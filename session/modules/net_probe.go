@@ -65,7 +65,7 @@ func (p Prober) OnSessionEnded(s *session.Session) {
 	}
 }
 
-func (p *Prober) sendUDP(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
+func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 	name := fmt.Sprintf("%s:137", ip)
 	if addr, err := net.ResolveUDPAddr("udp", name); err != nil {
 		log.Errorf("Could not resolve %s.", name)
@@ -109,7 +109,7 @@ func (p *Prober) Start() error {
 						continue
 					}
 
-					p.sendUDP(from, from_hw, ip)
+					p.sendProbe(from, from_hw, ip)
 
 					if throttle > 0 {
 						time.Sleep(time.Duration(throttle) * time.Millisecond)
