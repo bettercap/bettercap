@@ -15,12 +15,18 @@ type ModuleHandler struct {
 }
 
 func NewModuleHandler(name string, expr string, desc string, exec func(args []string) error) ModuleHandler {
-	return ModuleHandler{
+	h := ModuleHandler{
 		Name:        name,
 		Description: desc,
-		Parser:      regexp.MustCompile(expr),
+		Parser:      nil,
 		Exec:        exec,
 	}
+
+	if expr != "" {
+		h.Parser = regexp.MustCompile(expr)
+	}
+
+	return h
 }
 
 func (h *ModuleHandler) Help(padding int) string {
@@ -28,10 +34,18 @@ func (h *ModuleHandler) Help(padding int) string {
 }
 
 func (h *ModuleHandler) Parse(line string) (bool, []string) {
-	result := h.Parser.FindStringSubmatch(line)
-	if len(result) == h.Parser.NumSubexp()+1 {
-		return true, result[1:len(result)]
+	if h.Parser == nil {
+		if line == h.Name {
+			return true, nil
+		} else {
+			return false, nil
+		}
 	} else {
-		return false, nil
+		result := h.Parser.FindStringSubmatch(line)
+		if len(result) == h.Parser.NumSubexp()+1 {
+			return true, result[1:len(result)]
+		} else {
+			return false, nil
+		}
 	}
 }

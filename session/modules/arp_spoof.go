@@ -23,14 +23,16 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 
 	p.AddParam(session.NewStringParameter("arp.spoof.targets", "<entire subnet>", "", "IP addresses to spoof."))
 
-	p.AddHandler(session.NewModuleHandler("arp.spoof (on|off)", "^arp\\.spoof\\s+(on|off)$",
-		"Start/stop ARP spoofer.",
+	p.AddHandler(session.NewModuleHandler("arp.spoof on", "",
+		"Start ARP spoofer.",
 		func(args []string) error {
-			if args[0] == "on" {
-				return p.Start()
-			} else {
-				return p.Stop()
-			}
+			return p.Start()
+		}))
+
+	p.AddHandler(session.NewModuleHandler("arp.spoof off", "",
+		"Stop ARP spoofer.",
+		func(args []string) error {
+			return p.Stop()
 		}))
 
 	return p

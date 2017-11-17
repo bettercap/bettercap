@@ -99,14 +99,16 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 	p.AddParam(session.NewStringParameter("http.proxy.address", "<interface address>", `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, "Address to bind the HTTP proxy to."))
 	p.AddParam(session.NewStringParameter("http.proxy.post.filter", "", "", "SED like syntax to replace things in the response ( example |</head>|<script src='...'></script></head>| )."))
 
-	p.AddHandler(session.NewModuleHandler("http.proxy (on|off)", "^http\\.proxy (on|off)$",
-		"Start/stop HTTP proxy.",
+	p.AddHandler(session.NewModuleHandler("http.proxy on", "",
+		"Start HTTP proxy.",
 		func(args []string) error {
-			if args[0] == "on" {
-				return p.Start()
-			} else {
-				return p.Stop()
-			}
+			return p.Start()
+		}))
+
+	p.AddHandler(session.NewModuleHandler("http.proxy off", "",
+		"Stop HTTP proxy.",
+		func(args []string) error {
+			return p.Stop()
 		}))
 
 	p.proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

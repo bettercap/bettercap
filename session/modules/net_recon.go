@@ -26,17 +26,19 @@ func NewDiscovery(s *session.Session) *Discovery {
 		quit:    make(chan bool),
 	}
 
-	d.AddHandler(session.NewModuleHandler("net.recon (on|off)", "^net\\.recon\\s+(on|off)$",
-		"Start/stop network hosts discovery in background.",
+	d.AddHandler(session.NewModuleHandler("net.recon on", "",
+		"Start network hosts discovery.",
 		func(args []string) error {
-			if args[0] == "on" {
-				return d.Start()
-			} else {
-				return d.Stop()
-			}
+			return d.Start()
 		}))
 
-	d.AddHandler(session.NewModuleHandler("net.show", "^net\\.show$",
+	d.AddHandler(session.NewModuleHandler("net.recon off", "",
+		"Stop network hosts discovery.",
+		func(args []string) error {
+			return d.Stop()
+		}))
+
+	d.AddHandler(session.NewModuleHandler("net.show", "",
 		"Show current hosts list.",
 		func(args []string) error {
 			return d.Show()

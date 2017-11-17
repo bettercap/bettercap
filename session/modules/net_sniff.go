@@ -101,14 +101,16 @@ func NewSniffer(s *session.Session) *Sniffer {
 	sniff.AddParam(session.NewStringParameter("net.sniffer.regexp", "", "", "If filled, only packets matching this regular expression will be considered."))
 	sniff.AddParam(session.NewStringParameter("net.sniffer.output", "", "", "If set, the sniffer will write captured packets to this file."))
 
-	sniff.AddHandler(session.NewModuleHandler("net.sniffer (on|off)", "^net\\.sniffer\\s+(on|off)$",
-		"Start/stop network sniffer in background.",
+	sniff.AddHandler(session.NewModuleHandler("net.sniffer on", "",
+		"Start network sniffer in background.",
 		func(args []string) error {
-			if args[0] == "on" {
-				return sniff.Start()
-			} else {
-				return sniff.Stop()
-			}
+			return sniff.Start()
+		}))
+
+	sniff.AddHandler(session.NewModuleHandler("net.sniffer off", "",
+		"Stop network sniffer in background.",
+		func(args []string) error {
+			return sniff.Stop()
 		}))
 
 	return sniff

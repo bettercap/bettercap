@@ -20,14 +20,16 @@ func NewProber(s *session.Session) *Prober {
 
 	p.AddParam(session.NewIntParameter("net.probe.throttle", "10", "", "If greater than 0, probe packets will be throttled by this value in milliseconds."))
 
-	p.AddHandler(session.NewModuleHandler("net.probe (on|off)", "^net\\.probe\\s+(on|off)$",
-		"Start/stop network hosts probing in background.",
+	p.AddHandler(session.NewModuleHandler("net.probe on", "",
+		"Start network hosts probing in background.",
 		func(args []string) error {
-			if args[0] == "on" {
-				return p.Start()
-			} else {
-				return p.Stop()
-			}
+			return p.Start()
+		}))
+
+	p.AddHandler(session.NewModuleHandler("net.probe off", "",
+		"Stop network hosts probing in background.",
+		func(args []string) error {
+			return p.Stop()
 		}))
 
 	return p
