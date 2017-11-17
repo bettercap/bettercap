@@ -99,16 +99,26 @@ func (d *Discovery) Start() error {
 						}
 
 						if n_gw_shared > 0 {
-							log.Warningf("WARNING: %d endpoints share the same MAC of the gateway, there're might be some IP isolation going on.\n", n_gw_shared)
+							a := ""
+							b := ""
+							if n_gw_shared == 1 {
+								a = ""
+								b = "s"
+							} else {
+								a = "s"
+								b = ""
+							}
+
+							log.Warningf("WARNING: Found %d endpoint%s which share%s the same MAC of the gateway (%s), there're might be some IP isolation going on, skipping.\n", n_gw_shared, a, b, d.Session.Gateway.HwAddress)
 						}
 
 						// refresh target pool
-						for ip, mac := range new {
-							d.Session.Targets.AddIfNotExist(ip, mac)
-						}
-
 						for ip, mac := range rem {
 							d.Session.Targets.Remove(ip, mac)
+						}
+
+						for ip, mac := range new {
+							d.Session.Targets.AddIfNotExist(ip, mac)
 						}
 					}
 

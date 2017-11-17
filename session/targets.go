@@ -56,22 +56,23 @@ func (tp *Targets) Has(ip string) bool {
 	return false
 }
 
-func (tp *Targets) AddIfNotExist(ip, mac string) {
+func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
 	tp.lock.Lock()
 	defer tp.lock.Unlock()
 
 	if tp.shouldIgnore(ip) {
-		return
+		return nil
 	}
 
 	if t, found := tp.Targets[mac]; found {
-		t.IpAddress = ip
-		return
+		return t
 	}
 
 	e := net.NewEndpoint(ip, mac)
 	log.Infof("[%snew%s] %s\n", core.GREEN, core.RESET, e)
 	tp.Targets[mac] = e
+
+	return nil
 }
 
 type tSorter []*net.Endpoint
