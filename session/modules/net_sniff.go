@@ -86,13 +86,32 @@ func (c *SnifferContext) Close() {
 	}
 }
 
+type SnifferStats struct {
+	NumLocal   uint64
+	NumMatched uint64
+	NumDumped  uint64
+	NumWrote   uint64
+}
+
+func NewSnifferStats() *SnifferStats {
+	return &SnifferStats{
+		NumLocal:   0,
+		NumMatched: 0,
+		NumDumped:  0,
+		NumWrote:   0,
+	}
+}
+
 type Sniffer struct {
 	session.SessionModule
+	Stats *SnifferStats
+	Ctx   *SnifferContext
 }
 
 func NewSniffer(s *session.Session) *Sniffer {
 	sniff := &Sniffer{
 		SessionModule: session.NewSessionModule(s),
+		Stats:         nil,
 	}
 
 	sniff.AddParam(session.NewBoolParameter("net.sniffer.verbose", "true", "", "Print captured packets to screen."))
@@ -100,6 +119,12 @@ func NewSniffer(s *session.Session) *Sniffer {
 	sniff.AddParam(session.NewStringParameter("net.sniffer.filter", "not arp", "", "BPF filter for the sniffer."))
 	sniff.AddParam(session.NewStringParameter("net.sniffer.regexp", "", "", "If filled, only packets matching this regular expression will be considered."))
 	sniff.AddParam(session.NewStringParameter("net.sniffer.output", "", "", "If set, the sniffer will write captured packets to this file."))
+
+	sniff.AddHandler(session.NewModuleHandler("net.sniffer stats", "",
+		"Print sniffer session configuration and statistics.",
+		func(args []string) error {
+			return sniff.PrintStats()
+		}))
 
 	sniff.AddHandler(session.NewModuleHandler("net.sniffer on", "",
 		"Start network sniffer in background.",
@@ -218,41 +243,66 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 	return nil, ctx
 }
 
+func (s *Sniffer) PrintStats() error {
+	if s.Stats == nil {
+		return fmt.Errorf("No stats yet.")
+	}
+
+	s.Ctx.Log()
+
+	log.Infof("  Local Packets   : %d\n", s.Stats.NumLocal)
+	log.Infof("  Matched Packets : %d\n", s.Stats.NumMatched)
+	log.Infof("  Dumped Packets  : %d\n", s.Stats.NumDumped)
+	log.Infof("  Wrote Packets   : %d\n", s.Stats.NumWrote)
+
+	return nil
+}
+
 func (s *Sniffer) Start() error {
 	if s.Running() == false {
 		var err error
-		var ctx *SnifferContext
 
-		if err, ctx = s.GetContext(); err != nil {
-			if ctx != nil {
-				ctx.Close()
+		if err, s.Ctx = s.GetContext(); err != nil {
+			if s.Ctx != nil {
+				s.Ctx.Close()
+				s.Ctx = nil
 			}
 			return err
 		}
 
+		s.Stats = NewSnifferStats()
 		s.SetRunning(true)
 
 		go func() {
-			defer ctx.Close()
+			defer s.Ctx.Close()
 
 			log.Info("Network sniffer started.\n")
-			ctx.Log()
 
-			src := gopacket.NewPacketSource(ctx.Handle, ctx.Handle.LinkType())
+			src := gopacket.NewPacketSource(s.Ctx.Handle, s.Ctx.Handle.LinkType())
 			for packet := range src.Packets() {
 				if s.Running() == false {
 					break
 				}
 
-				if ctx.DumpLocal == true || s.isLocalPacket(packet) == false {
+				is_local := false
+				if s.isLocalPacket(packet) {
+					is_local = true
+					s.Stats.NumLocal++
+				}
+
+				if s.Ctx.DumpLocal == true || is_local == false {
 					data := packet.Data()
-					if ctx.Compiled == nil || ctx.Compiled.Match(data) == true {
-						if ctx.Verbose {
+					if s.Ctx.Compiled == nil || s.Ctx.Compiled.Match(data) == true {
+						s.Stats.NumMatched++
+
+						if s.Ctx.Verbose {
 							fmt.Println(packet.Dump())
+							s.Stats.NumDumped++
 						}
 
-						if ctx.OutputWriter != nil {
-							ctx.OutputWriter.WritePacket(packet.Metadata().CaptureInfo, data)
+						if s.Ctx.OutputWriter != nil {
+							s.Ctx.OutputWriter.WritePacket(packet.Metadata().CaptureInfo, data)
+							s.Stats.NumWrote++
 						}
 					}
 				}
