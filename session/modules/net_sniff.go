@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"regexp"
+	"time"
 )
 
 type SnifferContext struct {
@@ -87,18 +88,24 @@ func (c *SnifferContext) Close() {
 }
 
 type SnifferStats struct {
-	NumLocal   uint64
-	NumMatched uint64
-	NumDumped  uint64
-	NumWrote   uint64
+	NumLocal    uint64
+	NumMatched  uint64
+	NumDumped   uint64
+	NumWrote    uint64
+	Started     time.Time
+	FirstPacket time.Time
+	LastPacket  time.Time
 }
 
 func NewSnifferStats() *SnifferStats {
 	return &SnifferStats{
-		NumLocal:   0,
-		NumMatched: 0,
-		NumDumped:  0,
-		NumWrote:   0,
+		NumLocal:    0,
+		NumMatched:  0,
+		NumDumped:   0,
+		NumWrote:    0,
+		Started:     time.Now(),
+		FirstPacket: time.Time{},
+		LastPacket:  time.Time{},
 	}
 }
 
@@ -250,10 +257,24 @@ func (s *Sniffer) PrintStats() error {
 
 	s.Ctx.Log()
 
-	log.Infof("  Local Packets   : %d\n", s.Stats.NumLocal)
-	log.Infof("  Matched Packets : %d\n", s.Stats.NumMatched)
-	log.Infof("  Dumped Packets  : %d\n", s.Stats.NumDumped)
-	log.Infof("  Wrote Packets   : %d\n", s.Stats.NumWrote)
+	first := "never"
+	last := "never"
+
+	if s.Stats.FirstPacket.IsZero() == false {
+		first = s.Stats.FirstPacket.String()
+	}
+
+	if s.Stats.LastPacket.IsZero() == false {
+		last = s.Stats.LastPacket.String()
+	}
+
+	log.Infof("  Sniffer Started    : %s\n", s.Stats.Started)
+	log.Infof("  First Packet Seen  : %s\n", first)
+	log.Infof("  Last Packet Seen   : %s\n", last)
+	log.Infof("  Local Packets      : %d\n", s.Stats.NumLocal)
+	log.Infof("  Matched Packets    : %d\n", s.Stats.NumMatched)
+	log.Infof("  Dumped Packets     : %d\n", s.Stats.NumDumped)
+	log.Infof("  Wrote Packets      : %d\n", s.Stats.NumWrote)
 
 	return nil
 }
@@ -283,6 +304,12 @@ func (s *Sniffer) Start() error {
 				if s.Running() == false {
 					break
 				}
+
+				now := time.Now()
+				if s.Stats.FirstPacket.IsZero() {
+					s.Stats.FirstPacket = now
+				}
+				s.Stats.LastPacket = now
 
 				is_local := false
 				if s.isLocalPacket(packet) {
