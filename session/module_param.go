@@ -2,7 +2,7 @@ package session
 
 import (
 	"fmt"
-	"github.com/evilsocket/bettercap/core"
+	"github.com/bettercap/bettercap/core"
 	"regexp"
 	"strconv"
 	"strings"

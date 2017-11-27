@@ -8,7 +8,7 @@ import (
 
 	"github.com/op/go-logging"
 
-	"github.com/evilsocket/bettercap/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 type ArpTable map[string]string

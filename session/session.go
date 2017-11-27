@@ -15,10 +15,10 @@ import (
 	"github.com/chzyer/readline"
 	"github.com/op/go-logging"
 
-	"github.com/evilsocket/bettercap/core"
-	"github.com/evilsocket/bettercap/firewall"
-	"github.com/evilsocket/bettercap/net"
-	"github.com/evilsocket/bettercap/packets"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/firewall"
+	"github.com/bettercap/bettercap/net"
+	"github.com/bettercap/bettercap/packets"
 )
 
 type Session struct {

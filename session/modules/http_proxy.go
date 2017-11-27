@@ -10,8 +10,8 @@ import (
 	"github.com/elazarl/goproxy"
 	"github.com/elazarl/goproxy/ext/html"
 
-	"github.com/evilsocket/bettercap/firewall"
-	"github.com/evilsocket/bettercap/session"
+	"github.com/bettercap/bettercap/firewall"
+	"github.com/bettercap/bettercap/session"
 )
 
 var log = logging.MustGetLogger("mitm")
@@ -116,7 +116,7 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 			req.URL.Scheme = "http"
 			req.URL.Host = req.Host
 
-			// TODO: p.pre_filter.Process
+			// TODO: p.pre_filter.Process?
 
 			p.proxy.ServeHTTP(w, req)
 		} else {

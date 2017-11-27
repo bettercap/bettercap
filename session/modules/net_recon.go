@@ -2,8 +2,8 @@ package session_modules
 
 import (
 	"fmt"
-	"github.com/evilsocket/bettercap/net"
-	"github.com/evilsocket/bettercap/session"
+	"github.com/bettercap/bettercap/net"
+	"github.com/bettercap/bettercap/session"
 	"time"
 )
 

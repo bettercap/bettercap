@@ -7,8 +7,8 @@ import (
 
 	"github.com/op/go-logging"
 
-	"github.com/evilsocket/bettercap/core"
-	"github.com/evilsocket/bettercap/net"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/net"
 )
 
 var log = logging.MustGetLogger("mitm")

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/evilsocket/bettercap/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 type Endpoint struct {

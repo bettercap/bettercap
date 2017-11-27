@@ -5,9 +5,9 @@ import (
 
 	"github.com/op/go-logging"
 
-	"github.com/evilsocket/bettercap/core"
-	"github.com/evilsocket/bettercap/session"
-	"github.com/evilsocket/bettercap/session/modules"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/session/modules"
 )
 
 var sess *session.Session

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/evilsocket/bettercap/core"
+	"github.com/bettercap/bettercap/core"
 	"github.com/op/go-logging"
 )
 

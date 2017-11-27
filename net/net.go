@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evilsocket/bettercap/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 var IPv4RouteParser = regexp.MustCompile("^([\\d\\.]+)\\s+([\\d\\.]+)\\s+([\\d\\.]+)\\s+([A-Z]+)\\s+\\d+\\s+\\d+\\s+\\d+\\s+(.+)$")
