@@ -60,8 +60,8 @@ func NewProxyFilter(type_, expression string) (error, *ProxyFilter) {
 	return nil, filter
 }
 
-func (f *ProxyFilter) Process(req *http.Request, response_body string) string {
-	orig := response_body
+func (f *ProxyFilter) Process(req *http.Request, responseBody string) string {
+	orig := responseBody
 	filtered := f.Compiled.ReplaceAllString(orig, f.Replace)
 
 	// TODO: this sucks
