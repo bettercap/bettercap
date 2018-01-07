@@ -6,7 +6,7 @@ all: build
 	@echo "@ Done"
 	@echo -n "\n"
 
-build: deps build_file
+build: build_file
 	@echo "@ Building ..."
 	@go build $(FLAGS) -o $(TARGET) .
 
@@ -17,7 +17,7 @@ build_file: resources
 	@echo "  BuildDate = \"$(BUILD_DATE)\"" >> $(BUILD_FILE)
 	@echo ")" >> $(BUILD_FILE)
 
-resources:
+resources: deps
 	@echo "@ Compiling resources into go files ..."
 	@go-bindata -o net/oui_compiled.go -pkg net net/oui.dat
 
