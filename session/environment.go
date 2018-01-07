@@ -39,8 +39,9 @@ func (env *Environment) Set(name, value string) string {
 	old, _ := env.storage[name]
 	env.storage[name] = value
 
-	if len(name) > env.Padding {
-		env.Padding = len(name)
+	width := len(name)
+	if width > env.Padding {
+		env.Padding = width
 	}
 
 	return old
