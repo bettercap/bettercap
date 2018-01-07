@@ -11,7 +11,22 @@
 
 ---
 
-This is a WIP of the new version of [bettercap](https://github.com/evilsocket/bettercap), very alpha, do not use. To have some idea, take a look at the `caplets` folder :)
+This is a WIP of the new version of [bettercap](https://github.com/evilsocket/bettercap), very alpha, **do not use** ... or do, whatever.
+
+## Compiling
+
+Make sure you have a correctly configured Go >= 1.8 environment and the `libpcap-dev` package installed for your system, then:
+
+    git clone https://github.com/evilsocket/bettercap-ng $GOPATH/src/github.com/evilsocket/bettercap-ng
+    cd $GOPATH/src/github.com/evilsocket/bettercap-ng
+    make deps
+    make
+
+To show the command line options:
+
+    sudo ./bettercap-ng -h
+
+To have an idea of what commands you can use once `bettercap-ng` is started, take a look at the `caplets` scripts folder, each of those commands can be either manually entered during the interactive session, or scripted and loaded from `.cap` files.
 
 ## License
 
