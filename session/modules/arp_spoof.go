@@ -38,12 +38,12 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 	return p
 }
 
-func (p ArpSpoofer) OnSessionStarted(s *session.Session) {
+func (p *ArpSpoofer) OnSessionStarted(s *session.Session) {
 	// refresh the subnet after session has been created
 	s.Env.Set("arp.spoof.targets", s.Interface.CIDR())
 }
 
-func (p ArpSpoofer) OnSessionEnded(s *session.Session) {
+func (p *ArpSpoofer) OnSessionEnded(s *session.Session) {
 	if p.Running() {
 		p.Stop()
 	}
@@ -186,7 +186,7 @@ func (p *ArpSpoofer) Start() error {
 
 			for p.Running() {
 				p.sendArp(addresses, from, from_hw, true, false)
-				time.Sleep(5 * time.Second)
+				time.Sleep(1 * time.Second)
 			}
 
 			p.Done <- true

