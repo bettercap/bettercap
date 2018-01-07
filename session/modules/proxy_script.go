@@ -76,7 +76,6 @@ func (j *JSResponse) ReadBody() string {
 	}
 
 	j.Body = string(raw)
-	j.Updated()
 
 	return j.Body
 }
@@ -153,7 +152,7 @@ func (s ProxyScript) resToJS(res *http.Response) *JSResponse {
 	}
 }
 
-func (s *ProxyScript) doDefines(req *http.Request) (err error, jsres *JSResponse) {
+func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSResponse) {
 	jsreq := s.reqToJS(req)
 	if err = s.VM.Set("req", jsreq); err != nil {
 		log.Errorf("Error while defining request: %s", err)
@@ -169,7 +168,7 @@ func (s *ProxyScript) doDefines(req *http.Request) (err error, jsres *JSResponse
 	return
 }
 
-func (s *ProxyScript) doDefinesFor(res *http.Response) (err error, jsres *JSResponse) {
+func (s *ProxyScript) doResponseDefines(res *http.Response) (err error, jsres *JSResponse) {
 	jsreq := s.reqToJS(res.Request)
 	if err = s.VM.Set("req", jsreq); err != nil {
 		log.Errorf("Error while defining request: %s", err)
@@ -191,7 +190,7 @@ func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
 		s.gil.Lock()
 		defer s.gil.Unlock()
 
-		err, jsres := s.doDefines(req)
+		err, jsres := s.doRequestDefines(req)
 		if err != nil {
 			log.Errorf("Error while running bootstrap definitions: %s", err)
 			return nil
@@ -217,7 +216,7 @@ func (s *ProxyScript) OnResponse(res *http.Response) *JSResponse {
 		s.gil.Lock()
 		defer s.gil.Unlock()
 
-		err, jsres := s.doDefinesFor(res)
+		err, jsres := s.doResponseDefines(res)
 		if err != nil {
 			log.Errorf("Error while running bootstrap definitions: %s", err)
 			return nil

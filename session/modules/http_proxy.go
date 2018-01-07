@@ -9,6 +9,7 @@ import (
 
 	"github.com/elazarl/goproxy"
 
+	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/firewall"
 	"github.com/evilsocket/bettercap-ng/session"
 )
@@ -23,6 +24,16 @@ type HttpProxy struct {
 	server      http.Server
 	proxy       *goproxy.ProxyHttpServer
 	script      *ProxyScript
+}
+
+func (p HttpProxy) logAction(req *http.Request, jsres *JSResponse) {
+	fmt.Printf("[%s] %s > '%s %s%s' | Sending %d bytes of spoofed response.\n",
+		core.Green("http.proxy"),
+		core.Bold(strings.Split(req.RemoteAddr, ":")[0]),
+		req.Method,
+		req.Host,
+		req.URL.Path,
+		len(jsres.Body))
 }
 
 func NewHttpProxy(s *session.Session) *HttpProxy {
@@ -51,7 +62,6 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		}))
 
 	proxy := goproxy.NewProxyHttpServer()
-
 	proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if p.doProxy(req) == true {
 			req.URL.Scheme = "http"
@@ -65,9 +75,8 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		if p.script != nil {
 			jsres := p.script.OnRequest(req)
 			if jsres != nil {
-				log.Infof("Sending %d bytes of spoofed response to %s.", len(jsres.Body), req.RemoteAddr)
-				resp := jsres.ToResponse(req)
-				return req, resp
+				p.logAction(req, jsres)
+				return req, jsres.ToResponse(req)
 			}
 		}
 		return req, nil
@@ -77,8 +86,8 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		if p.script != nil {
 			jsres := p.script.OnResponse(res)
 			if jsres != nil {
-				log.Infof("Sending %d bytes of spoofed response to %s.", len(jsres.Body), res.Request.RemoteAddr)
-				res = jsres.ToResponse(res.Request)
+				p.logAction(res.Request, jsres)
+				return jsres.ToResponse(res.Request)
 			}
 		}
 		return res
