@@ -6,7 +6,7 @@ all: build
 	@echo "@ Done"
 	@echo -n "\n"
 
-build: build_file
+build: deps build_file
 	@echo "@ Building ..."
 	@go build $(FLAGS) -o $(TARGET) .
 
@@ -20,6 +20,14 @@ build_file: resources
 resources:
 	@echo "@ Compiling resources into go files ..."
 	@go-bindata -o net/oui_compiled.go -pkg net net/oui.dat
+
+deps:
+	@echo "@ Installing dependencies ..."
+	@go get -u github.com/jteeuwen/go-bindata/...
+	@go get github.com/elazarl/goproxy
+	@go get github.com/google/gopacket 
+	@go get github.com/malfunkt/iprange
+	@go get github.com/rogpeppe/go-charset/charset
 
 clean:
 	@rm -rf $(TARGET) net/oui_compiled.go

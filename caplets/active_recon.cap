@@ -1,0 +1,5 @@
+net.probe on
+net.recon on
+sleep 5
+net.show
+quit

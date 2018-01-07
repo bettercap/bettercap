@@ -1,0 +1,4 @@
+net.recon on
+sleep 1
+net.show
+quit

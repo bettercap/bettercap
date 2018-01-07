@@ -10,8 +10,8 @@ import (
 	"github.com/elazarl/goproxy"
 	"github.com/elazarl/goproxy/ext/html"
 
-	"github.com/bettercap/bettercap/firewall"
-	"github.com/bettercap/bettercap/session"
+	"github.com/evilsocket/bettercap-ng/firewall"
+	"github.com/evilsocket/bettercap-ng/session"
 )
 
 var log = logging.MustGetLogger("mitm")

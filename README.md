@@ -16,6 +16,8 @@ and offensive feature you could need in order to perform a man in the middle att
 
 **This is a WIP of the new version, very alpha, do not use.**
 
+To have some idea, take a look at the `caplets` folder :)
+
 ## License
 
 BetterCAP and BetterCAP-NG were made with ♥  by [Simone Margaritelli](https://www.evilsocket.net/) and it is released under the GPL 3 license.

@@ -2,8 +2,8 @@ package session_modules
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/core"
-	"github.com/bettercap/bettercap/session"
+	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/session"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
