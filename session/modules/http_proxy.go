@@ -80,8 +80,8 @@ type HttpProxy struct {
 	server      http.Server
 	proxy       *goproxy.ProxyHttpServer
 
-	pre_filter  *ProxyFilter
-	post_filter *ProxyFilter
+	preFilter  *ProxyFilter
+	postFilter *ProxyFilter
 }
 
 func NewHttpProxy(s *session.Session) *HttpProxy {
@@ -90,8 +90,8 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		proxy:         goproxy.NewProxyHttpServer(),
 		address:       "",
 		redirection:   nil,
-		pre_filter:    nil,
-		post_filter:   nil,
+		preFilter:     nil,
+		postFilter:    nil,
 	}
 
 	p.AddParam(session.NewIntParameter("http.port", "80", "", "HTTP port to redirect when the proxy is activated."))
@@ -116,7 +116,7 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 			req.URL.Scheme = "http"
 			req.URL.Host = req.Host
 
-			// TODO: p.pre_filter.Process?
+			// TODO: p.preFilter.Process?
 
 			p.proxy.ServeHTTP(w, req)
 		} else {
@@ -125,8 +125,8 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 	})
 
 	p.proxy.OnResponse(goproxy_html.IsHtml).Do(goproxy_html.HandleString(func(body string, ctx *goproxy.ProxyCtx) string {
-		if p.post_filter != nil {
-			body = p.post_filter.Process(ctx.Req, body)
+		if p.postFilter != nil {
+			body = p.postFilter.Process(ctx.Req, body)
 		}
 		return body
 	}))
@@ -183,13 +183,13 @@ func (p *HttpProxy) Start() error {
 		http_port = v.(int)
 	}
 
-	p.post_filter = nil
+	p.postFilter = nil
 	if err, v := p.Param("http.proxy.post.filter").Get(p.Session); err != nil {
 		return err
 	} else {
 		expression := v.(string)
 		if expression != "" {
-			if err, p.post_filter = NewProxyFilter("post", expression); err != nil {
+			if err, p.postFilter = NewProxyFilter("post", expression); err != nil {
 				return err
 			} else {
 				log.Debug("Proxy POST filter set to '%s'.", expression)
