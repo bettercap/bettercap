@@ -11,12 +11,7 @@
 
 ---
 
-**bettercap** is a complete, modular, portable and easily extensible **MITM** tool and framework with every kind of diagnostic
-and offensive feature you could need in order to perform a man in the middle attack.
-
-**This is a WIP of the new version, very alpha, do not use.**
-
-To have some idea, take a look at the `caplets` folder :)
+This is a WIP of the new version of [bettercap](https://github.com/evilsocket/bettercap), very alpha, do not use. To have some idea, take a look at the `caplets` folder :)
 
 ## License
 
