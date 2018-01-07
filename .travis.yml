@@ -1,0 +1,16 @@
+language: go
+sudo: false
+go:
+  - 1.9.x
+
+git:
+  depth: 3
+
+install:
+  - make deps
+
+go_import_path: github.com/evilsocket/bettercap-ng
+
+script:
+  - make test
+

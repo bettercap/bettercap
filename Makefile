@@ -29,6 +29,9 @@ deps:
 	@go get github.com/malfunkt/iprange
 	@go get github.com/rogpeppe/go-charset/charset
 
+test:
+	@go test ./...
+
 clean:
 	@rm -rf $(TARGET) net/oui_compiled.go
 
