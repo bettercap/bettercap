@@ -1,0 +1,2 @@
+set http.proxy.script caplets/proxy-script-test.js
+http.proxy on

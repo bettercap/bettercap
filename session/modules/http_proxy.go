@@ -2,75 +2,18 @@ package session_modules
 
 import (
 	"fmt"
-	"github.com/op/go-logging"
 	"net/http"
-	"regexp"
 	"strings"
 
+	"github.com/op/go-logging"
+
 	"github.com/elazarl/goproxy"
-	"github.com/elazarl/goproxy/ext/html"
 
 	"github.com/evilsocket/bettercap-ng/firewall"
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
 var log = logging.MustGetLogger("mitm")
-
-type ProxyFilter struct {
-	Type       string
-	Expression string
-	Replace    string
-	Compiled   *regexp.Regexp
-}
-
-func tokenize(s string, sep byte, n int) (error, []string) {
-	filtered := make([]string, 0)
-	tokens := strings.Split(s, string(sep))
-
-	for _, t := range tokens {
-		if t != "" {
-			filtered = append(filtered, t)
-		}
-	}
-
-	if len(filtered) != n {
-		return fmt.Errorf("Could not split '%s' by '%s'.", s, string(sep)), filtered
-	} else {
-		return nil, filtered
-	}
-}
-
-func NewProxyFilter(type_, expression string) (error, *ProxyFilter) {
-	err, tokens := tokenize(expression, expression[0], 2)
-	if err != nil {
-		return err, nil
-	}
-
-	filter := &ProxyFilter{
-		Type:       type_,
-		Expression: tokens[0],
-		Replace:    tokens[1],
-		Compiled:   nil,
-	}
-
-	if filter.Compiled, err = regexp.Compile(filter.Expression); err != nil {
-		return err, nil
-	}
-
-	return nil, filter
-}
-
-func (f *ProxyFilter) Process(req *http.Request, responseBody string) string {
-	orig := responseBody
-	filtered := f.Compiled.ReplaceAllString(orig, f.Replace)
-
-	// TODO: this sucks
-	if orig != filtered {
-		log.Infof("%s > Applied %s-filtering to %d of response body.", req.RemoteAddr, f.Type, len(filtered))
-	}
-
-	return filtered
-}
 
 type HttpProxy struct {
 	session.SessionModule
@@ -79,26 +22,22 @@ type HttpProxy struct {
 	redirection *firewall.Redirection
 	server      http.Server
 	proxy       *goproxy.ProxyHttpServer
-
-	preFilter  *ProxyFilter
-	postFilter *ProxyFilter
+	script      *ProxyScript
 }
 
 func NewHttpProxy(s *session.Session) *HttpProxy {
 	p := &HttpProxy{
 		SessionModule: session.NewSessionModule(s),
-		proxy:         goproxy.NewProxyHttpServer(),
+		proxy:         nil,
 		address:       "",
 		redirection:   nil,
-		preFilter:     nil,
-		postFilter:    nil,
+		script:        nil,
 	}
 
 	p.AddParam(session.NewIntParameter("http.port", "80", "", "HTTP port to redirect when the proxy is activated."))
 	p.AddParam(session.NewIntParameter("http.proxy.port", "8080", "", "Port to bind the HTTP proxy to."))
 	p.AddParam(session.NewStringParameter("http.proxy.address", "<interface address>", `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, "Address to bind the HTTP proxy to."))
-	p.AddParam(session.NewStringParameter("http.proxy.post.filter", "", "", "SED like syntax to replace things in the response ( example |</head>|<script src='...'></script></head>| )."))
-
+	p.AddParam(session.NewStringParameter("http.proxy.script", "", "", "Path of a proxy JS script."))
 	p.AddHandler(session.NewModuleHandler("http.proxy on", "",
 		"Start HTTP proxy.",
 		func(args []string) error {
@@ -111,25 +50,41 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 			return p.Stop()
 		}))
 
-	p.proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	proxy := goproxy.NewProxyHttpServer()
+
+	proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if p.doProxy(req) == true {
 			req.URL.Scheme = "http"
 			req.URL.Host = req.Host
-
-			// TODO: p.preFilter.Process?
-
 			p.proxy.ServeHTTP(w, req)
-		} else {
-			log.Infof("Skipping %s\n", req.Host)
 		}
 	})
 
-	p.proxy.OnResponse(goproxy_html.IsHtml).Do(goproxy_html.HandleString(func(body string, ctx *goproxy.ProxyCtx) string {
-		if p.postFilter != nil {
-			body = p.postFilter.Process(ctx.Req, body)
+	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+	proxy.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+		if p.script != nil {
+			jsres := p.script.OnRequest(req)
+			if jsres != nil {
+				log.Infof("Sending %d bytes of spoofed response to %s.", len(jsres.Body), req.RemoteAddr)
+				resp := jsres.ToResponse(req)
+				return req, resp
+			}
 		}
-		return body
-	}))
+		return req, nil
+	})
+
+	proxy.OnResponse().DoFunc(func(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
+		if p.script != nil {
+			jsres := p.script.OnResponse(res)
+			if jsres != nil {
+				log.Infof("Sending %d bytes of spoofed response to %s.", len(jsres.Body), res.Request.RemoteAddr)
+				res = jsres.ToResponse(res.Request)
+			}
+		}
+		return res
+	})
+
+	p.proxy = proxy
 
 	return p
 }
@@ -183,16 +138,15 @@ func (p *HttpProxy) Start() error {
 		http_port = v.(int)
 	}
 
-	p.postFilter = nil
-	if err, v := p.Param("http.proxy.post.filter").Get(p.Session); err != nil {
+	if err, v := p.Param("http.proxy.script").Get(p.Session); err != nil {
 		return err
 	} else {
-		expression := v.(string)
-		if expression != "" {
-			if err, p.postFilter = NewProxyFilter("post", expression); err != nil {
+		scriptPath := v.(string)
+		if scriptPath != "" {
+			if err, p.script = LoadProxyScript(scriptPath); err != nil {
 				return err
 			} else {
-				log.Debug("Proxy POST filter set to '%s'.", expression)
+				log.Debugf("Proxy script %s loaded.", scriptPath)
 			}
 		}
 	}
