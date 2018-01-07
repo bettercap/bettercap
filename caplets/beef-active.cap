@@ -11,6 +11,8 @@ http.proxy on
 # wait for everything to start properly
 sleep 1
 
+# make sure probing is off as it conflicts with arp spoofing
+net.probe off
 arp.spoof on
 
 
