@@ -30,4 +30,4 @@ To have an idea of what commands you can use once `bettercap-ng` is started, tak
 
 ## License
 
-BetterCAP and BetterCAP-NG were made with ♥  by [Simone Margaritelli](https://www.evilsocket.net/) and it is released under the GPL 3 license.
+`bettercap` and `bettercap-ng` are made with ♥  by [Simone Margaritelli](https://www.evilsocket.net/) and they're released under the GPL 3 license.
