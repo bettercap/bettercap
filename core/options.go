@@ -8,6 +8,7 @@ type Options struct {
 	Debug         *bool
 	Silent        *bool
 	NoHistory     *bool
+	Commands      *string
 }
 
 func ParseOptions() (Options, error) {
@@ -17,6 +18,7 @@ func ParseOptions() (Options, error) {
 		Debug:         flag.Bool("debug", false, "Print debug messages."),
 		Silent:        flag.Bool("silent", false, "Suppress all logs which are not errors."),
 		NoHistory:     flag.Bool("no-history", false, "Disable history file."),
+		Commands:      flag.String("eval", "", "Run a command, used to set variables via command line."),
 	}
 
 	flag.Parse()

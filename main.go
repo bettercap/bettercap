@@ -34,6 +34,12 @@ func main() {
 
 	defer sess.Close()
 
+	if *sess.Options.Commands != "" {
+		if err = sess.Run(*sess.Options.Commands); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	if *sess.Options.Caplet != "" {
 		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
 			log.Fatal(err)
