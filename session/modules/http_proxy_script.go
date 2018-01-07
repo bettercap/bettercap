@@ -13,7 +13,10 @@ type ProxyScript struct {
 	Path   string
 	Source string
 	VM     *otto.Otto
-	gil    *sync.Mutex
+
+	gil         *sync.Mutex
+	cbCacheLock *sync.Mutex
+	cbCache     map[string]bool
 }
 
 func LoadProxyScript(path string) (err error, s *ProxyScript) {
@@ -25,16 +28,17 @@ func LoadProxyScript(path string) (err error, s *ProxyScript) {
 	}
 
 	s = &ProxyScript{
-		Path:   path,
-		Source: string(raw),
-		VM:     otto.New(),
-		gil:    &sync.Mutex{},
+		Path:        path,
+		Source:      string(raw),
+		VM:          otto.New(),
+		gil:         &sync.Mutex{},
+		cbCacheLock: &sync.Mutex{},
+		cbCache:     make(map[string]bool),
 	}
 
 	_, err = s.VM.Run(s.Source)
 	if err == nil {
-		cb, err := s.VM.Get("onLoad")
-		if err == nil && cb.IsFunction() {
+		if s.hasCallback("onLoad") {
 			_, err = s.VM.Run("onLoad()")
 			if err != nil {
 				log.Errorf("Error while executing onLoad callback: %s", err)
@@ -44,6 +48,24 @@ func LoadProxyScript(path string) (err error, s *ProxyScript) {
 	}
 
 	return
+}
+
+func (s *ProxyScript) hasCallback(name string) bool {
+	s.cbCacheLock.Lock()
+	defer s.cbCacheLock.Unlock()
+
+	has, found := s.cbCache[name]
+	if found == false {
+		cb, err := s.VM.Get(name)
+		if err == nil && cb.IsFunction() {
+			has = true
+		} else {
+			has = false
+		}
+		s.cbCache[name] = has
+	}
+
+	return has
 }
 
 func (s ProxyScript) reqToJS(req *http.Request) JSRequest {
@@ -117,8 +139,7 @@ func (s *ProxyScript) doResponseDefines(res *http.Response) (err error, jsres *J
 }
 
 func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
-	cb, err := s.VM.Get("onRequest")
-	if err == nil && cb.IsFunction() {
+	if s.hasCallback("onRequest") {
 		s.gil.Lock()
 		defer s.gil.Unlock()
 
@@ -143,8 +164,7 @@ func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
 }
 
 func (s *ProxyScript) OnResponse(res *http.Response) *JSResponse {
-	cb, err := s.VM.Get("onResponse")
-	if err == nil && cb.IsFunction() {
+	if s.hasCallback("onResponse") {
 		s.gil.Lock()
 		defer s.gil.Unlock()
 
