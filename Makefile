@@ -22,7 +22,7 @@ build_file: resources
 
 resources: deps
 	@echo "@ Compiling resources into go files ..."
-	@go-bindata -o net/oui_compiled.go -pkg net net/oui.dat
+	@go-bindata -o net/oui_compiled.go -pkg net net/
 
 deps:
 	@echo "@ Installing dependencies ..."
