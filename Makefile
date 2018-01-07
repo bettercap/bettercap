@@ -6,6 +6,9 @@ all: build
 	@echo "@ Done"
 	@echo -n "\n"
 
+test: build
+	@go test ./...
+
 build: build_file
 	@echo "@ Building ..."
 	@go build $(FLAGS) -o $(TARGET) .
@@ -31,8 +34,6 @@ deps:
 	@go get github.com/chzyer/readline
 	@go get github.com/op/go-logging
 
-test:
-	@go test ./...
 
 clean:
 	@rm -rf $(TARGET) net/oui_compiled.go
