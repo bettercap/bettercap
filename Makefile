@@ -28,6 +28,8 @@ deps:
 	@go get github.com/google/gopacket 
 	@go get github.com/malfunkt/iprange
 	@go get github.com/rogpeppe/go-charset/charset
+	@go get github.com/chzyer/readline
+	@go get github.com/op/go-logging
 
 test:
 	@go test ./...
