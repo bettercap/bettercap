@@ -39,7 +39,7 @@ func ExpandPath(path string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			// Replace only the first occurence of ~
+			// Replace only the first occurrence of ~
 			path = strings.Replace(path, "~", usr.HomeDir, 1)
 		}
 		return filepath.Abs(path)
