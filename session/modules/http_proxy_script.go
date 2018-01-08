@@ -39,11 +39,13 @@ func LoadProxyScript(path string) (err error, s *ProxyScript) {
 		cbCache:          make(map[string]bool),
 	}
 
+	// this will define callbacks and global objects
 	_, err = s.VM.Run(s.Source)
 	if err != nil {
 		return
 	}
 
+	// run onLoad if defined
 	if s.hasCallback("onLoad") {
 		_, err = s.VM.Run("onLoad()")
 		if err != nil {
@@ -52,6 +54,7 @@ func LoadProxyScript(path string) (err error, s *ProxyScript) {
 		}
 	}
 
+	// compile call to onRequest if defined
 	if s.hasCallback("onRequest") {
 		s.onRequestScript, err = s.VM.Compile("", "onRequest(req, res)")
 		if err != nil {
@@ -60,6 +63,7 @@ func LoadProxyScript(path string) (err error, s *ProxyScript) {
 		}
 	}
 
+	// compile call to onResponse if defined
 	if s.hasCallback("onResponse") {
 		s.onResponseScript, err = s.VM.Compile("", "onResponse(req, res)")
 		if err != nil {
@@ -75,8 +79,10 @@ func (s *ProxyScript) hasCallback(name string) bool {
 	s.cbCacheLock.Lock()
 	defer s.cbCacheLock.Unlock()
 
+	// check the cache
 	has, found := s.cbCache[name]
 	if found == false {
+		// check the VM
 		cb, err := s.VM.Get(name)
 		if err == nil && cb.IsFunction() {
 			has = true
@@ -90,6 +96,7 @@ func (s *ProxyScript) hasCallback(name string) bool {
 }
 
 func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSResponse) {
+	// convert request and define empty response to be optionally filled
 	jsreq := NewJSRequest(req)
 	if err = s.VM.Set("req", jsreq); err != nil {
 		log.Errorf("Error while defining request: %s", err)
@@ -106,6 +113,7 @@ func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSR
 }
 
 func (s *ProxyScript) doResponseDefines(res *http.Response) (err error, jsres *JSResponse) {
+	// convert both request and response
 	jsreq := NewJSRequest(res.Request)
 	if err = s.VM.Set("req", jsreq); err != nil {
 		log.Errorf("Error while defining request: %s", err)
