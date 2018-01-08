@@ -2,6 +2,7 @@ package session_modules
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -17,6 +18,7 @@ type JSRequest struct {
 	Hostname string
 	Headers  []JSHeader
 	Body     string
+	req      *http.Request
 }
 
 func NewJSRequest(req *http.Request) JSRequest {
@@ -33,9 +35,18 @@ func NewJSRequest(req *http.Request) JSRequest {
 		Path:     req.URL.Path,
 		Hostname: req.Host,
 		Headers:  headers,
+		req:      req,
 	}
 }
 
 func (j *JSRequest) ReadBody() string {
-	return "TODO: read body"
+	raw, err := ioutil.ReadAll(j.req.Body)
+	if err != nil {
+		log.Errorf("Could not read request body: %s", err)
+		return ""
+	}
+
+	j.Body = string(raw)
+
+	return j.Body
 }

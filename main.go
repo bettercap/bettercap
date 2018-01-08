@@ -2,6 +2,7 @@ package main
 
 import (
 	"runtime"
+	"strings"
 
 	"github.com/op/go-logging"
 
@@ -35,8 +36,11 @@ func main() {
 	defer sess.Close()
 
 	if *sess.Options.Commands != "" {
-		if err = sess.Run(*sess.Options.Commands); err != nil {
-			log.Fatal(err)
+		for _, cmd := range strings.Split(*sess.Options.Commands, ";") {
+			cmd = strings.Trim(cmd, "\r\n\t ")
+			if err = sess.Run(cmd); err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 
