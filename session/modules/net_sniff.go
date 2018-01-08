@@ -47,27 +47,27 @@ var (
 
 func (c *SnifferContext) Log(sess *session.Session) {
 	if c.DumpLocal {
-		sess.Events.Log(session.INFO, "Skip local packets : "+no)
+		sess.Events.Log(session.INFO, "Skip local packets : %s", no)
 	} else {
-		sess.Events.Log(session.INFO, "Skip local packets : "+yes)
+		sess.Events.Log(session.INFO, "Skip local packets : %s", yes)
 	}
 
 	if c.Verbose {
-		sess.Events.Log(session.INFO, "Verbose            : "+yes)
+		sess.Events.Log(session.INFO, "Verbose            : %s", yes)
 	} else {
-		sess.Events.Log(session.INFO, "Verbose            : "+no)
+		sess.Events.Log(session.INFO, "Verbose            : %s", no)
 	}
 
 	if c.Filter != "" {
-		sess.Events.Log(session.INFO, "BPF Filter         : '"+core.Yellow(c.Filter)+"'")
+		sess.Events.Log(session.INFO, "BPF Filter         : '%s'", core.Yellow(c.Filter))
 	}
 
 	if c.Expression != "" {
-		sess.Events.Log(session.INFO, "Regular expression : '"+core.Yellow(c.Expression)+"'")
+		sess.Events.Log(session.INFO, "Regular expression : '%s'", core.Yellow(c.Expression))
 	}
 
 	if c.Output != "" {
-		sess.Events.Log(session.INFO, "File output        : '"+core.Yellow(c.Output)+"'")
+		sess.Events.Log(session.INFO, "File output        : '%s'", core.Yellow(c.Output))
 	}
 }
 

@@ -101,11 +101,7 @@ func (p *EventPool) Add(tag string, data interface{}) {
 	e := NewEvent(tag, data)
 	p.events = append([]Event{e}, p.events...)
 
-	select {
-	case p.NewEvents <- e:
-		break
-	default:
-	}
+	go func() { p.NewEvents <- e }()
 }
 
 func (p *EventPool) Log(level int, format string, args ...interface{}) {
