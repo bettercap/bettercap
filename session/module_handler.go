@@ -43,7 +43,7 @@ func (h *ModuleHandler) Parse(line string) (bool, []string) {
 	} else {
 		result := h.Parser.FindStringSubmatch(line)
 		if len(result) == h.Parser.NumSubexp()+1 {
-			return true, result[1:len(result)]
+			return true, result[1:]
 		} else {
 			return false, nil
 		}

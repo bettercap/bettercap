@@ -21,7 +21,7 @@ func NewCommandHandler(name string, expr string, desc string, exec func(args []s
 func (h *CommandHandler) Parse(line string) (bool, []string) {
 	result := h.Parser.FindStringSubmatch(line)
 	if len(result) == h.Parser.NumSubexp()+1 {
-		return true, result[1:len(result)]
+		return true, result[1:]
 	} else {
 		return false, nil
 	}
