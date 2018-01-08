@@ -68,6 +68,8 @@ func (s *EventsStream) Start() error {
 					} else {
 						fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
 					}
+
+					s.Session.Input.Refresh()
 					break
 
 				case <-s.quit:
