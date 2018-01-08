@@ -77,10 +77,9 @@ func (s *EventsStream) Start() error {
 		}()
 
 		return nil
-	} else {
-		return fmt.Errorf("Events stream already started.")
 	}
 
+	return fmt.Errorf("Events stream already started.")
 }
 
 func (s *EventsStream) Stop() error {
@@ -88,13 +87,12 @@ func (s *EventsStream) Stop() error {
 		s.SetRunning(false)
 		s.quit <- true
 		return nil
-	} else {
-		return fmt.Errorf("Events stream already stopped.")
 	}
+	return fmt.Errorf("Events stream already stopped.")
 }
 
-func (p EventsStream) OnSessionEnded(s *session.Session) {
-	if p.Running() {
-		p.Stop()
+func (s *EventsStream) OnSessionEnded(sess *session.Session) {
+	if s.Running() {
+		s.Stop()
 	}
 }
