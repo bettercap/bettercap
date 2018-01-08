@@ -2,7 +2,7 @@ TARGET=bettercap-ng
 BUILD_DATE=`date +%Y-%m-%d\ %H:%M`
 BUILD_FILE=core/build.go
 
-all: fmt vet lint build
+all: fmt vet build
 	@echo "@ Done"
 	@echo -n "\n"
 
