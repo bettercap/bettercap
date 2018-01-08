@@ -141,6 +141,7 @@ func (s *Session) registerCoreHandlers() {
 		"Close the session and exit.",
 		func(args []string, s *Session) error {
 			s.Active = false
+			s.Input.Close()
 			return nil
 		}))
 

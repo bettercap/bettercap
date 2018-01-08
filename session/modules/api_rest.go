@@ -57,25 +57,60 @@ func NewRestAPI(s *session.Session) *RestAPI {
 			return api.Stop()
 		}))
 
-	http.HandleFunc("/api/session", api.getSession)
+	http.HandleFunc("/api/session", api.sessRoute)
 
 	return api
 }
 
-func (api *RestAPI) getSession(w http.ResponseWriter, r *http.Request) {
+type JSSessionRequest struct {
+	Command string `json:"cmd"`
+}
+
+type JSSessionResponse struct {
+	Error string `json:"error"`
+}
+
+func (api *RestAPI) sessRoute(w http.ResponseWriter, r *http.Request) {
 	if api.checkAuth(w, r) == false {
 		return
 	}
 
-	js, err := json.Marshal(api.Session)
-	if err != nil {
-		log.Errorf("Error while returning session: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	if r.Method == "GET" {
+		js, err := json.Marshal(api.Session)
+		if err != nil {
+			log.Errorf("Error while returning session: %s", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	} else if r.Method == "POST" && r.Body != nil {
+		var req JSSessionRequest
+		var res JSSessionResponse
+
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+
+		err = api.Session.Run(req.Command)
+		if err != nil {
+			res.Error = err.Error()
+		}
+		js, err := json.Marshal(res)
+		if err != nil {
+			log.Errorf("Error while returning response: %s", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	} else {
+		http.Error(w, "Not Found", 404)
+	}
 }
 
 func (api RestAPI) checkAuth(w http.ResponseWriter, r *http.Request) bool {
