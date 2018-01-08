@@ -93,6 +93,10 @@ Clear events:
 
     curl -k --user bpcap:bcap -X DELETE https://bettercap-ip:8083/api/events
 
+<center>
+    <img src="https://pbs.twimg.com/media/DTAreSCX4AAXX6v.jpg:large" width="100%"/>
+</center>
+
 #### caplets/beef-inject.cap
 
 Use a proxy script to inject a BEEF javascript hook:
