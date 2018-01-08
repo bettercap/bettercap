@@ -43,12 +43,12 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"API authentication username."))
 
 	api.AddParam(session.NewStringParameter("api.rest.certificate",
-		"~/.bettercap-ng.certificate.pem",
+		"~/.bettercap-ng.api.rest.certificate.pem",
 		"",
 		"API TLS certificate."))
 
 	api.AddParam(session.NewStringParameter("api.rest.key",
-		"~/.bettercap-ng.key.pem",
+		"~/.bettercap-ng.api.rest.key.pem",
 		"",
 		"API TLS key"))
 
