@@ -2,7 +2,10 @@ package core
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
 	"strings"
 )
 
@@ -19,4 +22,27 @@ func Exec(executable string, args []string) (string, error) {
 	} else {
 		return strings.Trim(string(raw), "\r\n\t "), nil
 	}
+}
+
+func Exists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func ExpandPath(path string) (string, error) {
+	// Check if path is empty
+	if path != "" {
+		if strings.HasPrefix(path, "~") {
+			usr, err := user.Current()
+			if err != nil {
+				return "", err
+			}
+			// Replace only the first occurence of ~
+			path = strings.Replace(path, "~", usr.HomeDir, 1)
+		}
+		return filepath.Abs(path)
+	}
+	return "", nil
 }

@@ -30,11 +30,11 @@ func main() {
 	sess.Register(session_modules.NewRestAPI(sess))
 
 	if err = sess.Start(); err != nil {
-		sess.Events.Log(session.FATAL, "%s", err)
+		panic(err)
 	}
 
 	if err = sess.Run("events.stream on"); err != nil {
-		sess.Events.Log(session.FATAL, "%s", err)
+		panic(err)
 	}
 
 	defer sess.Close()
@@ -43,21 +43,21 @@ func main() {
 		for _, cmd := range strings.Split(*sess.Options.Commands, ";") {
 			cmd = strings.Trim(cmd, "\r\n\t ")
 			if err = sess.Run(cmd); err != nil {
-				sess.Events.Log(session.FATAL, "%s", err)
+				panic(err)
 			}
 		}
 	}
 
 	if *sess.Options.Caplet != "" {
 		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
-			sess.Events.Log(session.FATAL, "%s", err)
+			panic(err)
 		}
 	}
 
 	for sess.Active {
 		line, err := sess.ReadLine()
 		if err != nil {
-			sess.Events.Log(session.FATAL, "%s", err)
+			panic(err)
 		}
 
 		if line == "" || line[0] == '#' {

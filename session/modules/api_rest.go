@@ -8,7 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/evilsocket/bettercap-ng/tls"
 )
 
 type RestAPI struct {
@@ -16,6 +18,8 @@ type RestAPI struct {
 	server   *http.Server
 	username string
 	password string
+	certFile string
+	keyFile  string
 }
 
 func NewRestAPI(s *session.Session) *RestAPI {
@@ -32,13 +36,23 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"Address to bind the API REST server to."))
 
 	api.AddParam(session.NewIntParameter("api.rest.port",
-		"8081",
+		"8083",
 		"Port to bind the API REST server to."))
 
 	api.AddParam(session.NewStringParameter("api.rest.username",
 		"",
 		"",
 		"API authentication username."))
+
+	api.AddParam(session.NewStringParameter("api.rest.certificate",
+		"~/.bettercap-ng.certificate.pem",
+		"",
+		"API TLS certificate."))
+
+	api.AddParam(session.NewStringParameter("api.rest.key",
+		"~/.bettercap-ng.key.pem",
+		"",
+		"API TLS key"))
 
 	api.AddParam(session.NewStringParameter("api.rest.password",
 		"",
@@ -229,6 +243,24 @@ func (api *RestAPI) Start() error {
 		port = v.(int)
 	}
 
+	if err, v := api.Param("api.rest.certificate").Get(api.Session); err != nil {
+		return err
+	} else {
+		api.certFile = v.(string)
+		if api.certFile, err = core.ExpandPath(api.certFile); err != nil {
+			return err
+		}
+	}
+
+	if err, v := api.Param("api.rest.key").Get(api.Session); err != nil {
+		return err
+	} else {
+		api.keyFile = v.(string)
+		if api.keyFile, err = core.ExpandPath(api.keyFile); err != nil {
+			return err
+		}
+	}
+
 	if err, v := api.Param("api.rest.username").Get(api.Session); err != nil {
 		return err
 	} else {
@@ -247,16 +279,25 @@ func (api *RestAPI) Start() error {
 		}
 	}
 
+	if core.Exists(api.certFile) == false || core.Exists(api.keyFile) == false {
+		api.Session.Events.Log(session.INFO, "Generating RSA key to %s", api.keyFile)
+		api.Session.Events.Log(session.INFO, "Generating TLS certificate to %s", api.certFile)
+		if err := tls.Generate(api.certFile, api.keyFile); err != nil {
+			return err
+		}
+	} else {
+		api.Session.Events.Log(session.INFO, "Loading RSA key from %s", api.keyFile)
+		api.Session.Events.Log(session.INFO, "Loading TLS certificate from %s", api.certFile)
+	}
+
 	if api.Running() == false {
 		api.SetRunning(true)
-
 		api.server.Addr = fmt.Sprintf("%s:%d", address, port)
 		go func() {
-
-			api.Session.Events.Log(session.INFO, "API server starting on http://%s", api.server.Addr)
-			err := api.server.ListenAndServe()
-			if err != nil {
-				api.Session.Events.Log(session.ERROR, "%s", err)
+			api.Session.Events.Log(session.INFO, "API server starting on https://%s", api.server.Addr)
+			err := api.server.ListenAndServeTLS(api.certFile, api.keyFile)
+			if err != nil && err != http.ErrServerClosed {
+				panic(err)
 			}
 		}()
 
