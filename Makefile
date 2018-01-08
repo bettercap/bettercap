@@ -26,7 +26,7 @@ resources:
 
 vet:
 	@echo "@ Running VET ..."
-	@go vet .
+	@go vet ./...
 
 fmt:
 	@echo "@ Formatting ..."
@@ -34,7 +34,7 @@ fmt:
 
 lint:
 	@echo "@ Running LINT ..."
-	@golint .
+	@golint ./...
 
 deps:
 	@echo "@ Installing dependencies ..."

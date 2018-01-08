@@ -21,7 +21,7 @@ type HttpProxy struct {
 	script      *ProxyScript
 }
 
-func (p HttpProxy) logAction(req *http.Request, jsres *JSResponse) {
+func (p *HttpProxy) logAction(req *http.Request, jsres *JSResponse) {
 	p.Session.Events.Add("http.proxy.spoofed-response", struct {
 		To     string
 		Method string
@@ -113,24 +113,24 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 	return p
 }
 
-func (p HttpProxy) Name() string {
+func (p *HttpProxy) Name() string {
 	return "HTTP Proxy"
 }
 
-func (p HttpProxy) Description() string {
+func (p *HttpProxy) Description() string {
 	return "A full featured HTTP proxy that can be used to inject malicious contents into webpages, all HTTP traffic will be redirected to it."
 }
 
-func (p HttpProxy) Author() string {
+func (p *HttpProxy) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (p HttpProxy) OnSessionStarted(s *session.Session) {
+func (p *HttpProxy) OnSessionStarted(s *session.Session) {
 	// refresh the address after session has been created
 	s.Env.Set("http.proxy.address", s.Interface.IpAddress)
 }
 
-func (p HttpProxy) OnSessionEnded(s *session.Session) {
+func (p *HttpProxy) OnSessionEnded(s *session.Session) {
 	if p.Running() {
 		p.Stop()
 	}
@@ -222,7 +222,7 @@ func (p *HttpProxy) Stop() error {
 	}
 }
 
-func (p HttpProxy) doProxy(req *http.Request) bool {
+func (p *HttpProxy) doProxy(req *http.Request) bool {
 	blacklist := []string{
 		"localhost",
 		"127.0.0.1",
