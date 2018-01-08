@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"runtime"
 	"strings"
 
@@ -20,8 +21,8 @@ func main() {
 		panic(err)
 	}
 
-	log.Infof("Starting %s v%s\n", core.Name, core.Version)
-	log.Infof("Build: date=%s os=%s arch=%s\n", core.BuildDate, runtime.GOOS, runtime.GOARCH)
+	fmt.Printf("%s v%s\n", core.Name, core.Version)
+	fmt.Printf("Build: date=%s os=%s arch=%s\n\n", core.BuildDate, runtime.GOOS, runtime.GOARCH)
 
 	sess.Register(session_modules.NewProber(sess))
 	sess.Register(session_modules.NewDiscovery(sess))

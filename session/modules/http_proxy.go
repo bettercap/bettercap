@@ -38,7 +38,7 @@ func (p HttpProxy) logAction(req *http.Request, jsres *JSResponse) {
 
 func NewHttpProxy(s *session.Session) *HttpProxy {
 	p := &HttpProxy{
-		SessionModule: session.NewSessionModule(s),
+		SessionModule: session.NewSessionModule("http.proxy", s),
 		proxy:         nil,
 		address:       "",
 		redirection:   nil,

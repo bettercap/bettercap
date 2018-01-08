@@ -15,7 +15,7 @@ type Prober struct {
 
 func NewProber(s *session.Session) *Prober {
 	p := &Prober{
-		SessionModule: session.NewSessionModule(s),
+		SessionModule: session.NewSessionModule("net.probe", s),
 	}
 
 	p.AddParam(session.NewIntParameter("net.probe.throttle",

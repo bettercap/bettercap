@@ -17,7 +17,7 @@ type ArpSpoofer struct {
 
 func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 	p := &ArpSpoofer{
-		SessionModule: session.NewSessionModule(s),
+		SessionModule: session.NewSessionModule("arp.spoof", s),
 		Done:          make(chan bool),
 	}
 

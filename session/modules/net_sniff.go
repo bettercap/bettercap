@@ -117,7 +117,7 @@ type Sniffer struct {
 
 func NewSniffer(s *session.Session) *Sniffer {
 	sniff := &Sniffer{
-		SessionModule: session.NewSessionModule(s),
+		SessionModule: session.NewSessionModule("net.sniffer", s),
 		Stats:         nil,
 	}
 

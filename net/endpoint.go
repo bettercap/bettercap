@@ -8,18 +8,18 @@ import (
 	"github.com/evilsocket/bettercap-ng/core"
 )
 
+type OnHostResolvedCallback func(e *Endpoint)
 type Endpoint struct {
-	IP              net.IP
-	HW              net.HardwareAddr
-	IpAddress       string
-	SubnetBits      uint32
-	IpAddressUint32 uint32
-	HwAddress       string
-	Hostname        string
-	Vendor          string
+	IP               net.IP                 `json:"-"`
+	HW               net.HardwareAddr       `json:"-"`
+	IpAddress        string                 `json:"address"`
+	SubnetBits       uint32                 `json:"-"`
+	IpAddressUint32  uint32                 `json:"-"`
+	HwAddress        string                 `json:"mac"`
+	Hostname         string                 `json:"hostname"`
+	Vendor           string                 `json:"vendor"`
+	ResolvedCallback OnHostResolvedCallback `json:"-"`
 }
-
-type OnHostResolvedAction func(e *Endpoint)
 
 func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 	hw, err := net.ParseMAC(mac)
@@ -28,14 +28,15 @@ func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 	}
 
 	e := &Endpoint{
-		IP:              net.ParseIP(ip),
-		HW:              hw,
-		IpAddress:       ip,
-		SubnetBits:      bits,
-		IpAddressUint32: binary.BigEndian.Uint32(net.ParseIP(ip)[12:16]),
-		HwAddress:       mac,
-		Hostname:        name,
-		Vendor:          OuiLookup(mac),
+		IP:               net.ParseIP(ip),
+		HW:               hw,
+		IpAddress:        ip,
+		SubnetBits:       bits,
+		IpAddressUint32:  binary.BigEndian.Uint32(net.ParseIP(ip)[12:16]),
+		HwAddress:        mac,
+		Hostname:         name,
+		Vendor:           OuiLookup(mac),
+		ResolvedCallback: nil,
 	}
 
 	return e
@@ -48,7 +49,10 @@ func NewEndpoint(ip, mac string) *Endpoint {
 	go func() {
 		if names, err := net.LookupAddr(e.IpAddress); err == nil {
 			e.Hostname = names[0]
-			log.Debugf("Endpoint %s is now known as %s\n", e.IpAddress, core.Green(e.Hostname))
+			if e.ResolvedCallback != nil {
+				// log.Debugf("Endpoint %s is now known as %s\n", e.IpAddress, core.Green(e.Hostname))
+				e.ResolvedCallback(e)
+			}
 		}
 	}()
 

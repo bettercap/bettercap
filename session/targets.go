@@ -14,14 +14,16 @@ import (
 var log = logging.MustGetLogger("mitm")
 
 type Targets struct {
+	Session   *Session `json:"-"`
 	Interface *net.Endpoint
 	Gateway   *net.Endpoint
 	Targets   map[string]*net.Endpoint
 	lock      sync.Mutex
 }
 
-func NewTargets(iface, gateway *net.Endpoint) *Targets {
+func NewTargets(s *Session, iface, gateway *net.Endpoint) *Targets {
 	return &Targets{
+		Session:   s,
 		Interface: iface,
 		Gateway:   gateway,
 		Targets:   make(map[string]*net.Endpoint),
@@ -33,7 +35,7 @@ func (tp *Targets) Remove(ip, mac string) {
 	defer tp.lock.Unlock()
 
 	if e, found := tp.Targets[mac]; found {
-		log.Infof("[%slost%s] %s\n", core.RED, core.RESET, e)
+		tp.Session.Events.Add("target-lost", e)
 		delete(tp.Targets, mac)
 		return
 	}
@@ -69,8 +71,13 @@ func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
 	}
 
 	e := net.NewEndpoint(ip, mac)
-	log.Infof("[%snew%s] %s\n", core.GREEN, core.RESET, e)
+	e.ResolvedCallback = func(e *net.Endpoint) {
+		tp.Session.Events.Add("target.resolved", e)
+	}
+
 	tp.Targets[mac] = e
+
+	tp.Session.Events.Add("target.new", e)
 
 	return nil
 }

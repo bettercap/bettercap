@@ -18,16 +18,18 @@ type Module interface {
 }
 
 type SessionModule struct {
-	Session    *Session
-	Started    bool
-	StatusLock *sync.Mutex
+	Name       string      `json:"name"`
+	Session    *Session    `json:"-"`
+	Started    bool        `json:"started"`
+	StatusLock *sync.Mutex `json:"-"`
 
 	handlers []ModuleHandler
 	params   map[string]*ModuleParam
 }
 
-func NewSessionModule(s *Session) SessionModule {
+func NewSessionModule(name string, s *Session) SessionModule {
 	m := SessionModule{
+		Name:       name,
 		Session:    s,
 		Started:    false,
 		StatusLock: &sync.Mutex{},
@@ -70,6 +72,12 @@ func (m *SessionModule) SetRunning(running bool) {
 	m.StatusLock.Lock()
 	defer m.StatusLock.Unlock()
 	m.Started = running
+
+	if running {
+		m.Session.Events.Add("mod.started", m.Name)
+	} else {
+		m.Session.Events.Add("mod.stopped", m.Name)
+	}
 }
 
 func (m *SessionModule) OnSessionStarted(s *Session) {

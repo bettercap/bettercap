@@ -11,13 +11,15 @@ type Environment struct {
 	Padding int               `json:"-"`
 	Storage map[string]string `json:"storage"`
 	lock    *sync.Mutex
+	sess    *Session
 }
 
-func NewEnvironment() *Environment {
+func NewEnvironment(s *Session) *Environment {
 	env := &Environment{
 		Padding: 0,
 		Storage: make(map[string]string),
 		lock:    &sync.Mutex{},
+		sess:    s,
 	}
 
 	return env
@@ -38,6 +40,14 @@ func (env *Environment) Set(name, value string) string {
 
 	old, _ := env.Storage[name]
 	env.Storage[name] = value
+
+	env.sess.Events.Add("env.change", struct {
+		name  string
+		value string
+	}{
+		name,
+		value,
+	})
 
 	width := len(name)
 	if width > env.Padding {

@@ -18,7 +18,7 @@ type Discovery struct {
 
 func NewDiscovery(s *session.Session) *Discovery {
 	d := &Discovery{
-		SessionModule: session.NewSessionModule(s),
+		SessionModule: session.NewSessionModule("net.recon", s),
 
 		refresh: 1,
 		before:  nil,

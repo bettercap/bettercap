@@ -32,24 +32,29 @@ type Session struct {
 	Input     *readline.Instance       `json:"-"`
 	Active    bool                     `json:"active"`
 
-	// Watcher *discovery.Watcher
 	CoreHandlers []CommandHandler `json:"-"`
 	Modules      []Module         `json:"-"`
 	HelpPadding  int              `json:"-"`
+
+	Events *EventPool `json:"-"`
 }
 
 func New() (*Session, error) {
 	var err error
 
 	s := &Session{
-		Env:    NewEnvironment(),
+		Env:    nil,
 		Active: false,
 		Queue:  nil,
 
 		CoreHandlers: make([]CommandHandler, 0),
 		Modules:      make([]Module, 0),
 		HelpPadding:  0,
+
+		Events: NewEventPool(),
 	}
+
+	s.Env = NewEnvironment(s)
 
 	if s.Options, err = core.ParseOptions(); err != nil {
 		return nil, err
@@ -265,6 +270,8 @@ func (s *Session) setupInput() error {
 }
 
 func (s *Session) Close() {
+	s.Events.Add("session.closing", nil)
+
 	for _, m := range s.Modules {
 		m.OnSessionEnded(s)
 	}
@@ -311,7 +318,7 @@ func (s *Session) Start() error {
 
 	log.Debugf("[%sgateway%s] %s\n", core.GREEN, core.RESET, s.Gateway)
 
-	s.Targets = NewTargets(s.Interface, s.Gateway)
+	s.Targets = NewTargets(s, s.Interface, s.Gateway)
 	s.Firewall = firewall.Make()
 
 	if err := s.setupInput(); err != nil {
@@ -353,6 +360,8 @@ func (s *Session) Start() error {
 	for _, m := range s.Modules {
 		m.OnSessionStarted(s)
 	}
+
+	s.Events.Add("session.started", nil)
 
 	return nil
 }

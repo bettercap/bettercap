@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -20,7 +21,7 @@ type RestAPI struct {
 
 func NewRestAPI(s *session.Session) *RestAPI {
 	api := &RestAPI{
-		SessionModule: session.NewSessionModule(s),
+		SessionModule: session.NewSessionModule("api.rest", s),
 		server:        &http.Server{},
 		username:      "",
 		password:      "",
@@ -58,6 +59,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		}))
 
 	http.HandleFunc("/api/session", api.sessRoute)
+	http.HandleFunc("/api/events", api.eventsRoute)
 
 	return api
 }
@@ -102,6 +104,45 @@ func (api *RestAPI) sessRoute(w http.ResponseWriter, r *http.Request) {
 		js, err := json.Marshal(res)
 		if err != nil {
 			log.Errorf("Error while returning response: %s", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	} else {
+		http.Error(w, "Not Found", 404)
+	}
+}
+
+func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
+	if api.checkAuth(w, r) == false {
+		return
+	}
+
+	if r.Method == "GET" {
+		var err error
+
+		events := api.Session.Events.Events()
+		nmax := len(events)
+		n := nmax
+
+		keys, ok := r.URL.Query()["n"]
+		if len(keys) == 1 && ok {
+			sn := keys[0]
+			n, err = strconv.Atoi(sn)
+			if err == nil {
+				if n > nmax {
+					n = nmax
+				}
+			} else {
+				n = nmax
+			}
+		}
+
+		js, err := json.Marshal(events[0:n])
+		if err != nil {
+			log.Errorf("Error while returning events: %s", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
