@@ -70,8 +70,6 @@ func (d *Discovery) Start() error {
 		d.SetRunning(true)
 
 		go func() {
-			d.Session.Events.Log(session.INFO, "Network discovery started.")
-
 			for {
 				select {
 				case <-time.After(time.Duration(d.refresh) * time.Second):
@@ -127,7 +125,6 @@ func (d *Discovery) Start() error {
 					d.before = d.current
 
 				case <-d.quit:
-					d.Session.Events.Log(session.INFO, "Network discovery stopped.")
 					return
 				}
 			}

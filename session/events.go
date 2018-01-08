@@ -5,8 +5,6 @@ import (
 	"os"
 	"sync"
 	"time"
-
-	"github.com/evilsocket/bettercap-ng/core"
 )
 
 const (
@@ -32,23 +30,21 @@ func NewEvent(tag string, data interface{}) Event {
 	}
 }
 
-func (e Event) Print() {
-	fmt.Printf("[%s] [%s] %v\n", e.Time, core.Green(e.Tag), e.Data)
-}
-
 type EventPool struct {
-	debug  bool
-	silent bool
-	events []Event
-	lock   *sync.Mutex
+	NewEvents chan Event
+	debug     bool
+	silent    bool
+	events    []Event
+	lock      *sync.Mutex
 }
 
 func NewEventPool(debug bool, silent bool) *EventPool {
 	return &EventPool{
-		debug:  debug,
-		silent: silent,
-		events: make([]Event, 0),
-		lock:   &sync.Mutex{},
+		NewEvents: make(chan Event),
+		debug:     debug,
+		silent:    silent,
+		events:    make([]Event, 0),
+		lock:      &sync.Mutex{},
 	}
 }
 
@@ -57,7 +53,12 @@ func (p *EventPool) Add(tag string, data interface{}) {
 	defer p.lock.Unlock()
 	e := NewEvent(tag, data)
 	p.events = append([]Event{e}, p.events...)
-	e.Print()
+
+	select {
+	case p.NewEvents <- e:
+		break
+	default:
+	}
 }
 
 func (p *EventPool) Log(level int, format string, args ...interface{}) {

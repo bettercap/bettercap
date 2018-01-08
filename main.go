@@ -21,6 +21,7 @@ func main() {
 	fmt.Printf("%s v%s\n", core.Name, core.Version)
 	fmt.Printf("Build: date=%s os=%s arch=%s\n\n", core.BuildDate, runtime.GOOS, runtime.GOARCH)
 
+	sess.Register(session_modules.NewEventsStream(sess))
 	sess.Register(session_modules.NewProber(sess))
 	sess.Register(session_modules.NewDiscovery(sess))
 	sess.Register(session_modules.NewArpSpoofer(sess))
@@ -29,6 +30,10 @@ func main() {
 	sess.Register(session_modules.NewRestAPI(sess))
 
 	if err = sess.Start(); err != nil {
+		sess.Events.Log(session.FATAL, "%s", err)
+	}
+
+	if err = sess.Run("events.stream on"); err != nil {
 		sess.Events.Log(session.FATAL, "%s", err)
 	}
 
