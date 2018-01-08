@@ -23,6 +23,10 @@ func NewEnvironment() *Environment {
 	return env
 }
 
+func (env *Environment) Storage() *map[string]string {
+	return &env.storage
+}
+
 func (env *Environment) Has(name string) bool {
 	env.lock.Lock()
 	defer env.lock.Unlock()

@@ -1,5 +1,6 @@
 function onLoad() {
     console.log( "BeefInject loaded." );
+    console.log("targets: " + env['arp.spoof.targets']);
 }
 
 function onResponse(req, res) {

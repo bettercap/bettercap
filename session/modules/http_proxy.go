@@ -166,7 +166,7 @@ func (p *HttpProxy) Start() error {
 	} else {
 		scriptPath := v.(string)
 		if scriptPath != "" {
-			if err, p.script = LoadProxyScript(scriptPath); err != nil {
+			if err, p.script = LoadProxyScript(scriptPath, p.Session); err != nil {
 				return err
 			} else {
 				log.Debugf("Proxy script %s loaded.", scriptPath)

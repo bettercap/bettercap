@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/evilsocket/bettercap-ng/session"
+
 	"github.com/robertkrimen/otto"
 )
 
@@ -20,7 +22,7 @@ type ProxyScript struct {
 	cbCache          map[string]bool
 }
 
-func LoadProxyScript(path string) (err error, s *ProxyScript) {
+func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScript) {
 	log.Infof("Loading proxy script %s ...", path)
 
 	raw, err := ioutil.ReadFile(path)
@@ -29,9 +31,10 @@ func LoadProxyScript(path string) (err error, s *ProxyScript) {
 	}
 
 	s = &ProxyScript{
-		Path:             path,
-		Source:           string(raw),
-		VM:               otto.New(),
+		Path:   path,
+		Source: string(raw),
+		VM:     otto.New(),
+
 		gil:              &sync.Mutex{},
 		onRequestScript:  nil,
 		onResponseScript: nil,
@@ -42,6 +45,13 @@ func LoadProxyScript(path string) (err error, s *ProxyScript) {
 	// this will define callbacks and global objects
 	_, err = s.VM.Run(s.Source)
 	if err != nil {
+		return
+	}
+
+	// define session pointer
+	err = s.VM.Set("env", *sess.Env.Storage())
+	if err != nil {
+		log.Errorf("Error while defining environment: %s", err)
 		return
 	}
 
