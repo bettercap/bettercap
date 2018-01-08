@@ -45,12 +45,12 @@ func NewStringParameter(name string, def_value string, validator string, desc st
 	return NewModuleParameter(name, def_value, STRING, validator, desc)
 }
 
-func NewBoolParameter(name string, def_value string, validator string, desc string) *ModuleParam {
-	return NewModuleParameter(name, def_value, BOOL, validator, desc)
+func NewBoolParameter(name string, def_value string, desc string) *ModuleParam {
+	return NewModuleParameter(name, def_value, BOOL, "^(true|false)$", desc)
 }
 
-func NewIntParameter(name string, def_value string, validator string, desc string) *ModuleParam {
-	return NewModuleParameter(name, def_value, INT, validator, desc)
+func NewIntParameter(name string, def_value string, desc string) *ModuleParam {
+	return NewModuleParameter(name, def_value, INT, "^[\\d]+$", desc)
 }
 
 func (p ModuleParam) Validate(value string) (error, interface{}) {

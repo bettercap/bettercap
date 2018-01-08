@@ -45,10 +45,24 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		script:        nil,
 	}
 
-	p.AddParam(session.NewIntParameter("http.port", "80", "", "HTTP port to redirect when the proxy is activated."))
-	p.AddParam(session.NewIntParameter("http.proxy.port", "8080", "", "Port to bind the HTTP proxy to."))
-	p.AddParam(session.NewStringParameter("http.proxy.address", "<interface address>", `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, "Address to bind the HTTP proxy to."))
-	p.AddParam(session.NewStringParameter("http.proxy.script", "", "", "Path of a proxy JS script."))
+	p.AddParam(session.NewIntParameter("http.port",
+		"80",
+		"HTTP port to redirect when the proxy is activated."))
+
+	p.AddParam(session.NewIntParameter("http.proxy.port",
+		"8080",
+		"Port to bind the HTTP proxy to."))
+
+	p.AddParam(session.NewStringParameter("http.proxy.address",
+		"<interface address>",
+		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
+		"Address to bind the HTTP proxy to."))
+
+	p.AddParam(session.NewStringParameter("http.proxy.script",
+		"",
+		"",
+		"Path of a proxy JS script."))
+
 	p.AddHandler(session.NewModuleHandler("http.proxy on", "",
 		"Start HTTP proxy.",
 		func(args []string) error {
@@ -206,7 +220,7 @@ func (p *HttpProxy) Stop() error {
 	}
 }
 
-func (p *HttpProxy) doProxy(req *http.Request) bool {
+func (p HttpProxy) doProxy(req *http.Request) bool {
 	blacklist := []string{
 		"localhost",
 		"127.0.0.1",

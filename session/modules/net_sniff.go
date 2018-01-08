@@ -121,11 +121,28 @@ func NewSniffer(s *session.Session) *Sniffer {
 		Stats:         nil,
 	}
 
-	sniff.AddParam(session.NewBoolParameter("net.sniffer.verbose", "true", "", "Print captured packets to screen."))
-	sniff.AddParam(session.NewBoolParameter("net.sniffer.local", "false", "", "If true it will consider packets from/to this computer, otherwise it will skip them."))
-	sniff.AddParam(session.NewStringParameter("net.sniffer.filter", "not arp", "", "BPF filter for the sniffer."))
-	sniff.AddParam(session.NewStringParameter("net.sniffer.regexp", "", "", "If filled, only packets matching this regular expression will be considered."))
-	sniff.AddParam(session.NewStringParameter("net.sniffer.output", "", "", "If set, the sniffer will write captured packets to this file."))
+	sniff.AddParam(session.NewBoolParameter("net.sniffer.verbose",
+		"true",
+		"Print captured packets to screen."))
+
+	sniff.AddParam(session.NewBoolParameter("net.sniffer.local",
+		"false",
+		"If true it will consider packets from/to this computer, otherwise it will skip them."))
+
+	sniff.AddParam(session.NewStringParameter("net.sniffer.filter",
+		"not arp",
+		"",
+		"BPF filter for the sniffer."))
+
+	sniff.AddParam(session.NewStringParameter("net.sniffer.regexp",
+		"",
+		"",
+		"If filled, only packets matching this regular expression will be considered."))
+
+	sniff.AddParam(session.NewStringParameter("net.sniffer.output",
+		"",
+		"",
+		"If set, the sniffer will write captured packets to this file."))
 
 	sniff.AddHandler(session.NewModuleHandler("net.sniffer stats", "",
 		"Print sniffer session configuration and statistics.",
