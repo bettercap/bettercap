@@ -17,7 +17,7 @@ func (api *RestAPI) setupRoutes() {
 
 func (api RestAPI) checkAuth(w http.ResponseWriter, r *http.Request) bool {
 	if api.Authenticated(w, r) == false {
-		log.Warning("Unauthenticated access!")
+		log.Warning("Unauthorized request from %s", strings.SplitN(r.RemoteAddr, ":", 2)[0])
 		http.Error(w, "Not authorized", 401)
 		return false
 	}
