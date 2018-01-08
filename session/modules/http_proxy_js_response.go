@@ -1,4 +1,4 @@
-package session_modules
+package modules
 
 import (
 	"io/ioutil"

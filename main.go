@@ -21,13 +21,13 @@ func main() {
 	fmt.Printf("%s v%s\n", core.Name, core.Version)
 	fmt.Printf("Build: date=%s os=%s arch=%s\n\n", core.BuildDate, runtime.GOOS, runtime.GOARCH)
 
-	sess.Register(session_modules.NewEventsStream(sess))
-	sess.Register(session_modules.NewProber(sess))
-	sess.Register(session_modules.NewDiscovery(sess))
-	sess.Register(session_modules.NewArpSpoofer(sess))
-	sess.Register(session_modules.NewSniffer(sess))
-	sess.Register(session_modules.NewHttpProxy(sess))
-	sess.Register(session_modules.NewRestAPI(sess))
+	sess.Register(modules.NewEventsStream(sess))
+	sess.Register(modules.NewProber(sess))
+	sess.Register(modules.NewDiscovery(sess))
+	sess.Register(modules.NewArpSpoofer(sess))
+	sess.Register(modules.NewSniffer(sess))
+	sess.Register(modules.NewHttpProxy(sess))
+	sess.Register(modules.NewRestAPI(sess))
 
 	if err = sess.Start(); err != nil {
 		panic(err)
