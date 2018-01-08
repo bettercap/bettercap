@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/modules"
 	"github.com/evilsocket/bettercap-ng/session"
-	"github.com/evilsocket/bettercap-ng/session/modules"
 )
 
 var sess *session.Session
