@@ -1,7 +1,6 @@
 package session_modules
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -14,9 +13,11 @@ type ProxyScript struct {
 	Source string
 	VM     *otto.Otto
 
-	gil         *sync.Mutex
-	cbCacheLock *sync.Mutex
-	cbCache     map[string]bool
+	gil              *sync.Mutex
+	onRequestScript  *otto.Script
+	onResponseScript *otto.Script
+	cbCacheLock      *sync.Mutex
+	cbCache          map[string]bool
 }
 
 func LoadProxyScript(path string) (err error, s *ProxyScript) {
@@ -28,22 +29,42 @@ func LoadProxyScript(path string) (err error, s *ProxyScript) {
 	}
 
 	s = &ProxyScript{
-		Path:        path,
-		Source:      string(raw),
-		VM:          otto.New(),
-		gil:         &sync.Mutex{},
-		cbCacheLock: &sync.Mutex{},
-		cbCache:     make(map[string]bool),
+		Path:             path,
+		Source:           string(raw),
+		VM:               otto.New(),
+		gil:              &sync.Mutex{},
+		onRequestScript:  nil,
+		onResponseScript: nil,
+		cbCacheLock:      &sync.Mutex{},
+		cbCache:          make(map[string]bool),
 	}
 
 	_, err = s.VM.Run(s.Source)
-	if err == nil {
-		if s.hasCallback("onLoad") {
-			_, err = s.VM.Run("onLoad()")
-			if err != nil {
-				log.Errorf("Error while executing onLoad callback: %s", err)
-				return err, nil
-			}
+	if err != nil {
+		return
+	}
+
+	if s.hasCallback("onLoad") {
+		_, err = s.VM.Run("onLoad()")
+		if err != nil {
+			log.Errorf("Error while executing onLoad callback: %s", err)
+			return
+		}
+	}
+
+	if s.hasCallback("onRequest") {
+		s.onRequestScript, err = s.VM.Compile("", "onRequest(req, res)")
+		if err != nil {
+			log.Errorf("Error while compiling onRequest callback: %s", err)
+			return
+		}
+	}
+
+	if s.hasCallback("onResponse") {
+		s.onResponseScript, err = s.VM.Compile("", "onResponse(req, res)")
+		if err != nil {
+			log.Errorf("Error while compiling onResponse callback: %s", err)
+			return
 		}
 	}
 
@@ -68,46 +89,8 @@ func (s *ProxyScript) hasCallback(name string) bool {
 	return has
 }
 
-func (s ProxyScript) reqToJS(req *http.Request) JSRequest {
-	headers := make([]JSHeader, 0)
-	for key, values := range req.Header {
-		for _, value := range values {
-			headers = append(headers, JSHeader{key, value})
-		}
-	}
-
-	return JSRequest{
-		Method:   req.Method,
-		Version:  fmt.Sprintf("%d.%d", req.ProtoMajor, req.ProtoMinor),
-		Path:     req.URL.Path,
-		Hostname: req.Host,
-		Headers:  headers,
-	}
-}
-
-func (s ProxyScript) resToJS(res *http.Response) *JSResponse {
-	cType := ""
-	headers := ""
-
-	for name, values := range res.Header {
-		for _, value := range values {
-			if name == "Content-Type" {
-				cType = value
-			}
-			headers += name + ": " + value + "\r\n"
-		}
-	}
-
-	return &JSResponse{
-		Status:      res.StatusCode,
-		ContentType: cType,
-		Headers:     headers,
-		resp:        res,
-	}
-}
-
 func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSResponse) {
-	jsreq := s.reqToJS(req)
+	jsreq := NewJSRequest(req)
 	if err = s.VM.Set("req", jsreq); err != nil {
 		log.Errorf("Error while defining request: %s", err)
 		return
@@ -123,13 +106,13 @@ func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSR
 }
 
 func (s *ProxyScript) doResponseDefines(res *http.Response) (err error, jsres *JSResponse) {
-	jsreq := s.reqToJS(res.Request)
+	jsreq := NewJSRequest(res.Request)
 	if err = s.VM.Set("req", jsreq); err != nil {
 		log.Errorf("Error while defining request: %s", err)
 		return
 	}
 
-	jsres = s.resToJS(res)
+	jsres = NewJSResponse(res)
 	if err = s.VM.Set("res", jsres); err != nil {
 		log.Errorf("Error while defining response: %s", err)
 		return
@@ -139,7 +122,7 @@ func (s *ProxyScript) doResponseDefines(res *http.Response) (err error, jsres *J
 }
 
 func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
-	if s.hasCallback("onRequest") {
+	if s.onRequestScript != nil {
 		s.gil.Lock()
 		defer s.gil.Unlock()
 
@@ -149,7 +132,7 @@ func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
 			return nil
 		}
 
-		_, err = s.VM.Run("onRequest(req, res)")
+		_, err = s.VM.Run(s.onRequestScript)
 		if err != nil {
 			log.Errorf("Error while executing onRequest callback: %s", err)
 			return nil
@@ -164,7 +147,7 @@ func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
 }
 
 func (s *ProxyScript) OnResponse(res *http.Response) *JSResponse {
-	if s.hasCallback("onResponse") {
+	if s.onResponseScript != nil {
 		s.gil.Lock()
 		defer s.gil.Unlock()
 
@@ -174,7 +157,7 @@ func (s *ProxyScript) OnResponse(res *http.Response) *JSResponse {
 			return nil
 		}
 
-		_, err = s.VM.Run("onResponse(req, res)")
+		_, err = s.VM.Run(s.onResponseScript)
 		if err != nil {
 			log.Errorf("Error while executing onRequest callback: %s", err)
 			return nil

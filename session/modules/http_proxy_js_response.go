@@ -18,6 +18,27 @@ type JSResponse struct {
 	resp       *http.Response
 }
 
+func NewJSResponse(res *http.Response) *JSResponse {
+	cType := ""
+	headers := ""
+
+	for name, values := range res.Header {
+		for _, value := range values {
+			if name == "Content-Type" {
+				cType = value
+			}
+			headers += name + ": " + value + "\r\n"
+		}
+	}
+
+	return &JSResponse{
+		Status:      res.StatusCode,
+		ContentType: cType,
+		Headers:     headers,
+		resp:        res,
+	}
+}
+
 func (j *JSResponse) Updated() {
 	j.wasUpdated = true
 }
