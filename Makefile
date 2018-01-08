@@ -2,7 +2,7 @@ TARGET=bettercap-ng
 BUILD_DATE=`date +%Y-%m-%d\ %H:%M`
 BUILD_FILE=core/build.go
 
-all: build
+all: fmt vet lint build
 	@echo "@ Done"
 	@echo -n "\n"
 
@@ -23,6 +23,18 @@ build_file: resources
 resources:
 	@echo "@ Compiling resources into go files ..."
 	@go-bindata -o net/oui_compiled.go -pkg net net/oui.dat
+
+vet:
+	@echo "@ Running VET ..."
+	@go vet .
+
+fmt:
+	@echo "@ Formatting ..."
+	@go fmt ./...
+
+lint:
+	@echo "@ Running LINT ..."
+	@golint .
 
 deps:
 	@echo "@ Installing dependencies ..."
