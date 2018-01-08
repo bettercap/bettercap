@@ -28,6 +28,7 @@ func main() {
 	sess.Register(session_modules.NewArpSpoofer(sess))
 	sess.Register(session_modules.NewSniffer(sess))
 	sess.Register(session_modules.NewHttpProxy(sess))
+	sess.Register(session_modules.NewRestAPI(sess))
 
 	if err = sess.Start(); err != nil {
 		log.Fatal(err)

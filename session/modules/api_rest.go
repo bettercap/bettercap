@@ -1,0 +1,197 @@
+package session_modules
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/session"
+)
+
+type RestAPI struct {
+	session.SessionModule
+	server   *http.Server
+	username string
+	password string
+}
+
+func NewRestAPI(s *session.Session) *RestAPI {
+	api := &RestAPI{
+		SessionModule: session.NewSessionModule(s),
+		server:        &http.Server{},
+		username:      "",
+		password:      "",
+	}
+
+	api.AddParam(session.NewStringParameter("api.rest.address",
+		"<interface address>",
+		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
+		"Address to bind the API REST server to."))
+
+	api.AddParam(session.NewIntParameter("api.rest.port",
+		"8081",
+		"Port to bind the API REST server to."))
+
+	api.AddParam(session.NewStringParameter("api.rest.username",
+		"",
+		"",
+		"API authentication username."))
+
+	api.AddParam(session.NewStringParameter("api.rest.password",
+		"",
+		"",
+		"API authentication password."))
+
+	api.AddHandler(session.NewModuleHandler("api.rest on", "",
+		"Start REST API server.",
+		func(args []string) error {
+			return api.Start()
+		}))
+
+	api.AddHandler(session.NewModuleHandler("api.rest off", "",
+		"Stop REST API server.",
+		func(args []string) error {
+			return api.Stop()
+		}))
+
+	http.HandleFunc("/api/session", api.getSession)
+
+	return api
+}
+
+func (api *RestAPI) getSession(w http.ResponseWriter, r *http.Request) {
+	if api.checkAuth(w, r) == false {
+		return
+	}
+
+	js, err := json.Marshal(api.Session)
+	if err != nil {
+		log.Errorf("Error while returning session: %s", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
+func (api RestAPI) checkAuth(w http.ResponseWriter, r *http.Request) bool {
+	if api.Authenticated(w, r) == false {
+		log.Warningf("Unauthenticated access!")
+		http.Error(w, "Not authorized", 401)
+		return false
+	}
+	return true
+}
+
+func (api RestAPI) Authenticated(w http.ResponseWriter, r *http.Request) bool {
+	w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+
+	parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+	if len(parts) != 2 {
+		return false
+	}
+
+	b, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return false
+	}
+
+	pair := strings.SplitN(string(b), ":", 2)
+	if len(pair) != 2 {
+		return false
+	}
+
+	if pair[0] != api.username || pair[1] != api.password {
+		return false
+	}
+
+	return true
+}
+
+func (api RestAPI) Name() string {
+	return "REST API"
+}
+
+func (api RestAPI) Description() string {
+	return "Expose a RESTful API."
+}
+
+func (api RestAPI) Author() string {
+	return "Simone Margaritelli <evilsocket@protonmail.com>"
+}
+
+func (api RestAPI) OnSessionStarted(s *session.Session) {
+	// refresh the address after session has been created
+	s.Env.Set("api.rest.address", s.Interface.IpAddress)
+}
+
+func (api RestAPI) OnSessionEnded(s *session.Session) {
+	if api.Running() {
+		api.Stop()
+	}
+}
+
+func (api *RestAPI) Start() error {
+	var address string
+	var port int
+
+	if err, v := api.Param("api.rest.address").Get(api.Session); err != nil {
+		return err
+	} else {
+		address = v.(string)
+	}
+
+	if err, v := api.Param("api.rest.port").Get(api.Session); err != nil {
+		return err
+	} else {
+		port = v.(int)
+	}
+
+	if err, v := api.Param("api.rest.username").Get(api.Session); err != nil {
+		return err
+	} else {
+		api.username = v.(string)
+		if api.username == "" {
+			return fmt.Errorf("api.rest.username is empty.")
+		}
+	}
+
+	if err, v := api.Param("api.rest.password").Get(api.Session); err != nil {
+		return err
+	} else {
+		api.password = v.(string)
+		if api.password == "" {
+			return fmt.Errorf("api.rest.password is empty.")
+		}
+	}
+
+	if api.Running() == false {
+		api.SetRunning(true)
+
+		api.server.Addr = fmt.Sprintf("%s:%d", address, port)
+		go func() {
+			fmt.Printf("[%s] starting on http://%s/ ...\n", core.Green("api"), api.server.Addr)
+			err := api.server.ListenAndServe()
+			if err != nil {
+				fmt.Printf("[%s] %s\n", core.Green("api"), err)
+			}
+		}()
+
+		return nil
+	} else {
+		return fmt.Errorf("REST API server already started.")
+	}
+}
+
+func (api *RestAPI) Stop() error {
+	if api.Running() == true {
+		api.SetRunning(false)
+		return api.server.Shutdown(nil)
+	} else {
+		return fmt.Errorf("REST API server already stopped.")
+	}
+}

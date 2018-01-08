@@ -49,14 +49,14 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		"80",
 		"HTTP port to redirect when the proxy is activated."))
 
-	p.AddParam(session.NewIntParameter("http.proxy.port",
-		"8080",
-		"Port to bind the HTTP proxy to."))
-
 	p.AddParam(session.NewStringParameter("http.proxy.address",
 		"<interface address>",
 		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
 		"Address to bind the HTTP proxy to."))
+
+	p.AddParam(session.NewIntParameter("http.proxy.port",
+		"8080",
+		"Port to bind the HTTP proxy to."))
 
 	p.AddParam(session.NewStringParameter("http.proxy.script",
 		"",

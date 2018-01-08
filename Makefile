@@ -35,7 +35,6 @@ deps:
 	@go get github.com/op/go-logging
 	@go get github.com/robertkrimen/otto
 
-
 clean:
 	@rm -rf $(TARGET) net/oui_compiled.go
 

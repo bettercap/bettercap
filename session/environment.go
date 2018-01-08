@@ -8,30 +8,26 @@ import (
 )
 
 type Environment struct {
-	Padding int
-	storage map[string]string
+	Padding int               `json:"-"`
+	Storage map[string]string `json:"storage"`
 	lock    *sync.Mutex
 }
 
 func NewEnvironment() *Environment {
 	env := &Environment{
 		Padding: 0,
-		storage: make(map[string]string),
+		Storage: make(map[string]string),
 		lock:    &sync.Mutex{},
 	}
 
 	return env
 }
 
-func (env *Environment) Storage() *map[string]string {
-	return &env.storage
-}
-
 func (env *Environment) Has(name string) bool {
 	env.lock.Lock()
 	defer env.lock.Unlock()
 
-	_, found := env.storage[name]
+	_, found := env.Storage[name]
 
 	return found
 }
@@ -40,8 +36,8 @@ func (env *Environment) Set(name, value string) string {
 	env.lock.Lock()
 	defer env.lock.Unlock()
 
-	old, _ := env.storage[name]
-	env.storage[name] = value
+	old, _ := env.Storage[name]
+	env.Storage[name] = value
 
 	width := len(name)
 	if width > env.Padding {
@@ -55,7 +51,7 @@ func (env *Environment) Get(name string) (bool, string) {
 	env.lock.Lock()
 	defer env.lock.Unlock()
 
-	if value, found := env.storage[name]; found == true {
+	if value, found := env.Storage[name]; found == true {
 		return true, value
 	}
 
@@ -79,7 +75,7 @@ func (env *Environment) Sorted() []string {
 	defer env.lock.Unlock()
 
 	var keys []string
-	for k := range env.storage {
+	for k := range env.Storage {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)

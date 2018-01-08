@@ -1,0 +1,8 @@
+# change these!
+set api.rest.username bcap
+set api.rest.password bcap
+
+net.probe on
+net.recon on
+api.rest on
+

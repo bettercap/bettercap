@@ -22,20 +22,20 @@ import (
 )
 
 type Session struct {
-	Options   core.Options
-	Interface *net.Endpoint
-	Gateway   *net.Endpoint
-	Firewall  firewall.FirewallManager
-	Env       *Environment
-	Targets   *Targets
-	Queue     *packets.Queue
-	Input     *readline.Instance
-	Active    bool
+	Options   core.Options             `json:"options"`
+	Interface *net.Endpoint            `json:"interface"`
+	Gateway   *net.Endpoint            `json:"gateway"`
+	Firewall  firewall.FirewallManager `json:"-"`
+	Env       *Environment             `json:"env"`
+	Targets   *Targets                 `json:"targets"`
+	Queue     *packets.Queue           `json:"-"`
+	Input     *readline.Instance       `json:"-"`
+	Active    bool                     `json:"active"`
 
 	// Watcher *discovery.Watcher
-	CoreHandlers []CommandHandler
-	Modules      []Module
-	HelpPadding  int
+	CoreHandlers []CommandHandler `json:"-"`
+	Modules      []Module         `json:"-"`
+	HelpPadding  int              `json:"-"`
 }
 
 func New() (*Session, error) {
@@ -175,7 +175,7 @@ func (s *Session) registerCoreHandlers() {
 						prev_ns = ns
 					}
 
-					fmt.Printf("  %"+strconv.Itoa(s.Env.Padding)+"s: '%s'\n", k, s.Env.storage[k])
+					fmt.Printf("  %"+strconv.Itoa(s.Env.Padding)+"s: '%s'\n", k, s.Env.Storage[k])
 				}
 				fmt.Println()
 			} else if found, value := s.Env.Get(key); found == true {
