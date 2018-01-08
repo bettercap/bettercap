@@ -14,7 +14,7 @@ type Options struct {
 func ParseOptions() (Options, error) {
 	o := Options{
 		InterfaceName: flag.String("iface", "", "Network interface to bind to."),
-		Caplet:        flag.String("caplet", "", "Read commands from this file instead of goin into interactive mode."),
+		Caplet:        flag.String("caplet", "", "Read commands from this file and execute them in the interactive session."),
 		Debug:         flag.Bool("debug", false, "Print debug messages."),
 		Silent:        flag.Bool("silent", false, "Suppress all logs which are not errors."),
 		NoHistory:     flag.Bool("no-history", false, "Disable history file."),

