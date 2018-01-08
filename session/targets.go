@@ -5,13 +5,9 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/op/go-logging"
-
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/net"
 )
-
-var log = logging.MustGetLogger("mitm")
 
 type Targets struct {
 	Session   *Session `json:"-"`

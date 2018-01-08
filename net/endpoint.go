@@ -50,7 +50,6 @@ func NewEndpoint(ip, mac string) *Endpoint {
 		if names, err := net.LookupAddr(e.IpAddress); err == nil {
 			e.Hostname = names[0]
 			if e.ResolvedCallback != nil {
-				// log.Debugf("Endpoint %s is now known as %s\n", e.IpAddress, core.Green(e.Hostname))
 				e.ResolvedCallback(e)
 			}
 		}

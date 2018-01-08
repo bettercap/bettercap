@@ -7,15 +7,12 @@ import (
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/op/go-logging"
 )
 
 type LinuxFirewall struct {
 	forwarding   bool
 	redirections map[string]*Redirection
 }
-
-var log = logging.MustGetLogger("mitm")
 
 const (
 	IPV4ForwardingFile    = "/proc/sys/net/ipv4/ip_forward"
@@ -30,8 +27,6 @@ func Make() FirewallManager {
 	}
 
 	firewall.forwarding = firewall.IsForwardingEnabled()
-
-	log.Debugf("Created Linux Firewall ( forwarding=%v )\n", firewall.forwarding)
 
 	return firewall
 }
@@ -60,7 +55,6 @@ func (f LinuxFirewall) enableFeature(filename string, enable bool) error {
 func (f LinuxFirewall) IsForwardingEnabled() bool {
 
 	if out, err := ioutil.ReadFile(IPV4ForwardingFile); err != nil {
-		log.Error(err)
 		return false
 	} else {
 		return strings.Trim(string(out), "\r\n\t ") == "1"
@@ -89,8 +83,6 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 		if found == true {
 			return fmt.Errorf("Redirection '%s' already enabled.", rkey)
 		}
-
-		log.Debugf("Enabling redirection %s\n", rkey)
 
 		f.redirections[rkey] = r
 
@@ -126,11 +118,8 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 		}
 	} else {
 		if found == false {
-			log.Debugf("Did not remove redirection '%s' as it was already removed.\n", r.String())
 			return nil
 		}
-
-		log.Debugf("Disabling redirection %s\n", r.String())
 
 		delete(f.redirections, r.String())
 
@@ -165,14 +154,13 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 }
 
 func (f LinuxFirewall) Restore() {
-	log.Debugf("Restoring firewall state.\n")
 	for _, r := range f.redirections {
 		if err := f.EnableRedirection(r, false); err != nil {
-			log.Error(err)
+			fmt.Printf("%s", err)
 		}
 	}
 
 	if err := f.EnableForwarding(f.forwarding); err != nil {
-		log.Error(err)
+		fmt.Printf("%s", err)
 	}
 }

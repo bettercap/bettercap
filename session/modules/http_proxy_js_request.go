@@ -42,7 +42,6 @@ func NewJSRequest(req *http.Request) JSRequest {
 func (j *JSRequest) ReadBody() string {
 	raw, err := ioutil.ReadAll(j.req.Body)
 	if err != nil {
-		log.Errorf("Could not read request body: %s", err)
 		return ""
 	}
 

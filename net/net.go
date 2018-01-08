@@ -76,18 +76,15 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 
 			if ifname == iface.Name() && flags == "UG" {
 				gateway := m[2]
-				// log.Debugf("Gateway ip is %s", gateway)
 				if gateway == iface.IpAddress {
-					// log.Debug("Gateway == Interface")
 					return iface, nil
 				} else {
 					// we have the address, now we need its mac
 					mac, err := ArpLookup(iface.Name(), gateway, false)
 					if err == nil {
-						// log.Debugf("Gateway mac is %s", mac)
 						return NewEndpoint(gateway, mac), nil
 					} else {
-						log.Error(err)
+						fmt.Printf("%s\n", err)
 					}
 				}
 			}

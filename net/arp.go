@@ -6,15 +6,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/op/go-logging"
-
 	"github.com/evilsocket/bettercap-ng/core"
 )
 
 type ArpTable map[string]string
 
 var (
-	log        = logging.MustGetLogger("mitm")
 	arp_parsed = false
 	arp_lock   = &sync.Mutex{}
 	arp_table  = make(ArpTable)

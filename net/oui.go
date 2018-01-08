@@ -17,7 +17,7 @@ func OuiInit() {
 	data := string(bytes)
 	lines := strings.Split(data, "\n")
 
-	for lineno, line := range lines {
+	for _, line := range lines {
 		line = strings.Trim(line, " \n\r\t")
 		if len(line) == 0 || line[0] == '#' {
 			continue
@@ -25,7 +25,6 @@ func OuiInit() {
 
 		parts := strings.SplitN(line, " ", 2)
 		if len(parts) != 2 {
-			log.Warningf("Skipping line %d '%s'\n", lineno+1, line)
 			continue
 		}
 
@@ -34,8 +33,6 @@ func OuiInit() {
 
 		oui[prefix] = vendor
 	}
-
-	log.Debugf("Loaded %d vendors signatures.\n", len(oui))
 }
 
 func OuiLookup(mac string) string {
@@ -46,9 +43,6 @@ func OuiLookup(mac string) string {
 		if vendor, found := oui[prefix]; found == true {
 			return vendor
 		}
-	} else {
-		log.Warningf("Unexpected mac '%s' in net.OuiLookup\n", mac)
 	}
-
-	return "???"
+	return ""
 }

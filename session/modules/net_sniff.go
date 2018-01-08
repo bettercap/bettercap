@@ -45,34 +45,30 @@ var (
 	yes = core.Green("yes")
 )
 
-func (c *SnifferContext) Log() {
-	log.Info("\n")
-
+func (c *SnifferContext) Log(sess *session.Session) {
 	if c.DumpLocal {
-		log.Info("  Skip local packets : " + no)
+		sess.Events.Log(session.INFO, "Skip local packets : "+no)
 	} else {
-		log.Info("  Skip local packets : " + yes)
+		sess.Events.Log(session.INFO, "Skip local packets : "+yes)
 	}
 
 	if c.Verbose {
-		log.Info("  Verbose            : " + yes)
+		sess.Events.Log(session.INFO, "Verbose            : "+yes)
 	} else {
-		log.Info("  Verbose            : " + no)
+		sess.Events.Log(session.INFO, "Verbose            : "+no)
 	}
 
 	if c.Filter != "" {
-		log.Info("  BPF Filter         : '" + core.Yellow(c.Filter) + "'")
+		sess.Events.Log(session.INFO, "BPF Filter         : '"+core.Yellow(c.Filter)+"'")
 	}
 
 	if c.Expression != "" {
-		log.Info("  Regular expression : '" + core.Yellow(c.Expression) + "'")
+		sess.Events.Log(session.INFO, "Regular expression : '"+core.Yellow(c.Expression)+"'")
 	}
 
 	if c.Output != "" {
-		log.Info("  File output        : '" + core.Yellow(c.Output) + "'")
+		sess.Events.Log(session.INFO, "File output        : '"+core.Yellow(c.Output)+"'")
 	}
-
-	log.Info("\n")
 }
 
 func (c *SnifferContext) Close() {
@@ -272,7 +268,7 @@ func (s *Sniffer) PrintStats() error {
 		return fmt.Errorf("No stats yet.")
 	}
 
-	s.Ctx.Log()
+	s.Ctx.Log(s.Session)
 
 	first := "never"
 	last := "never"
@@ -285,13 +281,13 @@ func (s *Sniffer) PrintStats() error {
 		last = s.Stats.LastPacket.String()
 	}
 
-	log.Infof("  Sniffer Started    : %s\n", s.Stats.Started)
-	log.Infof("  First Packet Seen  : %s\n", first)
-	log.Infof("  Last Packet Seen   : %s\n", last)
-	log.Infof("  Local Packets      : %d\n", s.Stats.NumLocal)
-	log.Infof("  Matched Packets    : %d\n", s.Stats.NumMatched)
-	log.Infof("  Dumped Packets     : %d\n", s.Stats.NumDumped)
-	log.Infof("  Wrote Packets      : %d\n", s.Stats.NumWrote)
+	s.Session.Events.Log(session.INFO, "Sniffer Started    : %s", s.Stats.Started)
+	s.Session.Events.Log(session.INFO, "First Packet Seen  : %s", first)
+	s.Session.Events.Log(session.INFO, "Last Packet Seen   : %s", last)
+	s.Session.Events.Log(session.INFO, "Local Packets      : %d", s.Stats.NumLocal)
+	s.Session.Events.Log(session.INFO, "Matched Packets    : %d", s.Stats.NumMatched)
+	s.Session.Events.Log(session.INFO, "Dumped Packets     : %d", s.Stats.NumDumped)
+	s.Session.Events.Log(session.INFO, "Wrote Packets      : %d", s.Stats.NumWrote)
 
 	return nil
 }
@@ -313,8 +309,6 @@ func (s *Sniffer) Start() error {
 
 		go func() {
 			defer s.Ctx.Close()
-
-			log.Info("Network sniffer started.\n")
 
 			src := gopacket.NewPacketSource(s.Ctx.Handle, s.Ctx.Handle.LinkType())
 			for packet := range src.Packets() {
@@ -351,8 +345,6 @@ func (s *Sniffer) Start() error {
 					}
 				}
 			}
-
-			log.Info("Network sniffer stopped.\n")
 		}()
 
 		return nil

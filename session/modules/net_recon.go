@@ -70,7 +70,7 @@ func (d *Discovery) Start() error {
 		d.SetRunning(true)
 
 		go func() {
-			log.Info("Network discovery started.\n")
+			d.Session.Events.Log(session.INFO, "Network discovery started.")
 
 			for {
 				select {
@@ -78,7 +78,7 @@ func (d *Discovery) Start() error {
 					var err error
 
 					if d.current, err = net.ArpUpdate(d.Session.Interface.Name()); err != nil {
-						log.Error(err)
+						d.Session.Events.Log(session.ERROR, "%s", err)
 						continue
 					}
 
@@ -111,7 +111,7 @@ func (d *Discovery) Start() error {
 								b = ""
 							}
 
-							log.Warningf("WARNING: Found %d endpoint%s which share%s the same MAC of the gateway (%s), there're might be some IP isolation going on, skipping.\n", n_gw_shared, a, b, d.Session.Gateway.HwAddress)
+							d.Session.Events.Log(session.WARNING, "WARNING: Found %d endpoint%s which share%s the same MAC of the gateway (%s), there're might be some IP isolation going on, skipping.", n_gw_shared, a, b, d.Session.Gateway.HwAddress)
 						}
 
 						// refresh target pool
@@ -127,7 +127,7 @@ func (d *Discovery) Start() error {
 					d.before = d.current
 
 				case <-d.quit:
-					log.Info("Network discovery stopped.\n")
+					d.Session.Events.Log(session.INFO, "Network discovery stopped.")
 					return
 				}
 			}

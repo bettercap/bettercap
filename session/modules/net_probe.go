@@ -2,11 +2,12 @@ package session_modules
 
 import (
 	"fmt"
-	// "github.com/evilsocket/bettercap-ng/packets"
-	"github.com/evilsocket/bettercap-ng/session"
-	"github.com/malfunkt/iprange"
 	"net"
 	"time"
+
+	"github.com/evilsocket/bettercap-ng/session"
+
+	"github.com/malfunkt/iprange"
 )
 
 type Prober struct {
@@ -72,11 +73,11 @@ func (p Prober) OnSessionEnded(s *session.Session) {
 func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 	name := fmt.Sprintf("%s:137", ip)
 	if addr, err := net.ResolveUDPAddr("udp", name); err != nil {
-		log.Errorf("Could not resolve %s.", name)
+		p.Session.Events.Log(session.ERROR, "Could not resolve %s.", name)
 	} else if con, err := net.DialUDP("udp", nil, addr); err != nil {
-		log.Errorf("Could not dial %s.", name)
+		p.Session.Events.Log(session.ERROR, "Could not dial %s.", name)
 	} else {
-		// log.Debugf("UDP connection to %s enstablished.\n", name)
+		// p.Session.Events.Log(session.DEBUG,"UDP connection to %s enstablished.\n", name)
 		defer con.Close()
 		con.Write([]byte{0xde, 0xad, 0xbe, 0xef})
 	}
@@ -89,7 +90,7 @@ func (p *Prober) Start() error {
 			return err
 		} else {
 			throttle = v.(int)
-			log.Debugf("Throttling packets of %d ms.\n", throttle)
+			p.Session.Events.Log(session.DEBUG, "Throttling packets of %d ms.", throttle)
 		}
 
 		p.SetRunning(true)
@@ -97,19 +98,17 @@ func (p *Prober) Start() error {
 		go func() {
 			list, err := iprange.Parse(p.Session.Interface.CIDR())
 			if err != nil {
-				log.Fatal(err)
+				p.Session.Events.Log(session.FATAL, "%s", err)
 			}
 
 			from := p.Session.Interface.IP
 			from_hw := p.Session.Interface.HW
 			addresses := list.Expand()
 
-			log.Infof("Network prober started, probing %d possible addresses.\n", len(addresses))
-
 			for p.Running() {
 				for _, ip := range addresses {
 					if p.shouldProbe(ip) == false {
-						log.Debugf("Skipping address %s from UDP probing.\n", ip)
+						p.Session.Events.Log(session.DEBUG, "Skipping address %s from UDP probing.", ip)
 						continue
 					}
 
@@ -122,8 +121,6 @@ func (p *Prober) Start() error {
 
 				time.Sleep(5 * time.Second)
 			}
-
-			log.Info("Network prober stopped.\n")
 		}()
 
 		return nil

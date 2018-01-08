@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
@@ -80,7 +79,7 @@ func (api *RestAPI) sessRoute(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		js, err := json.Marshal(api.Session)
 		if err != nil {
-			log.Errorf("Error while returning session: %s", err)
+			api.Session.Events.Log(session.ERROR, "Error while returning session: %s", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -103,7 +102,7 @@ func (api *RestAPI) sessRoute(w http.ResponseWriter, r *http.Request) {
 		}
 		js, err := json.Marshal(res)
 		if err != nil {
-			log.Errorf("Error while returning response: %s", err)
+			api.Session.Events.Log(session.ERROR, "Error while returning response: %s", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -142,13 +141,18 @@ func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 
 		js, err := json.Marshal(events[0:n])
 		if err != nil {
-			log.Errorf("Error while returning events: %s", err)
+			api.Session.Events.Log(session.ERROR, "Error while returning events: %s", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(js)
+	} else if r.Method == "DELETE" {
+		api.Session.Events.Clear()
+		api.Session.Events.Add("sys.log.cleared", nil)
+		// w.Header().Set("Content-Type", "application/json")
+		// w.Write([]byte("{}"))
 	} else {
 		http.Error(w, "Not Found", 404)
 	}
@@ -156,7 +160,7 @@ func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 
 func (api RestAPI) checkAuth(w http.ResponseWriter, r *http.Request) bool {
 	if api.Authenticated(w, r) == false {
-		log.Warningf("Unauthenticated access!")
+		api.Session.Events.Log(session.WARNING, "Unauthenticated access!")
 		http.Error(w, "Not authorized", 401)
 		return false
 	}
@@ -250,10 +254,11 @@ func (api *RestAPI) Start() error {
 
 		api.server.Addr = fmt.Sprintf("%s:%d", address, port)
 		go func() {
-			fmt.Printf("[%s] starting on http://%s/ ...\n", core.Green("api"), api.server.Addr)
+
+			api.Session.Events.Log(session.INFO, "API server starting on http://%s", api.server.Addr)
 			err := api.server.ListenAndServe()
 			if err != nil {
-				fmt.Printf("[%s] %s\n", core.Green("api"), err)
+				api.Session.Events.Log(session.ERROR, "%s", err)
 			}
 		}()
 

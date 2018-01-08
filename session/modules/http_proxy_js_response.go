@@ -54,8 +54,6 @@ func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
 			parts := strings.SplitN(header, ":", 2)
 			if len(parts) == 2 {
 				resp.Header.Add(parts[0], parts[1])
-			} else {
-				log.Warningf("Unexpected header '%s'", header)
 			}
 		}
 	}
@@ -67,7 +65,6 @@ func (j *JSResponse) ReadBody() string {
 
 	raw, err := ioutil.ReadAll(j.resp.Body)
 	if err != nil {
-		log.Errorf("Could not read response body: %s", err)
 		return ""
 	}
 

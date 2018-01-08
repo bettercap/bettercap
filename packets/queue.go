@@ -3,11 +3,8 @@ package packets
 import (
 	"fmt"
 	"github.com/google/gopacket/pcap"
-	"github.com/op/go-logging"
 	"sync"
 )
-
-var log = logging.MustGetLogger("mitm")
 
 type Queue struct {
 	iface  string
@@ -17,7 +14,6 @@ type Queue struct {
 }
 
 func NewQueue(iface string) (*Queue, error) {
-	log.Debugf("Creating packet queue for interface %s.\n", iface)
 	var err error
 
 	q := &Queue{
@@ -39,7 +35,6 @@ func (q *Queue) Send(raw []byte) error {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	log.Debugf("Sending %d bytes to packet queue.\n", len(raw))
 	if q.active {
 		return q.handle.WritePacketData(raw)
 	} else {
@@ -50,8 +45,6 @@ func (q *Queue) Send(raw []byte) error {
 func (q *Queue) Stop() {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-
-	log.Debugf("Stopping packet queue.\n")
 
 	q.handle.Close()
 	q.active = false

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/chzyer/readline"
-	"github.com/op/go-logging"
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/firewall"
@@ -51,28 +50,20 @@ func New() (*Session, error) {
 		Modules:      make([]Module, 0),
 		HelpPadding:  0,
 
-		Events: NewEventPool(),
+		Events: nil,
 	}
-
-	s.Env = NewEnvironment(s)
 
 	if s.Options, err = core.ParseOptions(); err != nil {
 		return nil, err
 	}
 
+	s.Env = NewEnvironment(s)
+	s.Events = NewEventPool(*s.Options.Debug, *s.Options.Silent)
+
 	if u, err := user.Current(); err != nil {
 		return nil, err
 	} else if u.Uid != "0" {
 		return nil, fmt.Errorf("This software must run as root.")
-	}
-
-	// setup logging
-	if *s.Options.Debug == true {
-		logging.SetLevel(logging.DEBUG, "")
-	} else if *s.Options.Silent == true {
-		logging.SetLevel(logging.ERROR, "")
-	} else {
-		logging.SetLevel(logging.INFO, "")
 	}
 
 	s.registerCoreHandlers()
@@ -206,7 +197,6 @@ func (s *Session) registerCoreHandlers() {
 			}
 
 			s.Env.Set(key, value)
-			fmt.Printf("  %s => '%s'\n", core.Green(key), core.Yellow(value))
 			return nil
 		}))
 }
@@ -251,21 +241,6 @@ func (s *Session) setupInput() error {
 		return err
 	}
 
-	// now that we have the readline instance, we can set logging to its
-	// console writer so the whole thing gets correctly updated when something
-	// is logged to screen (it won't overlap with the prompt).
-	log_be := logging.NewLogBackend(s.Input.Stderr(), "", 0)
-	log_level := logging.AddModuleLevel(log_be)
-	if *s.Options.Debug == true {
-		log_level.SetLevel(logging.DEBUG, "")
-	} else if *s.Options.Silent == true {
-		log_level.SetLevel(logging.ERROR, "")
-	} else {
-		log_level.SetLevel(logging.INFO, "")
-	}
-
-	logging.SetBackend(log_level)
-
 	return nil
 }
 
@@ -302,11 +277,8 @@ func (s *Session) Start() error {
 		return err
 	}
 
-	log.Debugf("[%s%s%s] %s\n", core.GREEN, s.Interface.Name(), core.RESET, s.Interface)
-	log.Debugf("[%ssubnet%s] %s\n", core.GREEN, core.RESET, s.Interface.CIDR())
-
 	if s.Gateway, err = net.FindGateway(s.Interface); err != nil {
-		log.Warningf("%s\n", err)
+		s.Events.Log(WARNING, "%s", err)
 	}
 
 	if s.Gateway == nil || s.Gateway.IpAddress == s.Interface.IpAddress {
@@ -315,8 +287,6 @@ func (s *Session) Start() error {
 
 	s.Env.Set("gateway.address", s.Gateway.IpAddress)
 	s.Env.Set("gateway.mac", s.Gateway.HwAddress)
-
-	log.Debugf("[%sgateway%s] %s\n", core.GREEN, core.RESET, s.Gateway)
 
 	s.Targets = NewTargets(s, s.Interface, s.Gateway)
 	s.Firewall = firewall.Make()
@@ -350,7 +320,7 @@ func (s *Session) Start() error {
 	go func() {
 		<-c
 		fmt.Println()
-		log.Warning("Got SIGTERM ...")
+		s.Events.Log(WARNING, "Got SIGTERM")
 		s.Close()
 		os.Exit(0)
 	}()
@@ -373,7 +343,7 @@ func (s *Session) ReadLine() (string, error) {
 }
 
 func (s *Session) RunCaplet(filename string) error {
-	log.Infof("Reading from caplet %s ...\n", filename)
+	s.Events.Log(INFO, "Reading from caplet %s ...\n", filename)
 
 	input, err := os.Open(filename)
 	if err != nil {
