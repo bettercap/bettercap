@@ -31,7 +31,7 @@ func (tp *Targets) Remove(ip, mac string) {
 	defer tp.lock.Unlock()
 
 	if e, found := tp.Targets[mac]; found {
-		tp.Session.Events.Add("target-lost", e)
+		tp.Session.Events.Add("target.lost", e)
 		delete(tp.Targets, mac)
 		return
 	}
