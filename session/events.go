@@ -16,10 +16,50 @@ const (
 	FATAL
 )
 
+const (
+	BOLD = "\033[1m"
+	DIM  = "\033[2m"
+
+	FG_BLACK = "\033[30m"
+	FG_WHITE = "\033[97m"
+
+	BG_DGRAY  = "\033[100m"
+	BG_RED    = "\033[41m"
+	BG_GREEN  = "\033[42m"
+	BG_YELLOW = "\033[43m"
+	BG_LBLUE  = "\033[104m"
+
+	RESET = "\033[0m"
+)
+
+var (
+	labels = map[int]string{
+		DEBUG:     "DBG",
+		INFO:      "INF",
+		IMPORTANT: "IMP",
+		WARNING:   "WAR",
+		ERROR:     "ERR",
+		FATAL:     "!!!",
+	}
+	colors = map[int]string{
+		DEBUG:     DIM + FG_BLACK + BG_DGRAY,
+		INFO:      FG_WHITE + BG_GREEN,
+		IMPORTANT: FG_WHITE + BG_LBLUE,
+		WARNING:   FG_WHITE + BG_YELLOW,
+		ERROR:     FG_WHITE + BG_RED,
+		FATAL:     FG_WHITE + BG_RED + BOLD,
+	}
+)
+
 type Event struct {
 	Tag  string      `json:"tag"`
 	Time time.Time   `json:"time"`
 	Data interface{} `json:"data"`
+}
+
+type LogMessage struct {
+	Level   int
+	Message string
 }
 
 func NewEvent(tag string, data interface{}) Event {
@@ -28,6 +68,13 @@ func NewEvent(tag string, data interface{}) Event {
 		Time: time.Now(),
 		Data: data,
 	}
+}
+
+func (e Event) Label() string {
+	log := e.Data.(LogMessage)
+	label := labels[log.Level]
+	color := colors[log.Level]
+	return color + label + RESET
 }
 
 type EventPool struct {
@@ -68,10 +115,7 @@ func (p *EventPool) Log(level int, format string, args ...interface{}) {
 		return
 	}
 
-	p.Add("sys.log", struct {
-		Level   int
-		Message string
-	}{
+	p.Add("sys.log", LogMessage{
 		level,
 		fmt.Sprintf(format, args...),
 	})

@@ -61,7 +61,13 @@ func (s *EventsStream) Start() error {
 				var e session.Event
 				select {
 				case e = <-s.Session.Events.NewEvents:
-					fmt.Printf("[%s] [%s] %v\n", e.Time.Format("2006-01-02 15:04:05"), core.Green(e.Tag), e.Data)
+					tm := e.Time.Format("2006-01-02 15:04:05")
+
+					if e.Tag == "sys.log" {
+						fmt.Printf("[%s] %s %v\n", tm, e.Label(), e.Data.(session.LogMessage).Message)
+					} else {
+						fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
+					}
 					break
 
 				case <-s.quit:
