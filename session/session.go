@@ -204,7 +204,7 @@ func (s *Session) Start() error {
 }
 
 func (s *Session) ReadLine() (string, error) {
-	s.Input.SetPrompt(core.GREEN + s.Interface.IpAddress + core.RESET + "» ")
+	s.Input.SetPrompt("cap@" + core.GREEN + s.Interface.CIDR() + core.RESET + "» ")
 	s.Input.Refresh()
 	return s.Input.Readline()
 }
