@@ -151,8 +151,6 @@ func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "DELETE" {
 		api.Session.Events.Clear()
 		api.Session.Events.Add("sys.log.cleared", nil)
-		// w.Header().Set("Content-Type", "application/json")
-		// w.Write([]byte("{}"))
 	} else {
 		http.Error(w, "Not Found", 404)
 	}
