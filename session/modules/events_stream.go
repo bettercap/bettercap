@@ -61,7 +61,7 @@ func (s *EventsStream) Start() error {
 				var e session.Event
 				select {
 				case e = <-s.Session.Events.NewEvents:
-					fmt.Printf("[%s] [%s] %v\n", e.Time.UTC().Format("2006-01-02 15:04:05"), core.Green(e.Tag), e.Data)
+					fmt.Printf("[%s] [%s] %v\n", e.Time.Format("2006-01-02 15:04:05"), core.Green(e.Tag), e.Data)
 					break
 
 				case <-s.quit:
