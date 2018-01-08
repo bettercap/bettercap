@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/session"
 
 	"github.com/robertkrimen/otto"
@@ -24,7 +25,7 @@ type ProxyScript struct {
 }
 
 func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScript) {
-	sess.Events.Log(session.INFO, "Loading proxy script %s ...", path)
+	log.Info("Loading proxy script %s ...", path)
 
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -53,7 +54,7 @@ func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScr
 	// define session pointer
 	err = s.VM.Set("env", sess.Env.Storage)
 	if err != nil {
-		sess.Events.Log(session.ERROR, "Error while defining environment: %s", err)
+		log.Error("Error while defining environment: %s", err)
 		return
 	}
 
@@ -62,13 +63,13 @@ func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScr
 		filename := call.Argument(0).String()
 		raw, err := ioutil.ReadFile(filename)
 		if err != nil {
-			s.sess.Events.Log(session.ERROR, "Could not read %s: %s", filename, err)
+			log.Error("Could not read %s: %s", filename, err)
 			return otto.Value{}
 		}
 
 		v, err := s.VM.ToValue(string(raw))
 		if err != nil {
-			s.sess.Events.Log(session.ERROR, "Could not convert to string: %s", err)
+			log.Error("Could not convert to string: %s", err)
 			return otto.Value{}
 		}
 		return v
@@ -78,7 +79,7 @@ func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScr
 	if s.hasCallback("onLoad") {
 		_, err = s.VM.Run("onLoad()")
 		if err != nil {
-			sess.Events.Log(session.ERROR, "Error while executing onLoad callback: %s", err)
+			log.Error("Error while executing onLoad callback: %s", err)
 			return
 		}
 	}
@@ -87,7 +88,7 @@ func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScr
 	if s.hasCallback("onRequest") {
 		s.onRequestScript, err = s.VM.Compile("", "onRequest(req, res)")
 		if err != nil {
-			sess.Events.Log(session.ERROR, "Error while compiling onRequest callback: %s", err)
+			log.Error("Error while compiling onRequest callback: %s", err)
 			return
 		}
 	}
@@ -96,7 +97,7 @@ func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScr
 	if s.hasCallback("onResponse") {
 		s.onResponseScript, err = s.VM.Compile("", "onResponse(req, res)")
 		if err != nil {
-			sess.Events.Log(session.ERROR, "Error while compiling onResponse callback: %s", err)
+			log.Error("Error while compiling onResponse callback: %s", err)
 			return
 		}
 	}
@@ -128,13 +129,13 @@ func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSR
 	// convert request and define empty response to be optionally filled
 	jsreq := NewJSRequest(req)
 	if err = s.VM.Set("req", &jsreq); err != nil {
-		s.sess.Events.Log(session.ERROR, "Error while defining request: %s", err)
+		log.Error("Error while defining request: %s", err)
 		return
 	}
 
 	jsres = &JSResponse{}
 	if err = s.VM.Set("res", jsres); err != nil {
-		s.sess.Events.Log(session.ERROR, "Error while defining response: %s", err)
+		log.Error("Error while defining response: %s", err)
 		return
 	}
 
@@ -145,13 +146,13 @@ func (s *ProxyScript) doResponseDefines(res *http.Response) (err error, jsres *J
 	// convert both request and response
 	jsreq := NewJSRequest(res.Request)
 	if err = s.VM.Set("req", jsreq); err != nil {
-		s.sess.Events.Log(session.ERROR, "Error while defining request: %s", err)
+		log.Error("Error while defining request: %s", err)
 		return
 	}
 
 	jsres = NewJSResponse(res)
 	if err = s.VM.Set("res", jsres); err != nil {
-		s.sess.Events.Log(session.ERROR, "Error while defining response: %s", err)
+		log.Error("Error while defining response: %s", err)
 		return
 	}
 
@@ -165,13 +166,13 @@ func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
 
 		err, jsres := s.doRequestDefines(req)
 		if err != nil {
-			s.sess.Events.Log(session.ERROR, "Error while running bootstrap definitions: %s", err)
+			log.Error("Error while running bootstrap definitions: %s", err)
 			return nil
 		}
 
 		_, err = s.VM.Run(s.onRequestScript)
 		if err != nil {
-			s.sess.Events.Log(session.ERROR, "Error while executing onRequest callback: %s", err)
+			log.Error("Error while executing onRequest callback: %s", err)
 			return nil
 		}
 
@@ -190,13 +191,13 @@ func (s *ProxyScript) OnResponse(res *http.Response) *JSResponse {
 
 		err, jsres := s.doResponseDefines(res)
 		if err != nil {
-			s.sess.Events.Log(session.ERROR, "Error while running bootstrap definitions: %s", err)
+			log.Error("Error while running bootstrap definitions: %s", err)
 			return nil
 		}
 
 		_, err = s.VM.Run(s.onResponseScript)
 		if err != nil {
-			s.sess.Events.Log(session.ERROR, "Error while executing onRequest callback: %s", err)
+			log.Error("Error while executing onRequest callback: %s", err)
 			return nil
 		}
 

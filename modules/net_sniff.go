@@ -2,16 +2,19 @@ package modules
 
 import (
 	"fmt"
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/session"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
-	"github.com/google/gopacket/pcapgo"
 	"net"
 	"os"
 	"regexp"
 	"time"
+
+	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/evilsocket/bettercap-ng/session"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/pcapgo"
 )
 
 type SnifferContext struct {
@@ -47,27 +50,27 @@ var (
 
 func (c *SnifferContext) Log(sess *session.Session) {
 	if c.DumpLocal {
-		sess.Events.Log(session.INFO, "Skip local packets : %s", no)
+		log.Info("Skip local packets : %s", no)
 	} else {
-		sess.Events.Log(session.INFO, "Skip local packets : %s", yes)
+		log.Info("Skip local packets : %s", yes)
 	}
 
 	if c.Verbose {
-		sess.Events.Log(session.INFO, "Verbose            : %s", yes)
+		log.Info("Verbose            : %s", yes)
 	} else {
-		sess.Events.Log(session.INFO, "Verbose            : %s", no)
+		log.Info("Verbose            : %s", no)
 	}
 
 	if c.Filter != "" {
-		sess.Events.Log(session.INFO, "BPF Filter         : '%s'", core.Yellow(c.Filter))
+		log.Info("BPF Filter         : '%s'", core.Yellow(c.Filter))
 	}
 
 	if c.Expression != "" {
-		sess.Events.Log(session.INFO, "Regular expression : '%s'", core.Yellow(c.Expression))
+		log.Info("Regular expression : '%s'", core.Yellow(c.Expression))
 	}
 
 	if c.Output != "" {
-		sess.Events.Log(session.INFO, "File output        : '%s'", core.Yellow(c.Output))
+		log.Info("File output        : '%s'", core.Yellow(c.Output))
 	}
 }
 
@@ -281,13 +284,13 @@ func (s *Sniffer) PrintStats() error {
 		last = s.Stats.LastPacket.String()
 	}
 
-	s.Session.Events.Log(session.INFO, "Sniffer Started    : %s", s.Stats.Started)
-	s.Session.Events.Log(session.INFO, "First Packet Seen  : %s", first)
-	s.Session.Events.Log(session.INFO, "Last Packet Seen   : %s", last)
-	s.Session.Events.Log(session.INFO, "Local Packets      : %d", s.Stats.NumLocal)
-	s.Session.Events.Log(session.INFO, "Matched Packets    : %d", s.Stats.NumMatched)
-	s.Session.Events.Log(session.INFO, "Dumped Packets     : %d", s.Stats.NumDumped)
-	s.Session.Events.Log(session.INFO, "Wrote Packets      : %d", s.Stats.NumWrote)
+	log.Info("Sniffer Started    : %s", s.Stats.Started)
+	log.Info("First Packet Seen  : %s", first)
+	log.Info("Last Packet Seen   : %s", last)
+	log.Info("Local Packets      : %d", s.Stats.NumLocal)
+	log.Info("Matched Packets    : %d", s.Stats.NumMatched)
+	log.Info("Dumped Packets     : %d", s.Stats.NumDumped)
+	log.Info("Wrote Packets      : %d", s.Stats.NumWrote)
 
 	return nil
 }

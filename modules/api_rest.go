@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/session"
 	"github.com/evilsocket/bettercap-ng/tls"
 )
@@ -160,14 +161,14 @@ func (api *RestAPI) configure() error {
 	}
 
 	if core.Exists(api.certFile) == false || core.Exists(api.keyFile) == false {
-		api.Session.Events.Log(session.INFO, "Generating RSA key to %s", api.keyFile)
-		api.Session.Events.Log(session.INFO, "Generating TLS certificate to %s", api.certFile)
+		log.Info("Generating RSA key to %s", api.keyFile)
+		log.Info("Generating TLS certificate to %s", api.certFile)
 		if err := tls.Generate(api.certFile, api.keyFile); err != nil {
 			return err
 		}
 	} else {
-		api.Session.Events.Log(session.INFO, "Loading RSA key from %s", api.keyFile)
-		api.Session.Events.Log(session.INFO, "Loading TLS certificate from %s", api.certFile)
+		log.Info("Loading RSA key from %s", api.keyFile)
+		log.Info("Loading TLS certificate from %s", api.certFile)
 	}
 
 	return nil
@@ -181,7 +182,7 @@ func (api *RestAPI) Start() error {
 	if api.Running() == false {
 		api.SetRunning(true)
 		go func() {
-			api.Session.Events.Log(session.INFO, "API server starting on https://%s", api.server.Addr)
+			log.Info("API server starting on https://%s", api.server.Addr)
 			err := api.server.ListenAndServeTLS(api.certFile, api.keyFile)
 			if err != nil && err != http.ErrServerClosed {
 				panic(err)

@@ -2,12 +2,15 @@ package modules
 
 import (
 	"fmt"
+	"net"
+	"time"
+
+	"github.com/evilsocket/bettercap-ng/log"
 	network "github.com/evilsocket/bettercap-ng/net"
 	"github.com/evilsocket/bettercap-ng/packets"
 	"github.com/evilsocket/bettercap-ng/session"
+
 	"github.com/malfunkt/iprange"
-	"net"
-	"time"
 )
 
 type ArpSpoofer struct {
@@ -85,7 +88,7 @@ func (p *ArpSpoofer) getMAC(ip net.IP, probe bool) (net.HardwareAddr, error) {
 		from_hw := p.Session.Interface.HW
 
 		if err, probe := packets.NewUDPProbe(from, from_hw, ip, 139); err != nil {
-			p.Session.Events.Log(session.ERROR, "Error while creating UDP probe packet for %s: %s\n", ip.String(), err)
+			log.Error("Error while creating UDP probe packet for %s: %s", ip.String(), err)
 		} else {
 			p.Session.Queue.Send(probe)
 		}
@@ -110,21 +113,21 @@ func (p *ArpSpoofer) getMAC(ip net.IP, probe bool) (net.HardwareAddr, error) {
 func (p *ArpSpoofer) sendArp(addresses []net.IP, saddr net.IP, smac net.HardwareAddr, check_running bool, probe bool) {
 	for _, ip := range addresses {
 		if p.shouldSpoof(ip) == false {
-			p.Session.Events.Log(session.DEBUG, "Skipping address %s from ARP spoofing.\n", ip)
+			log.Debug("Skipping address %s from ARP spoofing.", ip)
 			continue
 		}
 
 		// do we have this ip mac address?
 		hw, err := p.getMAC(ip, probe)
 		if err != nil {
-			p.Session.Events.Log(session.DEBUG, "Error while looking up hardware address for %s: %s\n", ip.String(), err)
+			log.Debug("Error while looking up hardware address for %s: %s", ip.String(), err)
 			continue
 		}
 
 		if err, pkt := packets.NewARPReply(saddr, smac, ip, hw); err != nil {
-			p.Session.Events.Log(session.ERROR, "Error while creating ARP spoof packet for %s: %s\n", ip.String(), err)
+			log.Error("Error while creating ARP spoof packet for %s: %s", ip.String(), err)
 		} else {
-			p.Session.Events.Log(session.DEBUG, "Sending %d bytes of ARP packet to %s:%s.\n", len(pkt), ip.String(), hw.String())
+			log.Debug("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip.String(), hw.String())
 			p.Session.Queue.Send(pkt)
 		}
 
@@ -152,7 +155,7 @@ func (p *ArpSpoofer) unSpoof() error {
 	from := p.Session.Gateway.IP
 	from_hw := p.Session.Gateway.HW
 
-	p.Session.Events.Log(session.INFO, "Restoring ARP cache of %d targets (%s).\n", len(addresses), targets)
+	log.Info("Restoring ARP cache of %d targets (%s).", len(addresses), targets)
 
 	p.sendArp(addresses, from, from_hw, false, false)
 
@@ -182,7 +185,7 @@ func (p *ArpSpoofer) Start() error {
 			from := p.Session.Gateway.IP
 			from_hw := p.Session.Interface.HW
 
-			p.Session.Events.Log(session.INFO, "ARP spoofer started, probing %d targets (%s).\n", len(addresses), targets)
+			log.Info("ARP spoofer started, probing %d targets (%s).", len(addresses), targets)
 
 			for p.Running() {
 				p.sendArp(addresses, from, from_hw, true, false)
@@ -202,7 +205,7 @@ func (p *ArpSpoofer) Stop() error {
 	if p.Running() == true {
 		p.SetRunning(false)
 
-		p.Session.Events.Log(session.INFO, "Waiting for ARP spoofer to stop ...")
+		log.Info("Waiting for ARP spoofer to stop ...")
 
 		<-p.Done
 

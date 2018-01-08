@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/modules"
 	"github.com/evilsocket/bettercap-ng/session"
 )
@@ -65,7 +66,7 @@ func main() {
 		}
 
 		if err = sess.Run(line); err != nil {
-			sess.Events.Log(session.ERROR, "%s", err)
+			log.Error("%s", err)
 		}
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/session"
 
 	"github.com/malfunkt/iprange"
@@ -73,11 +74,11 @@ func (p Prober) OnSessionEnded(s *session.Session) {
 func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 	name := fmt.Sprintf("%s:137", ip)
 	if addr, err := net.ResolveUDPAddr("udp", name); err != nil {
-		p.Session.Events.Log(session.ERROR, "Could not resolve %s.", name)
+		log.Error("Could not resolve %s.", name)
 	} else if con, err := net.DialUDP("udp", nil, addr); err != nil {
-		p.Session.Events.Log(session.ERROR, "Could not dial %s.", name)
+		log.Error("Could not dial %s.", name)
 	} else {
-		// p.Session.Events.Log(session.DEBUG,"UDP connection to %s enstablished.\n", name)
+		log.Debug("UDP connection to %s enstablished.", name)
 		defer con.Close()
 		con.Write([]byte{0xde, 0xad, 0xbe, 0xef})
 	}
@@ -90,7 +91,7 @@ func (p *Prober) Start() error {
 			return err
 		} else {
 			throttle = v.(int)
-			p.Session.Events.Log(session.DEBUG, "Throttling packets of %d ms.", throttle)
+			log.Debug("Throttling packets of %d ms.", throttle)
 		}
 
 		p.SetRunning(true)
@@ -98,7 +99,7 @@ func (p *Prober) Start() error {
 		go func() {
 			list, err := iprange.Parse(p.Session.Interface.CIDR())
 			if err != nil {
-				p.Session.Events.Log(session.FATAL, "%s", err)
+				log.Fatal("%s", err)
 			}
 
 			from := p.Session.Interface.IP
@@ -108,7 +109,7 @@ func (p *Prober) Start() error {
 			for p.Running() {
 				for _, ip := range addresses {
 					if p.shouldProbe(ip) == false {
-						p.Session.Events.Log(session.DEBUG, "Skipping address %s from UDP probing.", ip)
+						log.Debug("Skipping address %s from UDP probing.", ip)
 						continue
 					}
 

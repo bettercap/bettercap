@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/evilsocket/bettercap-ng/log"
 )
 
 func (api *RestAPI) setupRoutes() {
@@ -17,7 +17,7 @@ func (api *RestAPI) setupRoutes() {
 
 func (api RestAPI) checkAuth(w http.ResponseWriter, r *http.Request) bool {
 	if api.Authenticated(w, r) == false {
-		api.Session.Events.Log(session.WARNING, "Unauthenticated access!")
+		log.Warning("Unauthenticated access!")
 		http.Error(w, "Not authorized", 401)
 		return false
 	}
@@ -57,7 +57,7 @@ func (api *RestAPI) sessRoute(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		js, err := json.Marshal(api.Session)
 		if err != nil {
-			api.Session.Events.Log(session.ERROR, "Error while returning session: %s", err)
+			log.Error("Error while returning session: %s", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -80,7 +80,7 @@ func (api *RestAPI) sessRoute(w http.ResponseWriter, r *http.Request) {
 		}
 		js, err := json.Marshal(res)
 		if err != nil {
-			api.Session.Events.Log(session.ERROR, "Error while returning response: %s", err)
+			log.Error("Error while returning response: %s", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -119,7 +119,7 @@ func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 
 		js, err := json.Marshal(events[0:n])
 		if err != nil {
-			api.Session.Events.Log(session.ERROR, "Error while returning events: %s", err)
+			log.Error("Error while returning events: %s", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

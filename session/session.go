@@ -17,6 +17,10 @@ import (
 	"github.com/evilsocket/bettercap-ng/packets"
 )
 
+var (
+	I = (*Session)(nil)
+)
+
 type Session struct {
 	Options   core.Options             `json:"options"`
 	Interface *net.Endpoint            `json:"interface"`
@@ -64,6 +68,10 @@ func New() (*Session, error) {
 	}
 
 	s.registerCoreHandlers()
+
+	if I == nil {
+		I = s
+	}
 
 	return s, nil
 }
@@ -217,7 +225,7 @@ func (s *Session) ReadLine() (string, error) {
 }
 
 func (s *Session) RunCaplet(filename string) error {
-	s.Events.Log(INFO, "Reading from caplet %s ...\n", filename)
+	s.Events.Log(INFO, "Reading from caplet %s ...", filename)
 
 	input, err := os.Open(filename)
 	if err != nil {

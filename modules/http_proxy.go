@@ -8,6 +8,7 @@ import (
 	"github.com/elazarl/goproxy"
 
 	"github.com/evilsocket/bettercap-ng/firewall"
+	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
@@ -170,13 +171,13 @@ func (p *HttpProxy) Start() error {
 			if err, p.script = LoadProxyScript(scriptPath, p.Session); err != nil {
 				return err
 			} else {
-				p.Session.Events.Log(session.DEBUG, "Proxy script %s loaded.", scriptPath)
+				log.Debug("Proxy script %s loaded.", scriptPath)
 			}
 		}
 	}
 
 	if p.Session.Firewall.IsForwardingEnabled() == false {
-		p.Session.Events.Log(session.INFO, "Enabling forwarding.")
+		log.Info("Enabling forwarding.")
 		p.Session.Firewall.EnableForwarding(true)
 	}
 
@@ -190,7 +191,7 @@ func (p *HttpProxy) Start() error {
 		return err
 	}
 
-	p.Session.Events.Log(session.DEBUG, "Applied redirection %s", p.redirection.String())
+	log.Debug("Applied redirection %s", p.redirection.String())
 
 	address := fmt.Sprintf("%s:%d", p.address, proxy_port)
 	p.server = http.Server{Addr: address, Handler: p.proxy}
@@ -198,7 +199,7 @@ func (p *HttpProxy) Start() error {
 		p.SetRunning(true)
 		if err := p.server.ListenAndServe(); err != nil {
 			p.SetRunning(false)
-			p.Session.Events.Log(session.WARNING, "%s", err)
+			log.Warning("%s", err)
 		}
 	}()
 
@@ -210,7 +211,7 @@ func (p *HttpProxy) Stop() error {
 		p.SetRunning(false)
 		p.server.Shutdown(nil)
 		if p.redirection != nil {
-			p.Session.Events.Log(session.DEBUG, "Disabling redirection %s", p.redirection.String())
+			log.Debug("Disabling redirection %s", p.redirection.String())
 			if err := p.Session.Firewall.EnableRedirection(p.redirection, false); err != nil {
 				return err
 			}
@@ -230,13 +231,13 @@ func (p *HttpProxy) doProxy(req *http.Request) bool {
 	}
 
 	if req.Host == "" {
-		p.Session.Events.Log(session.ERROR, "Got request with empty host: %v", req)
+		log.Error("Got request with empty host: %v", req)
 		return false
 	}
 
 	for _, blacklisted := range blacklist {
 		if strings.HasPrefix(req.Host, blacklisted) {
-			p.Session.Events.Log(session.ERROR, "Got request with blacklisted host: %s", req.Host)
+			log.Error("Got request with blacklisted host: %s", req.Host)
 			return false
 		}
 	}

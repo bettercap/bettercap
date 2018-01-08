@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/net"
 	"github.com/evilsocket/bettercap-ng/session"
 	"time"
@@ -84,7 +85,7 @@ func (d *Discovery) checkShared(new net.ArpTable) {
 			b = ""
 		}
 
-		d.Session.Events.Log(session.WARNING, "Found %d endpoint%s which share%s the same MAC of the gateway (%s), there're might be some IP isolation going on, skipping.", n_gw_shared, a, b, d.Session.Gateway.HwAddress)
+		log.Warning("Found %d endpoint%s which share%s the same MAC of the gateway (%s), there're might be some IP isolation going on, skipping.", n_gw_shared, a, b, d.Session.Gateway.HwAddress)
 	}
 }
 
@@ -124,7 +125,7 @@ func (d *Discovery) Start() error {
 					var err error
 
 					if d.current, err = net.ArpUpdate(d.Session.Interface.Name()); err != nil {
-						d.Session.Events.Log(session.ERROR, "%s", err)
+						log.Error("%s", err)
 						continue
 					}
 
