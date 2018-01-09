@@ -42,8 +42,8 @@ func (env *Environment) Set(name, value string) string {
 	env.Storage[name] = value
 
 	env.sess.Events.Add("env.change", struct {
-		name  string
-		value string
+		Name  string
+		Value string
 	}{
 		name,
 		value,
