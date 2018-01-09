@@ -153,7 +153,7 @@ func (s *Session) Start() error {
 	}
 
 	if s.Gateway, err = net.FindGateway(s.Interface); err != nil {
-		s.Events.Log(WARNING, "%s", err)
+		s.Events.Log(WARNING, "%s", err.Error())
 	}
 
 	if s.Gateway == nil || s.Gateway.IpAddress == s.Interface.IpAddress {
