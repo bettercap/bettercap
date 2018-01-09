@@ -166,7 +166,7 @@ For instance you can view a list of declared variables with `get *` and set new 
                   get NAME : Get the value of variable NAME, use * for all.
             set NAME VALUE : Set the VALUE of variable NAME.
 
-    ARP Spoofer [not active]
+    ARP Spoofer
     Keep spoofing selected hosts on the network.
 
               arp.spoof on : Start ARP spoofer.
@@ -177,14 +177,19 @@ For instance you can view a list of declared variables with `get *` and set new 
          arp.spoof.targets : IP addresses to spoof. (default=<entire subnet>)
 
 
-    Events Stream [active]
+    Events Stream
     Print events as a continuous stream.
 
           events.stream on : Start events stream.
          events.stream off : Stop events stream.
               events.clear : Clear events stream.
 
-    HTTP Proxy [not active]
+      Parameters
+
+      events.stream.filter : If filled, filter events by this prefix type. (default=)
+
+
+    HTTP Proxy
     A full featured HTTP proxy that can be used to inject malicious contents into webpages, all HTTP traffic will be redirected to it.
 
              http.proxy on : Start HTTP proxy.
@@ -198,7 +203,7 @@ For instance you can view a list of declared variables with `get *` and set new 
          http.proxy.script : Path of a proxy JS script. (default=)
 
 
-    Network Prober [not active]
+    Network Prober
     Keep probing for new hosts on the network by sending dummy UDP packets to every possible IP on the subnet.
 
               net.probe on : Start network hosts probing in background.
@@ -209,14 +214,14 @@ For instance you can view a list of declared variables with `get *` and set new 
         net.probe.throttle : If greater than 0, probe packets will be throttled by this value in milliseconds. (default=10)
 
 
-    Network Recon [not active]
+    Network Recon
     Read periodically the ARP cache in order to monitor for new hosts on the network.
 
               net.recon on : Start network hosts discovery.
              net.recon off : Stop network hosts discovery.
                   net.show : Show current hosts list.
 
-    Network Sniffer [not active]
+    Network Sniffer
     Sniff packets from the network.
 
          net.sniffer stats : Print sniffer session configuration and statistics.
@@ -225,14 +230,14 @@ For instance you can view a list of declared variables with `get *` and set new 
 
       Parameters
 
+        net.sniffer.regexp : If filled, only packets matching this regular expression will be considered. (default=)
+        net.sniffer.output : If set, the sniffer will write captured packets to this file. (default=)
        net.sniffer.verbose : Print captured packets to screen. (default=true)
          net.sniffer.local : If true it will consider packets from/to this computer, otherwise it will skip them. (default=false)
         net.sniffer.filter : BPF filter for the sniffer. (default=not arp)
-        net.sniffer.regexp : If filled, only packets matching this regular expression will be considered. (default=)
-        net.sniffer.output : If set, the sniffer will write captured packets to this file. (default=)
 
 
-    REST API [not active]
+    REST API
     Expose a RESTful API.
 
                api.rest on : Start REST API server.
