@@ -22,11 +22,7 @@ type Endpoint struct {
 }
 
 func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
-	hw, err := net.ParseMAC(mac)
-	if err != nil {
-		panic(err)
-	}
-
+	hw, _ := net.ParseMAC(mac)
 	e := &Endpoint{
 		IP:               net.ParseIP(ip),
 		HW:               hw,
