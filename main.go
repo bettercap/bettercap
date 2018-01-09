@@ -31,11 +31,11 @@ func main() {
 	sess.Register(modules.NewRestAPI(sess))
 
 	if err = sess.Start(); err != nil {
-		panic(err)
+		log.Fatal("%", err)
 	}
 
 	if err = sess.Run("events.stream on"); err != nil {
-		panic(err)
+		log.Fatal("%", err)
 	}
 
 	defer sess.Close()
@@ -44,21 +44,21 @@ func main() {
 		for _, cmd := range strings.Split(*sess.Options.Commands, ";") {
 			cmd = strings.Trim(cmd, "\r\n\t ")
 			if err = sess.Run(cmd); err != nil {
-				panic(err)
+				log.Fatal("%s", err)
 			}
 		}
 	}
 
 	if *sess.Options.Caplet != "" {
 		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
-			panic(err)
+			log.Fatal("%s", err)
 		}
 	}
 
 	for sess.Active {
 		line, err := sess.ReadLine()
 		if err != nil {
-			panic(err)
+			log.Fatal("%s", err)
 		}
 
 		if line == "" || line[0] == '#' {

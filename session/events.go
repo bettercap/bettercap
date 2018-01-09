@@ -111,12 +111,15 @@ func (p *EventPool) Log(level int, format string, args ...interface{}) {
 		return
 	}
 
+	message := fmt.Sprintf(format, args)
+
 	p.Add("sys.log", LogMessage{
 		level,
-		fmt.Sprintf(format, args...),
+		message,
 	})
 
 	if level == FATAL {
+		fmt.Fprintf(os.Stderr, "%s\n", message)
 		os.Exit(1)
 	}
 }
