@@ -64,7 +64,7 @@ func (s *EventsStream) Start() error {
 					tm := e.Time.Format("2006-01-02 15:04:05")
 
 					if e.Tag == "sys.log" {
-						fmt.Printf("[%s] %s %v\n", tm, e.Label(), e.Data.(session.LogMessage).Message)
+						fmt.Printf("[%s] [%s] %s %v\n", tm, core.Green(e.Tag), e.Label(), e.Data.(session.LogMessage).Message)
 					} else {
 						fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
 					}
