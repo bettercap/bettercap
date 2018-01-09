@@ -34,11 +34,11 @@ const (
 
 var (
 	labels = map[int]string{
-		DEBUG:     "DBG",
-		INFO:      "INF",
-		IMPORTANT: "IMP",
-		WARNING:   "WAR",
-		ERROR:     "ERR",
+		DEBUG:     "dbg",
+		INFO:      "inf",
+		IMPORTANT: "imp",
+		WARNING:   "war",
+		ERROR:     "err",
 		FATAL:     "!!!",
 	}
 	colors = map[int]string{
