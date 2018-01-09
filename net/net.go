@@ -81,11 +81,10 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 				} else {
 					// we have the address, now we need its mac
 					mac, err := ArpLookup(iface.Name(), gateway, false)
-					if err == nil {
-						return NewEndpoint(gateway, mac), nil
-					} else {
+					if err != nil {
 						fmt.Printf("%s\n", err)
 					}
+					return NewEndpoint(gateway, mac), nil
 				}
 			}
 		}
