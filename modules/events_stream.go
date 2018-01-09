@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/session"
@@ -17,6 +18,11 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		SessionModule: session.NewSessionModule("events.stream", s),
 		quit:          make(chan bool),
 	}
+
+	stream.AddParam(session.NewStringParameter("events.stream.filter",
+		"",
+		"",
+		"If filled, filter events by this prefix type."))
 
 	stream.AddHandler(session.NewModuleHandler("events.stream on", "",
 		"Start events stream.",
@@ -54,6 +60,14 @@ func (s EventsStream) Author() string {
 
 func (s *EventsStream) Start() error {
 	if s.Running() == false {
+		filter := ""
+
+		if err, v := s.Param("events.stream.filter").Get(s.Session); err != nil {
+			return err
+		} else {
+			filter = v.(string)
+		}
+
 		s.SetRunning(true)
 
 		go func() {
@@ -61,15 +75,17 @@ func (s *EventsStream) Start() error {
 				var e session.Event
 				select {
 				case e = <-s.Session.Events.NewEvents:
-					tm := e.Time.Format("2006-01-02 15:04:05")
+					if filter == "" || strings.Contains(e.Tag, filter) {
+						tm := e.Time.Format("2006-01-02 15:04:05")
 
-					if e.Tag == "sys.log" {
-						fmt.Printf("[%s] [%s] %s %v\n", tm, core.Green(e.Tag), e.Label(), e.Data.(session.LogMessage).Message)
-					} else {
-						fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
+						if e.Tag == "sys.log" {
+							fmt.Printf("[%s] [%s] %s %v\n", tm, core.Green(e.Tag), e.Label(), e.Data.(session.LogMessage).Message)
+						} else {
+							fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
+						}
+
+						s.Session.Input.Refresh()
 					}
-
-					s.Session.Input.Refresh()
 					break
 
 				case <-s.quit:
