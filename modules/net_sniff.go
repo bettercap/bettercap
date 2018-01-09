@@ -165,7 +165,7 @@ func NewSniffer(s *session.Session) *Sniffer {
 }
 
 func (s Sniffer) Name() string {
-	return "Network Sniffer"
+	return "net.sniff"
 }
 
 func (s Sniffer) Description() string {

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"os/user"
+	"sort"
 	"strings"
 	"syscall"
 
@@ -76,6 +77,15 @@ func New() (*Session, error) {
 	return s, nil
 }
 
+func (s *Session) Module(name string) (err error, mod Module) {
+	for _, m := range s.Modules {
+		if m.Name() == name {
+			return nil, m
+		}
+	}
+	return fmt.Errorf("Module %s not found", name), mod
+}
+
 func (s *Session) setupInput() error {
 	var err error
 
@@ -137,6 +147,11 @@ func (s *Session) Register(mod Module) error {
 
 func (s *Session) Start() error {
 	var err error
+
+	// make sure modules are always sorted by name
+	sort.Slice(s.Modules, func(i, j int) bool {
+		return s.Modules[i].Name() < s.Modules[j].Name()
+	})
 
 	net.OuiInit()
 

@@ -115,7 +115,7 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 }
 
 func (p *HttpProxy) Name() string {
-	return "HTTP Proxy"
+	return "http.proxy"
 }
 
 func (p *HttpProxy) Description() string {

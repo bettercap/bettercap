@@ -49,7 +49,7 @@ func NewDiscovery(s *session.Session) *Discovery {
 }
 
 func (d Discovery) Name() string {
-	return "Network Recon"
+	return "net.recon"
 }
 
 func (d Discovery) Description() string {

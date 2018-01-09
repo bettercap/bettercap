@@ -2,7 +2,6 @@ package session
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -11,26 +10,46 @@ import (
 )
 
 func (s *Session) helpHandler(args []string, sess *Session) error {
-	fmt.Println()
-	fmt.Printf("Basic commands:\n\n")
-	for _, h := range s.CoreHandlers {
-		fmt.Printf("  "+core.Bold("%"+strconv.Itoa(s.HelpPadding)+"s")+" : %s\n", h.Name, h.Description)
+	filter := ""
+	if len(args) == 2 {
+		filter = args[1]
 	}
 
-	sort.Slice(s.Modules, func(i, j int) bool {
-		return s.Modules[i].Name() < s.Modules[j].Name()
-	})
+	if filter == "" {
+		fmt.Println()
+		fmt.Printf(core.Bold("MAIN COMMANDS\n\n"))
+		for _, h := range s.CoreHandlers {
+			fmt.Printf("  "+core.Yellow("%"+strconv.Itoa(s.HelpPadding)+"s")+" : %s\n", h.Name, h.Description)
+		}
 
-	for _, m := range s.Modules {
+		fmt.Printf(core.Bold("\nMODULES\n"))
+
+		for _, m := range s.Modules {
+			status := ""
+			if m.Running() {
+				status = core.Green("running")
+			} else {
+				status = core.Red("not running")
+			}
+			fmt.Printf("  "+core.Yellow("%"+strconv.Itoa(s.HelpPadding)+"s")+" > %s\n", m.Name(), status)
+		}
+
+		fmt.Println()
+
+	} else {
+		err, m := s.Module(filter)
+		if err != nil {
+			return err
+		}
+
 		fmt.Println()
 		status := ""
 		if m.Running() {
-			status = core.Green("active")
+			status = core.Green("running")
 		} else {
-			status = core.Red("not active")
+			status = core.Red("not running")
 		}
-		fmt.Printf("%s [%s]\n", m.Name(), status)
-		fmt.Println(core.Dim(m.Description()) + "\n")
+		fmt.Printf("%s (%s): %s\n\n", core.Yellow(m.Name()), status, core.Dim(m.Description()))
 		for _, h := range m.Handlers() {
 			fmt.Printf(h.Help(s.HelpPadding))
 		}
@@ -130,6 +149,11 @@ func (s *Session) registerCoreHandlers() {
 	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("help",
 		"^(help|\\?)$",
 		"Display list of available commands.",
+		s.helpHandler))
+
+	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("help MODULE",
+		"^(help|\\?) (.+)$",
+		"Show module specific help.",
 		s.helpHandler))
 
 	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("active",

@@ -47,7 +47,7 @@ func NewEventsStream(s *session.Session) *EventsStream {
 }
 
 func (s EventsStream) Name() string {
-	return "Events Stream"
+	return "events.stream"
 }
 
 func (s EventsStream) Description() string {

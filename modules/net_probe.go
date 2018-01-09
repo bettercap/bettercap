@@ -40,7 +40,7 @@ func NewProber(s *session.Session) *Prober {
 }
 
 func (p Prober) Name() string {
-	return "Network Prober"
+	return "net.probe"
 }
 
 func (p Prober) Description() string {

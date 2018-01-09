@@ -53,7 +53,7 @@ func (p *ArpSpoofer) OnSessionEnded(s *session.Session) {
 }
 
 func (p ArpSpoofer) Name() string {
-	return "ARP Spoofer"
+	return "arp.spoof"
 }
 
 func (p ArpSpoofer) Description() string {

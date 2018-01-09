@@ -84,7 +84,7 @@ type JSSessionResponse struct {
 }
 
 func (api *RestAPI) Name() string {
-	return "REST API"
+	return "api.rest"
 }
 
 func (api *RestAPI) Description() string {
