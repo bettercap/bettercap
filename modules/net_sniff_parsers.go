@@ -64,12 +64,12 @@ func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 func mainParser(pkt gopacket.Packet, verbose bool) bool {
 	nlayer := pkt.NetworkLayer()
 	if nlayer == nil {
-		log.Warning("Missing network layer skipping packet.")
+		log.Debug("Missing network layer skipping packet.")
 		return false
 	}
 
 	if nlayer.LayerType() != layers.LayerTypeIPv4 {
-		log.Warning("Unexpected layer type %s, skipping packet.", nlayer.LayerType())
+		log.Debug("Unexpected layer type %s, skipping packet.", nlayer.LayerType())
 		return false
 	}
 
@@ -77,7 +77,7 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 
 	tlayer := pkt.TransportLayer()
 	if tlayer == nil {
-		log.Warning("Missing transport layer skipping packet.")
+		log.Debug("Missing transport layer skipping packet.")
 		return false
 	}
 
