@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
+
+	"github.com/chzyer/readline"
 )
 
 func (s *Session) helpHandler(args []string, sess *Session) error {
@@ -145,6 +147,11 @@ func (s *Session) setHandler(args []string, sess *Session) error {
 	return nil
 }
 
+func (s *Session) clsHandler(args []string, sess *Session) error {
+	readline.ClearScreen(s.Input.Stdout())
+	return nil
+}
+
 func (s *Session) registerCoreHandlers() {
 	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("help",
 		"^(help|\\?)$",
@@ -180,4 +187,9 @@ func (s *Session) registerCoreHandlers() {
 		"^set\\s+([^\\s]+)\\s+(.+)",
 		"Set the VALUE of variable NAME.",
 		s.setHandler))
+
+	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("clear",
+		"^(clear|cls)$",
+		"Clear the screen.",
+		s.clsHandler))
 }
