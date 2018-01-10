@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type JSHeader struct {
@@ -12,30 +13,41 @@ type JSHeader struct {
 }
 
 type JSRequest struct {
-	Method   string
-	Version  string
-	Path     string
-	Hostname string
-	Headers  []JSHeader
-	Body     string
-	req      *http.Request
+	Client      string
+	Method      string
+	Version     string
+	Path        string
+	Hostname    string
+	ContentType string
+	Headers     []JSHeader
+	Body        string
+	req         *http.Request
 }
 
 func NewJSRequest(req *http.Request) JSRequest {
 	headers := make([]JSHeader, 0)
+	cType := ""
+
 	for key, values := range req.Header {
 		for _, value := range values {
 			headers = append(headers, JSHeader{key, value})
+
+			if key == "Content-Type" {
+				cType = value
+			}
 		}
 	}
 
 	return JSRequest{
-		Method:   req.Method,
-		Version:  fmt.Sprintf("%d.%d", req.ProtoMajor, req.ProtoMinor),
-		Path:     req.URL.Path,
-		Hostname: req.Host,
-		Headers:  headers,
-		req:      req,
+		Client:      strings.Split(req.RemoteAddr, ":")[0],
+		Method:      req.Method,
+		Version:     fmt.Sprintf("%d.%d", req.ProtoMajor, req.ProtoMinor),
+		Path:        req.URL.Path,
+		Hostname:    req.Host,
+		ContentType: cType,
+		Headers:     headers,
+
+		req: req,
 	}
 }
 
