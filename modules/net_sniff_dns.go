@@ -1,6 +1,8 @@
 package modules
 
 import (
+	"strings"
+
 	"github.com/evilsocket/bettercap-ng/core"
 
 	"github.com/google/gopacket"
@@ -17,17 +19,29 @@ func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 		return false
 	}
 
+	m := make(map[string][]string, 0)
 	for _, a := range dns.Answers {
 		if a.IP == nil {
 			continue
 		}
+
+		hostname := string(a.Name)
+		if _, found := m[hostname]; found == false {
+			m[hostname] = make([]string, 0)
+		}
+
+		m[hostname] = append(m[hostname], vIP(a.IP))
+	}
+
+	for hostname, ips := range m {
 		SniffPrinter("[%s] %s %s > %s : %s is %s\n",
 			vTime(pkt.Metadata().Timestamp),
 			core.W(core.BG_DGRAY+core.FG_WHITE, "dns"),
 			vIP(ip.SrcIP),
 			vIP(ip.DstIP),
-			core.Yellow(string(a.Name)),
-			vIP(a.IP))
+			core.Yellow(hostname),
+			core.Dim(strings.Join(ips, ", ")),
+		)
 	}
 
 	return true
