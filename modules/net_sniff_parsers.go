@@ -5,19 +5,10 @@ import (
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/session"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 )
-
-type SniffPrinterType func(format string, args ...interface{}) (int, error)
-
-var SniffPrinter = SniffPrinterType(func(format string, args ...interface{}) (n int, e error) {
-	n, e = fmt.Printf(format, args...)
-	session.I.Input.Refresh()
-	return
-})
 
 func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	tcp := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
@@ -29,14 +20,23 @@ func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	}
 
 	if verbose == true {
-		SniffPrinter("[%s] %s %s:%s > %s:%s %s\n",
+		NewSnifferEvent(
+			pkt.Metadata().Timestamp,
+			"tcp",
+			fmt.Sprintf("%s:%s", ip.SrcIP, vPort(tcp.SrcPort)),
+			fmt.Sprintf("%s:%s", ip.DstIP, vPort(tcp.DstPort)),
+			SniffData{
+				"Size": len(ip.Payload),
+			},
+			"[%s] %s %s:%s > %s:%s %s",
 			vTime(pkt.Metadata().Timestamp),
 			core.W(core.BG_LBLUE+core.FG_BLACK, "tcp"),
 			vIP(ip.SrcIP),
 			vPort(tcp.SrcPort),
 			vIP(ip.DstIP),
 			vPort(tcp.DstPort),
-			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))))
+			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
+		).Push()
 	}
 }
 
@@ -48,25 +48,43 @@ func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	}
 
 	if verbose == true {
-		SniffPrinter("[%s] %s %s:%s > %s:%s %s\n",
+		NewSnifferEvent(
+			pkt.Metadata().Timestamp,
+			"udp",
+			fmt.Sprintf("%s:%s", ip.SrcIP, vPort(udp.SrcPort)),
+			fmt.Sprintf("%s:%s", ip.DstIP, vPort(udp.DstPort)),
+			SniffData{
+				"Size": len(ip.Payload),
+			},
+			"[%s] %s %s:%s > %s:%s %s",
 			vTime(pkt.Metadata().Timestamp),
 			core.W(core.BG_DGRAY+core.FG_WHITE, "udp"),
 			vIP(ip.SrcIP),
 			vPort(udp.SrcPort),
 			vIP(ip.DstIP),
 			vPort(udp.DstPort),
-			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))))
+			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
+		).Push()
 	}
 }
 
 func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	if verbose == true {
-		SniffPrinter("[%s] [%s] %s > %s (%d bytes)\n",
-			vTime(pkt.Metadata().Timestamp),
-			pkt.TransportLayer().LayerType(),
+		NewSnifferEvent(
+			pkt.Metadata().Timestamp,
+			pkt.TransportLayer().LayerType().String(),
 			vIP(ip.SrcIP),
 			vIP(ip.DstIP),
-			len(ip.Payload))
+			SniffData{
+				"Size": len(ip.Payload),
+			},
+			"[%s] %s %s > %s %s",
+			vTime(pkt.Metadata().Timestamp),
+			core.W(core.BG_DGRAY+core.FG_WHITE, pkt.TransportLayer().LayerType().String()),
+			vIP(ip.SrcIP),
+			vIP(ip.DstIP),
+			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
+		).Push()
 	}
 }
 

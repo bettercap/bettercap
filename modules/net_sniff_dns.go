@@ -34,14 +34,23 @@ func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 	}
 
 	for hostname, ips := range m {
-		SniffPrinter("[%s] %s %s > %s : %s is %s\n",
+		NewSnifferEvent(
+			pkt.Metadata().Timestamp,
+			"dns",
+			ip.SrcIP.String(),
+			ip.DstIP.String(),
+			SniffData{
+				"Hostname":  hostname,
+				"Addresses": ips,
+			},
+			"[%s] %s %s > %s : %s is %s",
 			vTime(pkt.Metadata().Timestamp),
 			core.W(core.BG_DGRAY+core.FG_WHITE, "dns"),
 			vIP(ip.SrcIP),
 			vIP(ip.DstIP),
 			core.Yellow(hostname),
 			core.Dim(strings.Join(ips, ", ")),
-		)
+		).Push()
 	}
 
 	return true

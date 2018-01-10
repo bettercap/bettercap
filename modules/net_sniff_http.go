@@ -26,25 +26,40 @@ func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 		return false
 	}
 
+	method := string(m[1])
+	hostname := string(m[2])
+	path := string(m[3])
 	ua := ""
 	mu := uaRe.FindSubmatch(data)
 	if len(mu) == 2 {
 		ua = string(mu[1])
 	}
 
-	url := fmt.Sprintf("%s", core.Yellow(string(m[3])))
+	url := fmt.Sprintf("%s", core.Yellow(path))
 	if tcp.DstPort != 80 {
 		url += fmt.Sprintf(":%s", vPort(tcp.DstPort))
 	}
-	url += fmt.Sprintf("%s", string(m[2]))
+	url += fmt.Sprintf("%s", hostname)
 
-	SniffPrinter("[%s] %s %s %s %s %s\n",
+	NewSnifferEvent(
+		pkt.Metadata().Timestamp,
+		"http",
+		ip.SrcIP.String(),
+		hostname,
+		SniffData{
+			"Method":   method,
+			"Hostname": hostname,
+			"URL":      url,
+			"UA":       ua,
+		},
+		"[%s] %s %s %s %s %s",
 		vTime(pkt.Metadata().Timestamp),
 		core.W(core.BG_RED+core.FG_BLACK, "http"),
 		vIP(ip.SrcIP),
-		core.W(core.BG_LBLUE+core.FG_BLACK, vURL(string(m[1]))),
+		core.W(core.BG_LBLUE+core.FG_BLACK, method),
 		vURL(url),
-		core.Dim(ua))
+		core.Dim(ua),
+	).Push()
 
 	return true
 }

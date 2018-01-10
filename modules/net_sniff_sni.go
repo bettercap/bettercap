@@ -31,11 +31,20 @@ func sniParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 		domain = fmt.Sprintf("%s:%d", domain, tcp.DstPort)
 	}
 
-	SniffPrinter("[%s] %s %s > %s\n",
+	NewSnifferEvent(
+		pkt.Metadata().Timestamp,
+		"sni",
+		ip.SrcIP.String(),
+		domain,
+		SniffData{
+			"Domain": domain,
+		},
+		"[%s] %s %s > %s",
 		vTime(pkt.Metadata().Timestamp),
 		core.W(core.BG_YELLOW+core.FG_WHITE, "sni"),
 		vIP(ip.SrcIP),
-		core.Yellow("https://"+domain))
+		core.Yellow("https://"+domain),
+	).Push()
 
 	return true
 }
