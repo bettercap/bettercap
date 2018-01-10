@@ -65,12 +65,6 @@ func (p *Prober) shouldProbe(ip net.IP) bool {
 	return true
 }
 
-func (p Prober) OnSessionEnded(s *session.Session) {
-	if p.Running() {
-		p.Stop()
-	}
-}
-
 func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 	name := fmt.Sprintf("%s:137", ip)
 	if addr, err := net.ResolveUDPAddr("udp", name); err != nil {
@@ -86,11 +80,12 @@ func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 
 func (p *Prober) Start() error {
 	if p.Running() == false {
-		throttle := int(0)
-		if err, v := p.Param("net.probe.throttle").Get(p.Session); err != nil {
+		var err error
+		var throttle int
+
+		if err, throttle = p.IntParam("net.probe.throttle"); err != nil {
 			return err
 		} else {
-			throttle = v.(int)
 			log.Debug("Throttling packets of %d ms.", throttle)
 		}
 

@@ -133,7 +133,9 @@ func (s *Session) Close() {
 	s.Events.Add("session.closing", nil)
 
 	for _, m := range s.Modules {
-		m.OnSessionEnded(s)
+		if m.Running() {
+			m.Stop()
+		}
 	}
 
 	s.Firewall.Restore()
@@ -216,11 +218,6 @@ func (s *Session) Start() error {
 	}()
 
 	s.Active = true
-
-	for _, m := range s.Modules {
-		m.OnSessionStarted(s)
-	}
-
 	s.Events.Add("session.started", nil)
 
 	return nil

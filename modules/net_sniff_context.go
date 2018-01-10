@@ -34,50 +34,40 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 		return err, ctx
 	}
 
-	if err, v := s.Param("net.sniff.verbose").Get(s.Session); err != nil {
+	if err, ctx.Verbose = s.BoolParam("net.sniff.verbose"); err != nil {
 		return err, ctx
-	} else {
-		ctx.Verbose = v.(bool)
 	}
 
-	if err, v := s.Param("net.sniff.local").Get(s.Session); err != nil {
+	if err, ctx.DumpLocal = s.BoolParam("net.sniff.local"); err != nil {
 		return err, ctx
-	} else {
-		ctx.DumpLocal = v.(bool)
 	}
 
-	if err, v := s.Param("net.sniff.filter").Get(s.Session); err != nil {
+	if err, ctx.Filter = s.StringParam("net.sniff.filter"); err != nil {
 		return err, ctx
-	} else {
-		if ctx.Filter = v.(string); ctx.Filter != "" {
-			err = ctx.Handle.SetBPFFilter(ctx.Filter)
-			if err != nil {
-				return err, ctx
-			}
+	} else if ctx.Filter != "" {
+		err = ctx.Handle.SetBPFFilter(ctx.Filter)
+		if err != nil {
+			return err, ctx
 		}
 	}
 
-	if err, v := s.Param("net.sniff.regexp").Get(s.Session); err != nil {
+	if err, ctx.Expression = s.StringParam("net.sniff.regexp"); err != nil {
 		return err, ctx
-	} else {
-		if ctx.Expression = v.(string); ctx.Expression != "" {
-			if ctx.Compiled, err = regexp.Compile(ctx.Expression); err != nil {
-				return err, ctx
-			}
+	} else if ctx.Expression != "" {
+		if ctx.Compiled, err = regexp.Compile(ctx.Expression); err != nil {
+			return err, ctx
 		}
 	}
 
-	if err, v := s.Param("net.sniff.output").Get(s.Session); err != nil {
+	if err, ctx.Output = s.StringParam("net.sniff.output"); err != nil {
 		return err, ctx
-	} else {
-		if ctx.Output = v.(string); ctx.Output != "" {
-			if ctx.OutputFile, err = os.Create(ctx.Output); err != nil {
-				return err, ctx
-			}
-
-			ctx.OutputWriter = pcapgo.NewWriter(ctx.OutputFile)
-			ctx.OutputWriter.WriteFileHeader(65536, layers.LinkTypeEthernet)
+	} else if ctx.Output != "" {
+		if ctx.OutputFile, err = os.Create(ctx.Output); err != nil {
+			return err, ctx
 		}
+
+		ctx.OutputWriter = pcapgo.NewWriter(ctx.OutputFile)
+		ctx.OutputWriter.WriteFileHeader(65536, layers.LinkTypeEthernet)
 	}
 
 	return nil, ctx

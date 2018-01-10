@@ -13,14 +13,12 @@ import (
 type HttpServer struct {
 	session.SessionModule
 	server *http.Server
-	path   string
 }
 
 func NewHttpServer(s *session.Session) *HttpServer {
 	httpd := &HttpServer{
 		SessionModule: session.NewSessionModule("http.server", s),
 		server:        &http.Server{},
-		path:          ".",
 	}
 
 	httpd.AddParam(session.NewStringParameter("http.server.path",
@@ -29,7 +27,7 @@ func NewHttpServer(s *session.Session) *HttpServer {
 		"Server folder."))
 
 	httpd.AddParam(session.NewStringParameter("http.server.address",
-		"<interface address>",
+		session.ParamIfaceAddress,
 		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
 		"Address to bind the http server to."))
 
@@ -64,39 +62,24 @@ func (httpd *HttpServer) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (httpd *HttpServer) OnSessionStarted(s *session.Session) {
-	// refresh the address after session has been created
-	s.Env.Set("http.server.address", s.Interface.IpAddress)
-}
-
-func (httpd *HttpServer) OnSessionEnded(s *session.Session) {
-	if httpd.Running() {
-		httpd.Stop()
-	}
-}
-
-func (httpd *HttpServer) configure() error {
+func (httpd *HttpServer) Configure() error {
+	var err error
+	var path string
 	var address string
 	var port int
 
-	if err, v := httpd.Param("http.server.path").Get(httpd.Session); err != nil {
+	if err, path = httpd.StringParam("http.server.path"); err != nil {
 		return err
-	} else {
-		httpd.path = v.(string)
 	}
 
-	http.Handle("/", http.FileServer(http.Dir(httpd.path)))
+	http.Handle("/", http.FileServer(http.Dir(path)))
 
-	if err, v := httpd.Param("http.server.address").Get(httpd.Session); err != nil {
+	if err, address = httpd.StringParam("http.server.addr"); err != nil {
 		return err
-	} else {
-		address = v.(string)
 	}
 
-	if err, v := httpd.Param("http.server.port").Get(httpd.Session); err != nil {
+	if err, port = httpd.IntParam("http.server.port"); err != nil {
 		return err
-	} else {
-		port = v.(int)
 	}
 
 	httpd.server.Addr = fmt.Sprintf("%s:%d", address, port)
@@ -105,7 +88,7 @@ func (httpd *HttpServer) configure() error {
 }
 
 func (httpd *HttpServer) Start() error {
-	if err := httpd.configure(); err != nil {
+	if err := httpd.Configure(); err != nil {
 		return err
 	}
 

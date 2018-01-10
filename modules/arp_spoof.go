@@ -15,16 +15,16 @@ import (
 
 type ArpSpoofer struct {
 	session.SessionModule
-	Done chan bool
+	done chan bool
 }
 
 func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 	p := &ArpSpoofer{
 		SessionModule: session.NewSessionModule("arp.spoof", s),
-		Done:          make(chan bool),
+		done:          make(chan bool),
 	}
 
-	p.AddParam(session.NewStringParameter("arp.spoof.targets", "<entire subnet>", "", "IP addresses to spoof."))
+	p.AddParam(session.NewStringParameter("arp.spoof.targets", session.ParamSubnet, "", "IP addresses to spoof."))
 
 	p.AddHandler(session.NewModuleHandler("arp.spoof on", "",
 		"Start ARP spoofer.",
@@ -39,17 +39,6 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 		}))
 
 	return p
-}
-
-func (p *ArpSpoofer) OnSessionStarted(s *session.Session) {
-	// refresh the subnet after session has been created
-	s.Env.Set("arp.spoof.targets", s.Interface.CIDR())
-}
-
-func (p *ArpSpoofer) OnSessionEnded(s *session.Session) {
-	if p.Running() {
-		p.Stop()
-	}
 }
 
 func (p ArpSpoofer) Name() string {
@@ -164,12 +153,11 @@ func (p *ArpSpoofer) unSpoof() error {
 
 func (p *ArpSpoofer) Start() error {
 	if p.Running() == false {
+		var err error
 		var targets string
 
-		if err, v := p.Param("arp.spoof.targets").Get(p.Session); err != nil {
+		if err, targets = p.StringParam("arp.spoof.targets"); err != nil {
 			return err
-		} else {
-			targets = v.(string)
 		}
 
 		list, err := iprange.Parse(targets)
@@ -192,7 +180,7 @@ func (p *ArpSpoofer) Start() error {
 				time.Sleep(1 * time.Second)
 			}
 
-			p.Done <- true
+			p.done <- true
 		}()
 
 		return nil
@@ -207,7 +195,7 @@ func (p *ArpSpoofer) Stop() error {
 
 		log.Info("Waiting for ARP spoofer to stop ...")
 
-		<-p.Done
+		<-p.done
 
 		p.unSpoof()
 

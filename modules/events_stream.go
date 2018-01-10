@@ -60,12 +60,11 @@ func (s EventsStream) Author() string {
 
 func (s *EventsStream) Start() error {
 	if s.Running() == false {
-		filter := ""
+		var err error
+		var filter string
 
-		if err, v := s.Param("events.stream.filter").Get(s.Session); err != nil {
+		if err, filter = s.StringParam("events.stream.filter"); err != nil {
 			return err
-		} else {
-			filter = v.(string)
 		}
 
 		s.SetRunning(true)
@@ -107,10 +106,4 @@ func (s *EventsStream) Stop() error {
 		return nil
 	}
 	return fmt.Errorf("Events stream already stopped.")
-}
-
-func (s *EventsStream) OnSessionEnded(sess *session.Session) {
-	if s.Running() {
-		s.Stop()
-	}
 }

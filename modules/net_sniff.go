@@ -85,12 +85,6 @@ func (s Sniffer) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (sn Sniffer) OnSessionEnded(s *session.Session) {
-	if sn.Running() {
-		sn.Stop()
-	}
-}
-
 func same(a, b net.HardwareAddr) bool {
 	if len(a) != len(b) {
 		return false

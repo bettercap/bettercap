@@ -60,12 +60,6 @@ func (d Discovery) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (d Discovery) OnSessionEnded(s *session.Session) {
-	if d.Running() {
-		d.Stop()
-	}
-}
-
 func (d *Discovery) checkShared(new net.ArpTable) {
 	n_gw_shared := 0
 	for ip, mac := range new {

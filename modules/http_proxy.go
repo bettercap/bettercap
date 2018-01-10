@@ -52,7 +52,7 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		"HTTP port to redirect when the proxy is activated."))
 
 	p.AddParam(session.NewStringParameter("http.proxy.address",
-		"<interface address>",
+		session.ParamIfaceAddress,
 		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
 		"Address to bind the HTTP proxy to."))
 
@@ -126,53 +126,35 @@ func (p *HttpProxy) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (p *HttpProxy) OnSessionStarted(s *session.Session) {
-	// refresh the address after session has been created
-	s.Env.Set("http.proxy.address", s.Interface.IpAddress)
-}
-
-func (p *HttpProxy) OnSessionEnded(s *session.Session) {
-	if p.Running() {
-		p.Stop()
-	}
-}
-
 func (p *HttpProxy) Start() error {
+	var err error
 	var http_port int
 	var proxy_port int
+	var scriptPath string
 
 	if p.Running() == true {
 		return fmt.Errorf("HTTP proxy already started.")
 	}
 
-	if err, v := p.Param("http.proxy.address").Get(p.Session); err != nil {
+	if err, p.address = p.StringParam("http.proxy.address"); err != nil {
 		return err
-	} else {
-		p.address = v.(string)
 	}
 
-	if err, v := p.Param("http.proxy.port").Get(p.Session); err != nil {
+	if err, proxy_port = p.IntParam("http.proxy.port"); err != nil {
 		return err
-	} else {
-		proxy_port = v.(int)
 	}
 
-	if err, v := p.Param("http.port").Get(p.Session); err != nil {
+	if err, http_port = p.IntParam("http.port"); err != nil {
 		return err
-	} else {
-		http_port = v.(int)
 	}
 
-	if err, v := p.Param("http.proxy.script").Get(p.Session); err != nil {
+	if err, scriptPath = p.StringParam("http.proxy.script"); err != nil {
 		return err
-	} else {
-		scriptPath := v.(string)
-		if scriptPath != "" {
-			if err, p.script = LoadProxyScript(scriptPath, p.Session); err != nil {
-				return err
-			} else {
-				log.Debug("Proxy script %s loaded.", scriptPath)
-			}
+	} else if scriptPath != "" {
+		if err, p.script = LoadProxyScript(scriptPath, p.Session); err != nil {
+			return err
+		} else {
+			log.Debug("Proxy script %s loaded.", scriptPath)
 		}
 	}
 

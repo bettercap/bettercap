@@ -25,12 +25,10 @@ func NewRestAPI(s *session.Session) *RestAPI {
 	api := &RestAPI{
 		SessionModule: session.NewSessionModule("api.rest", s),
 		server:        &http.Server{},
-		username:      "",
-		password:      "",
 	}
 
 	api.AddParam(session.NewStringParameter("api.rest.address",
-		"<interface address>",
+		session.ParamIfaceAddress,
 		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
 		"Address to bind the API REST server to."))
 
@@ -95,69 +93,41 @@ func (api *RestAPI) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (api *RestAPI) OnSessionStarted(s *session.Session) {
-	// refresh the address after session has been created
-	s.Env.Set("api.rest.address", s.Interface.IpAddress)
-}
-
-func (api *RestAPI) OnSessionEnded(s *session.Session) {
-	if api.Running() {
-		api.Stop()
-	}
-}
-
-func (api *RestAPI) configure() error {
+func (api *RestAPI) Configure() error {
+	var err error
 	var address string
 	var port int
 
-	if err, v := api.Param("api.rest.address").Get(api.Session); err != nil {
+	if err, address = api.StringParam("api.rest.addr"); err != nil {
+		return err
+	} else if err, port = api.IntParam("api.rest.port"); err != nil {
 		return err
 	} else {
-		address = v.(string)
+		api.server.Addr = fmt.Sprintf("%s:%d", address, port)
 	}
 
-	if err, v := api.Param("api.rest.port").Get(api.Session); err != nil {
+	if err, api.certFile = api.StringParam("api.rest.certificate"); err != nil {
 		return err
-	} else {
-		port = v.(int)
+	} else if api.certFile, err = core.ExpandPath(api.certFile); err != nil {
+		return err
 	}
 
-	api.server.Addr = fmt.Sprintf("%s:%d", address, port)
-
-	if err, v := api.Param("api.rest.certificate").Get(api.Session); err != nil {
+	if err, api.keyFile = api.StringParam("api.rest.key"); err != nil {
 		return err
-	} else {
-		api.certFile = v.(string)
-		if api.certFile, err = core.ExpandPath(api.certFile); err != nil {
-			return err
-		}
+	} else if api.keyFile, err = core.ExpandPath(api.keyFile); err != nil {
+		return err
 	}
 
-	if err, v := api.Param("api.rest.key").Get(api.Session); err != nil {
+	if err, api.username = api.StringParam("api.rest.username"); err != nil {
 		return err
-	} else {
-		api.keyFile = v.(string)
-		if api.keyFile, err = core.ExpandPath(api.keyFile); err != nil {
-			return err
-		}
+	} else if api.username == "" {
+		return fmt.Errorf("api.rest.username is empty.")
 	}
 
-	if err, v := api.Param("api.rest.username").Get(api.Session); err != nil {
+	if err, api.password = api.StringParam("api.rest.password"); err != nil {
 		return err
-	} else {
-		api.username = v.(string)
-		if api.username == "" {
-			return fmt.Errorf("api.rest.username is empty.")
-		}
-	}
-
-	if err, v := api.Param("api.rest.password").Get(api.Session); err != nil {
-		return err
-	} else {
-		api.password = v.(string)
-		if api.password == "" {
-			return fmt.Errorf("api.rest.password is empty.")
-		}
+	} else if api.password == "" {
+		return fmt.Errorf("api.rest.password is empty.")
 	}
 
 	if core.Exists(api.certFile) == false || core.Exists(api.keyFile) == false {
@@ -175,7 +145,7 @@ func (api *RestAPI) configure() error {
 }
 
 func (api *RestAPI) Start() error {
-	if err := api.configure(); err != nil {
+	if err := api.Configure(); err != nil {
 		return err
 	}
 

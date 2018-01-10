@@ -12,9 +12,6 @@ type Module interface {
 	Running() bool
 	Start() error
 	Stop() error
-
-	OnSessionStarted(s *Session)
-	OnSessionEnded(s *Session)
 }
 
 type SessionModule struct {
@@ -53,13 +50,38 @@ func (m *SessionModule) Param(name string) *ModuleParam {
 	return m.params[name]
 }
 
+func (m SessionModule) StringParam(name string) (error, string) {
+	if err, v := m.params[name].Get(m.Session); err != nil {
+		return err, ""
+	} else {
+		return nil, v.(string)
+	}
+}
+
+func (m SessionModule) IntParam(name string) (error, int) {
+	if err, v := m.params[name].Get(m.Session); err != nil {
+		return err, 0
+	} else {
+		return nil, v.(int)
+	}
+}
+
+func (m SessionModule) BoolParam(name string) (error, bool) {
+	if err, v := m.params[name].Get(m.Session); err != nil {
+		return err, false
+	} else {
+		return nil, v.(bool)
+	}
+}
+
 func (m *SessionModule) AddHandler(h ModuleHandler) {
 	m.handlers = append(m.handlers, h)
 }
 
-func (m *SessionModule) AddParam(p *ModuleParam) {
+func (m *SessionModule) AddParam(p *ModuleParam) *ModuleParam {
 	m.params[p.Name] = p
 	p.Register(m.Session)
+	return p
 }
 
 func (m *SessionModule) Running() bool {
@@ -78,8 +100,4 @@ func (m *SessionModule) SetRunning(running bool) {
 	} else {
 		m.Session.Events.Add("mod.stopped", m.Name)
 	}
-}
-
-func (m *SessionModule) OnSessionStarted(s *Session) {
-
 }
