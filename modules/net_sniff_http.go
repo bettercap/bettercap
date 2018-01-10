@@ -31,7 +31,7 @@ func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	}
 	url += fmt.Sprintf("%s", string(m[2]))
 
-	fmt.Printf("[%s] %s %s %s %s\n",
+	SniffPrinter("[%s] %s %s %s %s\n",
 		vTime(pkt.Metadata().Timestamp),
 		core.W(core.BG_RED+core.FG_BLACK, "http"),
 		vIP(ip.SrcIP),

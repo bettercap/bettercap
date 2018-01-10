@@ -10,6 +10,10 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
+type SniffPrinterType func(format string, args ...interface{}) (int, error)
+
+var SniffPrinter = SniffPrinterType(fmt.Printf)
+
 func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	tcp := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
 
@@ -20,7 +24,7 @@ func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	}
 
 	if verbose == true {
-		fmt.Printf("[%s] %s %s:%s > %s:%s %s\n",
+		SniffPrinter("[%s] %s %s:%s > %s:%s %s\n",
 			vTime(pkt.Metadata().Timestamp),
 			core.W(core.BG_LBLUE+core.FG_BLACK, "tcp"),
 			vIP(ip.SrcIP),
@@ -39,7 +43,7 @@ func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	}
 
 	if verbose == true {
-		fmt.Printf("[%s] %s %s:%s > %s:%s %s\n",
+		SniffPrinter("[%s] %s %s:%s > %s:%s %s\n",
 			vTime(pkt.Metadata().Timestamp),
 			core.W(core.BG_DGRAY+core.FG_WHITE, "udp"),
 			vIP(ip.SrcIP),
@@ -52,7 +56,7 @@ func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 
 func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	if verbose == true {
-		fmt.Printf("[%s] [%s] %s > %s (%d bytes)\n",
+		SniffPrinter("[%s] [%s] %s > %s (%d bytes)\n",
 			vTime(pkt.Metadata().Timestamp),
 			pkt.TransportLayer().LayerType(),
 			vIP(ip.SrcIP),

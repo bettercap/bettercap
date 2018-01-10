@@ -1,8 +1,6 @@
 package modules
 
 import (
-	"fmt"
-
 	"github.com/evilsocket/bettercap-ng/core"
 
 	"github.com/google/gopacket"
@@ -23,7 +21,7 @@ func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 		if a.IP == nil {
 			continue
 		}
-		fmt.Printf("[%s] %s %s > %s : %s is %s\n",
+		SniffPrinter("[%s] %s %s > %s : %s is %s\n",
 			vTime(pkt.Metadata().Timestamp),
 			core.W(core.BG_DGRAY+core.FG_WHITE, "dns"),
 			vIP(ip.SrcIP),
