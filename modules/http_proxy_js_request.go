@@ -17,6 +17,7 @@ type JSRequest struct {
 	Method      string
 	Version     string
 	Path        string
+	Query       string
 	Hostname    string
 	ContentType string
 	Headers     []JSHeader
@@ -42,8 +43,9 @@ func NewJSRequest(req *http.Request) JSRequest {
 		Client:      strings.Split(req.RemoteAddr, ":")[0],
 		Method:      req.Method,
 		Version:     fmt.Sprintf("%d.%d", req.ProtoMajor, req.ProtoMinor),
-		Path:        req.URL.Path,
 		Hostname:    req.Host,
+		Path:        req.URL.Path,
+		Query:       req.URL.RawQuery,
 		ContentType: cType,
 		Headers:     headers,
 
