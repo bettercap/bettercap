@@ -109,6 +109,8 @@ func (s *Session) getHandler(args []string, sess *Session) error {
 		prev_ns := ""
 
 		fmt.Println()
+		fmt.Printf(core.Bold("  %"+strconv.Itoa(s.Env.Padding)+"s: %s"), "Parameter", "Value")
+		fmt.Println()
 		for _, k := range s.Env.Sorted() {
 			ns := ""
 			toks := strings.Split(k, ".")
@@ -126,7 +128,9 @@ func (s *Session) getHandler(args []string, sess *Session) error {
 		fmt.Println()
 	} else if found, value := s.Env.Get(key); found == true {
 		fmt.Println()
-		fmt.Printf("  %s: '%s'\n", key, value)
+		fmt.Printf(core.Bold("  %"+strconv.Itoa(s.Env.Padding)+"s: %s\n"), "Parameter", "Value")
+		fmt.Println()
+		fmt.Printf("  %"+strconv.Itoa(s.Env.Padding)+"s: '%s'\n", key, value)
 		fmt.Println()
 	} else {
 		return fmt.Errorf("%s not found", key)
@@ -178,14 +182,14 @@ func (s *Session) registerCoreHandlers() {
 		"Sleep for the given amount of seconds.",
 		s.sleepHandler))
 
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("get NAME",
+	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("get PARAMETER",
 		"^get\\s+(.+)",
-		"Get the value of variable NAME, use * for all.",
+		"Get the value of PARAMETER, use * for all.",
 		s.getHandler))
 
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("set NAME VALUE",
+	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("set PARAMETER VALUE",
 		"^set\\s+([^\\s]+)\\s+(.+)",
-		"Set the VALUE of variable NAME.",
+		"Set the value of PARAMETER.",
 		s.setHandler))
 
 	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("clear",
