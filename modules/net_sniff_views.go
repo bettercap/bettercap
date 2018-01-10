@@ -49,7 +49,7 @@ func vPort(p interface{}) string {
 	return sp
 }
 
-var maxUrlSize = 40
+var maxUrlSize = 80
 
 func vURL(u string) string {
 	ul := len(u)

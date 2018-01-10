@@ -5,6 +5,7 @@ import (
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/evilsocket/bettercap-ng/session"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -12,7 +13,11 @@ import (
 
 type SniffPrinterType func(format string, args ...interface{}) (int, error)
 
-var SniffPrinter = SniffPrinterType(fmt.Printf)
+var SniffPrinter = SniffPrinterType(func(format string, args ...interface{}) (n int, e error) {
+	n, e = fmt.Printf(format, args...)
+	session.I.Input.Refresh()
+	return
+})
 
 func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	tcp := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
