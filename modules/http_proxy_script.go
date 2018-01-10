@@ -58,22 +58,11 @@ func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScr
 		return
 	}
 
-	// define builtins
-	s.VM.Set("readFile", func(call otto.FunctionCall) otto.Value {
-		filename := call.Argument(0).String()
-		raw, err := ioutil.ReadFile(filename)
-		if err != nil {
-			log.Error("Could not read %s: %s", filename, err)
-			return otto.Value{}
-		}
-
-		v, err := s.VM.ToValue(string(raw))
-		if err != nil {
-			log.Error("Could not convert to string: %s", err)
-			return otto.Value{}
-		}
-		return v
-	})
+	err = s.defineBuiltins()
+	if err != nil {
+		log.Error("Error while defining builtin functions: %s", err)
+		return
+	}
 
 	// run onLoad if defined
 	if s.hasCallback("onLoad") {
