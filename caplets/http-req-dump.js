@@ -119,9 +119,6 @@ function dumpRaw(req) {
 }
 
 function onRequest(req, res) {
-    if(req.Method == 'GET')
-        return;
-
     log( BOLD(req.Client), ">", B(req.Method), req.Hostname + req.Path + ( req.Query ? "?" + req.Query : '') );
 
     dumpHeaders(req);
