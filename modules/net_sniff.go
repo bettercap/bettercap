@@ -121,19 +121,9 @@ func (s *Sniffer) onPacketMatched(pkt gopacket.Packet) {
 		return
 	}
 
-	dumped := false
-	for _, parser := range PacketParsers {
-		if parser(pkt) == true {
-			dumped = true
-			break
-		}
+	if mainParser(pkt) == true {
+		s.Stats.NumDumped++
 	}
-
-	if dumped == false {
-		noParser(pkt)
-	}
-
-	s.Stats.NumDumped++
 }
 
 func (s *Sniffer) Start() error {
