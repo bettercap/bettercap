@@ -34,19 +34,19 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 		return err, ctx
 	}
 
-	if err, v := s.Param("net.sniffer.verbose").Get(s.Session); err != nil {
+	if err, v := s.Param("net.sniff.verbose").Get(s.Session); err != nil {
 		return err, ctx
 	} else {
 		ctx.Verbose = v.(bool)
 	}
 
-	if err, v := s.Param("net.sniffer.local").Get(s.Session); err != nil {
+	if err, v := s.Param("net.sniff.local").Get(s.Session); err != nil {
 		return err, ctx
 	} else {
 		ctx.DumpLocal = v.(bool)
 	}
 
-	if err, v := s.Param("net.sniffer.filter").Get(s.Session); err != nil {
+	if err, v := s.Param("net.sniff.filter").Get(s.Session); err != nil {
 		return err, ctx
 	} else {
 		if ctx.Filter = v.(string); ctx.Filter != "" {
@@ -57,7 +57,7 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 		}
 	}
 
-	if err, v := s.Param("net.sniffer.regexp").Get(s.Session); err != nil {
+	if err, v := s.Param("net.sniff.regexp").Get(s.Session); err != nil {
 		return err, ctx
 	} else {
 		if ctx.Expression = v.(string); ctx.Expression != "" {
@@ -67,7 +67,7 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 		}
 	}
 
-	if err, v := s.Param("net.sniffer.output").Get(s.Session); err != nil {
+	if err, v := s.Param("net.sniff.output").Get(s.Session); err != nil {
 		return err, ctx
 	} else {
 		if ctx.Output = v.(string); ctx.Output != "" {

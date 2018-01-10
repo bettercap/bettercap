@@ -52,11 +52,11 @@ Simple password sniffer.
 # keep reading arp table for network mapping
 net.recon on
 # setup a regular expression for packet payloads
-set net.sniffer.regexp .*password=.+
+set net.sniff.regexp .*password=.+
 # set the sniffer output file
-set net.sniffer.output passwords.pcap
+set net.sniff.output passwords.pcap
 # start the sniffer
-net.sniffer on
+net.sniff on
 ```
 
 #### caplets/rest-api.cap

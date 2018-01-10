@@ -19,34 +19,34 @@ type Sniffer struct {
 
 func NewSniffer(s *session.Session) *Sniffer {
 	sniff := &Sniffer{
-		SessionModule: session.NewSessionModule("net.sniffer", s),
+		SessionModule: session.NewSessionModule("net.sniff", s),
 		Stats:         nil,
 	}
 
-	sniff.AddParam(session.NewBoolParameter("net.sniffer.verbose",
+	sniff.AddParam(session.NewBoolParameter("net.sniff.verbose",
 		"true",
 		"If true, will print every captured packet, otherwise only selected ones."))
 
-	sniff.AddParam(session.NewBoolParameter("net.sniffer.local",
+	sniff.AddParam(session.NewBoolParameter("net.sniff.local",
 		"false",
 		"If true it will consider packets from/to this computer, otherwise it will skip them."))
 
-	sniff.AddParam(session.NewStringParameter("net.sniffer.filter",
+	sniff.AddParam(session.NewStringParameter("net.sniff.filter",
 		"not arp",
 		"",
 		"BPF filter for the sniffer."))
 
-	sniff.AddParam(session.NewStringParameter("net.sniffer.regexp",
+	sniff.AddParam(session.NewStringParameter("net.sniff.regexp",
 		"",
 		"",
 		"If filled, only packets matching this regular expression will be considered."))
 
-	sniff.AddParam(session.NewStringParameter("net.sniffer.output",
+	sniff.AddParam(session.NewStringParameter("net.sniff.output",
 		"",
 		"",
 		"If set, the sniffer will write captured packets to this file."))
 
-	sniff.AddHandler(session.NewModuleHandler("net.sniffer stats", "",
+	sniff.AddHandler(session.NewModuleHandler("net.sniff stats", "",
 		"Print sniffer session configuration and statistics.",
 		func(args []string) error {
 			sniff.Ctx.Log(sniff.Session)
@@ -57,13 +57,13 @@ func NewSniffer(s *session.Session) *Sniffer {
 			return sniff.Stats.Print()
 		}))
 
-	sniff.AddHandler(session.NewModuleHandler("net.sniffer on", "",
+	sniff.AddHandler(session.NewModuleHandler("net.sniff on", "",
 		"Start network sniffer in background.",
 		func(args []string) error {
 			return sniff.Start()
 		}))
 
-	sniff.AddHandler(session.NewModuleHandler("net.sniffer off", "",
+	sniff.AddHandler(session.NewModuleHandler("net.sniff off", "",
 		"Stop network sniffer in background.",
 		func(args []string) error {
 			return sniff.Stop()
