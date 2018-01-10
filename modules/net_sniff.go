@@ -49,11 +49,12 @@ func NewSniffer(s *session.Session) *Sniffer {
 	sniff.AddHandler(session.NewModuleHandler("net.sniff stats", "",
 		"Print sniffer session configuration and statistics.",
 		func(args []string) error {
-			sniff.Ctx.Log(sniff.Session)
-
 			if sniff.Stats == nil {
 				return fmt.Errorf("No stats yet.")
 			}
+
+			sniff.Ctx.Log(sniff.Session)
+
 			return sniff.Stats.Print()
 		}))
 
