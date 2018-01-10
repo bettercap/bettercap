@@ -25,7 +25,7 @@ func NewSniffer(s *session.Session) *Sniffer {
 
 	sniff.AddParam(session.NewBoolParameter("net.sniffer.verbose",
 		"true",
-		"Print captured packets to screen."))
+		"If true, will print every captured packet, otherwise only selected ones."))
 
 	sniff.AddParam(session.NewBoolParameter("net.sniffer.local",
 		"false",
@@ -117,11 +117,7 @@ func (s Sniffer) isLocalPacket(packet gopacket.Packet) bool {
 }
 
 func (s *Sniffer) onPacketMatched(pkt gopacket.Packet) {
-	if s.Ctx.Verbose == false {
-		return
-	}
-
-	if mainParser(pkt) == true {
+	if mainParser(pkt, s.Ctx.Verbose) == true {
 		s.Stats.NumDumped++
 	}
 }

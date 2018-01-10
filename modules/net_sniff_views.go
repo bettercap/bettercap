@@ -17,7 +17,7 @@ func vTime(t time.Time) string {
 
 func vIP(ip net.IP) string {
 	if session.I.Interface.IP.Equal(ip) {
-		return core.Dim("-")
+		return core.Dim("local")
 	} else if session.I.Gateway.IP.Equal(ip) {
 		return "gateway"
 	}

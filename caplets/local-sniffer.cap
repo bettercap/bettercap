@@ -3,7 +3,7 @@ events.clear
 set events.stream.filter net.sniff
 events.stream on
 
-set net.sniffer.verbose true
+set net.sniffer.verbose false
 set net.sniffer.local true
 
 net.sniffer on

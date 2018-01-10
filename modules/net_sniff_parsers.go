@@ -10,46 +10,56 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-func tcpParser(ip *layers.IPv4, pkt gopacket.Packet) {
+func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	tcp := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
 
 	if sniParser(ip, pkt, tcp) {
 		return
 	}
 
-	fmt.Printf("[%s] %s %s:%s > %s:%s %s\n",
-		vTime(pkt.Metadata().Timestamp),
-		core.W(core.BG_LBLUE+core.FG_BLACK, "tcp"),
-		vIP(ip.SrcIP),
-		vPort(tcp.SrcPort),
-		vIP(ip.DstIP),
-		vPort(tcp.DstPort),
-		core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))))
+	if verbose == true {
+		fmt.Printf("[%s] %s %s:%s > %s:%s %s\n",
+			vTime(pkt.Metadata().Timestamp),
+			core.W(core.BG_LBLUE+core.FG_BLACK, "tcp"),
+			vIP(ip.SrcIP),
+			vPort(tcp.SrcPort),
+			vIP(ip.DstIP),
+			vPort(tcp.DstPort),
+			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))))
+	}
 }
 
-func udpParser(ip *layers.IPv4, pkt gopacket.Packet) {
+func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	udp := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
 
-	fmt.Printf("[%s] %s %s:%s > %s:%s %s\n",
-		vTime(pkt.Metadata().Timestamp),
-		core.W(core.BG_DGRAY+core.FG_WHITE, "udp"),
-		vIP(ip.SrcIP),
-		vPort(udp.SrcPort),
-		vIP(ip.DstIP),
-		vPort(udp.DstPort),
-		core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))))
+	if dnsParser(ip, pkt, udp) {
+		return
+	}
+
+	if verbose == true {
+		fmt.Printf("[%s] %s %s:%s > %s:%s %s\n",
+			vTime(pkt.Metadata().Timestamp),
+			core.W(core.BG_DGRAY+core.FG_WHITE, "udp"),
+			vIP(ip.SrcIP),
+			vPort(udp.SrcPort),
+			vIP(ip.DstIP),
+			vPort(udp.DstPort),
+			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))))
+	}
 }
 
-func unkParser(ip *layers.IPv4, pkt gopacket.Packet) {
-	fmt.Printf("[%s] [%s] %s > %s (%d bytes)\n",
-		vTime(pkt.Metadata().Timestamp),
-		pkt.TransportLayer().LayerType(),
-		vIP(ip.SrcIP),
-		vIP(ip.DstIP),
-		len(ip.Payload))
+func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
+	if verbose == true {
+		fmt.Printf("[%s] [%s] %s > %s (%d bytes)\n",
+			vTime(pkt.Metadata().Timestamp),
+			pkt.TransportLayer().LayerType(),
+			vIP(ip.SrcIP),
+			vIP(ip.DstIP),
+			len(ip.Payload))
+	}
 }
 
-func mainParser(pkt gopacket.Packet) bool {
+func mainParser(pkt gopacket.Packet, verbose bool) bool {
 	nlayer := pkt.NetworkLayer()
 	if nlayer == nil {
 		log.Warning("Missing network layer skipping packet.")
@@ -70,11 +80,11 @@ func mainParser(pkt gopacket.Packet) bool {
 	}
 
 	if tlayer.LayerType() == layers.LayerTypeTCP {
-		tcpParser(ip, pkt)
+		tcpParser(ip, pkt, verbose)
 	} else if tlayer.LayerType() == layers.LayerTypeUDP {
-		udpParser(ip, pkt)
+		udpParser(ip, pkt, verbose)
 	} else {
-		unkParser(ip, pkt)
+		unkParser(ip, pkt, verbose)
 	}
 
 	return true
