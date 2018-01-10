@@ -15,6 +15,8 @@ func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 
 	if sniParser(ip, pkt, tcp) {
 		return
+	} else if httpParser(ip, pkt, tcp) {
+		return
 	}
 
 	if verbose == true {

@@ -48,3 +48,13 @@ func vPort(p interface{}) string {
 
 	return sp
 }
+
+var maxUrlSize = 40
+
+func vURL(u string) string {
+	ul := len(u)
+	if ul > maxUrlSize {
+		u = fmt.Sprintf("%s...", u[0:maxUrlSize-3])
+	}
+	return u
+}

@@ -5,5 +5,7 @@ events.stream on
 
 set net.sniffer.verbose false
 set net.sniffer.local true
+# http://biot.com/capstats/bpf.html
+# set net.sniffer.filter not arp and not udp port 53
 
 net.sniffer on
