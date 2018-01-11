@@ -9,7 +9,7 @@ import (
 
 const (
 	PromptVariable = "$"
-	DefaultPrompt  = "{by}{fw}{iface.cidr} {fb}> {iface.addr} {reset} {bold}» {reset}"
+	DefaultPrompt  = "{by}{fw}{cidr} {fb}> {env.iface.address} {reset} {bold}» {reset}"
 )
 
 var PromptEffects = map[string]string{
@@ -30,20 +30,8 @@ var PromptEffects = map[string]string{
 }
 
 var PromptCallbacks = map[string]func(s *Session) string{
-	"{iface.cidr}": func(s *Session) string {
+	"{cidr}": func(s *Session) string {
 		return s.Interface.CIDR()
-	},
-	"{iface.addr}": func(s *Session) string {
-		return s.Interface.IpAddress
-	},
-	"{iface.mac}": func(s *Session) string {
-		return s.Interface.HwAddress
-	},
-	"{gw.addr}": func(s *Session) string {
-		return s.Gateway.IpAddress
-	},
-	"{gw.mac}": func(s *Session) string {
-		return s.Gateway.HwAddress
 	},
 }
 
