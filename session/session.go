@@ -170,7 +170,7 @@ func (s *Session) Start() error {
 	}
 
 	if s.Gateway, err = net.FindGateway(s.Interface); err != nil {
-		s.Events.Log(WARNING, "%s", err.Error())
+		s.Events.Log(core.WARNING, "%s", err.Error())
 	}
 
 	if s.Gateway == nil || s.Gateway.IpAddress == s.Interface.IpAddress {
@@ -212,7 +212,7 @@ func (s *Session) Start() error {
 	go func() {
 		<-c
 		fmt.Println()
-		s.Events.Log(WARNING, "Got SIGTERM")
+		s.Events.Log(core.WARNING, "Got SIGTERM")
 		s.Close()
 		os.Exit(0)
 	}()
@@ -224,12 +224,12 @@ func (s *Session) Start() error {
 }
 
 func (s *Session) ReadLine() (string, error) {
-	prompt := FG_WHITE + BG_YELLOW + " " + s.Interface.CIDR() +
-		FG_BLACK +
+	prompt := core.FG_WHITE + core.BG_YELLOW + " " + s.Interface.CIDR() +
+		core.FG_BLACK +
 		" > " +
 		s.Interface.IpAddress +
 		" " + core.RESET +
-		BOLD + " » " + RESET
+		core.BOLD + " » " + core.RESET
 
 	s.Input.SetPrompt(prompt)
 	s.Input.Refresh()
@@ -237,7 +237,7 @@ func (s *Session) ReadLine() (string, error) {
 }
 
 func (s *Session) RunCaplet(filename string) error {
-	s.Events.Log(INFO, "Reading from caplet %s ...", filename)
+	s.Events.Log(core.INFO, "Reading from caplet %s ...", filename)
 
 	input, err := os.Open(filename)
 	if err != nil {

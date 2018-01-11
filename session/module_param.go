@@ -2,10 +2,11 @@ package session
 
 import (
 	"fmt"
-	"github.com/evilsocket/bettercap-ng/core"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/evilsocket/bettercap-ng/core"
 )
 
 type ParamType int

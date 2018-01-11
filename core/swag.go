@@ -25,6 +25,34 @@ const (
 const ON = GREEN + "✔" + RESET
 const OFF = RED + "✘" + RESET
 
+const (
+	DEBUG = iota
+	INFO
+	IMPORTANT
+	WARNING
+	ERROR
+	FATAL
+)
+
+var (
+	LogLabels = map[int]string{
+		DEBUG:     "dbg",
+		INFO:      "inf",
+		IMPORTANT: "imp",
+		WARNING:   "war",
+		ERROR:     "err",
+		FATAL:     "!!!",
+	}
+	LogColors = map[int]string{
+		DEBUG:     DIM + FG_BLACK + BG_DGRAY,
+		INFO:      FG_WHITE + BG_GREEN,
+		IMPORTANT: FG_WHITE + BG_LBLUE,
+		WARNING:   FG_WHITE + BG_YELLOW,
+		ERROR:     FG_WHITE + BG_RED,
+		FATAL:     FG_WHITE + BG_RED + BOLD,
+	}
+)
+
 // W for Wrap
 func W(e, s string) string {
 	return e + s + RESET
