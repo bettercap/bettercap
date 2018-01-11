@@ -32,6 +32,7 @@ type Session struct {
 	Queue     *packets.Queue           `json:"-"`
 	Input     *readline.Instance       `json:"-"`
 	Active    bool                     `json:"active"`
+	Prompt    Prompt                   `json:"-"`
 
 	CoreHandlers []CommandHandler `json:"-"`
 	Modules      []Module         `json:"-"`
@@ -44,6 +45,7 @@ func New() (*Session, error) {
 	var err error
 
 	s := &Session{
+		Prompt: NewPrompt(),
 		Env:    nil,
 		Active: false,
 		Queue:  nil,
@@ -161,6 +163,8 @@ func (s *Session) Start() error {
 		return err
 	}
 
+	s.Env.Set(PromptVariable, DefaultPrompt)
+
 	s.Env.Set("iface.name", s.Interface.Name())
 	s.Env.Set("iface.address", s.Interface.IpAddress)
 	s.Env.Set("iface.mac", s.Interface.HwAddress)
@@ -224,14 +228,7 @@ func (s *Session) Start() error {
 }
 
 func (s *Session) ReadLine() (string, error) {
-	prompt := core.FG_WHITE + core.BG_YELLOW + " " + s.Interface.CIDR() +
-		core.FG_BLACK +
-		" > " +
-		s.Interface.IpAddress +
-		" " + core.RESET +
-		core.BOLD + " » " + core.RESET
-
-	s.Input.SetPrompt(prompt)
+	s.Input.SetPrompt(s.Prompt.Render(s))
 	s.Input.Refresh()
 	return s.Input.Readline()
 }
