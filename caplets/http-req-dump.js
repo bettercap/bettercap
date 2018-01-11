@@ -1,5 +1,4 @@
 var RESET = "\033[0m";
-var log = console.log;
 
 function R(s) {
     return "\033[31m" + s + RESET;
@@ -119,7 +118,7 @@ function dumpRaw(req) {
 }
 
 function onRequest(req, res) {
-    log( BOLD(req.Client), ">", B(req.Method), req.Hostname + req.Path + ( req.Query ? "?" + req.Query : '') );
+    log( BOLD(req.Client), " > ", B(req.Method), req.Hostname + req.Path + ( req.Query ? "?" + req.Query : '') );
 
     dumpHeaders(req);
 
