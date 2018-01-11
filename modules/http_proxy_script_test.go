@@ -8,7 +8,7 @@ import (
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
-func getScript(src string) *HttpProxyScript {
+func getScript(src string) *ProxyScript {
 	sess := session.Session{}
 	sess.Env = session.NewEnvironment(&sess)
 
