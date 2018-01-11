@@ -117,69 +117,74 @@ func (s *Sniffer) onPacketMatched(pkt gopacket.Packet) {
 	}
 }
 
-func (s *Sniffer) Start() error {
-	if s.Running() == false {
-		var err error
+func (s *Sniffer) Configure() error {
+	var err error
 
-		if err, s.Ctx = s.GetContext(); err != nil {
-			if s.Ctx != nil {
-				s.Ctx.Close()
-				s.Ctx = nil
-			}
-			return err
+	if err, s.Ctx = s.GetContext(); err != nil {
+		if s.Ctx != nil {
+			s.Ctx.Close()
+			s.Ctx = nil
 		}
+		return err
+	}
 
+	return nil
+}
+
+func (s *Sniffer) Start() error {
+	if s.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := s.Configure(); err != nil {
+		return err
+	}
+
+	s.SetRunning(true)
+
+	go func() {
 		s.Stats = NewSnifferStats()
-		s.SetRunning(true)
+		defer s.Ctx.Close()
 
-		go func() {
-			defer s.Ctx.Close()
+		src := gopacket.NewPacketSource(s.Ctx.Handle, s.Ctx.Handle.LinkType())
+		for packet := range src.Packets() {
+			if s.Running() == false {
+				break
+			}
 
-			src := gopacket.NewPacketSource(s.Ctx.Handle, s.Ctx.Handle.LinkType())
-			for packet := range src.Packets() {
-				if s.Running() == false {
-					break
-				}
+			now := time.Now()
+			if s.Stats.FirstPacket.IsZero() {
+				s.Stats.FirstPacket = now
+			}
+			s.Stats.LastPacket = now
 
-				now := time.Now()
-				if s.Stats.FirstPacket.IsZero() {
-					s.Stats.FirstPacket = now
-				}
-				s.Stats.LastPacket = now
+			is_local := false
+			if s.isLocalPacket(packet) {
+				is_local = true
+				s.Stats.NumLocal++
+			}
 
-				is_local := false
-				if s.isLocalPacket(packet) {
-					is_local = true
-					s.Stats.NumLocal++
-				}
+			if s.Ctx.DumpLocal == true || is_local == false {
+				data := packet.Data()
+				if s.Ctx.Compiled == nil || s.Ctx.Compiled.Match(data) == true {
+					s.Stats.NumMatched++
 
-				if s.Ctx.DumpLocal == true || is_local == false {
-					data := packet.Data()
-					if s.Ctx.Compiled == nil || s.Ctx.Compiled.Match(data) == true {
-						s.Stats.NumMatched++
+					s.onPacketMatched(packet)
 
-						s.onPacketMatched(packet)
-
-						if s.Ctx.OutputWriter != nil {
-							s.Ctx.OutputWriter.WritePacket(packet.Metadata().CaptureInfo, data)
-							s.Stats.NumWrote++
-						}
+					if s.Ctx.OutputWriter != nil {
+						s.Ctx.OutputWriter.WritePacket(packet.Metadata().CaptureInfo, data)
+						s.Stats.NumWrote++
 					}
 				}
 			}
-		}()
+		}
+	}()
 
-		return nil
-	} else {
-		return fmt.Errorf("Network sniffer already started.")
-	}
+	return nil
 }
 
 func (s *Sniffer) Stop() error {
-	if s.Running() == true {
-		s.SetRunning(false)
-		return nil
-	} else {
-		return fmt.Errorf("Network sniffer already stopped.")
+	if s.Running() == false {
+		return session.ErrAlreadyStopped
 	}
+	s.SetRunning(false)
+	return nil
 }

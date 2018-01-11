@@ -88,33 +88,30 @@ func (httpd *HttpServer) Configure() error {
 }
 
 func (httpd *HttpServer) Start() error {
-	if err := httpd.Configure(); err != nil {
+	if httpd.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := httpd.Configure(); err != nil {
 		return err
 	}
 
-	if httpd.Running() == false {
-		httpd.SetRunning(true)
-		go func() {
-			log.Info("httpd server starting on http://%s", httpd.server.Addr)
-			err := httpd.server.ListenAndServe()
-			if err != nil && err != http.ErrServerClosed {
-				panic(err)
-			}
-		}()
+	httpd.SetRunning(true)
+	go func() {
+		log.Info("httpd server starting on http://%s", httpd.server.Addr)
+		err := httpd.server.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			panic(err)
+		}
+	}()
 
-		return nil
-	}
-
-	return fmt.Errorf("httpd server already started.")
+	return nil
 }
 
 func (httpd *HttpServer) Stop() error {
-	if httpd.Running() == true {
-		httpd.SetRunning(false)
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cancel()
-		return httpd.server.Shutdown(ctx)
-	} else {
-		return fmt.Errorf("httpd server already stopped.")
+	if httpd.Running() == false {
+		return session.ErrAlreadyStopped
 	}
+	httpd.SetRunning(false)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	return httpd.server.Shutdown(ctx)
 }

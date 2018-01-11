@@ -13,6 +13,7 @@ import (
 
 type Prober struct {
 	session.SessionModule
+	throttle int
 }
 
 func NewProber(s *session.Session) *Prober {
@@ -78,58 +79,60 @@ func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 	}
 }
 
-func (p *Prober) Start() error {
-	if p.Running() == false {
-		var err error
-		var throttle int
+func (p *Prober) Configure() error {
+	var err error
+	if err, p.throttle = p.IntParam("net.probe.throttle"); err != nil {
+		return err
+	} else {
+		log.Debug("Throttling packets of %d ms.", p.throttle)
+	}
+	return nil
+}
 
-		if err, throttle = p.IntParam("net.probe.throttle"); err != nil {
-			return err
-		} else {
-			log.Debug("Throttling packets of %d ms.", throttle)
+func (p *Prober) Start() error {
+	if p.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := p.Configure(); err != nil {
+		return err
+	}
+
+	p.SetRunning(true)
+
+	go func() {
+		list, err := iprange.Parse(p.Session.Interface.CIDR())
+		if err != nil {
+			log.Fatal("%s", err)
 		}
 
-		p.SetRunning(true)
+		from := p.Session.Interface.IP
+		from_hw := p.Session.Interface.HW
+		addresses := list.Expand()
 
-		go func() {
-			list, err := iprange.Parse(p.Session.Interface.CIDR())
-			if err != nil {
-				log.Fatal("%s", err)
-			}
-
-			from := p.Session.Interface.IP
-			from_hw := p.Session.Interface.HW
-			addresses := list.Expand()
-
-			for p.Running() {
-				for _, ip := range addresses {
-					if p.shouldProbe(ip) == false {
-						log.Debug("Skipping address %s from UDP probing.", ip)
-						continue
-					}
-
-					p.sendProbe(from, from_hw, ip)
-
-					if throttle > 0 {
-						time.Sleep(time.Duration(throttle) * time.Millisecond)
-					}
+		for p.Running() {
+			for _, ip := range addresses {
+				if p.shouldProbe(ip) == false {
+					log.Debug("Skipping address %s from UDP probing.", ip)
+					continue
 				}
 
-				time.Sleep(5 * time.Second)
-			}
-		}()
+				p.sendProbe(from, from_hw, ip)
 
-		return nil
-	} else {
-		return fmt.Errorf("Network prober already started.")
-	}
+				if p.throttle > 0 {
+					time.Sleep(time.Duration(p.throttle) * time.Millisecond)
+				}
+			}
+
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	return nil
 }
 
 func (p *Prober) Stop() error {
-	if p.Running() == true {
-		p.SetRunning(false)
-		return nil
-	} else {
-		return fmt.Errorf("Network prober already stopped.")
+	if p.Running() == false {
+		return session.ErrAlreadyStopped
 	}
+	p.SetRunning(false)
+	return nil
 }

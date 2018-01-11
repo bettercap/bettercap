@@ -118,7 +118,7 @@ function dumpRaw(req) {
 }
 
 function onRequest(req, res) {
-    log( BOLD(req.Client), " > ", B(req.Method), req.Hostname + req.Path + ( req.Query ? "?" + req.Query : '') );
+    log( BOLD(req.Client), " > ", B(req.Method), " " + req.Hostname + req.Path + ( req.Query ? "?" + req.Query : '') );
 
     dumpHeaders(req);
 

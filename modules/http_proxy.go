@@ -116,6 +116,28 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 	return p
 }
 
+func (p *HttpProxy) doProxy(req *http.Request) bool {
+	blacklist := []string{
+		"localhost",
+		"127.0.0.1",
+		p.address,
+	}
+
+	if req.Host == "" {
+		log.Error("Got request with empty host: %v", req)
+		return false
+	}
+
+	for _, blacklisted := range blacklist {
+		if strings.HasPrefix(req.Host, blacklisted) {
+			log.Error("Got request with blacklisted host: %s", req.Host)
+			return false
+		}
+	}
+
+	return true
+}
+
 func (p *HttpProxy) Name() string {
 	return "http.proxy"
 }
@@ -128,15 +150,11 @@ func (p *HttpProxy) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (p *HttpProxy) Start() error {
+func (p *HttpProxy) Configure() error {
 	var err error
 	var http_port int
 	var proxy_port int
 	var scriptPath string
-
-	if p.Running() == true {
-		return fmt.Errorf("HTTP proxy already started.")
-	}
 
 	if err, p.address = p.StringParam("http.proxy.address"); err != nil {
 		return err
@@ -160,6 +178,8 @@ func (p *HttpProxy) Start() error {
 		}
 	}
 
+	p.server = http.Server{Addr: fmt.Sprintf("%s:%d", p.address, proxy_port), Handler: p.proxy}
+
 	if p.Session.Firewall.IsForwardingEnabled() == false {
 		log.Info("Enabling forwarding.")
 		p.Session.Firewall.EnableForwarding(true)
@@ -177,10 +197,18 @@ func (p *HttpProxy) Start() error {
 
 	log.Debug("Applied redirection %s", p.redirection.String())
 
-	address := fmt.Sprintf("%s:%d", p.address, proxy_port)
-	p.server = http.Server{Addr: address, Handler: p.proxy}
+	return nil
+}
+
+func (p *HttpProxy) Start() error {
+	if p.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := p.Configure(); err != nil {
+		return err
+	}
+
+	p.SetRunning(true)
 	go func() {
-		p.SetRunning(true)
 		if err := p.server.ListenAndServe(); err != nil {
 			p.SetRunning(false)
 			log.Warning("%s", err)
@@ -191,42 +219,20 @@ func (p *HttpProxy) Start() error {
 }
 
 func (p *HttpProxy) Stop() error {
-	if p.Running() == true {
-		p.SetRunning(false)
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cancel()
-		p.server.Shutdown(ctx)
-		if p.redirection != nil {
-			log.Debug("Disabling redirection %s", p.redirection.String())
-			if err := p.Session.Firewall.EnableRedirection(p.redirection, false); err != nil {
-				return err
-			}
-			p.redirection = nil
+	if p.Running() == false {
+		return session.ErrAlreadyStopped
+	}
+	p.SetRunning(false)
+
+	if p.redirection != nil {
+		log.Debug("Disabling redirection %s", p.redirection.String())
+		if err := p.Session.Firewall.EnableRedirection(p.redirection, false); err != nil {
+			return err
 		}
-		return nil
-	} else {
-		return fmt.Errorf("HTTP proxy stopped.")
-	}
-}
-
-func (p *HttpProxy) doProxy(req *http.Request) bool {
-	blacklist := []string{
-		"localhost",
-		"127.0.0.1",
-		p.address,
+		p.redirection = nil
 	}
 
-	if req.Host == "" {
-		log.Error("Got request with empty host: %v", req)
-		return false
-	}
-
-	for _, blacklisted := range blacklist {
-		if strings.HasPrefix(req.Host, blacklisted) {
-			log.Error("Got request with blacklisted host: %s", req.Host)
-			return false
-		}
-	}
-
-	return true
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return p.server.Shutdown(ctx)
 }

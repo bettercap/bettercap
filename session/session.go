@@ -2,6 +2,7 @@ package session
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -20,6 +21,9 @@ import (
 
 var (
 	I = (*Session)(nil)
+
+	ErrAlreadyStarted = errors.New("Module is already running.")
+	ErrAlreadyStopped = errors.New("Module is not running.")
 )
 
 type Session struct {

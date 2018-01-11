@@ -10,12 +10,14 @@ import (
 
 type EventsStream struct {
 	session.SessionModule
-	quit chan bool
+	filter string
+	quit   chan bool
 }
 
 func NewEventsStream(s *session.Session) *EventsStream {
 	stream := &EventsStream{
 		SessionModule: session.NewSessionModule("events.stream", s),
+		filter:        "",
 		quit:          make(chan bool),
 	}
 
@@ -58,52 +60,55 @@ func (s EventsStream) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
+func (s *EventsStream) Configure() error {
+	var err error
+	if err, s.filter = s.StringParam("events.stream.filter"); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *EventsStream) Start() error {
-	if s.Running() == false {
-		var err error
-		var filter string
-
-		if err, filter = s.StringParam("events.stream.filter"); err != nil {
-			return err
-		}
-
-		s.SetRunning(true)
-
-		go func() {
-			for {
-				var e session.Event
-				select {
-				case e = <-s.Session.Events.NewEvents:
-					if filter == "" || strings.Contains(e.Tag, filter) {
-						tm := e.Time.Format("2006-01-02 15:04:05")
-
-						if e.Tag == "sys.log" {
-							fmt.Printf("[%s] [%s] (%s) %s\n", tm, core.Green(e.Tag), e.Label(), e.Data.(session.LogMessage).Message)
-						} else {
-							fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
-						}
-
-						s.Session.Input.Refresh()
-					}
-					break
-
-				case <-s.quit:
-					return
-				}
-			}
-		}()
-
-		return nil
+	if s.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := s.Configure(); err != nil {
+		return err
 	}
 
-	return fmt.Errorf("Events stream already started.")
+	s.SetRunning(true)
+
+	go func() {
+		for {
+			var e session.Event
+			select {
+			case e = <-s.Session.Events.NewEvents:
+				if s.filter == "" || strings.Contains(e.Tag, s.filter) {
+					tm := e.Time.Format("2006-01-02 15:04:05")
+
+					if e.Tag == "sys.log" {
+						fmt.Printf("[%s] [%s] (%s) %s\n", tm, core.Green(e.Tag), e.Label(), e.Data.(session.LogMessage).Message)
+					} else {
+						fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
+					}
+
+					s.Session.Input.Refresh()
+				}
+				break
+
+			case <-s.quit:
+				return
+			}
+		}
+	}()
+
+	return nil
 }
 
 func (s *EventsStream) Stop() error {
-	if s.Running() == true {
-		s.SetRunning(false)
-		s.quit <- true
-		return nil
+	if s.Running() == false {
+		return session.ErrAlreadyStopped
 	}
-	return fmt.Errorf("Events stream already stopped.")
+	s.SetRunning(false)
+	s.quit <- true
+	return nil
 }

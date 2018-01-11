@@ -145,33 +145,30 @@ func (api *RestAPI) Configure() error {
 }
 
 func (api *RestAPI) Start() error {
-	if err := api.Configure(); err != nil {
+	if api.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := api.Configure(); err != nil {
 		return err
 	}
 
-	if api.Running() == false {
-		api.SetRunning(true)
-		go func() {
-			log.Info("API server starting on https://%s", api.server.Addr)
-			err := api.server.ListenAndServeTLS(api.certFile, api.keyFile)
-			if err != nil && err != http.ErrServerClosed {
-				panic(err)
-			}
-		}()
+	api.SetRunning(true)
+	go func() {
+		log.Info("API server starting on https://%s", api.server.Addr)
+		err := api.server.ListenAndServeTLS(api.certFile, api.keyFile)
+		if err != nil && err != http.ErrServerClosed {
+			panic(err)
+		}
+	}()
 
-		return nil
-	}
-
-	return fmt.Errorf("REST API server already started.")
+	return nil
 }
 
 func (api *RestAPI) Stop() error {
-	if api.Running() == true {
-		api.SetRunning(false)
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cancel()
-		return api.server.Shutdown(ctx)
-	} else {
-		return fmt.Errorf("REST API server already stopped.")
+	if api.Running() == false {
+		return session.ErrAlreadyStopped
 	}
+	api.SetRunning(false)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	return api.server.Shutdown(ctx)
 }

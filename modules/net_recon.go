@@ -1,11 +1,11 @@
 package modules
 
 import (
-	"fmt"
+	"time"
+
 	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/net"
 	"github.com/evilsocket/bettercap-ng/session"
-	"time"
 )
 
 type Discovery struct {
@@ -108,35 +108,41 @@ func (d *Discovery) runDiff() {
 	}
 }
 
+func (d *Discovery) Configure() error {
+	return nil
+}
+
 func (d *Discovery) Start() error {
-	if d.Running() == false {
-		d.SetRunning(true)
-
-		go func() {
-			for {
-				select {
-				case <-time.After(time.Duration(d.refresh) * time.Second):
-					var err error
-
-					if d.current, err = net.ArpUpdate(d.Session.Interface.Name()); err != nil {
-						log.Error("%s", err)
-						continue
-					}
-
-					d.runDiff()
-
-					d.before = d.current
-
-				case <-d.quit:
-					return
-				}
-			}
-		}()
-
-		return nil
-	} else {
-		return fmt.Errorf("Network discovery already started.")
+	if d.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := d.Configure(); err != nil {
+		return err
 	}
+
+	d.SetRunning(true)
+
+	go func() {
+		for {
+			select {
+			case <-time.After(time.Duration(d.refresh) * time.Second):
+				var err error
+
+				if d.current, err = net.ArpUpdate(d.Session.Interface.Name()); err != nil {
+					log.Error("%s", err)
+					continue
+				}
+
+				d.runDiff()
+
+				d.before = d.current
+
+			case <-d.quit:
+				return
+			}
+		}
+	}()
+
+	return nil
 }
 
 func (d *Discovery) Show() error {
@@ -145,11 +151,10 @@ func (d *Discovery) Show() error {
 }
 
 func (d *Discovery) Stop() error {
-	if d.Running() == true {
-		d.SetRunning(false)
-		d.quit <- true
-		return nil
-	} else {
-		return fmt.Errorf("Network discovery already stopped.")
+	if d.Running() == false {
+		return session.ErrAlreadyStopped
 	}
+	d.quit <- true
+	d.SetRunning(false)
+	return nil
 }
