@@ -24,17 +24,10 @@ type ProxyScript struct {
 	cbCache          map[string]bool
 }
 
-func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScript) {
-	log.Info("Loading proxy script %s ...", path)
-
-	raw, err := ioutil.ReadFile(path)
-	if err != nil {
-		return
-	}
-
+func LoadProxyScriptSource(path, source string, sess *session.Session) (err error, s *ProxyScript) {
 	s = &ProxyScript{
 		Path:   path,
-		Source: string(raw),
+		Source: source,
 		VM:     otto.New(),
 
 		sess:             sess,
@@ -94,6 +87,17 @@ func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScr
 	return
 }
 
+func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScript) {
+	log.Info("Loading proxy script %s ...", path)
+
+	raw, err := ioutil.ReadFile(path)
+	if err != nil {
+		return
+	}
+
+	return LoadProxyScriptSource(path, string(raw), sess)
+}
+
 func (s *ProxyScript) hasCallback(name string) bool {
 	s.cbCacheLock.Lock()
 	defer s.cbCacheLock.Unlock()
@@ -117,7 +121,7 @@ func (s *ProxyScript) hasCallback(name string) bool {
 func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSResponse) {
 	// convert request and define empty response to be optionally filled
 	jsreq := NewJSRequest(req)
-	if err = s.VM.Set("req", &jsreq); err != nil {
+	if err = s.VM.Set("req", req); err != nil {
 		log.Error("Error while defining request: %s", err)
 		return
 	}
@@ -127,7 +131,6 @@ func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSR
 		log.Error("Error while defining response: %s", err)
 		return
 	}
-
 	return
 }
 
