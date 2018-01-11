@@ -1,9 +1,11 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/elazarl/goproxy"
 
@@ -191,7 +193,9 @@ func (p *HttpProxy) Start() error {
 func (p *HttpProxy) Stop() error {
 	if p.Running() == true {
 		p.SetRunning(false)
-		p.server.Shutdown(nil)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+		p.server.Shutdown(ctx)
 		if p.redirection != nil {
 			log.Debug("Disabling redirection %s", p.redirection.String())
 			if err := p.Session.Firewall.EnableRedirection(p.redirection, false); err != nil {
