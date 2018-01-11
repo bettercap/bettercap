@@ -121,7 +121,7 @@ func (s *ProxyScript) hasCallback(name string) bool {
 func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSResponse) {
 	// convert request and define empty response to be optionally filled
 	jsreq := NewJSRequest(req)
-	if err = s.VM.Set("req", req); err != nil {
+	if err = s.VM.Set("req", &jsreq); err != nil {
 		log.Error("Error while defining request: %s", err)
 		return
 	}
