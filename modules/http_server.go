@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -65,7 +66,7 @@ func (httpd *HttpServer) Author() string {
 
 func wrapHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Info("(%s) %s %s %s", core.Green("httpd"), core.Bold(r.RemoteAddr), r.Method, r.URL.Path)
+		log.Info("(%s) %s %s %s%s", core.Green("httpd"), core.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
 		h.ServeHTTP(w, r)
 	})
 }
