@@ -74,7 +74,7 @@ func (httpd *HttpServer) Configure() error {
 
 	http.Handle("/", http.FileServer(http.Dir(path)))
 
-	if err, address = httpd.StringParam("http.server.addr"); err != nil {
+	if err, address = httpd.StringParam("http.server.address"); err != nil {
 		return err
 	}
 
