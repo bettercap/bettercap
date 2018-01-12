@@ -33,7 +33,7 @@ func sniParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 
 	NewSnifferEvent(
 		pkt.Metadata().Timestamp,
-		"sni",
+		"https",
 		ip.SrcIP.String(),
 		domain,
 		SniffData{
