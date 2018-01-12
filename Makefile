@@ -41,6 +41,7 @@ deps:
 	@go get -u github.com/jteeuwen/go-bindata/...
 	@go get github.com/elazarl/goproxy
 	@go get github.com/google/gopacket 
+	@go get github.com/mdlayher/dhcp6
 	@go get github.com/malfunkt/iprange
 	@go get github.com/rogpeppe/go-charset/charset
 	@go get github.com/chzyer/readline

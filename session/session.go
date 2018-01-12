@@ -170,7 +170,8 @@ func (s *Session) Start() error {
 	s.Env.Set(PromptVariable, DefaultPrompt)
 
 	s.Env.Set("iface.name", s.Interface.Name())
-	s.Env.Set("iface.address", s.Interface.IpAddress)
+	s.Env.Set("iface.ipv4", s.Interface.IpAddress)
+	s.Env.Set("iface.ipv6", s.Interface.Ip6Address)
 	s.Env.Set("iface.mac", s.Interface.HwAddress)
 
 	if s.Queue, err = packets.NewQueue(s.Interface.Name()); err != nil {

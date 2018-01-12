@@ -9,7 +9,7 @@ import (
 
 const (
 	PromptVariable = "$"
-	DefaultPrompt  = "{by}{fw}{cidr} {fb}> {env.iface.address} {reset} {bold}» {reset}"
+	DefaultPrompt  = "{by}{fw}{cidr} {fb}> {env.iface.ipv4} {reset} {bold}» {reset}"
 )
 
 var PromptEffects = map[string]string{

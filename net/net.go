@@ -43,6 +43,12 @@ func FindInterface(name string) (*Endpoint, error) {
 								e = NewEndpointNoResolve(ip_part, mac, iface.Name, uint32(bits))
 							}
 						}
+					} else if e != nil {
+						parts := strings.SplitN(ip, "/", 2)
+						e.IPv6 = net.ParseIP(parts[0])
+						if e.IPv6 != nil {
+							e.Ip6Address = e.IPv6.String()
+						}
 					}
 				}
 

@@ -11,8 +11,10 @@ import (
 type OnHostResolvedCallback func(e *Endpoint)
 type Endpoint struct {
 	IP               net.IP                 `json:"-"`
+	IPv6             net.IP                 `json:"."`
 	HW               net.HardwareAddr       `json:"-"`
-	IpAddress        string                 `json:"address"`
+	IpAddress        string                 `json:"ipv4"`
+	Ip6Address       string                 `json:"ipv6"`
 	SubnetBits       uint32                 `json:"-"`
 	IpAddressUint32  uint32                 `json:"-"`
 	HwAddress        string                 `json:"mac"`
