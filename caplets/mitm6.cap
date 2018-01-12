@@ -1,8 +1,11 @@
 # custom prompt for ipv6 ... this is cool, i know :)
 set $ {by}{fw}{cidr} {fb}> {env.iface.ipv6} {reset} {bold}» {reset}
 
-net.recon on
-dhcp6.spoof on
+set dhcp6.spoof.domain microsoft.com
+set http.server.path caplets/www
 
+net.recon on
+http.server on
+dhcp6.spoof on
 events.clear
 clear
