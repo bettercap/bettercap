@@ -235,11 +235,11 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 
 	udp.SetNetworkLayerForChecksum(&ip6)
 
-	final := packets.DHCPv6Layer{
+	dhcp := packets.DHCPv6Layer{
 		Raw: rawAdv,
 	}
 
-	err, raw := packets.Serialize(&eth, &ip6, &udp, &final)
+	err, raw := packets.Serialize(&eth, &ip6, &udp, &dhcp)
 	if err != nil {
 		log.Error("Error serializing packet: %s.", err)
 		return
@@ -326,11 +326,11 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 
 	udp.SetNetworkLayerForChecksum(&ip6)
 
-	final := packets.DHCPv6Layer{
+	dhcp := packets.DHCPv6Layer{
 		Raw: rawAdv,
 	}
 
-	err, raw := packets.Serialize(&eth, &ip6, &udp, &final)
+	err, raw := packets.Serialize(&eth, &ip6, &udp, &dhcp)
 	if err != nil {
 		log.Error("Error serializing packet: %s.", err)
 		return
