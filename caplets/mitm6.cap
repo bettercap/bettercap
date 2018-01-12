@@ -1,8 +1,10 @@
 # custom prompt for ipv6 ... this is cool, i know :)
 set $ {by}{fw}{cidr} {fb}> {env.iface.ipv6} {reset} {bold}» {reset}
 
-# let's spoof microsoft.com domains
-set dns.spoof.domains microsoft.com
+# let's spoof Microsoft and Google ^_^
+set dns.spoof.domains microsoft.com, google.com
+set dhcp6.spoof.domains microsoft.com, google.com
+
 # every request to *.microsoft.com will come to us, let's give em some contents
 set http.server.path caplets/www
 

