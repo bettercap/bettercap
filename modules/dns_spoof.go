@@ -102,6 +102,8 @@ func (s *DNSSpoofer) Configure() error {
 }
 
 func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, req *layers.DNS, target net.HardwareAddr) {
+	var err error
+
 	redir := fmt.Sprintf("(->%s)", s.Address)
 	if t, found := s.Session.Targets.Targets[target.String()]; found == true {
 		log.Info("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(t.String()))
@@ -109,28 +111,34 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 		log.Info("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(target.String()))
 	}
 
-	pip := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
+	var src, dst net.IP
+
+	nlayer := pkt.NetworkLayer()
+	if nlayer == nil {
+		log.Error("Missing network layer skipping packet.")
+		return
+	}
+
+	var ipv6 bool
+
+	if nlayer.LayerType() == layers.LayerTypeIPv4 {
+		pip := pkt.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
+		src = pip.DstIP
+		dst = pip.SrcIP
+		ipv6 = false
+
+	} else {
+		pip := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
+		src = pip.DstIP
+		dst = pip.SrcIP
+		ipv6 = true
+	}
 
 	eth := layers.Ethernet{
 		SrcMAC:       peth.DstMAC,
 		DstMAC:       target,
 		EthernetType: layers.EthernetTypeIPv6,
 	}
-
-	ip6 := layers.IPv6{
-		Version:    6,
-		NextHeader: layers.IPProtocolUDP,
-		HopLimit:   64,
-		SrcIP:      pip.DstIP,
-		DstIP:      pip.SrcIP,
-	}
-
-	udp := layers.UDP{
-		SrcPort: pudp.DstPort,
-		DstPort: pudp.SrcPort,
-	}
-
-	udp.SetNetworkLayerForChecksum(&ip6)
 
 	answers := make([]layers.DNSResourceRecord, 0)
 	for _, q := range req.Questions {
@@ -153,10 +161,51 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 		Answers:   answers,
 	}
 
-	err, raw := packets.Serialize(&eth, &ip6, &udp, &dns)
-	if err != nil {
-		log.Error("Error serializing packet: %s.", err)
-		return
+	var raw []byte
+
+	if ipv6 == true {
+		ip6 := layers.IPv6{
+			Version:    6,
+			NextHeader: layers.IPProtocolUDP,
+			HopLimit:   64,
+			SrcIP:      src,
+			DstIP:      dst,
+		}
+
+		udp := layers.UDP{
+			SrcPort: pudp.DstPort,
+			DstPort: pudp.SrcPort,
+		}
+
+		udp.SetNetworkLayerForChecksum(&ip6)
+
+		err, raw = packets.Serialize(&eth, &ip6, &udp, &dns)
+		if err != nil {
+			log.Error("Error serializing packet: %s.", err)
+			return
+		}
+	} else {
+
+		ip4 := layers.IPv4{
+			Protocol: layers.IPProtocolUDP,
+			Version:  4,
+			TTL:      64,
+			SrcIP:    src,
+			DstIP:    dst,
+		}
+
+		udp := layers.UDP{
+			SrcPort: pudp.DstPort,
+			DstPort: pudp.SrcPort,
+		}
+
+		udp.SetNetworkLayerForChecksum(&ip4)
+
+		err, raw = packets.Serialize(&eth, &ip4, &udp, &dns)
+		if err != nil {
+			log.Error("Error serializing packet: %s.", err)
+			return
+		}
 	}
 
 	log.Debug("Sending %d bytes of packet ...", len(raw))
