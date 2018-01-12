@@ -21,8 +21,8 @@ arp.spoof on
 # enable proxy
 http.proxy on
 
-# set a custom prompt for ipv6
-set $ {by}{fw}{cidr} {fb}> {env.iface.ipv6} {reset} {bold}» {reset}
 # clear the events buffer and the screen
 events.clear
 clear
+
+
