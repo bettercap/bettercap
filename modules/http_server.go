@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/session"
 )
@@ -62,6 +63,13 @@ func (httpd *HttpServer) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
+func wrapHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Info("(%s) %s %s %s", core.Green("httpd"), core.Bold(r.RemoteAddr), r.Method, r.URL.Path)
+		h.ServeHTTP(w, r)
+	})
+}
+
 func (httpd *HttpServer) Configure() error {
 	var err error
 	var path string
@@ -72,7 +80,7 @@ func (httpd *HttpServer) Configure() error {
 		return err
 	}
 
-	http.Handle("/", http.FileServer(http.Dir(path)))
+	http.Handle("/", wrapHandler(http.FileServer(http.Dir(path))))
 
 	if err, address = httpd.StringParam("http.server.address"); err != nil {
 		return err
