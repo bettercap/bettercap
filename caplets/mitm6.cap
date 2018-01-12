@@ -1,6 +1,3 @@
-# custom prompt for ipv6 ... this is cool, i know :)
-set $ {by}{fw}{cidr} {fb}> {env.iface.ipv6} {reset} {bold}» {reset}
-
 # let's spoof Microsoft and Google ^_^
 set dns.spoof.domains microsoft.com, google.com
 set dhcp6.spoof.domains microsoft.com, google.com
@@ -17,6 +14,8 @@ dhcp6.spoof on
 # send spoofed DNS replies ^_^
 dns.spoof on
 
-# clear the prompt
+# set a custom prompt for ipv6
+set $ {by}{fw}{cidr} {fb}> {env.iface.ipv6} {reset} {bold}» {reset}
+# clear the events buffer and the screen
 events.clear
 clear

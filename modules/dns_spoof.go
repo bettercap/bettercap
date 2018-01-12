@@ -30,7 +30,7 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 	}
 
 	spoof.AddParam(session.NewStringParameter("dns.spoof.domains",
-		"microsoft.com, goole.com, facebook.com, apple.com, twitter.com",
+		"*",
 		``,
 		"Comma separated values of domain names to spoof."))
 
