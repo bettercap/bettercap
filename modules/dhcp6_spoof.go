@@ -243,6 +243,20 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 		Options:       make(dhcp6.Options),
 	}
 
+	var rawCID []byte
+	if raw, found := req.Options[dhcp6.OptionClientID]; found == false || len(raw) < 1 {
+		log.Error("Unexpected DHCPv6 packet, could not find client id.")
+		return
+	} else {
+		rawCID = raw[0]
+	}
+	reply.Options.AddRaw(dhcp6.OptionClientID, rawCID)
+	reply.Options.AddRaw(dhcp6.OptionServerID, s.DUIDRaw)
+	reply.Options.AddRaw(DHCP6OptDNSServers, s.Session.Interface.IPv6)
+	lenDomain := len(s.Domain)
+	rawDomain := append([]byte{byte(lenDomain & 0xff)}, []byte(s.Domain)...)
+	reply.Options.AddRaw(DHCP6OptDNSDomains, rawDomain)
+
 	var reqIANA dhcp6opts.IANA
 	if raw, found := req.Options[dhcp6.OptionIANA]; found == false || len(raw) < 1 {
 		log.Error("Unexpected DHCPv6 packet, could not find IANA.")
@@ -252,23 +266,15 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 		return
 	}
 
-	var rawCID []byte
-	if raw, found := req.Options[dhcp6.OptionClientID]; found == false || len(raw) < 1 {
-		log.Error("Unexpected DHCPv6 packet, could not find client id.")
-		return
+	var reqIAddr []byte
+	if raw, found := reqIANA.Options[dhcp6.OptionIAAddr]; found == true {
+		reqIAddr = raw[0]
 	} else {
-		rawCID = raw[0]
+		log.Error("Unexpected DHCPv6 packet, could not deserialize request IANA IAAddr.")
+		return
 	}
 
-	lenDomain := len(s.Domain)
-	rawDomain := append([]byte{byte(lenDomain & 0xff)}, []byte(s.Domain)...)
-	reply.Options.AddRaw(DHCP6OptDNSDomains, rawDomain)
-
-	reply.Options.AddRaw(dhcp6.OptionClientID, rawCID)
-	reply.Options.AddRaw(dhcp6.OptionServerID, s.DUIDRaw)
-	reply.Options.AddRaw(DHCP6OptDNSServers, s.Session.Interface.IPv6)
-
-	opts := dhcp6.Options{} //dhcp6.OptionIAAddr: [][]byte{iaaddrRaw}}
+	opts := dhcp6.Options{dhcp6.OptionIAAddr: [][]byte{reqIAddr}}
 	iana := dhcp6opts.NewIANA(reqIANA.IAID, 200*time.Second, 250*time.Second, opts)
 	ianaRaw, err := iana.MarshalBinary()
 	if err != nil {
@@ -325,7 +331,13 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 			addr = net.IP(raw[0])
 		}
 
-		log.Info("IPv6 address %s is now assigned to %s", addr.String(), target)
+		if t, found := s.Session.Targets.Targets[target.String()]; found == true {
+			log.Info("IPv6 address %s is now assigned to %s", addr.String(), t)
+		} else {
+			log.Info("IPv6 address %s is now assigned to %s", addr.String(), target)
+		}
+	} else {
+		log.Debug("DHCPv6 renew sent to %s", target)
 	}
 }
 
@@ -363,11 +375,19 @@ func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 		return
 	}
 
-	// DNS request?
-	dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
-	if parsed == true {
-		log.Warning("Got DNS request!")
-		log.Info("%s", dns)
+	// DNS request for us?
+	if bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
+		dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
+		if parsed == true && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
+			for _, q := range dns.Questions {
+				qName := string(q.Name)
+				if strings.HasSuffix(qName, s.Domain) == true {
+					log.Info("Spoofing domain %s", core.Red(qName))
+				} else {
+					log.Debug("Skipping domain %s", qName)
+				}
+			}
+		}
 	}
 }
 

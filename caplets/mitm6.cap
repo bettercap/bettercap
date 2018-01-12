@@ -2,11 +2,6 @@
 set $ {by}{fw}{cidr} {fb}> {env.iface.ipv6} {reset} {bold}» {reset}
 
 net.recon on
-# redirect http traffic to a proxy
-# http.proxy on
-# wait for everything to start properly
-# sleep 1
-
 dhcp6.spoof on
 
 events.clear
