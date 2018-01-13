@@ -23,7 +23,7 @@ func NewQueue(iface string) (*Queue, error) {
 		active: true,
 	}
 
-	q.handle, err = pcap.OpenLive(iface, 65536, true, pcap.BlockForever)
+	q.handle, err = pcap.OpenLive(iface, 1024, true, pcap.BlockForever)
 	if err != nil {
 		return nil, err
 	}

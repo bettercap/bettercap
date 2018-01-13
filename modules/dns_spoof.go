@@ -93,20 +93,21 @@ func (s *DNSSpoofer) Configure() error {
 }
 
 func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, req *layers.DNS, target net.HardwareAddr) {
-	var err error
-
 	redir := fmt.Sprintf("(->%s)", s.Address)
+	who := target.String()
+
 	if t, found := s.Session.Targets.Targets[target.String()]; found == true {
-		log.Info("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(t.String()))
-	} else {
-		log.Info("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(target.String()))
+		who = t.String()
 	}
 
+	log.Info("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(who))
+
+	var err error
 	var src, dst net.IP
 
 	nlayer := pkt.NetworkLayer()
 	if nlayer == nil {
-		log.Error("Missing network layer skipping packet.")
+		log.Debug("Missing network layer skipping packet.")
 		return
 	}
 
@@ -176,7 +177,6 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 			return
 		}
 	} else {
-
 		ip4 := layers.IPv4{
 			Protocol: layers.IPProtocolUDP,
 			Version:  4,
