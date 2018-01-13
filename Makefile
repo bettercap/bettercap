@@ -1,4 +1,4 @@
-TARGET=bettercap
+TARGET=bettercap-ng
 
 all: fmt vet build
 	@echo "@ Done"
