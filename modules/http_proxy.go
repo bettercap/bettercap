@@ -120,7 +120,7 @@ func (p *HttpProxy) doProxy(req *http.Request) bool {
 	blacklist := []string{
 		"localhost",
 		"127.0.0.1",
-		p.address,
+		// p.address,
 	}
 
 	if req.Host == "" {
