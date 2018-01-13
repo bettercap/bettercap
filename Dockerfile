@@ -1,10 +1,19 @@
 # iron/go:dev is the alpine image with the go tools added
 FROM iron/go:dev
 
-WORKDIR /bettercap-ng
+MAINTAINER Simone Margaritelli <https://evilsocket.net/>
 
-ENV SRC_DIR=/go/src/github.com/evilocket/bettercap-ng
+LABEL Package="BetterCAP" \
+      Version="Latest-Stable" \
+      Description="BetterCAP the state of the art, modular, portable and easily extensible MITM framework in a Container" \
+      Destro="Alpine Linux" \
+      GitHub="https://github.com/evilsocket/bettercap-ng" \
+      DockerHub="https://hub.docker.com/r/evilsocket/bettercap-ng/" \
+      Maintainer="Simone Margaritelli"
 
+
+ENV SRC_DIR=/gocode/src/github.com/evilsocket/bettercap-ng
+WORKDIR $SRC_DIR
 ADD . $SRC_DIR
 
 RUN apk add --update ca-certificates; \
@@ -14,8 +23,8 @@ RUN apk add --update ca-certificates; \
         libpcap-dev;\
     cd $SRC_DIR; \
     make deps; \
-    make; \
-    cp bettercap-ng /bettercap-ng/
+    ls -la; pwd; \
+    make
 
 EXPOSE 80 443 5300 8080 8081 8082 8083 8000
 ENTRYPOINT ["./bettercap-ng"]
