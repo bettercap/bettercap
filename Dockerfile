@@ -2,13 +2,12 @@ FROM iron/go:dev
 MAINTAINER Simone Margaritelli <https://evilsocket.net/>
 
 ENV SRC_DIR=/gocode/src/github.com/evilsocket/bettercap-ng
+COPY . $SRC_DIR
+
 WORKDIR $SRC_DIR
-ADD . $SRC_DIR
 
 RUN apk add --update ca-certificates
 RUN apk add --no-cache --update bash build-base libpcap-dev
-
-RUN cd $SRC_DIR
 RUN make deps
 RUN make
 

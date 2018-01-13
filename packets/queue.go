@@ -29,7 +29,7 @@ type Queue struct {
 	handle *pcap.Handle
 	source *gopacket.PacketSource
 	lock   *sync.Mutex
-	active bool `json:"-"`
+	active bool
 
 	Activities  chan Activity `json:"-"`
 	Sent        uint64
