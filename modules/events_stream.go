@@ -91,7 +91,7 @@ func (s *EventsStream) Start() error {
 						fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
 					}
 
-					s.Session.Input.Refresh()
+					s.Session.Refresh()
 				}
 				break
 

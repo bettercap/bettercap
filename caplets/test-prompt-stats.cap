@@ -1,0 +1,1 @@
+set $ {by}{fb}SENT:{fw}{net.sent.human} {fb}RECV:{fw}{net.received.human} {fb}PKTS:{fw}{net.packets} {r}ERR:{net.errors}{reset} {bold}» {reset}

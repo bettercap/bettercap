@@ -32,7 +32,7 @@ func (s *ProxyScript) defineBuiltins() error {
 			fmt.Printf("%s", v.String())
 		}
 		fmt.Println()
-		s.sess.Input.Refresh()
+		s.sess.Refresh()
 
 		return otto.Value{}
 	})

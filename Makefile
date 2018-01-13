@@ -45,6 +45,7 @@ deps:
 	@go get github.com/rogpeppe/go-charset/charset
 	@go get github.com/chzyer/readline
 	@go get github.com/robertkrimen/otto
+	@go get github.com/dustin/go-humanize
 
 clean:
 	@rm -rf $(TARGET) net/oui_compiled.go

@@ -1,10 +1,13 @@
 package session
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
+
+	"github.com/dustin/go-humanize"
 )
 
 const (
@@ -32,6 +35,24 @@ var PromptEffects = map[string]string{
 var PromptCallbacks = map[string]func(s *Session) string{
 	"{cidr}": func(s *Session) string {
 		return s.Interface.CIDR()
+	},
+	"{net.sent}": func(s *Session) string {
+		return fmt.Sprintf("%d", s.Queue.Sent)
+	},
+	"{net.sent.human}": func(s *Session) string {
+		return humanize.Bytes(s.Queue.Sent)
+	},
+	"{net.received}": func(s *Session) string {
+		return fmt.Sprintf("%d", s.Queue.Received)
+	},
+	"{net.received.human}": func(s *Session) string {
+		return humanize.Bytes(s.Queue.Received)
+	},
+	"{net.packets}": func(s *Session) string {
+		return fmt.Sprintf("%d", s.Queue.PktReceived)
+	},
+	"{net.errors}": func(s *Session) string {
+		return fmt.Sprintf("%d", s.Queue.Errors)
 	},
 }
 

@@ -253,9 +253,13 @@ func (s *Session) Start() error {
 	return nil
 }
 
-func (s *Session) ReadLine() (string, error) {
+func (s *Session) Refresh() {
 	s.Input.SetPrompt(s.Prompt.Render(s))
 	s.Input.Refresh()
+}
+
+func (s *Session) ReadLine() (string, error) {
+	s.Refresh()
 	return s.Input.Readline()
 }
 
