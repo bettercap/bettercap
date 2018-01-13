@@ -370,11 +370,11 @@ func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 	var dhcp dhcp6.Packet
 	var err error
 
-	eth := pkt.Layer(layers.LayerTypeEthernet).(*layers.Ethernet)
 	udp := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
-
 	// we just got a dhcp6 packet?
 	if err = dhcp.UnmarshalBinary(udp.Payload); err == nil {
+		eth := pkt.Layer(layers.LayerTypeEthernet).(*layers.Ethernet)
+
 		switch dhcp.MessageType {
 		case dhcp6.MessageTypeSolicit:
 
