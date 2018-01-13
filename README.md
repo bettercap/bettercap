@@ -88,6 +88,10 @@ events.clear
 clear
 ```
 
+<center>
+    <img src="https://pbs.twimg.com/media/DTXrMJJXcAE-NcQ.jpg:large" width="100%"/>
+</center>
+
 #### caplets/rest-api.cap
 
 Start a rest API.
