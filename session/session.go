@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/chzyer/readline"
 
@@ -231,9 +232,15 @@ func (s *Session) Start() error {
 	// keep reading network events in order to add / update endpoints
 	go func() {
 		for event := range s.Queue.Activities {
-			addr := event.IP.String()
-			mac := event.MAC.String()
-			s.Targets.AddIfNotExist(addr, mac)
+			if event.Source == true {
+				addr := event.IP.String()
+				mac := event.MAC.String()
+
+				existing := s.Targets.AddIfNotExist(addr, mac)
+				if existing != nil {
+					existing.LastSeen = time.Now()
+				}
+			}
 
 			if s.Active == false {
 				return

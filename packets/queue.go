@@ -14,8 +14,9 @@ import (
 )
 
 type Activity struct {
-	IP  net.IP
-	MAC net.HardwareAddr
+	IP     net.IP
+	MAC    net.HardwareAddr
+	Source bool
 }
 
 type Queue struct {
@@ -94,15 +95,17 @@ func (q *Queue) worker() {
 
 			if bytes.Compare(q.iface.IP, ip4.SrcIP) != 0 && q.iface.Net.Contains(ip4.SrcIP) {
 				q.Activities <- Activity{
-					IP:  ip4.SrcIP,
-					MAC: eth.SrcMAC,
+					IP:     ip4.SrcIP,
+					MAC:    eth.SrcMAC,
+					Source: true,
 				}
 			}
 
 			if bytes.Compare(q.iface.IP, ip4.DstIP) != 0 && q.iface.Net.Contains(ip4.DstIP) {
 				q.Activities <- Activity{
-					IP:  ip4.DstIP,
-					MAC: eth.SrcMAC,
+					IP:     ip4.DstIP,
+					MAC:    eth.SrcMAC,
+					Source: false,
 				}
 			}
 		}
