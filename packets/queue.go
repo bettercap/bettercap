@@ -19,6 +19,11 @@ type Activity struct {
 	Source bool
 }
 
+type Traffic struct {
+	Sent     uint64
+	Received uint64
+}
+
 type Queue struct {
 	iface  *bnet.Endpoint
 	handle *pcap.Handle
@@ -32,6 +37,7 @@ type Queue struct {
 	PktReceived uint64
 	Errors      uint64
 	Protos      map[string]uint64
+	Traffic     map[string]*Traffic
 }
 
 func NewQueue(iface *bnet.Endpoint) (*Queue, error) {
@@ -48,6 +54,7 @@ func NewQueue(iface *bnet.Endpoint) (*Queue, error) {
 		PktReceived: 0,
 		Errors:      0,
 		Protos:      make(map[string]uint64),
+		Traffic:     make(map[string]*Traffic),
 		Activities:  make(chan Activity),
 	}
 
@@ -67,9 +74,10 @@ func (q *Queue) worker() {
 		if q.active == false {
 			return
 		}
+		pktSize := uint64(len(pkt.Data()))
 
 		q.PktReceived++
-		q.Received += uint64(len(pkt.Data()))
+		q.Received += pktSize
 
 		// gather protocols stats
 		pktLayers := pkt.Layers()
@@ -99,6 +107,13 @@ func (q *Queue) worker() {
 					MAC:    eth.SrcMAC,
 					Source: true,
 				}
+
+				addr := ip4.SrcIP.String()
+				if _, found := q.Traffic[addr]; found == false {
+					q.Traffic[addr] = &Traffic{}
+				}
+
+				q.Traffic[addr].Sent += pktSize
 			}
 
 			if bytes.Compare(q.iface.IP, ip4.DstIP) != 0 && q.iface.Net.Contains(ip4.DstIP) {
@@ -107,6 +122,13 @@ func (q *Queue) worker() {
 					MAC:    eth.SrcMAC,
 					Source: false,
 				}
+
+				addr := ip4.DstIP.String()
+				if _, found := q.Traffic[addr]; found == false {
+					q.Traffic[addr] = &Traffic{}
+				}
+
+				q.Traffic[addr].Received += pktSize
 			}
 		}
 	}
