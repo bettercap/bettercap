@@ -4,7 +4,6 @@ BUILD_FILE=core/build.go
 
 all: fmt vet build
 	@echo "@ Done"
-	@echo -n "\n"
 
 test: build
 	@go test ./...
