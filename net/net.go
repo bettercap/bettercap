@@ -70,7 +70,7 @@ func FindInterface(name string) (*Endpoint, error) {
 }
 
 func FindGateway(iface *Endpoint) (*Endpoint, error) {
-	output, err := core.Exec("route", []string{"-n", "-A", "inet"})
+	output, err := core.Exec("netstat", []string{"-n", "-r"})
 	if err != nil {
 		return nil, err
 	}
