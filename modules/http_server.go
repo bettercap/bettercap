@@ -30,7 +30,7 @@ func NewHttpServer(s *session.Session) *HttpServer {
 
 	httpd.AddParam(session.NewStringParameter("http.server.address",
 		session.ParamIfaceAddress,
-		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
+		session.IPv4Validator,
 		"Address to bind the http server to."))
 
 	httpd.AddParam(session.NewIntParameter("http.server.port",

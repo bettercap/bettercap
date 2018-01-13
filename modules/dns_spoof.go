@@ -36,7 +36,7 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 
 	spoof.AddParam(session.NewStringParameter("dns.spoof.address",
 		session.ParamIfaceAddress,
-		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
+		session.IPv4Validator,
 		"IP address to map the domains to."))
 
 	spoof.AddHandler(session.NewModuleHandler("dns.spoof on", "",

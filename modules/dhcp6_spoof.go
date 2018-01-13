@@ -46,7 +46,7 @@ func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
 
 	spoof.AddParam(session.NewStringParameter("dhcp6.spoof.address",
 		session.ParamIfaceAddress,
-		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
+		session.IPv4Validator,
 		"IP address to map the domains to."))
 
 	spoof.AddHandler(session.NewModuleHandler("dhcp6.spoof on", "",

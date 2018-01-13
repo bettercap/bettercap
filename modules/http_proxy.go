@@ -55,7 +55,7 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 
 	p.AddParam(session.NewStringParameter("http.proxy.address",
 		session.ParamIfaceAddress,
-		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
+		session.IPv4Validator,
 		"Address to bind the HTTP proxy to."))
 
 	p.AddParam(session.NewIntParameter("http.proxy.port",

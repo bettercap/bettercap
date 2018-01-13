@@ -29,7 +29,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 
 	api.AddParam(session.NewStringParameter("api.rest.address",
 		session.ParamIfaceAddress,
-		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
+		session.IPv4Validator,
 		"Address to bind the API REST server to."))
 
 	api.AddParam(session.NewIntParameter("api.rest.port",

@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+const IPv4Validator = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`
+
 type ModuleHandler struct {
 	Name        string
 	Description string
