@@ -23,7 +23,6 @@ RUN apk add --update ca-certificates; \
         libpcap-dev;\
     cd $SRC_DIR; \
     make deps; \
-    ls -la; pwd; \
     make
 
 EXPOSE 80 443 5300 8080 8081 8082 8083 8000
