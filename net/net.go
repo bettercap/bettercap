@@ -24,7 +24,7 @@ func FindInterface(name string) (*Endpoint, error) {
 		addrs, err := iface.Addrs()
 		// is interface active?
 		if err == nil && len(addrs) > 0 {
-			if (name == "" && iface.Name != "lo") || iface.Name == name {
+			if (name == "" && iface.Name != "lo" && iface.Name != "lo0") || iface.Name == name {
 				var e *Endpoint = nil
 				// For every address of the interface.
 				for _, addr := range addrs {
