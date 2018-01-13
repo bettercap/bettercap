@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -62,4 +63,27 @@ func (j *JSRequest) ReadBody() string {
 	j.Body = string(raw)
 
 	return j.Body
+}
+
+func (j *JSRequest) ParseForm() map[string]string {
+	if j.Body == "" {
+		j.Body = j.ReadBody()
+	}
+
+	form := make(map[string]string, 0)
+	parts := strings.Split(j.Body, "&")
+
+	for _, part := range parts {
+		nv := strings.SplitN(part, "=", 2)
+		if len(nv) == 2 {
+			unescaped, err := url.QueryUnescape(nv[1])
+			if err == nil {
+				form[nv[0]] = unescaped
+			} else {
+				form[nv[0]] = nv[1]
+			}
+		}
+	}
+
+	return form
 }

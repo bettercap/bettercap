@@ -43,12 +43,9 @@ function dumpPlain(req) {
 function dumpForm(req) {
     log( "  > " + BOLD(G("Form")) );
 
-    var body = req.ReadBody();
-    var parts = body.split('&');
-
-    for( var i = 0; i < parts.length; i++ ) {
-        var nv = parts[i].split('=');
-        log( "   " + B(nv[0]) + " : " + Y(nv[1]) );
+    var form = req.ParseForm();
+    for( var key in form ) {
+        log( "   " + B(key) + " : " + Y(form[key]) );
     }
 }
 
