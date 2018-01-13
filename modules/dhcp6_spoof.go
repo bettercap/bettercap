@@ -359,8 +359,7 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 
 func (s *DHCP6Spoofer) duidMatches(dhcp dhcp6.Packet) bool {
 	if raw, found := dhcp.Options[dhcp6.OptionServerID]; found == true && len(raw) >= 1 {
-		rawServerID := raw[0]
-		if bytes.Compare(rawServerID, s.DUIDRaw) == 0 {
+		if bytes.Compare(raw[0], s.DUIDRaw) == 0 {
 			return true
 		}
 	}
