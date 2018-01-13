@@ -1,14 +1,9 @@
 package net
 
 import (
-	"regexp"
-	"strings"
-
 	"github.com/evilsocket/bettercap-ng/core"
+	"strings"
 )
-
-var ArpTableParser = regexp.MustCompile("^[^\\d\\.]+([\\d\\.]+).+\\s+([a-f0-9:]{17}).+\\s+(.+)$")
-var ArpTableTokens = 4
 
 func ArpUpdate(iface string) (ArpTable, error) {
 	arp_lock.Lock()
