@@ -158,6 +158,10 @@ func (s *Session) clsHandler(args []string, sess *Session) error {
 	return nil
 }
 
+func (s *Session) includeHandler(args []string, sess *Session) error {
+	return s.RunCaplet(args[0])
+}
+
 func (s *Session) registerCoreHandlers() {
 	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("help",
 		"^(help|\\?)$",
@@ -198,4 +202,9 @@ func (s *Session) registerCoreHandlers() {
 		"^(clear|cls)$",
 		"Clear the screen.",
 		s.clsHandler))
+
+	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("include CAPLET",
+		"^include\\s+(.+)",
+		"Load and run this caplet in the current session.",
+		s.includeHandler))
 }

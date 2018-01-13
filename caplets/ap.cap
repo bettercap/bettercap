@@ -1,6 +1,4 @@
-set api.rest.username changeme 
-set api.rest.password changeme
-set api.rest.address 0.0.0.0
+include caplets/ap-config.cap
 
 set net.sniff.local true
 set net.sniff.verbose false
