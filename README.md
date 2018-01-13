@@ -17,6 +17,10 @@ This is a WIP of the new version of [bettercap](https://github.com/evilsocket/be
 
 In this repository, BetterCAP is containerized using [Alpine Linux](https://alpinelinux.org/ "") -  a security-oriented, lightweight Linux distribution based on musl libc and busybox. The resulting Docker image is relatively small and easy to manage the dependencies.
 
+<center>
+    <img src="http://dockeri.co/image/evilsocket/bettercap-ng"/>
+</center>
+
 To pull latest BetterCAP version of the image:
 
 ```sh
@@ -28,10 +32,6 @@ To run:
 ```sh
 $ docker run -it --privileged --net=host evilsocket/bettercap-ng -h
 ```
-
-<center>
-    <img src="http://dockeri.co/image/evilsocket/bettercap-ng"/>
-</center>
 
 ## Compiling
 
