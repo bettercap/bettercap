@@ -205,7 +205,7 @@ func (d *Discovery) Show() error {
 				t.Vendor,
 				humanize.Bytes(traffic.Sent),
 				humanize.Bytes(traffic.Received),
-				t.LastSeen.Format("2006-01-02 15:04:05"),
+				t.LastSeen.Format("15:04:05"),
 			}
 		}
 
