@@ -79,17 +79,8 @@ func (s *DNSSpoofer) Configure() error {
 		return err
 	}
 
-	s.Domains = make([]string, 0)
-	if err, domains := s.StringParam("dns.spoof.domains"); err != nil {
+	if err, s.Domains = s.ListParam("dns.spoof.domains"); err != nil {
 		return err
-	} else {
-		parts := strings.Split(domains, ",")
-		for _, part := range parts {
-			part = strings.Trim(part, "\t\n\r ")
-			if part != "" {
-				s.Domains = append(s.Domains, part)
-			}
-		}
 	}
 
 	if err, addr = s.StringParam("dns.spoof.address"); err != nil {

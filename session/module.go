@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -51,6 +52,23 @@ func (m *SessionModule) Parameters() map[string]*ModuleParam {
 
 func (m *SessionModule) Param(name string) *ModuleParam {
 	return m.params[name]
+}
+
+func (m SessionModule) ListParam(name string) (err error, values []string) {
+	values = make([]string, 0)
+	list := ""
+	if err, list = m.StringParam(name); err != nil {
+		return
+	} else {
+		parts := strings.Split(list, ",")
+		for _, part := range parts {
+			part = strings.Trim(part, "\t\n\r ")
+			if part != "" {
+				values = append(values, part)
+			}
+		}
+	}
+	return
 }
 
 func (m SessionModule) StringParam(name string) (error, string) {

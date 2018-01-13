@@ -76,6 +76,31 @@ func (s DHCP6Spoofer) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
+func (s *DHCP6Spoofer) encodeDomains() {
+	totLen := 0
+	for _, d := range s.Domains {
+		totLen += len(d)
+	}
+
+	if totLen > 0 {
+		s.RawDomains = make([]byte, totLen+1*len(s.Domains))
+		i := 0
+		for _, domain := range s.Domains {
+			lenDomain := len(domain)
+			plusOne := lenDomain + 1
+
+			s.RawDomains[i] = byte(lenDomain & 0xff)
+			k := 0
+			for j := i + 1; j < plusOne; j++ {
+				s.RawDomains[j] = domain[k]
+				k++
+			}
+
+			i += plusOne
+		}
+	}
+}
+
 func (s *DHCP6Spoofer) Configure() error {
 	var err error
 	var addr string
@@ -89,38 +114,10 @@ func (s *DHCP6Spoofer) Configure() error {
 		return err
 	}
 
-	s.Domains = make([]string, 0)
-	if err, domains := s.StringParam("dhcp6.spoof.domains"); err != nil {
+	if err, s.Domains = s.ListParam("dhcp6.spoof.domains"); err != nil {
 		return err
-	} else {
-		parts := strings.Split(domains, ",")
-		totLen := 0
-		for _, part := range parts {
-			part = strings.Trim(part, "\t\n\r ")
-			if part != "" {
-				s.Domains = append(s.Domains, part)
-				totLen += len(part)
-			}
-		}
-
-		if totLen > 0 {
-			s.RawDomains = make([]byte, totLen+1*len(s.Domains))
-			i := 0
-			for _, domain := range s.Domains {
-				lenDomain := len(domain)
-				plusOne := lenDomain + 1
-
-				s.RawDomains[i] = byte(lenDomain & 0xff)
-				k := 0
-				for j := i + 1; j < plusOne; j++ {
-					s.RawDomains[j] = domain[k]
-					k++
-				}
-
-				i += plusOne
-			}
-		}
 	}
+	s.encodeDomains()
 
 	if err, addr = s.StringParam("dhcp6.spoof.address"); err != nil {
 		return err
