@@ -23,28 +23,24 @@ In this repository, BetterCAP is containerized using [Alpine Linux](https://alpi
 
 To pull latest BetterCAP version of the image:
 
-```sh
-$ docker pull evilsocket/bettercap-ng
-```
+    $ docker pull evilsocket/bettercap-ng
 
 To run:
 
-```sh
-$ docker run -it --privileged --net=host evilsocket/bettercap-ng -h
-```
+    $ docker run -it --privileged --net=host evilsocket/bettercap-ng -h
 
 ## Compiling
 
 Make sure you have a correctly configured Go >= 1.8 environment and the `libpcap-dev` package installed for your system, then:
 
-    git clone https://github.com/evilsocket/bettercap-ng $GOPATH/src/github.com/evilsocket/bettercap-ng
-    cd $GOPATH/src/github.com/evilsocket/bettercap-ng
-    make deps
-    make
+    $ git clone https://github.com/evilsocket/bettercap-ng $GOPATH/src/github.com/evilsocket/bettercap-ng
+    $ cd $GOPATH/src/github.com/evilsocket/bettercap-ng
+    $ make deps
+    $ make
 
 To show the command line options:
 
-    # sudo ./bettercap-ng -h
+    $ sudo ./bettercap-ng -h
     
     Usage of ./bettercap-ng:
       -caplet string
@@ -160,11 +156,10 @@ This caplet will create a fake Facebook login page on port 80, intercept login a
 
 Make sure to create the folder first:
 
-    cd caplets/www/
-    make
+    $ cd caplets/www/
+    $ make
 
 ```sh
-
 set http.server.address 0.0.0.0
 set http.server.path caplets/www/www.facebook.com/
 
