@@ -7,7 +7,7 @@ ENV SRC_DIR=/go/src/github.com/evilocket/bettercap-ng
 
 ADD . $SRC_DIR
 
-RUN apk add --update ca-certificates && \
+RUN apk add --update ca-certificates; \
     apk add --no-cache --update \
         bash \
         build-base \
