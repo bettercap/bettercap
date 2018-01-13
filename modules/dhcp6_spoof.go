@@ -357,6 +357,16 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 	}
 }
 
+func (s *DHCP6Spoofer) duidMatches(dhcp dhcp6.Packet) bool {
+	if raw, found := dhcp.Options[dhcp6.OptionServerID]; found == true && len(raw) >= 1 {
+		rawServerID := raw[0]
+		if bytes.Compare(rawServerID, s.DUIDRaw) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 	var dhcp dhcp6.Packet
 	var err error
@@ -372,19 +382,13 @@ func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 			s.dhcpAdvertise(pkt, dhcp, eth.SrcMAC)
 
 		case dhcp6.MessageTypeRequest:
-			if raw, found := dhcp.Options[dhcp6.OptionServerID]; found == true && len(raw) >= 1 {
-				rawServerID := raw[0]
-				if bytes.Compare(rawServerID, s.DUIDRaw) == 0 {
-					s.dhcpReply("request", pkt, dhcp, eth.SrcMAC)
-				}
+			if s.duidMatches(dhcp) {
+				s.dhcpReply("request", pkt, dhcp, eth.SrcMAC)
 			}
 
 		case dhcp6.MessageTypeRenew:
-			if raw, found := dhcp.Options[dhcp6.OptionServerID]; found == true && len(raw) >= 1 {
-				rawServerID := raw[0]
-				if bytes.Compare(rawServerID, s.DUIDRaw) == 0 {
-					s.dhcpReply("renew", pkt, dhcp, eth.SrcMAC)
-				}
+			if s.duidMatches(dhcp) {
+				s.dhcpReply("renew", pkt, dhcp, eth.SrcMAC)
 			}
 		}
 	}
