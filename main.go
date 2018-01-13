@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -21,8 +20,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("%s v%s\n", core.Name, core.Version)
-	fmt.Printf("Build: date=%s os=%s arch=%s\n\n", core.BuildDate, runtime.GOOS, runtime.GOARCH)
+	fmt.Printf(core.Bold("%s v%s\n\n"), core.Name, core.Version)
 
 	sess.Register(modules.NewEventsStream(sess))
 	sess.Register(modules.NewProber(sess))

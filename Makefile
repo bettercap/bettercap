@@ -1,6 +1,4 @@
 TARGET=bettercap
-BUILD_DATE=`date +%Y-%m-%d\ %H:%M`
-BUILD_FILE=core/build.go
 
 all: fmt vet build
 	@echo "@ Done"
@@ -8,16 +6,9 @@ all: fmt vet build
 test: build
 	@go test ./...
 
-build: build_file
+build: resources
 	@echo "@ Building ..."
 	@go build $(FLAGS) -o $(TARGET) .
-
-build_file: resources
-	@rm -f $(BUILD_FILE)
-	@echo "package core" > $(BUILD_FILE)
-	@echo "const (" >> $(BUILD_FILE)
-	@echo "  BuildDate = \"$(BUILD_DATE)\"" >> $(BUILD_FILE)
-	@echo ")" >> $(BUILD_FILE)
 
 resources:
 	@echo "@ Compiling resources into go files ..."
