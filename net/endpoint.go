@@ -13,7 +13,7 @@ type OnHostResolvedCallback func(e *Endpoint)
 type Endpoint struct {
 	IP               net.IP                 `json:"-"`
 	Net              *net.IPNet             `json:"-"`
-	IPv6             net.IP                 `json:"."`
+	IPv6             net.IP                 `json:"-"`
 	HW               net.HardwareAddr       `json:"-"`
 	IpAddress        string                 `json:"ipv4"`
 	Ip6Address       string                 `json:"ipv6"`
