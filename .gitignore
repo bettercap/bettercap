@@ -2,5 +2,5 @@
 
 core/build.go
 net/oui_compiled.go
-bettercap-ng
+bettercap
 bettercap.history

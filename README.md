@@ -40,7 +40,7 @@ Make sure you have a correctly configured Go >= 1.8 environment and the `libpcap
 
 To show the command line options:
 
-    $ sudo ./bettercap-ng -h
+    $ sudo ./bettercap -h
     
     Usage of ./bettercap-ng:
       -caplet string

@@ -1,4 +1,4 @@
-TARGET=bettercap-ng
+TARGET=bettercap
 BUILD_DATE=`date +%Y-%m-%d\ %H:%M`
 BUILD_FILE=core/build.go
 
