@@ -1,6 +1,4 @@
 *.sw*
-
 core/build.go
-net/oui_compiled.go
 bettercap
 bettercap.history
