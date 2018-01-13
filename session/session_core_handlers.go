@@ -74,15 +74,17 @@ func (s *Session) activeHandler(args []string, sess *Session) error {
 		if m.Running() == false {
 			continue
 		}
-		fmt.Printf("[%s] %s (%s)\n", core.Green("active"), m.Name(), core.Dim(m.Description()))
+
+		fmt.Printf("%s (%s)\n", core.Bold(m.Name()), core.Dim(m.Description()))
 		params := m.Parameters()
 		if len(params) > 0 {
-			for _, p := range params {
-				_, p.Value = s.Env.Get(p.Name)
-				fmt.Printf("  %s: '%s'\n", p.Name, core.Yellow(p.Value))
-			}
 			fmt.Println()
+			for _, p := range params {
+				fmt.Printf(p.Dump(s.HelpPadding))
+			}
 		}
+
+		fmt.Println()
 	}
 
 	return nil

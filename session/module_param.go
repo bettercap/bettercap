@@ -104,6 +104,11 @@ func (p ModuleParam) Get(s *Session) (error, interface{}) {
 
 }
 
+func (p ModuleParam) Dump(padding int) string {
+	return fmt.Sprintf("  "+core.YELLOW+"%"+strconv.Itoa(padding)+"s"+core.RESET+
+		" : %s\n", p.Name, p.Value)
+}
+
 func (p ModuleParam) Help(padding int) string {
 	return fmt.Sprintf("  "+core.YELLOW+"%"+strconv.Itoa(padding)+"s"+core.RESET+
 		" : "+
