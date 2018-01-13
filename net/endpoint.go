@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
 )
@@ -11,6 +12,7 @@ import (
 type OnHostResolvedCallback func(e *Endpoint)
 type Endpoint struct {
 	IP               net.IP                 `json:"-"`
+	Net              *net.IPNet             `json:"-"`
 	IPv6             net.IP                 `json:"."`
 	HW               net.HardwareAddr       `json:"-"`
 	IpAddress        string                 `json:"ipv4"`
@@ -21,12 +23,17 @@ type Endpoint struct {
 	Hostname         string                 `json:"hostname"`
 	Vendor           string                 `json:"vendor"`
 	ResolvedCallback OnHostResolvedCallback `json:"-"`
+	FirstSeen        time.Time              `json:"first_seen"`
+	LastSeen         time.Time              `json:"last_seen"`
 }
 
 func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 	hw, _ := net.ParseMAC(mac)
+	now := time.Now()
+
 	e := &Endpoint{
 		IP:               net.ParseIP(ip),
+		Net:              nil,
 		HW:               hw,
 		IpAddress:        ip,
 		SubnetBits:       bits,
@@ -35,7 +42,12 @@ func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 		Hostname:         name,
 		Vendor:           OuiLookup(mac),
 		ResolvedCallback: nil,
+		FirstSeen:        now,
+		LastSeen:         now,
 	}
+
+	_, netw, _ := net.ParseCIDR(e.CIDR())
+	e.Net = netw
 
 	return e
 }

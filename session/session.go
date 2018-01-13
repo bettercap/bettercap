@@ -33,7 +33,7 @@ type Session struct {
 	Firewall  firewall.FirewallManager `json:"-"`
 	Env       *Environment             `json:"env"`
 	Targets   *Targets                 `json:"targets"`
-	Queue     *packets.Queue           `json:"-"`
+	Queue     *packets.Queue           `json:"packets"`
 	Input     *readline.Instance       `json:"-"`
 	Active    bool                     `json:"active"`
 	Prompt    Prompt                   `json:"-"`
@@ -174,7 +174,7 @@ func (s *Session) Start() error {
 	s.Env.Set("iface.ipv6", s.Interface.Ip6Address)
 	s.Env.Set("iface.mac", s.Interface.HwAddress)
 
-	if s.Queue, err = packets.NewQueue(s.Interface.Name()); err != nil {
+	if s.Queue, err = packets.NewQueue(s.Interface); err != nil {
 		return err
 	}
 
@@ -227,6 +227,20 @@ func (s *Session) Start() error {
 	}()
 
 	s.Active = true
+
+	// keep reading network events in order to add / update endpoints
+	go func() {
+		for event := range s.Queue.Activities {
+			addr := event.IP.String()
+			mac := event.MAC.String()
+			s.Targets.AddIfNotExist(addr, mac)
+
+			if s.Active == false {
+				return
+			}
+		}
+	}()
+
 	s.Events.Add("session.started", nil)
 
 	return nil

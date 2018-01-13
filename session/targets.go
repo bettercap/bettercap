@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/net"
@@ -63,6 +64,7 @@ func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
 	}
 
 	if t, found := tp.Targets[mac]; found {
+		t.LastSeen = time.Now()
 		return t
 	}
 
