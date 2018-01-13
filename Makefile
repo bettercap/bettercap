@@ -47,6 +47,8 @@ deps:
 	@go get github.com/robertkrimen/otto
 	@go get github.com/dustin/go-humanize
 	@go get github.com/olekukonko/tablewriter
+	@go get github.com/dustin/go-humanize
+	@go get github.com/olekukonko/tablewriter
 
 clean:
 	@rm -rf $(TARGET) net/oui_compiled.go
