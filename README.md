@@ -138,6 +138,11 @@ This caplet will create a fake Facebook login page on port 80, intercept login a
     <img src="https://pbs.twimg.com/media/DTY39bnXcAAg5jX.jpg:large" width="100%"/>
 </center>
 
+Make sure to create the folder first:
+
+    cd caplets/www/
+    make
+
 ```sh
 
 set http.server.address 0.0.0.0
