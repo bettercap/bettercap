@@ -28,5 +28,3 @@ RUN apk add --update ca-certificates; \
 
 EXPOSE 80 443 5300 8080 8081 8082 8083 8000
 ENTRYPOINT ["./bettercap-ng"]
-CMD ["-h"]
-
