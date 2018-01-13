@@ -23,6 +23,14 @@ func NewTargets(s *Session, iface, gateway *net.Endpoint) *Targets {
 	}
 }
 
+func (tp *Targets) Lock() {
+	tp.lock.Lock()
+}
+
+func (tp *Targets) Unlock() {
+	tp.lock.Unlock()
+}
+
 func (tp *Targets) Remove(ip, mac string) {
 	tp.lock.Lock()
 	defer tp.lock.Unlock()

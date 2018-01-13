@@ -1,11 +1,19 @@
 package modules
 
 import (
+	"fmt"
+	"os"
+	"sort"
 	"time"
 
+	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/net"
+	"github.com/evilsocket/bettercap-ng/packets"
 	"github.com/evilsocket/bettercap-ng/session"
+
+	"github.com/dustin/go-humanize"
+	"github.com/olekukonko/tablewriter"
 )
 
 type Discovery struct {
@@ -145,8 +153,95 @@ func (d *Discovery) Start() error {
 	return nil
 }
 
+type tSorter []*net.Endpoint
+
+func (a tSorter) Len() int           { return len(a) }
+func (a tSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a tSorter) Less(i, j int) bool { return a[i].IpAddressUint32 < a[j].IpAddressUint32 }
+
 func (d *Discovery) Show() error {
-	d.Session.Targets.Dump()
+	d.Session.Targets.Lock()
+	defer d.Session.Targets.Unlock()
+
+	iface := d.Session.Interface
+	gw := d.Session.Gateway
+
+	data := [][]string{
+		[]string{core.Green("interface"), core.Bold(iface.Name()), iface.IpAddress, iface.HwAddress, core.Dim(iface.Vendor)},
+		[]string{core.Green("gateway"), core.Bold(gw.Hostname), gw.IpAddress, gw.HwAddress, core.Dim(gw.Vendor)},
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+
+	table.AppendBulk(data)
+	table.Render()
+
+	fmt.Println()
+
+	nTargets := len(d.Session.Targets.Targets)
+	if nTargets == 0 {
+		fmt.Println(core.Dim("No endpoints discovered so far."))
+	} else {
+		targets := make([]*net.Endpoint, 0, nTargets)
+		for _, t := range d.Session.Targets.Targets {
+			targets = append(targets, t)
+		}
+
+		sort.Sort(tSorter(targets))
+
+		data = make([][]string, nTargets)
+		for i, t := range targets {
+			var traffic *packets.Traffic
+			var found bool
+
+			if traffic, found = d.Session.Queue.Traffic[t.IpAddress]; found == false {
+				traffic = &packets.Traffic{}
+			}
+
+			data[i] = []string{
+				t.IpAddress,
+				t.HwAddress,
+				core.Yellow(t.Hostname),
+				t.Vendor,
+				humanize.Bytes(traffic.Sent),
+				humanize.Bytes(traffic.Received),
+				t.LastSeen.Format("2006-01-02 15:04:05"),
+			}
+		}
+
+		table = tablewriter.NewWriter(os.Stdout)
+
+		table.SetHeader([]string{"IP", "MAC", "Hostname", "Vendor", "Sent", "Recvd", "Last Seen"})
+		table.AppendBulk(data)
+		table.Render()
+
+		fmt.Println()
+	}
+
+	row := []string{
+		humanize.Bytes(d.Session.Queue.Sent),
+		humanize.Bytes(d.Session.Queue.Received),
+		fmt.Sprintf("%d", d.Session.Queue.PktReceived),
+		fmt.Sprintf("%d", d.Session.Queue.Errors),
+	}
+
+	table = tablewriter.NewWriter(os.Stdout)
+
+	table.SetHeader([]string{"Sent", "Sniffed", "# Packets", "Errors"})
+	table.Append(row)
+	table.Render()
+
+	fmt.Println()
+
+	table = tablewriter.NewWriter(os.Stdout)
+
+	for proto, hits := range d.Session.Queue.Protos {
+		table.Append([]string{proto, fmt.Sprintf("%d", hits)})
+	}
+
+	table.SetHeader([]string{"Proto", "# Packets"})
+	table.Render()
+
 	return nil
 }
 
