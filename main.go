@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 
@@ -16,7 +17,8 @@ var err error
 
 func main() {
 	if sess, err = session.New(); err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	fmt.Printf("%s v%s\n", core.Name, core.Version)
