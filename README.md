@@ -13,6 +13,22 @@
 
 This is a WIP of the new version of [bettercap](https://github.com/evilsocket/bettercap), very alpha, **do not use** ... or do, whatever.
 
+## Run with Docker
+
+In this repository, BetterCAP is containerized using [Alpine Linux](https://alpinelinux.org/ "") -  a security-oriented, lightweight Linux distribution based on musl libc and busybox. The resulting Docker image is relatively small and easy to manage the dependencies.
+
+To pull latest BetterCAP version of the image:
+
+```sh
+$ docker pull evilsocket/bettercap-ng
+```
+
+To run:
+
+```sh
+$ docker run -it --privileged --net=host evilsocket/bettercap-ng -h
+```
+
 ## Compiling
 
 Make sure you have a correctly configured Go >= 1.8 environment and the `libpcap-dev` package installed for your system, then:
