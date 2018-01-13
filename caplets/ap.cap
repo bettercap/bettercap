@@ -1,0 +1,17 @@
+set api.rest.username changeme 
+set api.rest.password changeme
+set api.rest.address 0.0.0.0
+
+set net.sniff.local true
+set net.sniff.verbose false
+set net.sniff.filter not arp and not udp port 53
+
+events.stream off
+events.clear 
+
+set events.stream.filter target.
+events.stream on
+
+net.recon on
+api.rest on
+net.sniff on

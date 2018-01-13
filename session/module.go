@@ -1,6 +1,9 @@
 package session
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type Module interface {
 	Name() string
@@ -51,18 +54,27 @@ func (m *SessionModule) Param(name string) *ModuleParam {
 }
 
 func (m SessionModule) StringParam(name string) (error, string) {
-	if err, v := m.params[name].Get(m.Session); err != nil {
-		return err, ""
+	if p, found := m.params[name]; found == true {
+		if err, v := p.Get(m.Session); err != nil {
+			return err, ""
+		} else {
+			return nil, v.(string)
+		}
 	} else {
-		return nil, v.(string)
+		return fmt.Errorf("Parameter %s does not exist.", name), ""
 	}
 }
 
 func (m SessionModule) IntParam(name string) (error, int) {
-	if err, v := m.params[name].Get(m.Session); err != nil {
-		return err, 0
+	if p, found := m.params[name]; found == true {
+		if err, v := p.Get(m.Session); err != nil {
+			return err, 0
+		} else {
+			return nil, v.(int)
+		}
+
 	} else {
-		return nil, v.(int)
+		return fmt.Errorf("Parameter %s does not exist.", name), 0
 	}
 }
 

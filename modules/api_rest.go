@@ -98,7 +98,7 @@ func (api *RestAPI) Configure() error {
 	var address string
 	var port int
 
-	if err, address = api.StringParam("api.rest.addr"); err != nil {
+	if err, address = api.StringParam("api.rest.address"); err != nil {
 		return err
 	} else if err, port = api.IntParam("api.rest.port"); err != nil {
 		return err
