@@ -32,16 +32,13 @@ To run:
 
 ## Compiling
 
-Make sure you have a correctly configured Go >= 1.8 environment and the `libpcap-dev` package installed for your system, then:
+Make sure you have a correctly configured Go >= 1.8 environment, that `$GOPATH/bin` is in `$PATH` and the `libpcap-dev` package installed for your system, then:
 
-    $ git clone https://github.com/evilsocket/bettercap-ng $GOPATH/src/github.com/evilsocket/bettercap-ng
-    $ cd $GOPATH/src/github.com/evilsocket/bettercap-ng
-    $ make deps
-    $ make
+    $ go get github.com/evilsocket/bettercap-ng
 
 To show the command line options:
 
-    $ sudo ./bettercap -h
+    $ sudo bettercap-ng -h
     
     Usage of ./bettercap-ng:
       -caplet string
