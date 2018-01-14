@@ -209,7 +209,7 @@ func (s *Session) registerCoreHandlers() {
 		readline.PcItem("get", readline.PcItemDynamic(func(prefix string) []string {
 			prefix = strings.Trim(prefix[3:], "\t\r\n ")
 			varNames := []string{""}
-			for key, _ := range s.Env.Storage {
+			for key := range s.Env.Storage {
 				if prefix == "" || strings.HasPrefix(key, prefix) == true {
 					varNames = append(varNames, key)
 				}
