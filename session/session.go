@@ -98,13 +98,37 @@ func (s *Session) setupInput() error {
 
 	pcompleters := make([]readline.PrefixCompleterInterface, 0)
 	for _, h := range s.CoreHandlers {
-		pcompleters = append(pcompleters, readline.PcItem(h.Name))
+		if h.Completer == nil {
+			pcompleters = append(pcompleters, readline.PcItem(h.Name))
+		} else {
+			pcompleters = append(pcompleters, h.Completer)
+		}
 	}
+
+	tree := make(map[string][]string, 0)
 
 	for _, m := range s.Modules {
 		for _, h := range m.Handlers() {
-			pcompleters = append(pcompleters, readline.PcItem(h.Name))
+			parts := strings.Split(h.Name, " ")
+			name := parts[0]
+
+			if _, found := tree[name]; found == false {
+				tree[name] = []string{}
+			}
+
+			tree[name] = append(tree[name], parts[1:]...)
 		}
+	}
+
+	for root, subElems := range tree {
+		item := readline.PcItem(root)
+		item.Children = []readline.PrefixCompleterInterface{}
+
+		for _, child := range subElems {
+			item.Children = append(item.Children, readline.PcItem(child))
+		}
+
+		pcompleters = append(pcompleters, item)
 	}
 
 	history := ""

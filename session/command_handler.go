@@ -1,10 +1,14 @@
 package session
 
-import "regexp"
+import (
+	"github.com/chzyer/readline"
+	"regexp"
+)
 
 type CommandHandler struct {
 	Name        string
 	Description string
+	Completer   *readline.PrefixCompleter
 	Parser      *regexp.Regexp
 	Exec        func(args []string, s *Session) error
 }
@@ -13,6 +17,7 @@ func NewCommandHandler(name string, expr string, desc string, exec func(args []s
 	return CommandHandler{
 		Name:        name,
 		Description: desc,
+		Completer:   nil,
 		Parser:      regexp.MustCompile(expr),
 		Exec:        exec,
 	}

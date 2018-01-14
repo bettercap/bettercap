@@ -2,9 +2,10 @@ package session
 
 import (
 	"fmt"
-	"github.com/evilsocket/bettercap-ng/core"
 	"regexp"
 	"strconv"
+
+	"github.com/evilsocket/bettercap-ng/core"
 )
 
 const IPv4Validator = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`

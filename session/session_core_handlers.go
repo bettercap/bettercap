@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -14,7 +15,7 @@ import (
 func (s *Session) helpHandler(args []string, sess *Session) error {
 	filter := ""
 	if len(args) == 2 {
-		filter = args[1]
+		filter = strings.Trim(args[1], "\r\n\t ")
 	}
 
 	if filter == "" {
@@ -162,49 +163,93 @@ func (s *Session) includeHandler(args []string, sess *Session) error {
 	return s.RunCaplet(args[0])
 }
 
+func (s *Session) addHandler(h CommandHandler, c *readline.PrefixCompleter) {
+	h.Completer = c
+	s.CoreHandlers = append(s.CoreHandlers, h)
+}
+
 func (s *Session) registerCoreHandlers() {
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("help",
-		"^(help|\\?)$",
-		"Display list of available commands.",
-		s.helpHandler))
+	s.addHandler(NewCommandHandler("help MODULE",
+		"^(help|\\?)(.*)$",
+		"List available commands or show module specific help if no module name is provided.",
+		s.helpHandler),
+		readline.PcItem("help", readline.PcItemDynamic(func(prefix string) []string {
+			prefix = strings.Trim(prefix[4:], "\t\r\n ")
+			modNames := []string{""}
+			for _, m := range s.Modules {
+				if prefix == "" || strings.HasPrefix(m.Name(), prefix) == true {
+					modNames = append(modNames, m.Name())
+				}
+			}
+			return modNames
+		})))
 
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("help MODULE",
-		"^(help|\\?) (.+)$",
-		"Show module specific help.",
-		s.helpHandler))
-
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("active",
+	s.addHandler(NewCommandHandler("active",
 		"^active$",
 		"Show information about active modules.",
-		s.activeHandler))
+		s.activeHandler),
+		readline.PcItem("active"))
 
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("exit",
+	s.addHandler(NewCommandHandler("quit",
 		"^(q|quit|e|exit)$",
 		"Close the session and exit.",
-		s.exitHandler))
+		s.exitHandler),
+		readline.PcItem("quit"))
 
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("sleep SECONDS",
+	s.addHandler(NewCommandHandler("sleep SECONDS",
 		"^sleep\\s+(\\d+)$",
 		"Sleep for the given amount of seconds.",
-		s.sleepHandler))
+		s.sleepHandler),
+		readline.PcItem("sleep"))
 
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("get NAME",
+	s.addHandler(NewCommandHandler("get NAME",
 		"^get\\s+(.+)",
 		"Get the value of variable NAME, use * for all.",
-		s.getHandler))
+		s.getHandler),
+		readline.PcItem("get", readline.PcItemDynamic(func(prefix string) []string {
+			prefix = strings.Trim(prefix[3:], "\t\r\n ")
+			varNames := []string{""}
+			for key, _ := range s.Env.Storage {
+				if prefix == "" || strings.HasPrefix(key, prefix) == true {
+					varNames = append(varNames, key)
+				}
+			}
+			return varNames
+		})))
 
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("set NAME VALUE",
+	s.addHandler(NewCommandHandler("set NAME VALUE",
 		"^set\\s+([^\\s]+)\\s+(.+)",
 		"Set the VALUE of variable NAME.",
-		s.setHandler))
+		s.setHandler),
+		readline.PcItem("set", readline.PcItemDynamic(func(prefix string) []string {
+			prefix = strings.Trim(prefix[3:], "\t\r\n ")
+			varNames := []string{""}
+			for key, _ := range s.Env.Storage {
+				if prefix == "" || strings.HasPrefix(key, prefix) == true {
+					varNames = append(varNames, key)
+				}
+			}
+			return varNames
+		})))
 
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("clear",
+	s.addHandler(NewCommandHandler("clear",
 		"^(clear|cls)$",
 		"Clear the screen.",
-		s.clsHandler))
+		s.clsHandler),
+		readline.PcItem("clear"))
 
-	s.CoreHandlers = append(s.CoreHandlers, NewCommandHandler("include CAPLET",
+	s.addHandler(NewCommandHandler("include CAPLET",
 		"^include\\s+(.+)",
 		"Load and run this caplet in the current session.",
-		s.includeHandler))
+		s.includeHandler),
+		readline.PcItem("include", readline.PcItemDynamic(func(prefix string) []string {
+			prefix = strings.Trim(prefix[8:], "\t\r\n ")
+			if prefix == "" {
+				prefix = "."
+			}
+
+			files := []string{}
+			files, _ = filepath.Glob(prefix + "*")
+			return files
+		})))
 }
