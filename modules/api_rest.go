@@ -10,13 +10,14 @@ import (
 	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/session"
 	"github.com/evilsocket/bettercap-ng/tls"
+
+	"github.com/gin-gonic/gin"
 )
 
 type RestAPI struct {
 	session.SessionModule
+	router   *gin.Engine
 	server   *http.Server
-	username string
-	password string
 	certFile string
 	keyFile  string
 }
@@ -38,8 +39,13 @@ func NewRestAPI(s *session.Session) *RestAPI {
 
 	api.AddParam(session.NewStringParameter("api.rest.username",
 		"",
-		"",
+		".+",
 		"API authentication username."))
+
+	api.AddParam(session.NewStringParameter("api.rest.password",
+		"",
+		".+",
+		"API authentication password."))
 
 	api.AddParam(session.NewStringParameter("api.rest.certificate",
 		"~/.bcap-api.rest.certificate.pem",
@@ -50,11 +56,6 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"~/.bcap-api.rest.key.pem",
 		"",
 		"API TLS key"))
-
-	api.AddParam(session.NewStringParameter("api.rest.password",
-		"",
-		"",
-		"API authentication password."))
 
 	api.AddHandler(session.NewModuleHandler("api.rest on", "",
 		"Start REST API server.",
@@ -67,8 +68,6 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		func(args []string) error {
 			return api.Stop()
 		}))
-
-	api.setupRoutes()
 
 	return api
 }
@@ -95,16 +94,17 @@ func (api *RestAPI) Author() string {
 
 func (api *RestAPI) Configure() error {
 	var err error
-	var address string
+	var username string
+	var password string
+	var ip string
 	var port int
 
-	if err, address = api.StringParam("api.rest.address"); err != nil {
+	if err, ip = api.StringParam("api.rest.address"); err != nil {
 		return err
 	} else if err, port = api.IntParam("api.rest.port"); err != nil {
 		return err
-	} else {
-		api.server.Addr = fmt.Sprintf("%s:%d", address, port)
 	}
+	api.server.Addr = fmt.Sprintf("%s:%d", ip, port)
 
 	if err, api.certFile = api.StringParam("api.rest.certificate"); err != nil {
 		return err
@@ -118,16 +118,12 @@ func (api *RestAPI) Configure() error {
 		return err
 	}
 
-	if err, api.username = api.StringParam("api.rest.username"); err != nil {
+	if err, username = api.StringParam("api.rest.username"); err != nil {
 		return err
-	} else if api.username == "" {
-		return fmt.Errorf("api.rest.username is empty.")
 	}
 
-	if err, api.password = api.StringParam("api.rest.password"); err != nil {
+	if err, password = api.StringParam("api.rest.password"); err != nil {
 		return err
-	} else if api.password == "" {
-		return fmt.Errorf("api.rest.password is empty.")
 	}
 
 	if core.Exists(api.certFile) == false || core.Exists(api.keyFile) == false {
@@ -140,6 +136,20 @@ func (api *RestAPI) Configure() error {
 		log.Info("Loading RSA key from %s", api.keyFile)
 		log.Info("Loading TLS certificate from %s", api.certFile)
 	}
+
+	gin.SetMode(gin.ReleaseMode)
+
+	api.router = gin.New()
+	api.router.Use(SecurityMiddleware())
+	api.router.Use(gin.BasicAuth(gin.Accounts{username: password}))
+
+	group := api.router.Group("/api")
+	group.GET("/session", ShowRestSession)
+	group.POST("/session", RunRestCommand)
+	group.GET("/events", ShowRestEvents)
+	group.DELETE("/events", ClearRestEvents)
+
+	api.server.Handler = api.router
 
 	return nil
 }

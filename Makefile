@@ -38,6 +38,8 @@ deps:
 	@go get github.com/robertkrimen/otto
 	@go get github.com/dustin/go-humanize
 	@go get github.com/olekukonko/tablewriter
+	@go get github.com/gin-gonic/gin
+	@go get gopkg.in/unrolled/secure.v1
 
 clean:
 	@rm -rf $(TARGET) net/oui_compiled.go
