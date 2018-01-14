@@ -30,7 +30,8 @@ func Generate(certPath string, keyPath string) error {
 	}
 
 	notBefore := time.Now()
-	notAfter := notBefore.Add(time.Duration(24*365) * time.Hour)
+	aYear := time.Duration(365*24) * time.Hour
+	notAfter := notBefore.Add(aYear)
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
@@ -40,9 +41,9 @@ func Generate(certPath string, keyPath string) error {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName:         "bettercap-ng",
-			Organization:       []string{"bettercap-ng"},
-			OrganizationalUnit: []string{"RSA key generation module"},
+			CommonName:         "www.cisco.com",
+			Organization:       []string{"Cisco Systems, Inc."},
+			OrganizationalUnit: []string{"Cisco Systems, Inc."},
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
