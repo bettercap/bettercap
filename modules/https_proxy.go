@@ -32,14 +32,14 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"Port to bind the HTTPS proxy to."))
 
 	p.AddParam(session.NewStringParameter("https.proxy.certificate",
-		"~/.bcap-https.proxy.certificate.pem",
+		"~/.bcap-https.proxy-ca.certificate.pem",
 		"",
-		"HTTPS proxy TLS certificate."))
+		"HTTPS proxy certification authority TLS certificate file."))
 
 	p.AddParam(session.NewStringParameter("https.proxy.key",
-		"~/.bcap-https.proxy.key.pem",
+		"~/.bcap-https.proxy-ca.key.pem",
 		"",
-		"HTTPS proxy TLS key"))
+		"HTTPS proxy certification authority TLS key file."))
 
 	p.AddParam(session.NewStringParameter("https.proxy.script",
 		"",
@@ -111,14 +111,14 @@ func (p *HttpsProxy) Configure() error {
 	}
 
 	if core.Exists(certFile) == false || core.Exists(keyFile) == false {
-		log.Info("Generating proxy TLS key to %s", keyFile)
-		log.Info("Generating proxy TLS certificate to %s", certFile)
+		log.Info("Generating proxy certification authority TLS key to %s", keyFile)
+		log.Info("Generating proxy certification authority TLS certificate to %s", certFile)
 		if err := tls.Generate(certFile, keyFile); err != nil {
 			return err
 		}
 	} else {
-		log.Info("Loading proxy TLS key from %s", keyFile)
-		log.Info("Loading proxy TLS certificate from %s", certFile)
+		log.Info("Loading proxy certification authority TLS key from %s", keyFile)
+		log.Info("Loading proxy certification authority TLS certificate from %s", certFile)
 	}
 
 	return p.proxy.ConfigureTLS(address, proxyPort, httpPort, scriptPath, certFile, keyFile)

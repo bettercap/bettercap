@@ -103,7 +103,9 @@ func (p *ArpSpoofer) getMAC(ip net.IP, probe bool) (net.HardwareAddr, error) {
 
 func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running bool, probe bool) {
 	for _, ip := range p.addresses {
-		if p.shouldSpoof(ip) == false {
+		if check_running && p.Running() == false {
+			return
+		} else if p.shouldSpoof(ip) == false {
 			log.Debug("Skipping address %s from ARP spoofing.", ip)
 			continue
 		}
@@ -120,10 +122,6 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 		} else {
 			log.Debug("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip.String(), hw.String())
 			p.Session.Queue.Send(pkt)
-		}
-
-		if check_running && p.Running() == false {
-			return
 		}
 	}
 }

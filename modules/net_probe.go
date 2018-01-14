@@ -73,7 +73,7 @@ func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 	} else if con, err := net.DialUDP("udp", nil, addr); err != nil {
 		log.Error("Could not dial %s.", name)
 	} else {
-		log.Debug("UDP connection to %s enstablished.", name)
+		// log.Debug("UDP connection to %s enstablished.", name)
 		defer con.Close()
 		con.Write([]byte{0xde, 0xad, 0xbe, 0xef})
 	}

@@ -140,7 +140,7 @@ func (q *Queue) Send(raw []byte) error {
 
 	if q.active {
 		err := q.handle.WritePacketData(raw)
-		if err != nil {
+		if err == nil {
 			q.Sent += uint64(len(raw))
 		} else {
 			q.Errors += 1

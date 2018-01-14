@@ -81,7 +81,9 @@ func (s *Session) activeHandler(args []string, sess *Session) error {
 		if len(params) > 0 {
 			fmt.Println()
 			for _, p := range params {
-				fmt.Printf(p.Dump(s.HelpPadding))
+				_, val := s.Env.Get(p.Name)
+				fmt.Printf("  "+core.YELLOW+"%"+strconv.Itoa(s.HelpPadding)+"s"+core.RESET+
+					" : %s\n", p.Name, val)
 			}
 		}
 
