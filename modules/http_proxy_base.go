@@ -210,7 +210,7 @@ func TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCt
 		cert := getCachedCert(hostname, port)
 		if cert == nil {
 			log.Info("Creating spoofed certificate for %s:%d", core.Yellow(hostname), port)
-			cert, err = btls.SignCertificateForHost(ca, hostname)
+			cert, err = btls.SignCertificateForHost(ca, hostname, port)
 			if err != nil {
 				log.Warning("Cannot sign host certificate with provided CA: %s", err)
 				return nil, err

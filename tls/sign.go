@@ -1,17 +1,14 @@
 package tls
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
+	"fmt"
 	"math/big"
-	"net"
 	"sort"
-	"time"
-
-	"github.com/elazarl/goproxy"
 )
 
 func hashSorted(lst []string) []byte {
@@ -31,57 +28,51 @@ func hashSortedBigInt(lst []string) *big.Int {
 	return rv
 }
 
-func SignCertificateForHost(ca *tls.Certificate, host string) (cert *tls.Certificate, err error) {
-	var x509ca *x509.Certificate
+func getServerCertificate(host string, port int) *x509.Certificate {
+	config := tls.Config{InsecureSkipVerify: true}
+	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", host, port), &config)
+	if err != nil {
+		return nil
+	}
+	defer conn.Close()
 
-	// TODO: read actual fields from the host
+	state := conn.ConnectionState()
+
+	return state.PeerCertificates[0]
+}
+
+func SignCertificateForHost(ca *tls.Certificate, host string, port int) (cert *tls.Certificate, err error) {
+	var x509ca *x509.Certificate
 
 	if x509ca, err = x509.ParseCertificate(ca.Certificate[0]); err != nil {
 		return
 	}
-	start := time.Unix(0, 0)
-	end, err := time.Parse("2006-01-02", "2049-12-31")
-	if err != nil {
-		panic(err)
-	}
 
-	hosts := []string{host}
-	hash := hashSorted(hosts)
-	serial := new(big.Int)
-	serial.SetBytes(hash)
+	srvCert := getServerCertificate(host, port)
+
 	template := x509.Certificate{
-		SerialNumber: serial,
-		Issuer:       x509ca.Subject,
-		Subject: pkix.Name{
-			Organization: []string{"Cisco Systems, Inc."},
-		},
-		NotBefore: start,
-		NotAfter:  end,
-
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		SerialNumber:          srvCert.SerialNumber,
+		Issuer:                x509ca.Subject,
+		Subject:               srvCert.Subject,
+		NotBefore:             srvCert.NotBefore,
+		NotAfter:              srvCert.NotAfter,
+		KeyUsage:              srvCert.KeyUsage,
+		ExtKeyUsage:           srvCert.ExtKeyUsage,
+		IPAddresses:           srvCert.IPAddresses,
+		DNSNames:              srvCert.DNSNames,
 		BasicConstraintsValid: true,
 	}
 
-	for _, h := range hosts {
-		if ip := net.ParseIP(h); ip != nil {
-			template.IPAddresses = append(template.IPAddresses, ip)
-		} else {
-			template.DNSNames = append(template.DNSNames, h)
-		}
-	}
-	var csprng goproxy.CounterEncryptorRand
-	if csprng, err = goproxy.NewCounterEncryptorRandFromKey(ca.PrivateKey, hash); err != nil {
-		return
-	}
 	var certpriv *rsa.PrivateKey
-	if certpriv, err = rsa.GenerateKey(&csprng, 1024); err != nil {
+	if certpriv, err = rsa.GenerateKey(rand.Reader, 1024); err != nil {
 		return
 	}
+
 	var derBytes []byte
-	if derBytes, err = x509.CreateCertificate(&csprng, &template, x509ca, &certpriv.PublicKey, ca.PrivateKey); err != nil {
+	if derBytes, err = x509.CreateCertificate(rand.Reader, &template, x509ca, &certpriv.PublicKey, ca.PrivateKey); err != nil {
 		return
 	}
+
 	return &tls.Certificate{
 		Certificate: [][]byte{derBytes, ca.Certificate[0]},
 		PrivateKey:  certpriv,
