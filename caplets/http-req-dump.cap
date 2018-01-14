@@ -2,7 +2,7 @@
 #
 #   sudo ./bettercap-ng -caplet caplets/http-req-dump.cap -eval "set arp.spoof.targets 192.168.1.64"
 
-# events.stream off
+events.stream off
 
 net.recon on
 net.probe on
