@@ -1,4 +1,6 @@
 TARGET=bettercap-ng
+TO_UPDATE=core/banner.go
+CURRENT_VERSION=$(shell cat core/banner.go | grep Version | cut -d '"' -f 2)
 
 all: fmt vet build
 	@echo "@ Done"
@@ -10,36 +12,22 @@ build: resources
 	@echo "@ Building ..."
 	@go build $(FLAGS) -o $(TARGET) .
 
-resources:
-	@echo "@ Compiling resources into go files ..."
+resources: oui
+
+oui:
 	@$(GOPATH)/bin/go-bindata -o net/oui_compiled.go -pkg net net/oui.dat
 
 vet:
-	@echo "@ Running VET ..."
 	@go vet ./...
 
 fmt:
-	@echo "@ Formatting ..."
 	@go fmt ./...
 
 lint:
-	@echo "@ Running LINT ..."
 	@golint ./...
 
 deps:
-	@echo "@ Installing dependencies ..."
-	@go get -u github.com/jteeuwen/go-bindata/...
-	@go get github.com/elazarl/goproxy
-	@go get github.com/google/gopacket 
-	@go get github.com/mdlayher/dhcp6
-	@go get github.com/malfunkt/iprange
-	@go get github.com/rogpeppe/go-charset/charset
-	@go get github.com/chzyer/readline
-	@go get github.com/robertkrimen/otto
-	@go get github.com/dustin/go-humanize
-	@go get github.com/olekukonko/tablewriter
-	@go get github.com/gin-gonic/gin
-	@go get gopkg.in/unrolled/secure.v1
+	@go get ./...
 
 clean:
 	@rm -rf $(TARGET) net/oui_compiled.go
@@ -49,3 +37,6 @@ clear_arp:
 
 bcast_ping:
 	@ping -b 255.255.255.255
+
+release:
+	@./new_release.sh
