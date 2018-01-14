@@ -15,7 +15,7 @@ type CommandRequest struct {
 	Command string `json:"cmd"`
 }
 
-type ApiResponse struct {
+type APIResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"msg"`
 }
@@ -35,12 +35,12 @@ func SafeBind(c *gin.Context, obj interface{}) error {
 	return binding.Validator.ValidateStruct(obj)
 }
 
-func BadRequest(c *gin.Context, opt_msg ...string) {
+func BadRequest(c *gin.Context, optMsg ...string) {
 	msg := "Bad Request"
-	if len(opt_msg) > 0 {
-		msg = opt_msg[0]
+	if len(optMsg) > 0 {
+		msg = optMsg[0]
 	}
-	c.JSON(400, ApiResponse{
+	c.JSON(400, APIResponse{
 		Success: false,
 		Message: msg,
 	})
@@ -63,7 +63,7 @@ func RunRestCommand(c *gin.Context) {
 	if err != nil {
 		BadRequest(c, err.Error())
 	} else {
-		c.JSON(200, ApiResponse{Success: true})
+		c.JSON(200, APIResponse{Success: true})
 	}
 }
 
