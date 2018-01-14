@@ -20,19 +20,22 @@ type HTTPProxy struct {
 	Redirection *firewall.Redirection
 	Proxy       *goproxy.ProxyHttpServer
 	Script      *ProxyScript
+	CertFile    string
+	KeyFile     string
 
-	s *session.Session
+	isTLS bool
+	sess  *session.Session
 }
 
 func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	p := &HTTPProxy{
 		Proxy: goproxy.NewProxyHttpServer(),
-		s:     s,
+		sess:  s,
+		isTLS: false,
 	}
 
 	p.Proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if p.doProxy(req) == true {
-			req.URL.Scheme = "http"
 			req.URL.Host = req.Host
 			p.Proxy.ServeHTTP(w, req)
 		}
@@ -65,7 +68,7 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 }
 
 func (p *HTTPProxy) logAction(req *http.Request, jsres *JSResponse) {
-	p.s.Events.Add("http.proxy.spoofed-response", struct {
+	p.sess.Events.Add("http.proxy.spoofed-response", struct {
 		To     string
 		Method string
 		Host   string
@@ -107,7 +110,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	p.Address = address
 
 	if scriptPath != "" {
-		if err, p.Script = LoadProxyScript(scriptPath, p.s); err != nil {
+		if err, p.Script = LoadProxyScript(scriptPath, p.sess); err != nil {
 			return err
 		} else {
 			log.Debug("Proxy script %s loaded.", scriptPath)
@@ -119,18 +122,18 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 		Handler: p.Proxy,
 	}
 
-	if p.s.Firewall.IsForwardingEnabled() == false {
+	if p.sess.Firewall.IsForwardingEnabled() == false {
 		log.Info("Enabling forwarding.")
-		p.s.Firewall.EnableForwarding(true)
+		p.sess.Firewall.EnableForwarding(true)
 	}
 
-	p.Redirection = firewall.NewRedirection(p.s.Interface.Name(),
+	p.Redirection = firewall.NewRedirection(p.sess.Interface.Name(),
 		"TCP",
 		httpPort,
 		p.Address,
 		proxyPort)
 
-	if err := p.s.Firewall.EnableRedirection(p.Redirection, true); err != nil {
+	if err := p.sess.Firewall.EnableRedirection(p.Redirection, true); err != nil {
 		return err
 	}
 
@@ -139,9 +142,30 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	return nil
 }
 
+func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, scriptPath string, certFile string, keyFile string) error {
+	err := p.Configure(address, proxyPort, httpPort, scriptPath)
+	if err != nil {
+		return err
+	}
+
+	p.isTLS = true
+	p.CertFile = certFile
+	p.KeyFile = keyFile
+
+	return nil
+}
+
 func (p *HTTPProxy) Start() {
 	go func() {
-		if err := p.Server.ListenAndServe(); err != nil {
+		var err error
+
+		if p.isTLS == true {
+			err = p.Server.ListenAndServeTLS(p.CertFile, p.KeyFile)
+		} else {
+			err = p.Server.ListenAndServe()
+		}
+
+		if err != nil {
 			log.Warning("%s", err)
 		}
 	}()
@@ -150,7 +174,7 @@ func (p *HTTPProxy) Start() {
 func (p *HTTPProxy) Stop() error {
 	if p.Redirection != nil {
 		log.Debug("Disabling redirection %s", p.Redirection.String())
-		if err := p.s.Firewall.EnableRedirection(p.Redirection, false); err != nil {
+		if err := p.sess.Firewall.EnableRedirection(p.Redirection, false); err != nil {
 			return err
 		}
 		p.Redirection = nil

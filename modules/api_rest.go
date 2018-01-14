@@ -127,13 +127,13 @@ func (api *RestAPI) Configure() error {
 	}
 
 	if core.Exists(api.certFile) == false || core.Exists(api.keyFile) == false {
-		log.Info("Generating RSA key to %s", api.keyFile)
+		log.Info("Generating TLS key to %s", api.keyFile)
 		log.Info("Generating TLS certificate to %s", api.certFile)
 		if err := tls.Generate(api.certFile, api.keyFile); err != nil {
 			return err
 		}
 	} else {
-		log.Info("Loading RSA key from %s", api.keyFile)
+		log.Info("Loading TLS key from %s", api.keyFile)
 		log.Info("Loading TLS certificate from %s", api.certFile)
 	}
 

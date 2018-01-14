@@ -1,0 +1,147 @@
+package modules
+
+import (
+	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/evilsocket/bettercap-ng/tls"
+)
+
+type HttpsProxy struct {
+	session.SessionModule
+	proxy *HTTPProxy
+}
+
+func NewHttpsProxy(s *session.Session) *HttpsProxy {
+	p := &HttpsProxy{
+		SessionModule: session.NewSessionModule("https.proxy", s),
+		proxy:         NewHTTPProxy(s),
+	}
+
+	p.AddParam(session.NewIntParameter("https.port",
+		"443",
+		"HTTPS port to redirect when the proxy is activated."))
+
+	p.AddParam(session.NewStringParameter("https.proxy.address",
+		session.ParamIfaceAddress,
+		session.IPv4Validator,
+		"Address to bind the HTTPS proxy to."))
+
+	p.AddParam(session.NewIntParameter("https.proxy.port",
+		"8083",
+		"Port to bind the HTTPS proxy to."))
+
+	p.AddParam(session.NewStringParameter("https.proxy.certificate",
+		"~/.bcap-https.proxy.certificate.pem",
+		"",
+		"HTTPS proxy TLS certificate."))
+
+	p.AddParam(session.NewStringParameter("https.proxy.key",
+		"~/.bcap-https.proxy.key.pem",
+		"",
+		"HTTPS proxy TLS key"))
+
+	p.AddParam(session.NewStringParameter("https.proxy.script",
+		"",
+		"",
+		"Path of a proxy JS script."))
+
+	p.AddHandler(session.NewModuleHandler("https.proxy on", "",
+		"Start HTTPS proxy.",
+		func(args []string) error {
+			return p.Start()
+		}))
+
+	p.AddHandler(session.NewModuleHandler("https.proxy off", "",
+		"Stop HTTPS proxy.",
+		func(args []string) error {
+			return p.Stop()
+		}))
+
+	return p
+}
+
+func (p *HttpsProxy) Name() string {
+	return "https.proxy"
+}
+
+func (p *HttpsProxy) Description() string {
+	return "A full featured HTTPS proxy that can be used to inject malicious contents into webpages, all HTTPS traffic will be redirected to it."
+}
+
+func (p *HttpsProxy) Author() string {
+	return "Simone Margaritelli <evilsocket@protonmail.com>"
+}
+
+func (p *HttpsProxy) Configure() error {
+	var err error
+	var address string
+	var proxyPort int
+	var httpPort int
+	var scriptPath string
+	var certFile string
+	var keyFile string
+
+	if err, address = p.StringParam("https.proxy.address"); err != nil {
+		return err
+	}
+
+	if err, proxyPort = p.IntParam("https.proxy.port"); err != nil {
+		return err
+	}
+
+	if err, httpPort = p.IntParam("https.port"); err != nil {
+		return err
+	}
+
+	if err, certFile = p.StringParam("https.proxy.certificate"); err != nil {
+		return err
+	} else if certFile, err = core.ExpandPath(certFile); err != nil {
+		return err
+	}
+
+	if err, keyFile = p.StringParam("https.proxy.key"); err != nil {
+		return err
+	} else if keyFile, err = core.ExpandPath(keyFile); err != nil {
+		return err
+	}
+
+	if err, scriptPath = p.StringParam("https.proxy.script"); err != nil {
+		return err
+	}
+
+	if core.Exists(certFile) == false || core.Exists(keyFile) == false {
+		log.Info("Generating proxy TLS key to %s", keyFile)
+		log.Info("Generating proxy TLS certificate to %s", certFile)
+		if err := tls.Generate(certFile, keyFile); err != nil {
+			return err
+		}
+	} else {
+		log.Info("Loading proxy TLS key from %s", keyFile)
+		log.Info("Loading proxy TLS certificate from %s", certFile)
+	}
+
+	return p.proxy.ConfigureTLS(address, proxyPort, httpPort, scriptPath, certFile, keyFile)
+}
+
+func (p *HttpsProxy) Start() error {
+	if p.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := p.Configure(); err != nil {
+		return err
+	}
+
+	p.SetRunning(true)
+	p.proxy.Start()
+
+	return nil
+}
+
+func (p *HttpsProxy) Stop() error {
+	if p.Running() == false {
+		return session.ErrAlreadyStopped
+	}
+	p.SetRunning(false)
+
+	return p.proxy.Stop()
+}

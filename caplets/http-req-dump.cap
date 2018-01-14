@@ -14,8 +14,10 @@ set net.sniff.local true
 set net.sniff.filter tcp port 443
 net.sniff on
 
+set https.proxy.script caplets/http-req-dump.js
 set http.proxy.script caplets/http-req-dump.js
 clear
 http.proxy on
+https.proxy on
 arp.spoof on
 
