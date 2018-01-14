@@ -32,12 +32,12 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"Port to bind the HTTPS proxy to."))
 
 	p.AddParam(session.NewStringParameter("https.proxy.certificate",
-		"~/.bcap-https.proxy-ca.certificate.pem",
+		"~/.bettercap-ca.cert.pem",
 		"",
 		"HTTPS proxy certification authority TLS certificate file."))
 
 	p.AddParam(session.NewStringParameter("https.proxy.key",
-		"~/.bcap-https.proxy-ca.key.pem",
+		"~/.bettercap-ca.key.pem",
 		"",
 		"HTTPS proxy certification authority TLS key file."))
 

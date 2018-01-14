@@ -41,9 +41,11 @@ func Generate(certPath string, keyPath string) error {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName:         "www.cisco.com",
-			Organization:       []string{"Cisco Systems, Inc."},
-			OrganizationalUnit: []string{"Cisco Systems, Inc."},
+			Country:            []string{"US"},
+			Locality:           []string{"Scottsdale"},
+			Organization:       []string{"GoDaddy.com, Inc."},
+			OrganizationalUnit: []string{"http://certs.godaddy.com/repository/"},
+			CommonName:         "Go Daddy Secure Certificate Authority - G2",
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
