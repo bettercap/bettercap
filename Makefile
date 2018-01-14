@@ -1,6 +1,4 @@
 TARGET=bettercap-ng
-TO_UPDATE=core/banner.go
-CURRENT_VERSION=$(shell cat core/banner.go | grep Version | cut -d '"' -f 2)
 
 all: fmt vet build
 	@echo "@ Done"
