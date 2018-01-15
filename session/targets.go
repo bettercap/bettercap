@@ -11,6 +11,7 @@ type Targets struct {
 	Interface *net.Endpoint
 	Gateway   *net.Endpoint
 	Targets   map[string]*net.Endpoint
+	TTL       map[string]uint
 	lock      sync.Mutex
 }
 
@@ -20,6 +21,7 @@ func NewTargets(s *Session, iface, gateway *net.Endpoint) *Targets {
 		Interface: iface,
 		Gateway:   gateway,
 		Targets:   make(map[string]*net.Endpoint),
+		TTL:       make(map[string]uint),
 	}
 }
 
@@ -36,8 +38,12 @@ func (tp *Targets) Remove(ip, mac string) {
 	defer tp.lock.Unlock()
 
 	if e, found := tp.Targets[mac]; found {
-		tp.Session.Events.Add("target.lost", e)
-		delete(tp.Targets, mac)
+		tp.TTL[mac]--
+		if tp.TTL[mac] == 0 {
+			tp.Session.Events.Add("target.lost", e)
+			delete(tp.Targets, mac)
+			delete(tp.TTL, mac)
+		}
 		return
 	}
 }
@@ -77,6 +83,7 @@ func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
 	}
 
 	tp.Targets[mac] = e
+	tp.TTL[mac] = 2
 
 	tp.Session.Events.Add("target.new", e)
 
