@@ -165,6 +165,14 @@ func (s *Session) includeHandler(args []string, sess *Session) error {
 	return s.RunCaplet(args[0])
 }
 
+func (s *Session) shHandler(args []string, sess *Session) error {
+	out, err := core.Shell(args[0])
+	if err == nil {
+		fmt.Printf("%s\n", out)
+	}
+	return err
+}
+
 func (s *Session) addHandler(h CommandHandler, c *readline.PrefixCompleter) {
 	h.Completer = c
 	s.CoreHandlers = append(s.CoreHandlers, h)
@@ -254,4 +262,10 @@ func (s *Session) registerCoreHandlers() {
 			files, _ = filepath.Glob(prefix + "*")
 			return files
 		})))
+
+	s.addHandler(NewCommandHandler("! COMMAND",
+		"^!\\s*(.+)$",
+		"Execute a shell command and print its output.",
+		s.shHandler),
+		readline.PcItem("!"))
 }
