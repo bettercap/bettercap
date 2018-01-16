@@ -159,6 +159,28 @@ func (a tSorter) Len() int           { return len(a) }
 func (a tSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a tSorter) Less(i, j int) bool { return a[i].IpAddressUint32 < a[j].IpAddressUint32 }
 
+func rankByProtoHits(protos map[string]uint64) ProtoPairList {
+	pl := make(ProtoPairList, len(protos))
+	i := 0
+	for k, v := range protos {
+		pl[i] = ProtoPair{k, v}
+		i++
+	}
+	sort.Sort(sort.Reverse(pl))
+	return pl
+}
+
+type ProtoPair struct {
+	Protocol string
+	Hits     uint64
+}
+
+type ProtoPairList []ProtoPair
+
+func (p ProtoPairList) Len() int           { return len(p) }
+func (p ProtoPairList) Less(i, j int) bool { return p[i].Hits < p[j].Hits }
+func (p ProtoPairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
 func (d *Discovery) Show() error {
 	d.Session.Targets.Lock()
 	defer d.Session.Targets.Unlock()
@@ -235,8 +257,9 @@ func (d *Discovery) Show() error {
 
 	table = tablewriter.NewWriter(os.Stdout)
 
-	for proto, hits := range d.Session.Queue.Protos {
-		table.Append([]string{proto, fmt.Sprintf("%d", hits)})
+	protos := rankByProtoHits(d.Session.Queue.Protos)
+	for _, p := range protos {
+		table.Append([]string{p.Protocol, fmt.Sprintf("%d", p.Hits)})
 	}
 
 	table.SetHeader([]string{"Proto", "# Packets"})
