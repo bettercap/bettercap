@@ -159,15 +159,19 @@ func (a tSorter) Len() int           { return len(a) }
 func (a tSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a tSorter) Less(i, j int) bool { return a[i].IpAddressUint32 < a[j].IpAddressUint32 }
 
-func rankByProtoHits(protos map[string]uint64) ProtoPairList {
+func rankByProtoHits(protos map[string]uint64) (ProtoPairList, uint64) {
 	pl := make(ProtoPairList, len(protos))
+	max := uint64(0)
 	i := 0
 	for k, v := range protos {
 		pl[i] = ProtoPair{k, v}
+		if v > max {
+			max = v
+		}
 		i++
 	}
 	sort.Sort(sort.Reverse(pl))
-	return pl
+	return pl, max
 }
 
 type ProtoPair struct {
@@ -197,6 +201,7 @@ func (d *Discovery) Show() error {
 
 	table := tablewriter.NewWriter(os.Stdout)
 
+	table.SetColWidth(80)
 	table.AppendBulk(data)
 	table.Render()
 
@@ -236,6 +241,7 @@ func (d *Discovery) Show() error {
 		table = tablewriter.NewWriter(os.Stdout)
 
 		table.SetHeader([]string{"IP", "MAC", "Hostname", "Vendor", "Sent", "Recvd", "Last Seen"})
+		table.SetColWidth(80)
 		table.AppendBulk(data)
 		table.Render()
 
@@ -252,16 +258,26 @@ func (d *Discovery) Show() error {
 	table = tablewriter.NewWriter(os.Stdout)
 
 	table.SetHeader([]string{"Sent", "Sniffed", "# Packets", "Errors"})
+	table.SetColWidth(80)
 	table.Append(row)
 	table.Render()
 
 	fmt.Println()
 
 	table = tablewriter.NewWriter(os.Stdout)
+	table.SetColWidth(80)
 
-	protos := rankByProtoHits(d.Session.Queue.Protos)
+	protos, maxPackets := rankByProtoHits(d.Session.Queue.Protos)
+	maxBarWidth := 70
+
 	for _, p := range protos {
-		table.Append([]string{p.Protocol, fmt.Sprintf("%d", p.Hits)})
+		width := int(float32(maxBarWidth) * (float32(p.Hits) / float32(maxPackets)))
+		bar := ""
+		for i := 0; i < width; i++ {
+			bar += "▇"
+		}
+
+		table.Append([]string{p.Protocol, fmt.Sprintf("%s %d", bar, p.Hits)})
 	}
 
 	table.SetHeader([]string{"Proto", "# Packets"})
