@@ -83,7 +83,7 @@ func (q *Queue) worker() {
 		pktLayers := pkt.Layers()
 		for _, layer := range pktLayers {
 			proto := layer.LayerType().String()
-			if proto == "DecodeFailure" || proto == "Payload" {
+			if proto == "DecodeFailure" || proto == "Payload" || proto == "Ethernet" {
 				continue
 			}
 
