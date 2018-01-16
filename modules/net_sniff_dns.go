@@ -15,7 +15,7 @@ func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 		return false
 	}
 
-	if dns.OpCode != layers.DNSOpCodeQuery || len(dns.Answers) == 0 {
+	if dns.OpCode != layers.DNSOpCodeQuery {
 		return false
 	}
 
