@@ -151,6 +151,14 @@ func (q *Queue) Send(raw []byte) error {
 	}
 }
 
+func (q *Queue) Lock() {
+	q.lock.Lock()
+}
+
+func (q *Queue) Unlock() {
+	q.lock.Unlock()
+}
+
 func (q *Queue) Stop() {
 	q.lock.Lock()
 	defer q.lock.Unlock()

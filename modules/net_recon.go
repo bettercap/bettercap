@@ -183,7 +183,9 @@ func (p ProtoPairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 func (d *Discovery) Show() error {
 	d.Session.Targets.Lock()
+	d.Session.Queue.Lock()
 	defer d.Session.Targets.Unlock()
+	defer d.Session.Queue.Unlock()
 
 	iface := d.Session.Interface
 	gw := d.Session.Gateway
