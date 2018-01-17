@@ -75,7 +75,13 @@ func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 	} else {
 		// log.Debug("UDP connection to %s enstablished.", name)
 		defer con.Close()
-		con.Write([]byte{0xde, 0xad, 0xbe, 0xef})
+		wrote, _ := con.Write([]byte{0xde, 0xad, 0xbe, 0xef})
+
+		if wrote > 0 {
+			p.Session.Queue.Lock()
+			p.Session.Queue.Sent += uint64(wrote)
+			p.Session.Queue.Unlock()
+		}
 	}
 }
 

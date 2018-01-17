@@ -74,6 +74,8 @@ func (q *Queue) worker() {
 		if q.active == false {
 			return
 		}
+
+		q.Lock()
 		pktSize := uint64(len(pkt.Data()))
 
 		q.PktReceived++
@@ -131,6 +133,8 @@ func (q *Queue) worker() {
 				q.Traffic[addr].Received += pktSize
 			}
 		}
+
+		q.Unlock()
 	}
 }
 
