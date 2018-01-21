@@ -50,7 +50,13 @@ func NewDiscovery(s *session.Session) *Discovery {
 	d.AddHandler(session.NewModuleHandler("net.show", "",
 		"Show current hosts list.",
 		func(args []string) error {
-			return d.Show()
+			return d.Show("address")
+		}))
+
+	d.AddHandler(session.NewModuleHandler("net.show by seen", "",
+		"Show current hosts list (sort by last seen).",
+		func(args []string) error {
+			return d.Show("seen")
 		}))
 
 	return d
@@ -179,7 +185,7 @@ func (p ProtoPairList) Len() int           { return len(p) }
 func (p ProtoPairList) Less(i, j int) bool { return p[i].Hits < p[j].Hits }
 func (p ProtoPairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func (d *Discovery) Show() error {
+func (d *Discovery) Show(by string) error {
 	d.Session.Targets.Lock()
 	d.Session.Queue.Lock()
 	defer d.Session.Targets.Unlock()
@@ -210,7 +216,11 @@ func (d *Discovery) Show() error {
 			targets = append(targets, t)
 		}
 
-		sort.Sort(ByAddressSorter(targets))
+		if by == "address" {
+			sort.Sort(ByAddressSorter(targets))
+		} else if by == "seen" {
+			sort.Sort(BySeenSorter(targets))
+		}
 
 		data = make([][]string, nTargets)
 		for i, t := range targets {
