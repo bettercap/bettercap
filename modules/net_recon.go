@@ -153,12 +153,6 @@ func (d *Discovery) Start() error {
 	return nil
 }
 
-type tSorter []*net.Endpoint
-
-func (a tSorter) Len() int           { return len(a) }
-func (a tSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a tSorter) Less(i, j int) bool { return a[i].IpAddressUint32 < a[j].IpAddressUint32 }
-
 func rankByProtoHits(protos map[string]uint64) (ProtoPairList, uint64) {
 	pl := make(ProtoPairList, len(protos))
 	max := uint64(0)
@@ -216,7 +210,7 @@ func (d *Discovery) Show() error {
 			targets = append(targets, t)
 		}
 
-		sort.Sort(tSorter(targets))
+		sort.Sort(ByAddressSorter(targets))
 
 		data = make([][]string, nTargets)
 		for i, t := range targets {
