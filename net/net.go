@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,10 @@ import (
 
 var IPv4RouteParser = regexp.MustCompile("^([\\d\\.]+)\\s+([\\d\\.]+)\\s+([\\d\\.]+)\\s+([A-Z]+)\\s+\\d+\\s+\\d+\\s+\\d+\\s+(.+)$")
 var IPv4RouteTokens = 6
+var IPv4RouteParserMac = regexp.MustCompile("^([a-z]+)+\\s+(\\d+\\.+\\d+.\\d.+\\d)+\\s+([a-zA-z]+)+\\s+(\\d+)+\\s+(\\d+)+\\s+([a-zA-Z]+\\d+)$")
+var IPv4RouteTokensMac = 7
+var IPv4RouteGWFlags = "UG"
+var IPv4RouteGWFlagsMac = "UGSc"
 
 func FindInterface(name string) (*Endpoint, error) {
 	ifaces, err := net.Interfaces()
@@ -70,20 +75,34 @@ func FindInterface(name string) (*Endpoint, error) {
 }
 
 func FindGateway(iface *Endpoint) (*Endpoint, error) {
+	var routeParser = IPv4RouteParser
+	var routeTokens = IPv4RouteTokens
+	var flagsIndex = 4
+	var ifnameIndex = 5
+	var gwFlags = IPv4RouteGWFlags
+
+	if runtime.GOOS == "darwin" {
+		// "MacOS detected"
+		routeParser = IPv4RouteParserMac
+		routeTokens = IPv4RouteTokensMac
+		flagsIndex = 3
+		ifnameIndex = 6
+		gwFlags = IPv4RouteGWFlagsMac
+	}
+
 	output, err := core.Exec("netstat", []string{"-n", "-r"})
 	if err != nil {
 		return nil, err
 	}
 
 	for _, line := range strings.Split(output, "\n") {
-		m := IPv4RouteParser.FindStringSubmatch(line)
-		if len(m) == IPv4RouteTokens {
+		m := routeParser.FindStringSubmatch(line)
+		if len(m) == routeTokens {
 			// destination := m[1]
 			// mask := m[3]
-			flags := m[4]
-			ifname := m[5]
-
-			if ifname == iface.Name() && flags == "UG" {
+			flags := m[flagsIndex]
+			ifname := m[ifnameIndex]
+			if ifname == iface.Name() && flags == gwFlags {
 				gateway := m[2]
 				if gateway == iface.IpAddress {
 					return iface, nil
