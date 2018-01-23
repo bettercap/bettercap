@@ -69,8 +69,11 @@ func main() {
 			continue
 		}
 
-		if err = sess.Run(line); err != nil {
-			log.Error("%s", err)
+		for _, cmd := range strings.Split(line, ";") {
+			cmd = strings.Trim(cmd, "\r\n\t ")
+			if err = sess.Run(cmd); err != nil {
+				log.Error("%s", err)
+			}
 		}
 	}
 }
