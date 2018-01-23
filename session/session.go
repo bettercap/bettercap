@@ -46,6 +46,17 @@ type Session struct {
 	Events *EventPool `json:"-"`
 }
 
+func ParseCommands(buffer string) []string {
+	cmds := make([]string, 0)
+	for _, cmd := range strings.Split(buffer, ";") {
+		cmd = strings.Trim(cmd, "\r\n\t ")
+		if cmd != "" {
+			cmds = append(cmds, cmd)
+		}
+	}
+	return cmds
+}
+
 func New() (*Session, error) {
 	var err error
 

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
@@ -50,12 +49,9 @@ func main() {
 		}
 	}
 
-	if *sess.Options.Commands != "" {
-		for _, cmd := range strings.Split(*sess.Options.Commands, ";") {
-			cmd = strings.Trim(cmd, "\r\n\t ")
-			if err = sess.Run(cmd); err != nil {
-				log.Fatal("%s", err)
-			}
+	for _, cmd := range session.ParseCommands(*sess.Options.Commands) {
+		if err = sess.Run(cmd); err != nil {
+			log.Fatal("%s", err)
 		}
 	}
 
@@ -69,8 +65,7 @@ func main() {
 			continue
 		}
 
-		for _, cmd := range strings.Split(line, ";") {
-			cmd = strings.Trim(cmd, "\r\n\t ")
+		for _, cmd := range session.ParseCommands(line) {
 			if err = sess.Run(cmd); err != nil {
 				log.Error("%s", err)
 			}
