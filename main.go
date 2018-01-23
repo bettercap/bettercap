@@ -44,18 +44,18 @@ func main() {
 
 	defer sess.Close()
 
+	if *sess.Options.Caplet != "" {
+		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
+			log.Fatal("%s", err)
+		}
+	}
+
 	if *sess.Options.Commands != "" {
 		for _, cmd := range strings.Split(*sess.Options.Commands, ";") {
 			cmd = strings.Trim(cmd, "\r\n\t ")
 			if err = sess.Run(cmd); err != nil {
 				log.Fatal("%s", err)
 			}
-		}
-	}
-
-	if *sess.Options.Caplet != "" {
-		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
-			log.Fatal("%s", err)
 		}
 	}
 
