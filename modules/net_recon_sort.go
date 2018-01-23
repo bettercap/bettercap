@@ -14,4 +14,4 @@ type BySeenSorter []*net.Endpoint
 
 func (a BySeenSorter) Len() int           { return len(a) }
 func (a BySeenSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a BySeenSorter) Less(i, j int) bool { return a[i].LastSeen.Before(a[j].LastSeen) }
+func (a BySeenSorter) Less(i, j int) bool { return a[i].LastSeen.After(a[j].LastSeen) }
