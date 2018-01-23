@@ -2,5 +2,8 @@ package net
 
 import "regexp"
 
-var ArpTableParser = regexp.MustCompile("^[^\\d\\.]+([\\d\\.]+).+\\s+([a-f0-9:]{17}).+\\s+(.+)$")
+var ArpTableParser = regexp.MustCompile("^([\\d\\.]+)\\s+dev\\s+(\\w+)\\s+\\w+\\s+([a-f0-9:]{17})\\s+\\w+$")
 var ArpTableTokens = 4
+var ArpTableTokenIndex = []uint{1, 3, 2}
+var ArpCmd = "ip"
+var ArpCmdOpts = []string{"neigh"}

@@ -12,8 +12,8 @@ func ArpUpdate(iface string) (ArpTable, error) {
 	// Signal we parsed the ARP table at least once.
 	arp_parsed = true
 
-	// Run "arp -an" and parse the output.
-	output, err := core.Exec("arp", []string{"-a", "-n"})
+	// Run "arp -an" (darwin) or "ip neigh" (linux) and parse the output
+	output, err := core.Exec(ArpCmd, ArpCmdOpts)
 	if err != nil {
 		return arp_table, err
 	}
@@ -22,9 +22,9 @@ func ArpUpdate(iface string) (ArpTable, error) {
 	for _, line := range strings.Split(output, "\n") {
 		m := ArpTableParser.FindStringSubmatch(line)
 		if len(m) == ArpTableTokens {
-			address := m[1]
-			mac := m[2]
-			ifname := m[3]
+			address := m[ArpTableTokenIndex[0]]
+			mac := m[ArpTableTokenIndex[1]]
+			ifname := m[ArpTableTokenIndex[2]]
 
 			if ifname == iface {
 				new_table[address] = mac
