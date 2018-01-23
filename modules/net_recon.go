@@ -48,7 +48,7 @@ func NewDiscovery(s *session.Session) *Discovery {
 		}))
 
 	d.AddHandler(session.NewModuleHandler("net.show", "",
-		"Show current hosts list.",
+		"Show current hosts list (default sorting by ip).",
 		func(args []string) error {
 			return d.Show("address")
 		}))
@@ -57,6 +57,18 @@ func NewDiscovery(s *session.Session) *Discovery {
 		"Show current hosts list (sort by last seen).",
 		func(args []string) error {
 			return d.Show("seen")
+		}))
+
+	d.AddHandler(session.NewModuleHandler("net.show by sent", "",
+		"Show current hosts list (sort by sent packets).",
+		func(args []string) error {
+			return d.Show("sent")
+		}))
+
+	d.AddHandler(session.NewModuleHandler("net.show by rcvd", "",
+		"Show current hosts list (sort by received packets).",
+		func(args []string) error {
+			return d.Show("rcvd")
 		}))
 
 	return d
@@ -220,6 +232,10 @@ func (d *Discovery) Show(by string) error {
 			sort.Sort(ByAddressSorter(targets))
 		} else if by == "seen" {
 			sort.Sort(BySeenSorter(targets))
+		} else if by == "sent" {
+			sort.Sort(BySentSorter(targets))
+		} else if by == "rcvd" {
+			sort.Sort(ByRcvdSorter(targets))
 		}
 
 		data = make([][]string, nTargets)
