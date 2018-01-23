@@ -27,17 +27,25 @@ type Endpoint struct {
 	LastSeen         time.Time              `json:"last_seen"`
 }
 
+func ip2int(ip net.IP) uint32 {
+	if len(ip) == 16 {
+		return binary.BigEndian.Uint32(ip[12:16])
+	}
+	return binary.BigEndian.Uint32(ip)
+}
+
 func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
+	addr := net.ParseIP(ip)
 	hw, _ := net.ParseMAC(mac)
 	now := time.Now()
 
 	e := &Endpoint{
-		IP:               net.ParseIP(ip),
+		IP:               addr,
+		IpAddress:        ip,
+		IpAddressUint32:  ip2int(addr),
 		Net:              nil,
 		HW:               hw,
-		IpAddress:        ip,
 		SubnetBits:       bits,
-		IpAddressUint32:  binary.BigEndian.Uint32(net.ParseIP(ip)[12:16]),
 		HwAddress:        mac,
 		Hostname:         name,
 		Vendor:           OuiLookup(mac),
