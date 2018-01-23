@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -34,8 +35,19 @@ func ip2int(ip net.IP) uint32 {
 	return binary.BigEndian.Uint32(ip)
 }
 
+func normalizeMac(mac string) string {
+	parts := strings.Split(mac, ":")
+	for i, p := range parts {
+		if len(p) < 2 {
+			parts[i] = "0" + p
+		}
+	}
+	return strings.Join(parts, ":")
+}
+
 func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 	addr := net.ParseIP(ip)
+	mac = normalizeMac(mac)
 	hw, _ := net.ParseMAC(mac)
 	now := time.Now()
 
