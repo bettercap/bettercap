@@ -25,10 +25,11 @@ type Traffic struct {
 }
 
 type Queue struct {
+	sync.Mutex
+
 	iface  *bnet.Endpoint
 	handle *pcap.Handle
 	source *gopacket.PacketSource
-	lock   *sync.Mutex
 	active bool
 
 	Activities  chan Activity `json:"-"`
@@ -46,7 +47,6 @@ func NewQueue(iface *bnet.Endpoint) (*Queue, error) {
 	q := &Queue{
 		iface:       iface,
 		handle:      nil,
-		lock:        &sync.Mutex{},
 		active:      true,
 		source:      nil,
 		Sent:        0,
@@ -139,8 +139,8 @@ func (q *Queue) worker() {
 }
 
 func (q *Queue) Send(raw []byte) error {
-	q.lock.Lock()
-	defer q.lock.Unlock()
+	q.Lock()
+	defer q.Unlock()
 
 	if q.active {
 		err := q.handle.WritePacketData(raw)
@@ -155,18 +155,9 @@ func (q *Queue) Send(raw []byte) error {
 	}
 }
 
-func (q *Queue) Lock() {
-	q.lock.Lock()
-}
-
-func (q *Queue) Unlock() {
-	q.lock.Unlock()
-}
-
 func (q *Queue) Stop() {
-	q.lock.Lock()
-	defer q.lock.Unlock()
-
+	q.Lock()
+	defer q.Unlock()
 	q.handle.Close()
 	q.active = false
 }
