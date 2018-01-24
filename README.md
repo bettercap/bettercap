@@ -50,6 +50,12 @@ To show the command line options:
       -silent
             Suppress all logs which are not errors.
 
+## Cross Compiling
+
+An example cross compilation for ARM (C toolchain and libs installation left to the reader as an excercise :D)
+
+    env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm
+
 ## Caplets
 
 Interactive sessions can be scripted with `.cap` files, or `caplets`, the following are a few basic examples, look the `caplets` folder for more.
