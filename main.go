@@ -61,10 +61,6 @@ func main() {
 			log.Fatal("%s", err)
 		}
 
-		if line == "" || line[0] == '#' {
-			continue
-		}
-
 		for _, cmd := range session.ParseCommands(line) {
 			if err = sess.Run(cmd); err != nil {
 				log.Error("%s", err)

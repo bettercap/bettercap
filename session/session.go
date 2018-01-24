@@ -50,7 +50,7 @@ func ParseCommands(buffer string) []string {
 	cmds := make([]string, 0)
 	for _, cmd := range strings.Split(buffer, ";") {
 		cmd = strings.Trim(cmd, "\r\n\t ")
-		if cmd != "" {
+		if cmd != "" || (len(cmd) > 0 && cmd[0] != '#') {
 			cmds = append(cmds, cmd)
 		}
 	}
