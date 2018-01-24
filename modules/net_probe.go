@@ -2,6 +2,7 @@ package modules
 
 import (
 	"net"
+	"sync"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/log"
@@ -66,7 +67,15 @@ func (p *Prober) shouldProbe(ip net.IP) bool {
 }
 
 func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
-	p.sendProbeUDP(from, from_hw, ip)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func(w *sync.WaitGroup) {
+		p.sendProbeUDP(from, from_hw, ip)
+		w.Done()
+	}(&wg)
+
+	wg.Wait()
 }
 
 func (p *Prober) Configure() error {
