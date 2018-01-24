@@ -7,12 +7,13 @@ import (
 )
 
 type Targets struct {
+	sync.Mutex
+
 	Session   *Session `json:"-"`
 	Interface *net.Endpoint
 	Gateway   *net.Endpoint
 	Targets   map[string]*net.Endpoint
 	TTL       map[string]uint
-	lock      sync.Mutex
 }
 
 func NewTargets(s *Session, iface, gateway *net.Endpoint) *Targets {
@@ -25,17 +26,9 @@ func NewTargets(s *Session, iface, gateway *net.Endpoint) *Targets {
 	}
 }
 
-func (tp *Targets) Lock() {
-	tp.lock.Lock()
-}
-
-func (tp *Targets) Unlock() {
-	tp.lock.Unlock()
-}
-
 func (tp *Targets) Remove(ip, mac string) {
-	tp.lock.Lock()
-	defer tp.lock.Unlock()
+	tp.Lock()
+	defer tp.Unlock()
 
 	if e, found := tp.Targets[mac]; found {
 		tp.TTL[mac]--
@@ -53,8 +46,8 @@ func (tp *Targets) shouldIgnore(ip string) bool {
 }
 
 func (tp *Targets) Has(ip string) bool {
-	tp.lock.Lock()
-	defer tp.lock.Unlock()
+	tp.Lock()
+	defer tp.Unlock()
 
 	for _, e := range tp.Targets {
 		if e.IpAddress == ip {
@@ -66,8 +59,8 @@ func (tp *Targets) Has(ip string) bool {
 }
 
 func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
-	tp.lock.Lock()
-	defer tp.lock.Unlock()
+	tp.Lock()
+	defer tp.Unlock()
 
 	if tp.shouldIgnore(ip) {
 		return nil

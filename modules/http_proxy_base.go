@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -167,32 +166,6 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	log.Debug("Applied redirection %s", p.Redirection.String())
 
 	return nil
-}
-
-var (
-	certCache = make(map[string]*tls.Certificate)
-	certLock  = &sync.Mutex{}
-)
-
-func getCachedCert(domain string, port int) *tls.Certificate {
-	key := fmt.Sprintf("%s:%d", domain, port)
-
-	certLock.Lock()
-	defer certLock.Unlock()
-
-	if cert, found := certCache[key]; found == true {
-		return cert
-	}
-	return nil
-}
-
-func setCachedCert(domain string, port int, cert *tls.Certificate) {
-	key := fmt.Sprintf("%s:%d", domain, port)
-
-	certLock.Lock()
-	defer certLock.Unlock()
-
-	certCache[key] = cert
 }
 
 func TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCtx) (*tls.Config, error) {

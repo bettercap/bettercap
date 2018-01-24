@@ -8,9 +8,9 @@ import (
 type ArpTable map[string]string
 
 var (
-	arp_parsed = false
-	arp_lock   = &sync.Mutex{}
-	arp_table  = make(ArpTable)
+	arpWasParsed = false
+	arpLock      = &sync.Mutex{}
+	arpTable     = make(ArpTable)
 )
 
 func ArpDiff(current, before ArpTable) ArpTable {
@@ -34,7 +34,7 @@ func ArpLookup(iface string, address string, refresh bool) (string, error) {
 	}
 
 	// Lookup the hardware address of this ip.
-	if mac, found := arp_table[address]; found == true {
+	if mac, found := arpTable[address]; found == true {
 		return mac, nil
 	}
 
@@ -42,7 +42,7 @@ func ArpLookup(iface string, address string, refresh bool) (string, error) {
 }
 
 func ArpParsed() bool {
-	arp_lock.Lock()
-	defer arp_lock.Unlock()
-	return arp_parsed
+	arpLock.Lock()
+	defer arpLock.Unlock()
+	return arpWasParsed
 }

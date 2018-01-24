@@ -36,11 +36,12 @@ func (e Event) Label() string {
 }
 
 type EventPool struct {
+	sync.Mutex
+
 	NewEvents chan Event
 	debug     bool
 	silent    bool
 	events    []Event
-	lock      *sync.Mutex
 }
 
 func NewEventPool(debug bool, silent bool) *EventPool {
@@ -49,13 +50,12 @@ func NewEventPool(debug bool, silent bool) *EventPool {
 		debug:     debug,
 		silent:    silent,
 		events:    make([]Event, 0),
-		lock:      &sync.Mutex{},
 	}
 }
 
 func (p *EventPool) Add(tag string, data interface{}) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	p.Lock()
+	defer p.Unlock()
 	e := NewEvent(tag, data)
 	p.events = append([]Event{e}, p.events...)
 
@@ -86,13 +86,13 @@ func (p *EventPool) Log(level int, format string, args ...interface{}) {
 }
 
 func (p *EventPool) Clear() {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	p.Lock()
+	defer p.Unlock()
 	p.events = make([]Event, 0)
 }
 
 func (p *EventPool) Events() []Event {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	p.Lock()
+	defer p.Unlock()
 	return p.events
 }
