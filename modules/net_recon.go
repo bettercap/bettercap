@@ -228,14 +228,14 @@ func (d *Discovery) Show(by string) error {
 			targets = append(targets, t)
 		}
 
-		if by == "address" {
-			sort.Sort(ByAddressSorter(targets))
-		} else if by == "seen" {
+		if by == "seen" {
 			sort.Sort(BySeenSorter(targets))
 		} else if by == "sent" {
 			sort.Sort(BySentSorter(targets))
 		} else if by == "rcvd" {
 			sort.Sort(ByRcvdSorter(targets))
+		} else {
+			sort.Sort(ByAddressSorter(targets))
 		}
 
 		data = make([][]string, nTargets)
