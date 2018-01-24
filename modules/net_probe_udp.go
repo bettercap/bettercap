@@ -16,7 +16,7 @@ func (p *Prober) sendProbeUDP(from net.IP, from_hw net.HardwareAddr, ip net.IP) 
 	} else {
 		// log.Debug("UDP connection to %s enstablished.", name)
 		defer con.Close()
-		wrote, _ := con.Write([]byte{0xde, 0xad, 0xbe, 0xef})
+		wrote, _ := con.Write([]byte{0x00})
 
 		if wrote > 0 {
 			p.Session.Queue.Lock()
