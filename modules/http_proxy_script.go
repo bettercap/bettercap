@@ -12,12 +12,13 @@ import (
 )
 
 type ProxyScript struct {
+	sync.Mutex
+
 	Path   string
 	Source string
 	VM     *otto.Otto
 
 	sess             *session.Session
-	gil              *sync.Mutex
 	onRequestScript  *otto.Script
 	onResponseScript *otto.Script
 	cbCacheLock      *sync.Mutex
@@ -31,7 +32,6 @@ func LoadProxyScriptSource(path, source string, sess *session.Session) (err erro
 		VM:     otto.New(),
 
 		sess:             sess,
-		gil:              &sync.Mutex{},
 		onRequestScript:  nil,
 		onResponseScript: nil,
 		cbCacheLock:      &sync.Mutex{},
@@ -153,8 +153,8 @@ func (s *ProxyScript) doResponseDefines(res *http.Response) (err error, jsres *J
 
 func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
 	if s.onRequestScript != nil {
-		s.gil.Lock()
-		defer s.gil.Unlock()
+		s.Lock()
+		defer s.Unlock()
 
 		err, jsres := s.doRequestDefines(req)
 		if err != nil {
@@ -178,8 +178,8 @@ func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
 
 func (s *ProxyScript) OnResponse(res *http.Response) *JSResponse {
 	if s.onResponseScript != nil {
-		s.gil.Lock()
-		defer s.gil.Unlock()
+		s.Lock()
+		defer s.Unlock()
 
 		err, jsres := s.doResponseDefines(res)
 		if err != nil {
