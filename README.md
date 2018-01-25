@@ -52,7 +52,7 @@ To show the command line options:
 
 ## Cross Compiling
 
-As an example, let's cross compilate for ARM (requires `gcc-arm-linux-gnueabi`, `byacc` and `flex` packages). 
+As an example, let's cross compile bettercap for ARM (requires `gcc-arm-linux-gnueabi`, `byacc` and `flex` packages).
 
 **Step 1**: download and cross compile libpcap-1.8.1 for ARM (adjust `PCAPV` to use a different libpcap version):
 
