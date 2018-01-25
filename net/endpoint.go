@@ -35,7 +35,7 @@ func ip2int(ip net.IP) uint32 {
 	return binary.BigEndian.Uint32(ip)
 }
 
-func normalizeMac(mac string) string {
+func NormalizeMac(mac string) string {
 	parts := strings.Split(mac, ":")
 	for i, p := range parts {
 		if len(p) < 2 {
@@ -47,7 +47,7 @@ func normalizeMac(mac string) string {
 
 func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 	addr := net.ParseIP(ip)
-	mac = normalizeMac(mac)
+	mac = NormalizeMac(mac)
 	hw, _ := net.ParseMAC(mac)
 	now := time.Now()
 
