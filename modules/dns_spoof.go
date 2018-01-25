@@ -232,8 +232,9 @@ func (s *DNSSpoofer) onPacket(pkt gopacket.Packet) {
 	eth := pkt.Layer(layers.LayerTypeEthernet).(*layers.Ethernet)
 	udp := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
 
-	// DNS request for us?
-	if s.All == true || bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
+	if eth == nil || udp == nil {
+		return
+	} else if s.All == true || bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
 		dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
 		if parsed == true && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
 			for _, q := range dns.Questions {
