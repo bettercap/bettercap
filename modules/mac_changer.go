@@ -85,6 +85,10 @@ func (mc *MacChanger) setMac(mac net.HardwareAddr) error {
 	}
 
 	_, err := core.Exec("ifconfig", args)
+	if err == nil {
+		mc.Session.Interface.HW = mac
+	}
+
 	return err
 }
 
