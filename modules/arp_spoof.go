@@ -93,6 +93,7 @@ func (p *ArpSpoofer) getMAC(ip net.IP, probe bool) (net.HardwareAddr, error) {
 		return nil, fmt.Errorf("Could not find hardware address for %s.", ip.String())
 	}
 
+	mac = network.NormalizeMac(mac)
 	hw, err = net.ParseMAC(mac)
 	if err != nil {
 		return nil, fmt.Errorf("Error while parsing hardware address '%s' for %s: %s", mac, ip.String(), err)
