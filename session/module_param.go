@@ -1,7 +1,9 @@
 package session
 
 import (
+	"crypto/rand"
 	"fmt"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -82,6 +84,7 @@ func (p ModuleParam) Validate(value string) (error, interface{}) {
 
 const ParamIfaceAddress = "<interface address>"
 const ParamSubnet = "<entire subnet>"
+const ParamRandomMAC = "<random mac>"
 
 func (p ModuleParam) Get(s *Session) (error, interface{}) {
 	var v string
@@ -97,6 +100,10 @@ func (p ModuleParam) Get(s *Session) (error, interface{}) {
 		v = s.Interface.IpAddress
 	} else if v == ParamSubnet {
 		v = s.Interface.CIDR()
+	} else if v == ParamRandomMAC {
+		hw := make([]byte, 6)
+		rand.Read(hw)
+		v = net.HardwareAddr(hw).String()
 	}
 
 	err, obj = p.Validate(v)

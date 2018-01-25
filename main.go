@@ -22,6 +22,7 @@ func main() {
 	fmt.Printf(core.Bold("%s v%s\n\n"), core.Name, core.Version)
 
 	sess.Register(modules.NewEventsStream(sess))
+	sess.Register(modules.NewMacChanger(sess))
 	sess.Register(modules.NewProber(sess))
 	sess.Register(modules.NewDiscovery(sess))
 	sess.Register(modules.NewArpSpoofer(sess))
