@@ -186,5 +186,6 @@ func (s *Sniffer) Stop() error {
 		return session.ErrAlreadyStopped
 	}
 	s.SetRunning(false)
+	s.Ctx.Close()
 	return nil
 }

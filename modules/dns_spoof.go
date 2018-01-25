@@ -280,5 +280,6 @@ func (s *DNSSpoofer) Stop() error {
 		return session.ErrAlreadyStopped
 	}
 	s.SetRunning(false)
+	s.Handle.Close()
 	return nil
 }
