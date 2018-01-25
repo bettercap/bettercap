@@ -25,6 +25,11 @@ import (
 	"github.com/inconshreveable/go-vhost"
 )
 
+const (
+	httpReadTimeout  = 5 * time.Second
+	httpWriteTimeout = 10 * time.Second
+)
+
 type HTTPProxy struct {
 	Name        string
 	Address     string
@@ -144,8 +149,10 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	}
 
 	p.Server = http.Server{
-		Addr:    fmt.Sprintf("%s:%d", p.Address, proxyPort),
-		Handler: p.Proxy,
+		Addr:         fmt.Sprintf("%s:%d", p.Address, proxyPort),
+		Handler:      p.Proxy,
+		ReadTimeout:  httpReadTimeout,
+		WriteTimeout: httpWriteTimeout,
 	}
 
 	if p.sess.Firewall.IsForwardingEnabled() == false {
@@ -279,6 +286,10 @@ func (p *HTTPProxy) httpsWorker() error {
 		}
 
 		go func(c net.Conn) {
+			now := time.Now()
+			c.SetReadDeadline(now.Add(httpReadTimeout))
+			c.SetWriteDeadline(now.Add(httpWriteTimeout))
+
 			tlsConn, err := vhost.TLS(c)
 			if err != nil {
 				log.Warning("Error reading SNI: %s.", err)
