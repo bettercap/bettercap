@@ -1,4 +1,0 @@
-{
-  Description     = "Change BPF permissions";
-  Provides        = ("ChmodBPF");
-}
