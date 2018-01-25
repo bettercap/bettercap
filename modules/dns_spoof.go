@@ -21,12 +21,14 @@ type DNSSpoofer struct {
 	Handle  *pcap.Handle
 	Domains []string
 	Address net.IP
+	All     bool
 }
 
 func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 	spoof := &DNSSpoofer{
 		SessionModule: session.NewSessionModule("dns.spoof", s),
 		Handle:        nil,
+		All:           false,
 	}
 
 	spoof.AddParam(session.NewStringParameter("dns.spoof.domains",
@@ -38,6 +40,10 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		session.ParamIfaceAddress,
 		session.IPv4Validator,
 		"IP address to map the domains to."))
+
+	spoof.AddParam(session.NewBoolParameter("dns.spoof.all",
+		"false",
+		"If true the module will reply to every DNS request, otherwise it will only reply to the one targeting the local pc."))
 
 	spoof.AddHandler(session.NewModuleHandler("dns.spoof on", "",
 		"Start the DNS spoofer in the background.",
@@ -76,6 +82,10 @@ func (s *DNSSpoofer) Configure() error {
 
 	err = s.Handle.SetBPFFilter("udp")
 	if err != nil {
+		return err
+	}
+
+	if err, s.All = s.BoolParam("dns.spoof.all"); err != nil {
 		return err
 	}
 
@@ -223,7 +233,7 @@ func (s *DNSSpoofer) onPacket(pkt gopacket.Packet) {
 	udp := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
 
 	// DNS request for us?
-	if bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
+	if s.All == true || bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
 		dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
 		if parsed == true && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
 			for _, q := range dns.Questions {
