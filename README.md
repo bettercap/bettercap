@@ -52,10 +52,20 @@ To show the command line options:
 
 ## Cross Compiling
 
-An example cross compilation for ARM (C toolchain and libs installation left to the reader as an excercise :D)
+An example cross compilation for ARM (requires C ARM toolchain):
 
+    # download and cross compile libpcap-1.8.1 for ARM
+    cd /tmp
+    export PCAPV=1.8.1
+    wget http://www.tcpdump.org/release/libpcap-$PCAPV.tar.gz
+    tar xvf libpcap-$PCAPV.tar.gz
+    cd libpcap-$PCAPV
+    export CC=arm-linux-gnueabi-gcc
+    ./configure --host=arm-linux --with-pcap=linux
+    make
+    # cross compile bettercap-ng
     cd $GOPATH/src/github.com/evilsocket/bettercap-ng
-    env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm make
+    env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm CGO_LDFLAGS="-L/tmp/libpcap-$PCAPV" make
 
 ## Caplets
 

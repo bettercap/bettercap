@@ -1,0 +1,345 @@
+/* cmakeconfig.h.in */
+
+/* Enable optimizer debugging */
+#cmakedefine BDEBUG 1
+
+/* define if you have a cloning BPF device */
+#cmakedefine HAVE_CLONING_BPF 1
+
+/* define if you have the DAG API */
+#cmakedefine HAVE_DAG_API 1
+
+/* define if you have dag_get_erf_types() */
+#cmakedefine HAVE_DAG_GET_ERF_TYPES 1
+
+/* define if you have dag_get_stream_erf_types() */
+#cmakedefine HAVE_DAG_GET_STREAM_ERF_TYPES 1
+
+/* define if you have streams capable DAG API */
+#cmakedefine HAVE_DAG_STREAMS_API 1
+
+/* define if you have vdag_set_device_info() */
+#cmakedefine HAVE_DAG_VDAG 1
+
+/* Define to 1 if you have the declaration of `ether_hostton', and to 0 if you
+   don't. */
+#cmakedefine HAVE_DECL_ETHER_HOSTTON 1
+
+/* define if you have a /dev/dlpi */
+#cmakedefine HAVE_DEV_DLPI 1
+
+/* if passive_req_t primitive exists */
+#cmakedefine HAVE_DLPI_PASSIVE 1
+
+/* Define to 1 if you have the `ether_hostton' function. */
+#cmakedefine HAVE_ETHER_HOSTTON 1
+
+/* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
+#cmakedefine HAVE_FSEEKO 1
+
+/* on HP-UX 10.20 or later */
+#cmakedefine HAVE_HPUX10_20_OR_LATER 1
+
+/* on HP-UX 9.x */
+#cmakedefine HAVE_HPUX9 1
+
+/* if ppa_info_t_dl_module_id exists */
+#cmakedefine HAVE_HP_PPA_INFO_T_DL_MODULE_ID_1 1
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H 1
+
+/* if libdlpi exists */
+#cmakedefine HAVE_LIBDLPI 1
+
+/* if libnl exists */
+#cmakedefine HAVE_LIBNL 1
+
+/* if libnl exists and is version 2.x */
+#cmakedefine HAVE_LIBNL_2_x 1
+
+/* if libnl exists and is version 3.x */
+#cmakedefine HAVE_LIBNL_3_x 1
+
+/* libnl has NLE_FAILURE */
+#cmakedefine HAVE_LIBNL_NLE 1
+
+/* libnl has new-style socket api */
+#cmakedefine HAVE_LIBNL_SOCKETS 1
+
+/* Define to 1 if you have the <limits.h> header file. */
+#cmakedefine HAVE_LIMITS_H 1
+
+/* Define to 1 if you have the <linux/compiler.h> header file. */
+#cmakedefine HAVE_LINUX_COMPILER_H 1
+
+/* Define to 1 if you have the <linux/ethtool.h> header file. */
+#cmakedefine HAVE_LINUX_ETHTOOL_H 1
+
+/* Define to 1 if you have the <linux/if_bonding.h> header file. */
+#cmakedefine HAVE_LINUX_IF_BONDING_H 1
+
+/* Define to 1 if you have the <linux/if_packet.h> header file. */
+#cmakedefine HAVE_LINUX_IF_PACKET_H 1
+
+/* Define to 1 if you have the <linux/net_tstamp.h> header file. */
+#cmakedefine HAVE_LINUX_NET_TSTAMP_H 1
+
+/* Define to 1 if you have the <linux/sockios.h> header file. */
+#cmakedefine HAVE_LINUX_SOCKIOS_H 1
+
+/* if tp_vlan_tci exists */
+#cmakedefine HAVE_LINUX_TPACKET_AUXDATA_TP_VLAN_TCI 1
+
+/* Define to 1 if you have the <linux/types.h> header file. */
+#cmakedefine HAVE_LINUX_TYPES_H 1
+
+/* Define to 1 if you have the <linux/usbdevice_fs.h> header file. */
+#cmakedefine HAVE_LINUX_USBDEVICE_FS_H 1
+
+/* Define to 1 if you have the <linux/wireless.h> header file. */
+#cmakedefine HAVE_LINUX_WIRELESS_H 1
+
+/* Define to 1 if you have the <memory.h> header file. */
+#cmakedefine HAVE_MEMORY_H 1
+
+/* Define to 1 if you have the <netinet/ether.h> header file. */
+#cmakedefine HAVE_NETINET_ETHER_H 1
+
+/* Define to 1 if you have the <netinet/if_ether.h> header file. */
+#cmakedefine HAVE_NETINET_IF_ETHER_H 1
+
+/* Define to 1 if you have the <netpacket/if_packet.h> header file. */
+#cmakedefine HAVE_NETPACKET_IF_PACKET_H 1
+
+/* Define to 1 if you have the <netpacket/packet.h> header file. */
+#cmakedefine HAVE_NETPACKET_PACKET_H 1
+
+/* Define to 1 if you have the <net/if_media.h> header file. */
+#cmakedefine HAVE_NET_IF_MEDIA_H 1
+
+/* Define to 1 if you have the <net/pfvar.h> header file. */
+#cmakedefine HAVE_NET_PFVAR_H 1
+
+/* if there's an os_proto.h for this platform, to use additional prototypes */
+#cmakedefine HAVE_OS_PROTO_H 1
+
+/* Define to 1 if remote packet capture is to be supported */
+#cmakedefine HAVE_REMOTE 1
+
+/* Define to 1 if you have the <paths.h> header file. */
+#cmakedefine HAVE_PATHS_H 1
+
+/* define if net/pfvar.h defines PF_NAT through PF_NORDR */
+#cmakedefine HAVE_PF_NAT_THROUGH_PF_NORDR 1
+
+/* define if you have the Septel API */
+#cmakedefine HAVE_SEPTEL_API 1
+
+/* define if you have the Myricom SNF API */
+#cmakedefine HAVE_SNF_API 1
+
+/* Define to 1 if you have the `snprintf' function. */
+#cmakedefine HAVE_SNPRINTF 1
+
+/* if struct sockaddr has the sa_len member */
+#cmakedefine HAVE_SOCKADDR_SA_LEN 1
+
+/* if struct sockaddr_storage exists */
+#cmakedefine HAVE_SOCKADDR_STORAGE 1
+
+/* define if socklen_t is defined */
+#cmakedefine HAVE_SOCKLEN_T 1
+
+/* On solaris */
+#cmakedefine HAVE_SOLARIS 1
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H 1
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#cmakedefine HAVE_STDLIB_H 1
+
+/* Define to 1 if you have the `strerror' function. */
+#cmakedefine HAVE_STRERROR 1
+
+/* Define to 1 if you have the `strlcpy' function. */
+#cmakedefine HAVE_STRLCPY 1
+
+/* Define to 1 if the system has the type `struct BPF_TIMEVAL'. */
+#cmakedefine HAVE_STRUCT_BPF_TIMEVAL 1
+
+/* Define to 1 if the system has the type `struct ether_addr'. */
+#cmakedefine HAVE_STRUCT_ETHER_ADDR 1
+
+/* Define to 1 if you have the <sys/bitypes.h> header file. */
+#cmakedefine HAVE_SYS_BITYPES_H 1
+
+/* Define to 1 if you have the <sys/bufmod.h> header file. */
+#cmakedefine HAVE_SYS_BUFMOD_H 1
+
+/* Define to 1 if you have the <sys/dlpi_ext.h> header file. */
+#cmakedefine HAVE_SYS_DLPI_EXT_H 1
+
+/* Define to 1 if you have the <sys/ioccom.h> header file. */
+#cmakedefine HAVE_SYS_IOCCOM_H 1
+
+/* Define to 1 if you have the <sys/sockio.h> header file. */
+#cmakedefine HAVE_SYS_SOCKIO_H 1
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#cmakedefine HAVE_SYS_STAT_H 1
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H 1
+
+/* define if you have the TurboCap API */
+#cmakedefine HAVE_TC_API 1
+
+/* if if_packet.h has tpacket_stats defined */
+#cmakedefine HAVE_TPACKET_STATS 1
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H 1
+
+/* if struct usbdevfs_ctrltransfer has bRequestType */
+#cmakedefine HAVE_USBDEVFS_CTRLTRANSFER_BREQUESTTYPE 1
+
+/* Define to 1 if you have the `vsnprintf' function. */
+#cmakedefine HAVE_VSNPRINTF 1
+
+/* Define to 1 if you have the `PacketIsLoopbackAdapter' function. */
+#cmakedefine HAVE_PACKET_IS_LOOPBACK_ADAPTER 1
+
+/* define if the system supports zerocopy BPF */
+#cmakedefine HAVE_ZEROCOPY_BPF 1
+
+/* define if your compiler has __attribute__ */
+#cmakedefine HAVE___ATTRIBUTE__ 1
+
+/* IPv6 */
+#cmakedefine INET6 1
+
+/* if unaligned access fails */
+#cmakedefine LBL_ALIGN 1
+
+/* path for device for USB sniffing */
+#cmakedefine LINUX_USB_MON_DEV 1
+
+/* if we need a pcap_parse wrapper around yyparse */
+#cmakedefine NEED_YYPARSE_WRAPPER 1
+
+/* Define to 1 if netinet/ether.h declares `ether_hostton' */
+#cmakedefine NETINET_ETHER_H_DECLARES_ETHER_HOSTTON 1
+
+/* Define to 1 if netinet/if_ether.h declares `ether_hostton' */
+#cmakedefine NETINET_IF_ETHER_H_DECLARES_ETHER_HOSTTON 1
+
+/* do not use protochain */
+#cmakedefine NO_PROTOCHAIN 1
+
+/* Define to the address where bug reports for this package should be sent. */
+#cmakedefine PACKAGE_BUGREPORT 1
+
+/* Define to the full name of this package. */
+#cmakedefine PACKAGE_NAME 1
+
+/* Define to the full name and version of this package. */
+#cmakedefine PACKAGE_STRING 1
+
+/* Define to the one symbol short name of this package. */
+#cmakedefine PACKAGE_TARNAME 1
+
+/* Define to the home page for this package. */
+#cmakedefine PACKAGE_URL 1
+
+/* Define to the version of this package. */
+#cmakedefine PACKAGE_VERSION 1
+
+/* /dev/dlpi directory */
+#cmakedefine PCAP_DEV_PREFIX 1
+
+/* target host supports Bluetooth sniffing */
+#cmakedefine PCAP_SUPPORT_BT 1
+
+/* target host supports Bluetooth Monitor */
+#cmakedefine PCAP_SUPPORT_BT_MONITOR 1
+
+/* support D-Bus sniffing */
+#cmakedefine PCAP_SUPPORT_DBUS 1
+
+/* target host supports netfilter sniffing */
+#cmakedefine PCAP_SUPPORT_NETFILTER 1
+
+/* use Linux packet ring capture if available */
+#cmakedefine PCAP_SUPPORT_PACKET_RING 1
+
+/* target host supports USB sniffing */
+#cmakedefine PCAP_SUPPORT_USB 1
+
+/* include ACN support */
+#cmakedefine SITA 1
+
+/* if struct sockaddr_hci has hci_channel member */
+#cmakedefine SOCKADDR_HCI_HAS_HCI_CHANNEL 1
+
+/* Define to 1 if you have the ANSI C header files. */
+#cmakedefine STDC_HEADERS 1
+
+/* Enable parser debugging */
+#cmakedefine YYDEBUG 1
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#cmakedefine _FILE_OFFSET_BITS 1
+
+/* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
+#cmakedefine _LARGEFILE_SOURCE 1
+
+/* Define for large files, on AIX-style hosts. */
+#cmakedefine _LARGE_FILES 1
+
+/* define on AIX to get certain functions */
+#cmakedefine _SUN 1
+
+/* define if your compiler allows __attribute__((format)) without a warning */
+#cmakedefine __ATTRIBUTE___FORMAT_OK 1
+
+#if 0
+/* to handle Ultrix compilers that don't support const in prototypes */
+#cmakedefine const 1
+
+/* Define as token for inline if inlining supported */
+#cmakedefine inline 1
+
+/* Define to `short' if int16_t not defined. */
+#cmakedefine int16_t 1
+
+/* Define to `int' if int32_t not defined. */
+#cmakedefine int32_t 1
+
+/* Define to `long long' if int64_t not defined. */
+#cmakedefine int64_t 1
+
+/* Define to `signed char' if int8_t not defined. */
+#cmakedefine int8_t 1
+
+/* on sinix */
+#cmakedefine sinix 1
+
+/* Define to `unsigned short' if u_int16_t not defined. */
+#cmakedefine u_int16_t 1
+
+/* Define to `unsigned int' if u_int32_t not defined. */
+#cmakedefine u_int32_t 1
+
+/* Define to `unsigned long long' if u_int64_t not defined. */
+#cmakedefine u_int64_t 1
+
+/* Define to `unsigned char' if u_int8_t not defined. */
+#cmakedefine u_int8_t 1
+#endif

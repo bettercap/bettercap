@@ -1,0 +1,133 @@
+.\" Copyright (c) 1994, 1996, 1997
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that: (1) source code distributions
+.\" retain the above copyright notice and this paragraph in its entirety, (2)
+.\" distributions including binary code include the above copyright notice and
+.\" this paragraph in its entirety in the documentation or other materials
+.\" provided with the distribution, and (3) all advertising materials mentioning
+.\" features or use of this software display the following acknowledgement:
+.\" ``This product includes software developed by the University of California,
+.\" Lawrence Berkeley Laboratory and its contributors.'' Neither the name of
+.\" the University nor the names of its contributors may be used to endorse
+.\" or promote products derived from this software without specific prior
+.\" written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+.\" WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.TH PCAP_GET_SELECTABLE_FD 3PCAP "18 October 2014"
+.SH NAME
+pcap_get_selectable_fd \- get a file descriptor on which a select() can
+be done for a live capture
+.SH SYNOPSIS
+.nf
+.ft B
+#include <pcap/pcap.h>
+.ft
+.LP
+.ft B
+int pcap_get_selectable_fd(pcap_t *p);
+.ft
+.fi
+.SH DESCRIPTION
+.B pcap_get_selectable_fd()
+returns, on UNIX, a file descriptor number for a file descriptor on
+which one can
+do a
+.BR select() ,
+.BR poll() ,
+or other such call
+to wait for it to be possible to read packets without blocking, if such
+a descriptor exists, or \-1, if no such descriptor exists.  Some network
+devices opened with
+.B pcap_create()
+and
+.BR pcap_activate() ,
+or with
+.BR pcap_open_live() ,
+do not support
+.B select()
+or
+.B poll()
+(for example, regular network devices on FreeBSD 4.3 and 4.4, and Endace
+DAG devices), so \-1 is returned for those devices.
+.PP
+Note that a descriptor on which a read can be done without blocking may,
+on some platforms, not have any packets to read if the read timeout has
+expired.  A call to
+.B pcap_dispatch()
+will return 0 in this case, but will not block.
+.PP
+Note that in:
+.IP
+FreeBSD prior to FreeBSD 4.6;
+.IP
+NetBSD prior to NetBSD 3.0;
+.IP
+OpenBSD prior to OpenBSD 2.4;
+.IP
+Mac OS X prior to Mac OS X 10.7;
+.PP
+.B select()
+and
+.B poll()
+do not work correctly on BPF devices;
+.B pcap_get_selectable_fd()
+will return a file descriptor on most of those versions (the exceptions
+being FreeBSD 4.3 and 4.4), but a simple
+.B select()
+or
+.B poll()
+will not indicate that the descriptor is readable until a full buffer's
+worth of packets is received, even if the read timeout expires before
+then.  To work around this, an application that uses
+.B select()
+or
+.B poll()
+to wait for packets to arrive must put the
+.B pcap_t
+in non-blocking mode, and must arrange that the
+.B select()
+or
+.B poll()
+have a timeout less than or equal to the read timeout,
+and must try to read packets after that timeout expires, regardless of
+whether
+.B select()
+or
+.B poll()
+indicated that the file descriptor for the
+.B pcap_t
+is ready to be read or not.  (That workaround will not work in FreeBSD
+4.3 and later; however, in FreeBSD 4.6 and later,
+.B select()
+and
+.B poll()
+work correctly on BPF devices, so the workaround isn't necessary,
+although it does no harm.)
+.PP
+Note also that
+.B poll()
+doesn't work on character special files, including BPF devices, in Mac
+OS X 10.4 and 10.5, so, while
+.B select()
+can be used on the descriptor returned by
+.BR pcap_get_selectable_fd() ,
+.B poll()
+cannot be used on it those versions of Mac OS X.  Kqueues also don't
+work on that descriptor.
+.BR poll() ,
+but not kqueues, work on that descriptor in Mac OS X releases prior to
+10.4;
+.B poll()
+and kqueues work on that descriptor in Mac OS X 10.6 and later.
+.PP
+.B pcap_get_selectable_fd()
+is not available on Windows.
+.SH RETURN VALUE
+A selectable file descriptor is returned if one exists; otherwise, \-1
+is returned.
+.SH SEE ALSO
+pcap(3PCAP), select(2), poll(2)
