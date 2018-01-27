@@ -64,6 +64,9 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 
 	p.Proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if p.doProxy(req) == true {
+			if p.isTLS == false {
+				req.URL.Scheme = "http"
+			}
 			req.URL.Host = req.Host
 			p.Proxy.ServeHTTP(w, req)
 		}
