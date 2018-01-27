@@ -59,6 +59,8 @@ func (d *Discovery) Show(by string) error {
 		[]string{core.Green("gateway"), core.Bold(gw.Hostname), gw.IpAddress, gw.HwAddress, core.Dim(gw.Vendor)},
 	}
 
+	fmt.Println()
+
 	table := tablewriter.NewWriter(os.Stdout)
 
 	table.SetColWidth(80)
@@ -159,7 +161,10 @@ func (d *Discovery) Show(by string) error {
 	}
 
 	table.SetHeader([]string{"Proto", "# Packets"})
+
 	table.Render()
+
+	d.Session.Refresh()
 
 	return nil
 }
