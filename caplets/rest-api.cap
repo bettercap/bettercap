@@ -4,6 +4,5 @@ set api.rest.password bcap
 # set api.rest.port 8082
 
 net.probe on
-net.recon on
 api.rest on
 

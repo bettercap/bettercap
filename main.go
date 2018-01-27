@@ -41,6 +41,8 @@ func main() {
 
 	if err = sess.Run("events.stream on"); err != nil {
 		log.Fatal("%", err)
+	} else if err = sess.Run("net.recon on"); err != nil {
+		log.Fatal("%", err)
 	}
 
 	defer sess.Close()

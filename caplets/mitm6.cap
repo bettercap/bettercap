@@ -6,8 +6,6 @@ set dhcp6.spoof.domains microsoft.com, google.com
 # let's give em some contents
 set http.server.path caplets/www
 
-# check who's alive on the network
-net.recon on
 # serve files
 http.server on
 # redirect DNS request by spoofing DHCPv6 packets

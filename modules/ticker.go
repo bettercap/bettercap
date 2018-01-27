@@ -82,7 +82,7 @@ func (t *Ticker) Start() error {
 
 	t.SetRunning(true)
 	go func() {
-		log.Info("Ticker running with period %ds.", t.Period)
+		log.Info("Ticker running with period %ds.", t.Period.Seconds())
 		tick := time.Tick(t.Period)
 		for _ = range tick {
 			if t.Running() == false {

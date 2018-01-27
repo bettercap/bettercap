@@ -10,6 +10,5 @@ events.clear
 set events.stream.filter target.
 events.stream on
 
-net.recon on
 api.rest on
 net.sniff on

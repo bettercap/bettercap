@@ -8,8 +8,6 @@ set http.proxy.script caplets/beef-inject.js
 # let's give em some contents
 set http.server.path caplets/www
 
-# check who's alive on the network
-net.recon on
 # serve files
 http.server on
 # redirect DNS request by spoofing DHCPv6 packets

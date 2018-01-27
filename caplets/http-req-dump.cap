@@ -4,7 +4,6 @@
 
 # events.stream off
 
-net.recon on
 net.probe on
 sleep 1
 net.probe off
