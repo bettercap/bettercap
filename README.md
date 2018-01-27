@@ -12,9 +12,9 @@
 
 ---
 
-This is a WIP of the new version of [bettercap](https://github.com/evilsocket/bettercap), very alpha, **do not use** ... or do, whatever.
+**bettercap-ng** is a complete reimplementation of bettercap, the Swiss army knife for MITM and network attacks. It is faster, stabler, smaller, easier to install and to use.
 
-## Docker
+## Using with Docker
 
 In this repository, BetterCAP is containerized using [Alpine Linux](https://alpinelinux.org/ "") -  a security-oriented, lightweight Linux distribution based on musl libc and busybox. The resulting Docker image is relatively small and easy to manage the dependencies.
 
@@ -71,6 +71,10 @@ As an example, let's cross compile bettercap for ARM (requires `gcc-arm-linux-gn
     env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm CGO_LDFLAGS="-L/tmp/libpcap-$PCAPV" make
 
 **Done**
+
+## Interactive Mode
+
+By default, bettercap-ng will start in interactive mode, allowing you to start and stop modules manually, change options and apply new firewall rules on the fly, to show the help menu type `help`, you can have module specific help by using `help module-name`.
 
 ## Caplets
 
@@ -246,10 +250,6 @@ function onResponse(req, res) {
     }
 }
 ```
-
-## Interactive Mode
-
-Interactive mode allows you to start and stop modules manually on the fly, change options and apply new firewall rules on the fly, to show the help menu type `help`, you can have module specific help by using `help module-name`.
 
 ## License
 
