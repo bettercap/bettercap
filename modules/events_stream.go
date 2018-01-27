@@ -38,6 +38,12 @@ func NewEventsStream(s *session.Session) *EventsStream {
 			return stream.Stop()
 		}))
 
+	stream.AddHandler(session.NewModuleHandler("events.show", "",
+		"Show events stream.",
+		func(args []string) error {
+			return stream.Show()
+		}))
+
 	stream.AddHandler(session.NewModuleHandler("events.clear", "",
 		"Clear events stream.",
 		func(args []string) error {
@@ -68,6 +74,20 @@ func (s *EventsStream) Configure() error {
 	return nil
 }
 
+func (s *EventsStream) dumpEvent(e session.Event) {
+	if s.filter == "" || strings.Contains(e.Tag, s.filter) {
+		tm := e.Time.Format("2006-01-02 15:04:05")
+
+		if e.Tag == "sys.log" {
+			fmt.Printf("[%s] [%s] (%s) %s\n", tm, core.Green(e.Tag), e.Label(), e.Data.(session.LogMessage).Message)
+		} else {
+			fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
+		}
+
+		s.Session.Refresh()
+	}
+}
+
 func (s *EventsStream) Start() error {
 	if s.Running() == true {
 		return session.ErrAlreadyStarted
@@ -82,17 +102,7 @@ func (s *EventsStream) Start() error {
 			var e session.Event
 			select {
 			case e = <-s.Session.Events.NewEvents:
-				if s.filter == "" || strings.Contains(e.Tag, s.filter) {
-					tm := e.Time.Format("2006-01-02 15:04:05")
-
-					if e.Tag == "sys.log" {
-						fmt.Printf("[%s] [%s] (%s) %s\n", tm, core.Green(e.Tag), e.Label(), e.Data.(session.LogMessage).Message)
-					} else {
-						fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e.Data)
-					}
-
-					s.Session.Refresh()
-				}
+				s.dumpEvent(e)
 				break
 
 			case <-s.quit:
@@ -100,6 +110,14 @@ func (s *EventsStream) Start() error {
 			}
 		}
 	}()
+
+	return nil
+}
+
+func (s *EventsStream) Show() error {
+	for _, e := range s.Session.Events.Events() {
+		s.dumpEvent(e)
+	}
 
 	return nil
 }
