@@ -120,7 +120,7 @@ By default, bettercap-ng will start in interactive mode, allowing you to start a
                   https.proxy > not running
                   mac.changer > not running
                     net.probe > not running
-                    net.recon > not running
+                    net.recon > running
                     net.sniff > not running
                        ticker > not running
 
