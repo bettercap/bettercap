@@ -86,13 +86,15 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	})
 
 	p.Proxy.OnResponse().DoFunc(func(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
-		req := res.Request
-		log.Debug("(%s) > %s %s %s%s", core.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
-		if p.Script != nil {
-			jsres := p.Script.OnResponse(res)
-			if jsres != nil {
-				p.logAction(res.Request, jsres)
-				return jsres.ToResponse(res.Request)
+		if res != nil {
+			req := res.Request
+			log.Debug("(%s) > %s %s %s%s", core.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
+			if p.Script != nil {
+				jsres := p.Script.OnResponse(res)
+				if jsres != nil {
+					p.logAction(res.Request, jsres)
+					return jsres.ToResponse(res.Request)
+				}
 			}
 		}
 		return res
