@@ -164,22 +164,19 @@ https.proxy on
 arp.spoof on
 ```
 
-#### caplets/simple-password-sniffer.cap
+#### caplets/netmon.cap
 
-Simple password sniffer.
+An example of how to use the `ticker` module, use this caplet to monitor activities on your network.
 
 ```sh
-# setup a regular expression for packet payloads
-set net.sniff.regexp .*password=.+
-# set the sniffer output file
-set net.sniff.output passwords.pcap
-# start the sniffer
-net.sniff on
+net.probe on
+clear
+ticker on
 ```
 
 #### caplets/mitm6.cap
 
-Reroute DNS requests by using DHCPv6 replies, start a HTTP server and DNS spoofer for `microsoft.com` and `google.com`.
+[Reroute IPv4 DNS requests by using DHCPv6 replies](https://blog.fox-it.com/2018/01/11/mitm6-compromising-ipv4-networks-via-ipv6/), start a HTTP server and DNS spoofer for `microsoft.com` and `google.com`.
 
 ```sh
 # let's spoof Microsoft and Google ^_^
