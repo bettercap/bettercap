@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/net"
@@ -11,6 +12,11 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/olekukonko/tablewriter"
+)
+
+var (
+	aliveTimeInterval   = time.Duration(10) * time.Second
+	presentTimeInterval = time.Duration(1) * time.Minute
 )
 
 type ProtoPair struct {
@@ -89,6 +95,16 @@ func (d *Discovery) Show(by string) error {
 				traffic = &packets.Traffic{}
 			}
 
+			seen := t.LastSeen.Format("15:04:05")
+			sinceLastSeen := time.Since(t.LastSeen)
+			if sinceLastSeen <= aliveTimeInterval {
+				seen = core.Bold(seen)
+			} else if sinceLastSeen <= presentTimeInterval {
+
+			} else {
+				seen = core.Dim(seen)
+			}
+
 			data[i] = []string{
 				t.IpAddress,
 				t.HwAddress,
@@ -96,7 +112,7 @@ func (d *Discovery) Show(by string) error {
 				t.Vendor,
 				humanize.Bytes(traffic.Sent),
 				humanize.Bytes(traffic.Received),
-				t.LastSeen.Format("15:04:05"),
+				seen,
 			}
 		}
 
