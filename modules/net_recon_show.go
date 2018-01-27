@@ -69,7 +69,7 @@ func (d *Discovery) Show(by string) error {
 
 	nTargets := len(d.Session.Targets.Targets)
 	if nTargets == 0 {
-		fmt.Println(core.Dim("No endpoints discovered so far."))
+		fmt.Println(core.Dim("No endpoints discovered so far.\n"))
 	} else {
 		targets := make([]*net.Endpoint, 0, nTargets)
 		for _, t := range d.Session.Targets.Targets {
