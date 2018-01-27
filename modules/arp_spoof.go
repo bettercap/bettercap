@@ -151,6 +151,12 @@ func (p *ArpSpoofer) Configure() error {
 		return fmt.Errorf("Error while parsing arp.spoof.targets variable '%s': %s.", targets, err)
 	}
 	p.addresses = list.Expand()
+
+	if p.Session.Firewall.IsForwardingEnabled() == false {
+		log.Info("Enabling forwarding.")
+		p.Session.Firewall.EnableForwarding(true)
+	}
+
 	return nil
 }
 

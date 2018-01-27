@@ -99,6 +99,11 @@ func (s *DNSSpoofer) Configure() error {
 
 	s.Address = net.ParseIP(addr)
 
+	if s.Session.Firewall.IsForwardingEnabled() == false {
+		log.Info("Enabling forwarding.")
+		s.Session.Firewall.EnableForwarding(true)
+	}
+
 	return nil
 }
 

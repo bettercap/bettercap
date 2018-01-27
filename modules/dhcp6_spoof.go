@@ -107,6 +107,11 @@ func (s *DHCP6Spoofer) Configure() error {
 		return err
 	}
 
+	if s.Session.Firewall.IsForwardingEnabled() == false {
+		log.Info("Enabling forwarding.")
+		s.Session.Firewall.EnableForwarding(true)
+	}
+
 	return nil
 }
 
