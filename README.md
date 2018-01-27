@@ -107,6 +107,7 @@ By default, bettercap-ng will start in interactive mode, allowing you to start a
                         clear : Clear the screen.
                include CAPLET : Load and run this caplet in the current session.
                     ! COMMAND : Execute a shell command and print its output.
+               alias MAC NAME : Assign an alias to a given endpoint given its MAC address.
 
     MODULES
                      api.rest > not running
