@@ -72,6 +72,26 @@ As an example, let's cross compile bettercap for ARM (requires `gcc-arm-linux-gn
 
 **Done**
 
+## Command Line Options
+
+By issuing `bettercap-ng -h` the main command line options will be shown:
+
+    Usage of ./bettercap-ng:
+      -caplet string
+            Read commands from this file and execute them in the interactive session.
+      -debug
+            Print debug messages.
+      -eval string
+            Run a command, used to set variables via command line.
+      -iface string
+            Network interface to bind to.
+      -no-history
+            Disable history file.
+      -silent
+            Suppress all logs which are not errors.
+
+If no `-caplet` option is specified, bettercap-ng will start in interactive mode.
+
 ## Interactive Mode
 
 By default, bettercap-ng will start in interactive mode, allowing you to start and stop modules manually, change options and apply new firewall rules on the fly, to show the help menu type `help`, you can have module specific help by using `help module-name`.
