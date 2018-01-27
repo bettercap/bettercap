@@ -94,7 +94,35 @@ If no `-caplet` option is specified, bettercap-ng will start in interactive mode
 
 ## Interactive Mode
 
-By default, bettercap-ng will start in interactive mode, allowing you to start and stop modules manually, change options and apply new firewall rules on the fly, to show the help menu type `help`, you can have module specific help by using `help module-name`.
+By default, bettercap-ng will start in interactive mode, allowing you to start and stop modules manually, change options and apply new firewall rules on the fly, to show the help menu type `help`:
+
+    MAIN COMMANDS
+    
+                  help MODULE : List available commands or show module specific help if no module name is provided.
+                       active : Show information about active modules.
+                         quit : Close the session and exit.
+                sleep SECONDS : Sleep for the given amount of seconds.
+                     get NAME : Get the value of variable NAME, use * for all.
+               set NAME VALUE : Set the VALUE of variable NAME.
+                        clear : Clear the screen.
+               include CAPLET : Load and run this caplet in the current session.
+                    ! COMMAND : Execute a shell command and print its output.
+
+    MODULES
+                     api.rest > not running
+                    arp.spoof > not running
+                  dhcp6.spoof > not running
+                    dns.spoof > not running
+                events.stream > running
+                   http.proxy > not running
+                  http.server > not running
+                  https.proxy > not running
+                  mac.changer > not running
+                    net.probe > not running
+                    net.recon > not running
+                    net.sniff > not running
+
+You can have module specific help by using `help module-name` (for instance try with `help net.recon`), to print all variables you can use `get *`.
 
 ## Caplets
 
