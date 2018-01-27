@@ -22,6 +22,7 @@ type Endpoint struct {
 	IpAddressUint32  uint32                 `json:"-"`
 	HwAddress        string                 `json:"mac"`
 	Hostname         string                 `json:"hostname"`
+	Alias            string                 `json:"alias"`
 	Vendor           string                 `json:"vendor"`
 	ResolvedCallback OnHostResolvedCallback `json:"-"`
 	FirstSeen        time.Time              `json:"first_seen"`

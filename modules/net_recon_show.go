@@ -107,10 +107,15 @@ func (d *Discovery) Show(by string) error {
 				seen = core.Dim(seen)
 			}
 
+			name := core.Yellow(t.Hostname)
+			if t.Alias != "" {
+				name = core.Green(t.Alias)
+			}
+
 			data[i] = []string{
 				t.IpAddress,
 				t.HwAddress,
-				core.Yellow(t.Hostname),
+				name,
 				t.Vendor,
 				humanize.Bytes(traffic.Sent),
 				humanize.Bytes(traffic.Received),
@@ -120,7 +125,7 @@ func (d *Discovery) Show(by string) error {
 
 		table = tablewriter.NewWriter(os.Stdout)
 
-		table.SetHeader([]string{"IP", "MAC", "Hostname", "Vendor", "Sent", "Recvd", "Last Seen"})
+		table.SetHeader([]string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Last Seen"})
 		table.SetColWidth(80)
 		table.AppendBulk(data)
 		table.Render()
