@@ -82,11 +82,11 @@ By issuing `bettercap-ng -h` the main command line options will be shown:
       -debug
             Print debug messages.
       -eval string
-            Run a command, used to set variables via command line.
+            Run one or more commands separated by ; in the interactive session, used to set variables via command line.
       -iface string
-            Network interface to bind to.
+            Network interface to bind to, if empty the default interface will be auto selected.
       -no-history
-            Disable history file.
+            Disable interactive session history file.
       -silent
             Suppress all logs which are not errors.
 
