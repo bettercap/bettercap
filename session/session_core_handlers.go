@@ -183,8 +183,7 @@ func (s *Session) aliasHandler(args []string, sess *Session) error {
 	mac := args[0]
 	alias := args[1]
 
-	if t, found := s.Targets.Targets[mac]; found == true {
-		t.Alias = alias
+	if s.Targets.SetAliasFor(mac, alias) == true {
 		return nil
 	} else {
 		return fmt.Errorf("Could not find endpoint %s", mac)

@@ -1,10 +1,18 @@
 package session
 
 import (
+	"bufio"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
 	"sync"
 
+	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/net"
 )
+
+const TargetsAliasesFile = "~/bettercap.aliases"
 
 type Targets struct {
 	sync.Mutex
@@ -14,16 +22,72 @@ type Targets struct {
 	Gateway   *net.Endpoint
 	Targets   map[string]*net.Endpoint
 	TTL       map[string]uint
+	Aliases   map[string]string
+
+	aliasesFileName string
 }
 
 func NewTargets(s *Session, iface, gateway *net.Endpoint) *Targets {
-	return &Targets{
+	t := &Targets{
 		Session:   s,
 		Interface: iface,
 		Gateway:   gateway,
 		Targets:   make(map[string]*net.Endpoint),
 		TTL:       make(map[string]uint),
+		Aliases:   make(map[string]string),
 	}
+
+	t.aliasesFileName, _ = core.ExpandPath(TargetsAliasesFile)
+	if core.Exists(t.aliasesFileName) {
+		if err := t.loadAliases(); err != nil {
+			s.Events.Log(core.ERROR, "%s", err)
+		}
+	}
+
+	return t
+}
+
+func (tp *Targets) loadAliases() error {
+	tp.Session.Events.Log(core.INFO, "Loading aliases from %s ...", tp.aliasesFileName)
+	file, err := os.Open(tp.aliasesFileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.SplitN(line, " ", 2)
+		mac := strings.Trim(parts[0], "\r\n\t ")
+		alias := strings.Trim(parts[1], "\r\n\t ")
+		tp.Session.Events.Log(core.DEBUG, " aliases[%s] = '%s'", mac, alias)
+		tp.Aliases[mac] = alias
+	}
+
+	return nil
+}
+
+func (tp *Targets) saveAliases() {
+	data := ""
+	for mac, alias := range tp.Aliases {
+		data += fmt.Sprintf("%s %s\n", mac, alias)
+	}
+	ioutil.WriteFile(tp.aliasesFileName, []byte(data), 0644)
+}
+
+func (tp *Targets) SetAliasFor(mac, alias string) bool {
+	tp.Lock()
+	defer tp.Unlock()
+
+	if t, found := tp.Targets[mac]; found == true {
+		tp.Aliases[mac] = alias
+		t.Alias = alias
+		tp.saveAliases()
+		return true
+	}
+
+	return false
 }
 
 func (tp *Targets) Remove(ip, mac string) {
@@ -66,6 +130,7 @@ func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
 		return nil
 	}
 
+	mac = net.NormalizeMac(mac)
 	if t, found := tp.Targets[mac]; found {
 		return t
 	}
@@ -73,6 +138,10 @@ func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
 	e := net.NewEndpoint(ip, mac)
 	e.ResolvedCallback = func(e *net.Endpoint) {
 		tp.Session.Events.Add("target.resolved", e)
+	}
+
+	if alias, found := tp.Aliases[mac]; found {
+		e.Alias = alias
 	}
 
 	tp.Targets[mac] = e

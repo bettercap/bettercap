@@ -20,6 +20,8 @@ import (
 	"github.com/evilsocket/bettercap-ng/packets"
 )
 
+const HistoryFile = "~/bettercap.history"
+
 var (
 	I = (*Session)(nil)
 
@@ -144,7 +146,7 @@ func (s *Session) setupInput() error {
 
 	history := ""
 	if *s.Options.NoHistory == false {
-		history = "bettercap.history"
+		history, _ = core.ExpandPath(HistoryFile)
 	}
 
 	cfg := readline.Config{
