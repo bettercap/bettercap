@@ -1,14 +1,15 @@
 package packets
 
 import (
-	"github.com/google/gopacket/layers"
 	"net"
+
+	"github.com/google/gopacket/layers"
 )
 
 func NewARPTo(from net.IP, from_hw net.HardwareAddr, to net.IP, to_hw net.HardwareAddr, req uint16) (layers.Ethernet, layers.ARP) {
 	eth := layers.Ethernet{
 		SrcMAC:       from_hw,
-		DstMAC:       net.HardwareAddr{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		DstMAC:       to_hw,
 		EthernetType: layers.EthernetTypeARP,
 	}
 	arp := layers.ARP{
