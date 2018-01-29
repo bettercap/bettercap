@@ -39,3 +39,10 @@ bcast_ping:
 
 release:
 	@./new_release.sh
+
+deadlock_detect_build:
+	@go get github.com/sasha-s/go-deadlock/...
+	@find . -name "*.go" | xargs sed -i "s/sync.Mutex/deadlock.Mutex/"
+	@goimports -w .
+	@git status
+
