@@ -12,7 +12,7 @@
 
 ---
 
-**bettercap-ng** is a complete reimplementation of bettercap, the Swiss army knife for MITM and network attacks. It is faster, stabler, smaller, easier to install and to use.
+**bettercap-ng** is a complete reimplementation of bettercap, the Swiss army knife for network attacks and monitoring. It is faster, stabler, smaller, easier to install and to use.
 
 ## Using with Docker
 
