@@ -126,7 +126,9 @@ func (d *Discovery) Show(by string) error {
 		sort.Sort(ByAddressSorter(targets))
 	}
 
+	pad := 1
 	if d.Session.Interface.HwAddress == d.Session.Gateway.HwAddress {
+		pad = 0
 		targets = append([]*net.Endpoint{d.Session.Interface}, targets...)
 	} else {
 		targets = append([]*net.Endpoint{d.Session.Interface, d.Session.Gateway}, targets...)
@@ -135,7 +137,7 @@ func (d *Discovery) Show(by string) error {
 	rows := make([][]string, 0)
 	for i, t := range targets {
 		rows = append(rows, d.getRow(t))
-		if i == 1 {
+		if i == pad {
 			rows = append(rows, []string{"", "", "", "", "", "", ""})
 		}
 	}
