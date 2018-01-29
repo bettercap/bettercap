@@ -1,12 +1,12 @@
 ### Prerequisites
 
-* [ ] Did you read the [README](https://github.com/evilsocket/bettercap-ng/blob/master/README.md)?
-* [ ] Are you running the [latest source code version](https://github.com/evilsocket/bettercap-ng)?
-* [ ] Did you search [other issues](https://github.com/evilsocket/bettercap-ng/issues?q=is%3Aopen+is%3Aissue+label%3Abug) to see if this problem was already reported?
+* [ ] I read the [README](https://github.com/evilsocket/bettercap-ng/blob/master/README.md).
+* [ ] I am running the [latest source code version](https://github.com/evilsocket/bettercap-ng).
+* [ ] I already searched [other issues](https://github.com/evilsocket/bettercap-ng/issues?q=is%3Aopen+is%3Aissue+label%3Abug) to see if this problem was already reported.
 
 ### Description
 
-*Description of the bug or feature*
+*Description of the bug or feature request*
 
 ### Environment
 
