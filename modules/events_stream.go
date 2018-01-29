@@ -115,7 +115,7 @@ func (s *EventsStream) Start() error {
 }
 
 func (s *EventsStream) Show() error {
-	for _, e := range s.Session.Events.Events() {
+	for _, e := range s.Session.Events.Sorted() {
 		s.dumpEvent(e)
 	}
 

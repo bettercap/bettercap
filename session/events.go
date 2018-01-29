@@ -3,6 +3,7 @@ package session
 import (
 	"fmt"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -94,5 +95,16 @@ func (p *EventPool) Clear() {
 func (p *EventPool) Events() []Event {
 	p.Lock()
 	defer p.Unlock()
+	return p.events
+}
+
+func (p *EventPool) Sorted() []Event {
+	p.Lock()
+	defer p.Unlock()
+
+	sort.Slice(p.events, func(i, j int) bool {
+		return p.events[i].Time.Before(p.events[j].Time)
+	})
+
 	return p.events
 }

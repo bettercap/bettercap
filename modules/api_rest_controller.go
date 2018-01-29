@@ -31,7 +31,7 @@ func RunRestCommand(c *gin.Context) {
 func ShowRestEvents(c *gin.Context) {
 	var err error
 
-	events := session.I.Events.Events()
+	events := session.I.Events.Sorted()
 	nmax := len(events)
 	n := nmax
 
