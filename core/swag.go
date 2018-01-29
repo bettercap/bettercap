@@ -74,6 +74,10 @@ func Green(s string) string {
 	return W(GREEN, s)
 }
 
+func Blue(s string) string {
+	return W(BLUE, s)
+}
+
 func Yellow(s string) string {
 	return W(YELLOW, s)
 }

@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	aliveTimeInterval   = time.Duration(10) * time.Second
-	presentTimeInterval = time.Duration(1) * time.Minute
+	aliveTimeInterval      = time.Duration(10) * time.Second
+	presentTimeInterval    = time.Duration(1) * time.Minute
+	justJoinedTimeInterval = time.Duration(10) * time.Second
 )
 
 type ProtoPair struct {
@@ -45,113 +46,107 @@ func rankByProtoHits(protos map[string]uint64) (ProtoPairList, uint64) {
 	return pl, max
 }
 
+func (d *Discovery) getRow(e *net.Endpoint) []string {
+	sinceStarted := time.Since(d.Session.StartedAt)
+	sinceFirstSeen := time.Since(e.FirstSeen)
+
+	addr := e.IpAddress
+	mac := e.HwAddress
+	if d.Session.Targets.WasMissed(e.HwAddress) == true {
+		// if endpoint was not found in ARP at least once
+		addr = core.Dim(addr)
+		mac = core.Dim(mac)
+	} else if sinceStarted > justJoinedTimeInterval && sinceFirstSeen <= justJoinedTimeInterval {
+		// if endpoint was first seen in the last 10 seconds
+		addr = core.Bold(addr)
+		mac = core.Bold(mac)
+	}
+
+	name := ""
+	if e == d.Session.Interface {
+		name = e.Name()
+	} else if e == d.Session.Gateway {
+		name = "gateway"
+	} else if e.Hostname != "" {
+		name = core.Yellow(e.Hostname)
+	} else if e.Alias != "" {
+		name = core.Green(e.Alias)
+	}
+
+	var traffic *packets.Traffic
+	var found bool
+	if traffic, found = d.Session.Queue.Traffic[e.IpAddress]; found == false {
+		traffic = &packets.Traffic{}
+	}
+
+	seen := e.LastSeen.Format("15:04:05")
+	sinceLastSeen := time.Since(e.LastSeen)
+	if sinceStarted > aliveTimeInterval && sinceLastSeen <= aliveTimeInterval {
+		// if endpoint seen in the last 10 seconds
+		seen = core.Bold(seen)
+	} else if sinceLastSeen <= presentTimeInterval {
+		// if endpoint seen in the last 60 seconds
+	} else {
+		// not seen in a while
+		seen = core.Dim(seen)
+	}
+
+	return []string{
+		addr,
+		mac,
+		name,
+		e.Vendor,
+		humanize.Bytes(traffic.Sent),
+		humanize.Bytes(traffic.Received),
+		seen,
+	}
+}
+
+func (d *Discovery) showTable(header []string, rows [][]string) {
+	fmt.Println()
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader(header)
+	table.SetColWidth(80)
+	table.AppendBulk(rows)
+	table.Render()
+}
+
 func (d *Discovery) Show(by string) error {
-	d.Session.Targets.Lock()
 	d.Session.Queue.Lock()
-	defer d.Session.Targets.Unlock()
 	defer d.Session.Queue.Unlock()
 
-	iface := d.Session.Interface
-	gw := d.Session.Gateway
-
-	data := [][]string{
-		[]string{core.Green("interface"), core.Bold(iface.Name()), iface.IpAddress, iface.HwAddress, core.Dim(iface.Vendor)},
-		[]string{core.Green("gateway"), core.Bold(gw.Hostname), gw.IpAddress, gw.HwAddress, core.Dim(gw.Vendor)},
-	}
-
-	fmt.Println()
-
-	table := tablewriter.NewWriter(os.Stdout)
-
-	table.SetColWidth(80)
-	table.AppendBulk(data)
-	table.Render()
-
-	fmt.Println()
-
-	nTargets := len(d.Session.Targets.Targets)
-	if nTargets == 0 {
-		fmt.Println(core.Dim("No endpoints discovered so far.\n"))
+	targets := d.Session.Targets.List()
+	if by == "seen" {
+		sort.Sort(BySeenSorter(targets))
+	} else if by == "sent" {
+		sort.Sort(BySentSorter(targets))
+	} else if by == "rcvd" {
+		sort.Sort(ByRcvdSorter(targets))
 	} else {
-		targets := make([]*net.Endpoint, 0, nTargets)
-		for _, t := range d.Session.Targets.Targets {
-			targets = append(targets, t)
-		}
-
-		if by == "seen" {
-			sort.Sort(BySeenSorter(targets))
-		} else if by == "sent" {
-			sort.Sort(BySentSorter(targets))
-		} else if by == "rcvd" {
-			sort.Sort(ByRcvdSorter(targets))
-		} else {
-			sort.Sort(ByAddressSorter(targets))
-		}
-
-		data = make([][]string, nTargets)
-		for i, t := range targets {
-			var traffic *packets.Traffic
-			var found bool
-
-			if traffic, found = d.Session.Queue.Traffic[t.IpAddress]; found == false {
-				traffic = &packets.Traffic{}
-			}
-
-			seen := t.LastSeen.Format("15:04:05")
-			sinceLastSeen := time.Since(t.LastSeen)
-			if sinceLastSeen <= aliveTimeInterval {
-				seen = core.Bold(seen)
-			} else if sinceLastSeen <= presentTimeInterval {
-
-			} else {
-				seen = core.Dim(seen)
-			}
-
-			name := core.Yellow(t.Hostname)
-			if t.Alias != "" {
-				name = core.Green(t.Alias)
-			}
-
-			data[i] = []string{
-				t.IpAddress,
-				t.HwAddress,
-				name,
-				t.Vendor,
-				humanize.Bytes(traffic.Sent),
-				humanize.Bytes(traffic.Received),
-				seen,
-			}
-		}
-
-		table = tablewriter.NewWriter(os.Stdout)
-
-		table.SetHeader([]string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Last Seen"})
-		table.SetColWidth(80)
-		table.AppendBulk(data)
-		table.Render()
-
-		fmt.Println()
+		sort.Sort(ByAddressSorter(targets))
 	}
 
-	row := []string{
+	targets = append([]*net.Endpoint{d.Session.Interface, d.Session.Gateway}, targets...)
+	rows := make([][]string, 0)
+	for i, t := range targets {
+		rows = append(rows, d.getRow(t))
+		if i == 1 {
+			rows = append(rows, []string{"", "", "", "", "", "", ""})
+		}
+	}
+
+	d.showTable([]string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Last Seen"}, rows)
+
+	rows = [][]string{{
 		humanize.Bytes(d.Session.Queue.Sent),
 		humanize.Bytes(d.Session.Queue.Received),
 		fmt.Sprintf("%d", d.Session.Queue.PktReceived),
 		fmt.Sprintf("%d", d.Session.Queue.Errors),
-	}
+	}}
 
-	table = tablewriter.NewWriter(os.Stdout)
+	d.showTable([]string{"Sent", "Sniffed", "# Packets", "Errors"}, rows)
 
-	table.SetHeader([]string{"Sent", "Sniffed", "# Packets", "Errors"})
-	table.SetColWidth(80)
-	table.Append(row)
-	table.Render()
-
-	fmt.Println()
-
-	table = tablewriter.NewWriter(os.Stdout)
-	table.SetColWidth(80)
-
+	rows = make([][]string, 0)
 	protos, maxPackets := rankByProtoHits(d.Session.Queue.Protos)
 	maxBarWidth := 70
 
@@ -162,12 +157,10 @@ func (d *Discovery) Show(by string) error {
 			bar += "▇"
 		}
 
-		table.Append([]string{p.Protocol, fmt.Sprintf("%s %d", bar, p.Hits)})
+		rows = append(rows, []string{p.Protocol, fmt.Sprintf("%s %d", bar, p.Hits)})
 	}
 
-	table.SetHeader([]string{"Proto", "# Packets"})
-
-	table.Render()
+	d.showTable([]string{"Proto", "# Packets"}, rows)
 
 	d.Session.Refresh()
 

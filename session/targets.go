@@ -12,6 +12,7 @@ import (
 	"github.com/evilsocket/bettercap-ng/net"
 )
 
+const TargetsDefaultTTL = 2
 const TargetsAliasesFile = "~/bettercap.aliases"
 
 type Targets struct {
@@ -45,6 +46,17 @@ func NewTargets(s *Session, iface, gateway *net.Endpoint) *Targets {
 	}
 
 	return t
+}
+
+func (tp *Targets) List() (list []*net.Endpoint) {
+	tp.Lock()
+	defer tp.Unlock()
+
+	list = make([]*net.Endpoint, 0)
+	for _, t := range tp.Targets {
+		list = append(list, t)
+	}
+	return
 }
 
 func (tp *Targets) loadAliases() error {
@@ -88,6 +100,20 @@ func (tp *Targets) SetAliasFor(mac, alias string) bool {
 	}
 
 	return false
+}
+
+func (tp *Targets) WasMissed(mac string) bool {
+	if mac == tp.Session.Interface.HwAddress || mac == tp.Session.Gateway.HwAddress {
+		return false
+	}
+
+	tp.Lock()
+	defer tp.Unlock()
+
+	if ttl, found := tp.TTL[mac]; found == true {
+		return ttl < TargetsDefaultTTL
+	}
+	return true
 }
 
 func (tp *Targets) Remove(ip, mac string) {
@@ -145,7 +171,7 @@ func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
 	}
 
 	tp.Targets[mac] = e
-	tp.TTL[mac] = 2
+	tp.TTL[mac] = TargetsDefaultTTL
 
 	tp.Session.Events.Add("target.new", e)
 

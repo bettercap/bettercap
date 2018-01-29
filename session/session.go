@@ -38,6 +38,7 @@ type Session struct {
 	Targets   *Targets                 `json:"targets"`
 	Queue     *packets.Queue           `json:"packets"`
 	Input     *readline.Instance       `json:"-"`
+	StartedAt time.Time                `json:"started_at"`
 	Active    bool                     `json:"active"`
 	Prompt    Prompt                   `json:"-"`
 
@@ -264,6 +265,7 @@ func (s *Session) Start() error {
 		os.Exit(0)
 	}()
 
+	s.StartedAt = time.Now()
 	s.Active = true
 
 	// keep reading network events in order to add / update endpoints
