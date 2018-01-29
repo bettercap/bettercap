@@ -81,7 +81,7 @@ func (s *EventsStream) dumpEvent(e session.Event) {
 		if e.Tag == "sys.log" {
 			fmt.Printf("[%s] [%s] (%s) %s\n", tm, core.Green(e.Tag), e.Label(), e.Data.(session.LogMessage).Message)
 		} else {
-			fmt.Printf("[%s] [%s] %v\n", tm, core.Green(e.Tag), e)
+			fmt.Printf("[%s] [%s] %+v\n", tm, core.Green(e.Tag), e)
 		}
 
 		s.Session.Refresh()

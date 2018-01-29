@@ -126,7 +126,12 @@ func (d *Discovery) Show(by string) error {
 		sort.Sort(ByAddressSorter(targets))
 	}
 
-	targets = append([]*net.Endpoint{d.Session.Interface, d.Session.Gateway}, targets...)
+	if d.Session.Interface.HwAddress == d.Session.Gateway.HwAddress {
+		targets = append([]*net.Endpoint{d.Session.Interface}, targets...)
+	} else {
+		targets = append([]*net.Endpoint{d.Session.Interface, d.Session.Gateway}, targets...)
+	}
+
 	rows := make([][]string, 0)
 	for i, t := range targets {
 		rows = append(rows, d.getRow(t))
