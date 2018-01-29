@@ -158,6 +158,9 @@ func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
 
 	mac = net.NormalizeMac(mac)
 	if t, found := tp.Targets[mac]; found {
+		if tp.TTL[mac] < TargetsDefaultTTL {
+			tp.TTL[mac]++
+		}
 		return t
 	}
 
