@@ -11,7 +11,7 @@
 
 **bettercap-ng** is a complete reimplementation of bettercap, the Swiss army knife for network attacks and monitoring. It is faster, stabler, smaller, easier to install and to use.
 
-## Using with Docker
+## Using it with Docker
 
 In this repository, BetterCAP is containerized using [Alpine Linux](https://alpinelinux.org/ "") -  a security-oriented, lightweight Linux distribution based on musl libc and busybox. The resulting Docker image is relatively small and easy to manage the dependencies.
 
@@ -23,7 +23,7 @@ To run:
 
     $ docker run -it --privileged --net=host evilsocket/bettercap-ng -h
 
-## Compiling
+## Compilation
 
 Make sure you have a correctly configured Go >= 1.8 environment, that `$GOPATH/bin` is in `$PATH` and the `libpcap-dev` package installed for your system, then:
 
@@ -47,7 +47,7 @@ To show the command line options:
       -silent
             Suppress all logs which are not errors.
 
-## Cross Compiling
+## Cross Compilation
 
 As an example, let's cross compile bettercap for ARM (requires `gcc-arm-linux-gnueabi`, `byacc` and `flex` packages).
 
