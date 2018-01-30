@@ -1,4 +1,4 @@
-events.stream off
+#events.stream off
 events.clear
 # set events.stream.filter net.sniff
 # events.stream on

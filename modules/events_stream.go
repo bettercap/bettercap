@@ -1,10 +1,6 @@
 package modules
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
@@ -74,20 +70,6 @@ func (s *EventsStream) Configure() error {
 	return nil
 }
 
-func (s *EventsStream) dumpEvent(e session.Event) {
-	if s.filter == "" || strings.Contains(e.Tag, s.filter) {
-		tm := e.Time.Format("2006-01-02 15:04:05")
-
-		if e.Tag == "sys.log" {
-			fmt.Printf("[%s] [%s] (%s) %s\n", tm, core.Green(e.Tag), e.Label(), e.Data.(session.LogMessage).Message)
-		} else {
-			fmt.Printf("[%s] [%s] %+v\n", tm, core.Green(e.Tag), e)
-		}
-
-		s.Session.Refresh()
-	}
-}
-
 func (s *EventsStream) Start() error {
 	if s.Running() == true {
 		return session.ErrAlreadyStarted
@@ -102,7 +84,7 @@ func (s *EventsStream) Start() error {
 			var e session.Event
 			select {
 			case e = <-s.Session.Events.NewEvents:
-				s.dumpEvent(e)
+				s.view(e)
 				break
 
 			case <-s.quit:
@@ -116,7 +98,7 @@ func (s *EventsStream) Start() error {
 
 func (s *EventsStream) Show() error {
 	for _, e := range s.Session.Events.Sorted() {
-		s.dumpEvent(e)
+		s.view(e)
 	}
 
 	return nil
