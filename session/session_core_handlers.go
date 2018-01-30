@@ -181,7 +181,7 @@ func (s *Session) shHandler(args []string, sess *Session) error {
 
 func (s *Session) aliasHandler(args []string, sess *Session) error {
 	mac := args[0]
-	alias := args[1]
+	alias := strings.Trim(args[1], "\r\n\t ")
 
 	if s.Targets.SetAliasFor(mac, alias) == true {
 		return nil
@@ -287,7 +287,7 @@ func (s *Session) registerCoreHandlers() {
 		readline.PcItem("!"))
 
 	s.addHandler(NewCommandHandler("alias MAC NAME",
-		"^alias\\s+([a-fA-F0-9:]{17})\\s+(.+)",
+		"^alias\\s+([a-fA-F0-9:]{17})\\s*(.*)",
 		"Assign an alias to a given endpoint given its MAC address.",
 		s.aliasHandler),
 		readline.PcItem("alias", readline.PcItemDynamic(func(prefix string) []string {

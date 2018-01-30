@@ -93,7 +93,12 @@ func (tp *Targets) SetAliasFor(mac, alias string) bool {
 	defer tp.Unlock()
 
 	if t, found := tp.Targets[mac]; found == true {
-		tp.Aliases[mac] = alias
+		if alias != "" {
+			tp.Aliases[mac] = alias
+		} else {
+			delete(tp.Aliases, mac)
+		}
+
 		t.Alias = alias
 		tp.saveAliases()
 		return true
