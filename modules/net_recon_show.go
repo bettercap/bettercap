@@ -56,7 +56,7 @@ func (d *Discovery) getRow(e *net.Endpoint) []string {
 		// if endpoint was not found in ARP at least once
 		addr = core.Dim(addr)
 		mac = core.Dim(mac)
-	} else if sinceStarted > justJoinedTimeInterval && sinceFirstSeen <= justJoinedTimeInterval {
+	} else if sinceStarted > (justJoinedTimeInterval*2) && sinceFirstSeen <= justJoinedTimeInterval {
 		// if endpoint was first seen in the last 10 seconds
 		addr = core.Bold(addr)
 		mac = core.Bold(mac)
