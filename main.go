@@ -34,6 +34,7 @@ func main() {
 	sess.Register(modules.NewHttpProxy(sess))
 	sess.Register(modules.NewHttpsProxy(sess))
 	sess.Register(modules.NewRestAPI(sess))
+	sess.Register(modules.NewWOL(sess))
 
 	if err = sess.Start(); err != nil {
 		log.Fatal("%", err)

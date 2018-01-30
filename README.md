@@ -120,6 +120,7 @@ By default, bettercap-ng will start in interactive mode, allowing you to start a
                     net.recon > running
                     net.sniff > not running
                        ticker > not running
+                          wol > not running
 
 You can have module specific help by using `help module-name` (for instance try with `help net.recon`), to print all variables you can use `get *`.
 
