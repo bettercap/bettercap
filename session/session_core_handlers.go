@@ -160,7 +160,7 @@ func (s *Session) clsHandler(args []string, sess *Session) error {
 	// fixes a weird bug which causes the screen not to be fully
 	// cleared if a "clear; net.show" commands chain is executed
 	// in the interactive session.
-	for i := 0; i < 80; i++ {
+	for i := 0; i < 180; i++ {
 		fmt.Println()
 	}
 	readline.ClearScreen(s.Input.Stdout())

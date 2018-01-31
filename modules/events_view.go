@@ -28,7 +28,7 @@ func (s EventsStream) viewSnifferEvent(e session.Event) {
 		se.Data)
 }
 
-func (s *EventsStream) view(e session.Event) {
+func (s *EventsStream) View(e session.Event, refresh bool) {
 	if s.filter == "" || strings.Contains(e.Tag, s.filter) {
 		if e.Tag == "sys.log" {
 			s.viewLogEvent(e)
@@ -38,6 +38,8 @@ func (s *EventsStream) view(e session.Event) {
 			fmt.Printf("[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), core.Green(e.Tag), e)
 		}
 
-		s.Session.Refresh()
+		if refresh {
+			s.Session.Refresh()
+		}
 	}
 }

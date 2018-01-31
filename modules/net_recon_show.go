@@ -144,30 +144,55 @@ func (d *Discovery) Show(by string) error {
 
 	d.showTable([]string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Last Seen"}, rows)
 
-	rows = [][]string{{
+	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
+		core.Red("↑"),
 		humanize.Bytes(d.Session.Queue.Sent),
+		core.Green("↓"),
 		humanize.Bytes(d.Session.Queue.Received),
-		fmt.Sprintf("%d", d.Session.Queue.PktReceived),
-		fmt.Sprintf("%d", d.Session.Queue.Errors),
-	}}
+		d.Session.Queue.PktReceived,
+		d.Session.Queue.Errors)
 
-	d.showTable([]string{"Sent", "Sniffed", "# Packets", "Errors"}, rows)
+	s := EventsStream{}
+	events := d.Session.Events.Sorted()
+	size := len(events)
 
-	rows = make([][]string, 0)
-	protos, maxPackets := rankByProtoHits(d.Session.Queue.Protos)
-	maxBarWidth := 70
-
-	for _, p := range protos {
-		width := int(float32(maxBarWidth) * (float32(p.Hits) / float32(maxPackets)))
-		bar := ""
-		for i := 0; i < width; i++ {
-			bar += "▇"
+	if size > 0 {
+		max := 20
+		if size > max {
+			from := size - max
+			size = max
+			events = events[from:]
 		}
 
-		rows = append(rows, []string{p.Protocol, fmt.Sprintf("%s %d", bar, p.Hits)})
+		fmt.Printf("Last %d events:\n\n", size)
+
+		for _, e := range events {
+			s.View(e, false)
+		}
+
+		fmt.Println()
 	}
 
-	d.showTable([]string{"Proto", "# Packets"}, rows)
+	/*
+		Last events are more useful than this histogram and vertical scroll
+		isn't infinite :)
+
+			rows = make([][]string, 0)
+			protos, maxPackets := rankByProtoHits(d.Session.Queue.Protos)
+			maxBarWidth := 70
+
+			for _, p := range protos {
+				width := int(float32(maxBarWidth) * (float32(p.Hits) / float32(maxPackets)))
+				bar := ""
+				for i := 0; i < width; i++ {
+					bar += "▇"
+				}
+
+				rows = append(rows, []string{p.Protocol, fmt.Sprintf("%s %d", bar, p.Hits)})
+			}
+
+			d.showTable([]string{"Proto", "# Packets"}, rows)
+	*/
 
 	d.Session.Refresh()
 

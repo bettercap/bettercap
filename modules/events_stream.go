@@ -84,7 +84,7 @@ func (s *EventsStream) Start() error {
 			var e session.Event
 			select {
 			case e = <-s.Session.Events.NewEvents:
-				s.view(e)
+				s.View(e, true)
 				break
 
 			case <-s.quit:
@@ -98,8 +98,10 @@ func (s *EventsStream) Start() error {
 
 func (s *EventsStream) Show() error {
 	for _, e := range s.Session.Events.Sorted() {
-		s.view(e)
+		s.View(e, false)
 	}
+
+	s.Session.Refresh()
 
 	return nil
 }
