@@ -12,7 +12,7 @@ import (
 	"github.com/evilsocket/bettercap-ng/net"
 )
 
-const TargetsDefaultTTL = 2
+const TargetsDefaultTTL = 10
 const TargetsAliasesFile = "~/bettercap.aliases"
 
 type Targets struct {

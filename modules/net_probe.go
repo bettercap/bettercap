@@ -60,8 +60,6 @@ func (p *Prober) shouldProbe(ip net.IP) bool {
 		return false
 	} else if addr == p.Session.Gateway.IpAddress {
 		return false
-	} else if p.Session.Targets.Has(addr) == true {
-		return false
 	}
 	return true
 }

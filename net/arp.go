@@ -13,18 +13,6 @@ var (
 	arpTable     = make(ArpTable)
 )
 
-func ArpDiff(current, before ArpTable) ArpTable {
-	diff := make(ArpTable)
-	for ip, mac := range current {
-		_, found := before[ip]
-		if !found {
-			diff[ip] = mac
-		}
-	}
-
-	return diff
-}
-
 func ArpLookup(iface string, address string, refresh bool) (string, error) {
 	// Refresh ARP table if first run or if a force refresh has been instructed.
 	if ArpParsed() == false || refresh == true {

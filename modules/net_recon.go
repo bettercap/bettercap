@@ -102,27 +102,21 @@ func (d *Discovery) checkShared(new net.ArpTable) {
 }
 
 func (d *Discovery) runDiff() {
-	var new net.ArpTable = make(net.ArpTable)
+	// check for endpoints who disappeared
 	var rem net.ArpTable = make(net.ArpTable)
-
-	if d.before != nil {
-		new = net.ArpDiff(d.current, d.before)
-		rem = net.ArpDiff(d.before, d.current)
-	} else {
-		new = d.current
+	for mac, t := range d.Session.Targets.Targets {
+		if _, found := d.current[mac]; found == false {
+			rem[mac] = t.IpAddress
+		}
 	}
 
-	if len(new) > 0 || len(rem) > 0 {
-		d.checkShared(new)
+	for mac, ip := range rem {
+		d.Session.Targets.Remove(ip, mac)
+	}
 
-		// refresh target pool
-		for ip, mac := range rem {
-			d.Session.Targets.Remove(ip, mac)
-		}
-
-		for ip, mac := range new {
-			d.Session.Targets.AddIfNotExist(ip, mac)
-		}
+	// now check for new friends ^_^
+	for ip, mac := range d.current {
+		d.Session.Targets.AddIfNotExist(ip, mac)
 	}
 }
 
