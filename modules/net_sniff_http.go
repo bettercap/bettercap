@@ -35,11 +35,11 @@ func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 		ua = string(mu[1])
 	}
 
-	url := fmt.Sprintf("%s", core.Yellow(path))
+	url := fmt.Sprintf("%s", core.Yellow(hostname))
 	if tcp.DstPort != 80 {
 		url += fmt.Sprintf(":%s", vPort(tcp.DstPort))
 	}
-	url += fmt.Sprintf("%s", hostname)
+	url += fmt.Sprintf("%s", path)
 
 	NewSnifferEvent(
 		pkt.Metadata().Timestamp,
