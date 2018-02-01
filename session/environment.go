@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+
+	"github.com/evilsocket/bettercap-ng/core"
 )
 
 type Environment struct {
@@ -41,13 +43,7 @@ func (env *Environment) Set(name, value string) string {
 	old, _ := env.Storage[name]
 	env.Storage[name] = value
 
-	env.sess.Events.Add("env.change", struct {
-		Name  string
-		Value string
-	}{
-		name,
-		value,
-	})
+	env.sess.Events.Log(core.DEBUG, "env.change: %s -> '%s'", name, value)
 
 	width := len(name)
 	if width > env.Padding {
