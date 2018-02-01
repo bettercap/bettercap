@@ -47,7 +47,7 @@ type EventPool struct {
 
 func NewEventPool(debug bool, silent bool) *EventPool {
 	return &EventPool{
-		NewEvents: make(chan Event),
+		NewEvents: make(chan Event, 0xff),
 		debug:     debug,
 		silent:    silent,
 		events:    make([]Event, 0),
@@ -59,11 +59,7 @@ func (p *EventPool) Add(tag string, data interface{}) {
 	defer p.Unlock()
 	e := NewEvent(tag, data)
 	p.events = append([]Event{e}, p.events...)
-
-	select {
-	case p.NewEvents <- e:
-	default:
-	}
+	p.NewEvents <- e
 }
 
 func (p *EventPool) Log(level int, format string, args ...interface{}) {
