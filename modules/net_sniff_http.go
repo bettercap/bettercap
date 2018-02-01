@@ -27,8 +27,8 @@ func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	}
 
 	method := string(m[1])
-	hostname := string(m[2])
-	path := string(m[3])
+	hostname := string(m[3])
+	path := string(m[2])
 	ua := ""
 	mu := uaRe.FindSubmatch(data)
 	if len(mu) == 2 {
@@ -47,10 +47,10 @@ func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 		ip.SrcIP.String(),
 		hostname,
 		SniffData{
-			"Method":   method,
-			"Hostname": hostname,
-			"URL":      url,
-			"UA":       ua,
+			"method": method,
+			"host":   hostname,
+			"path":   url,
+			"agent":  ua,
 		},
 		"[%s] %s %s %s %s %s",
 		vTime(pkt.Metadata().Timestamp),
