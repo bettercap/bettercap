@@ -234,14 +234,18 @@ func (s *DNSSpoofer) shouldSpoof(domain string) bool {
 }
 
 func (s *DNSSpoofer) onPacket(pkt gopacket.Packet) {
-	eth := pkt.Layer(layers.LayerTypeEthernet).(*layers.Ethernet)
-	udp := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
-
-	if eth == nil || udp == nil {
+	typeEth := pkt.Layer(layers.LayerTypeEthernet)
+	typeUDP := pkt.Layer(layers.LayerTypeUDP)
+	if typeEth == nil || typeUDP == nil {
 		return
-	} else if s.All == true || bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
+	}
+
+	eth := typeEth.(*layers.Ethernet)
+
+	if s.All || bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
 		dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
-		if parsed == true && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
+		if parsed && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
+			udp := typeUDP.(*layers.UDP)
 			for _, q := range dns.Questions {
 				qName := string(q.Name)
 				if s.shouldSpoof(qName) == true {
