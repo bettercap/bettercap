@@ -153,7 +153,7 @@ func (tp *Targets) Has(ip string) bool {
 	return false
 }
 
-func (tp *Targets) AddIfNotExist(ip, mac string) *net.Endpoint {
+func (tp *Targets) AddIfNew(ip, mac string) *net.Endpoint {
 	tp.Lock()
 	defer tp.Unlock()
 

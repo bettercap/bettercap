@@ -275,7 +275,7 @@ func (s *Session) Start() error {
 				addr := event.IP.String()
 				mac := event.MAC.String()
 
-				existing := s.Targets.AddIfNotExist(addr, mac)
+				existing := s.Targets.AddIfNew(addr, mac)
 				if existing != nil {
 					existing.LastSeen = time.Now()
 				}

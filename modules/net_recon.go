@@ -116,7 +116,7 @@ func (d *Discovery) runDiff() {
 
 	// now check for new friends ^_^
 	for ip, mac := range d.current {
-		d.Session.Targets.AddIfNotExist(ip, mac)
+		d.Session.Targets.AddIfNew(ip, mac)
 	}
 }
 
