@@ -23,6 +23,10 @@ func NewSniffer(s *session.Session) *Sniffer {
 		Stats:         nil,
 	}
 
+	sniff.AddParam(session.NewBoolParameter("net.sniff.truncate",
+		"true",
+		"If true, will truncate long request URLs so user-agent fits on same line when possible, otherwise extra verbose / full URLs."))
+
 	sniff.AddParam(session.NewBoolParameter("net.sniff.verbose",
 		"true",
 		"If true, will print every captured packet, otherwise only selected ones."))
@@ -112,7 +116,7 @@ func (s Sniffer) isLocalPacket(packet gopacket.Packet) bool {
 }
 
 func (s *Sniffer) onPacketMatched(pkt gopacket.Packet) {
-	if mainParser(pkt, s.Ctx.Verbose) == true {
+	if mainParser(pkt, s.Ctx.Verbose, s.Ctx.Truncate) == true {
 		s.Stats.NumDumped++
 	}
 }

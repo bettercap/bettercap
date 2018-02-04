@@ -10,12 +10,17 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
+func tcpParser(
+	ip *layers.IPv4,
+	pkt gopacket.Packet,
+	verbose bool,
+	truncateURLs bool,
+) {
 	tcp := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
 
 	if sniParser(ip, pkt, tcp) {
 		return
-	} else if httpParser(ip, pkt, tcp) {
+	} else if httpParser(ip, pkt, tcp, truncateURLs) {
 		return
 	}
 
@@ -88,7 +93,7 @@ func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	}
 }
 
-func mainParser(pkt gopacket.Packet, verbose bool) bool {
+func mainParser(pkt gopacket.Packet, verbose bool, truncateURLs bool) bool {
 	nlayer := pkt.NetworkLayer()
 	if nlayer == nil {
 		log.Debug("Missing network layer skipping packet.")
@@ -109,7 +114,7 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 	}
 
 	if tlayer.LayerType() == layers.LayerTypeTCP {
-		tcpParser(ip, pkt, verbose)
+		tcpParser(ip, pkt, verbose, truncateURLs)
 	} else if tlayer.LayerType() == layers.LayerTypeUDP {
 		udpParser(ip, pkt, verbose)
 	} else {
