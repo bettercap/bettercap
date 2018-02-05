@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -112,9 +113,6 @@ func (d *Discovery) showTable(header []string, rows [][]string) {
 }
 
 func (d *Discovery) Show(by string) error {
-	d.Session.Queue.Lock()
-	defer d.Session.Queue.Unlock()
-
 	targets := d.Session.Targets.List()
 	if by == "seen" {
 		sort.Sort(BySeenSorter(targets))
@@ -146,11 +144,11 @@ func (d *Discovery) Show(by string) error {
 
 	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
 		core.Red("↑"),
-		humanize.Bytes(d.Session.Queue.Sent),
+		humanize.Bytes(atomic.LoadUint64(&d.Session.Queue.Sent)),
 		core.Green("↓"),
-		humanize.Bytes(d.Session.Queue.Received),
-		d.Session.Queue.PktReceived,
-		d.Session.Queue.Errors)
+		humanize.Bytes(atomic.LoadUint64(&d.Session.Queue.Received)),
+		atomic.LoadUint64(&d.Session.Queue.PktReceived),
+		atomic.LoadUint64(&d.Session.Queue.Errors))
 
 	s := EventsStream{}
 	events := d.Session.Events.Sorted()

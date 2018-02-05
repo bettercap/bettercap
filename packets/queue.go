@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 
 	bnet "github.com/evilsocket/bettercap-ng/net"
 
@@ -75,11 +76,10 @@ func (q *Queue) worker() {
 			return
 		}
 
-		q.Lock()
 		pktSize := uint64(len(pkt.Data()))
 
-		q.PktReceived++
-		q.Received += pktSize
+		atomic.AddUint64(&q.PktReceived, 1)
+		atomic.AddUint64(&q.Received, pktSize)
 
 		// gather protocols stats
 		pktLayers := pkt.Layers()
@@ -89,10 +89,13 @@ func (q *Queue) worker() {
 				continue
 			}
 
+			q.Lock()
 			if _, found := q.Protos[proto]; found == false {
-				q.Protos[proto] = 0
+				q.Protos[proto] = 1
+			} else {
+				q.Protos[proto] += 1
 			}
-			q.Protos[proto] += 1
+			q.Unlock()
 		}
 
 		// check for new ipv4 endpoints
@@ -104,6 +107,7 @@ func (q *Queue) worker() {
 			ip4 := lip4.(*layers.IPv4)
 
 			if bytes.Compare(q.iface.IP, ip4.SrcIP) != 0 && q.iface.Net.Contains(ip4.SrcIP) {
+				q.Lock()
 				q.Activities <- Activity{
 					IP:     ip4.SrcIP,
 					MAC:    eth.SrcMAC,
@@ -112,13 +116,17 @@ func (q *Queue) worker() {
 
 				addr := ip4.SrcIP.String()
 				if _, found := q.Traffic[addr]; found == false {
-					q.Traffic[addr] = &Traffic{}
+					q.Traffic[addr] = &Traffic{
+						Sent: pktSize,
+					}
+				} else {
+					q.Traffic[addr].Sent += pktSize
 				}
-
-				q.Traffic[addr].Sent += pktSize
+				q.Unlock()
 			}
 
 			if bytes.Compare(q.iface.IP, ip4.DstIP) != 0 && q.iface.Net.Contains(ip4.DstIP) {
+				q.Lock()
 				q.Activities <- Activity{
 					IP:     ip4.DstIP,
 					MAC:    eth.SrcMAC,
@@ -127,14 +135,15 @@ func (q *Queue) worker() {
 
 				addr := ip4.DstIP.String()
 				if _, found := q.Traffic[addr]; found == false {
-					q.Traffic[addr] = &Traffic{}
+					q.Traffic[addr] = &Traffic{
+						Received: pktSize,
+					}
+				} else {
+					q.Traffic[addr].Received += pktSize
 				}
-
-				q.Traffic[addr].Received += pktSize
+				q.Unlock()
 			}
 		}
-
-		q.Unlock()
 	}
 }
 
