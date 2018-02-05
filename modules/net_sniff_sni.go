@@ -2,9 +2,9 @@ package modules
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"regexp"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -37,7 +37,7 @@ func sniParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 		ip.SrcIP.String(),
 		domain,
 		SniffData{
-			"host": domain,
+			"Domain": domain,
 		},
 		"[%s] %s %s > %s",
 		vTime(pkt.Metadata().Timestamp),

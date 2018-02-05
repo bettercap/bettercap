@@ -2,9 +2,9 @@ package modules
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"regexp"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -13,12 +13,7 @@ import (
 var httpRe = regexp.MustCompile("(?s).*(GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE|PATCH) (.+) HTTP/\\d\\.\\d.+Host: ([^\\s]+)")
 var uaRe = regexp.MustCompile("(?s).*User-Agent: ([^\\n]+).+")
 
-func httpParser(
-	ip *layers.IPv4,
-	pkt gopacket.Packet,
-	tcp *layers.TCP,
-	truncateURLs bool,
-) bool {
+func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	data := tcp.Payload
 	dataSize := len(data)
 
@@ -46,12 +41,6 @@ func httpParser(
 	}
 	url += fmt.Sprintf("%s", path)
 
-	// shorten / truncate long URLs if needed
-	formattedURL := string(url)
-	if truncateURLs {
-		formattedURL = vURL(url)
-	}
-
 	NewSnifferEvent(
 		pkt.Metadata().Timestamp,
 		"http",
@@ -68,7 +57,7 @@ func httpParser(
 		core.W(core.BG_RED+core.FG_BLACK, "http"),
 		vIP(ip.SrcIP),
 		core.W(core.BG_LBLUE+core.FG_BLACK, method),
-		formattedURL,
+		vURL(url),
 		core.Dim(ua),
 	).Push()
 
