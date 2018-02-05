@@ -64,7 +64,7 @@ func (mc *MacChanger) Author() string {
 func (mc *MacChanger) Configure() (err error) {
 	var changeTo string
 
-	if err, mv.iface = mc.StringParam("mac.changer.iface"); err != nil {
+	if err, mc.iface = mc.StringParam("mac.changer.iface"); err != nil {
 		return err
 	}
 
