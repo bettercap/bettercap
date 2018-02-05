@@ -20,7 +20,7 @@ func (s EventsStream) viewLogEvent(e session.Event) {
 		e.Data.(session.LogMessage).Message)
 }
 
-func (s EventsStream) viewTargetEvent(e session.Event) {
+func (s EventsStream) viewEndpointEvent(e session.Event) {
 	t := e.Data.(*net.Endpoint)
 	fmt.Printf("[%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
@@ -47,8 +47,8 @@ func (s *EventsStream) View(e session.Event, refresh bool) {
 	if s.filter == "" || strings.Contains(e.Tag, s.filter) {
 		if e.Tag == "sys.log" {
 			s.viewLogEvent(e)
-		} else if strings.HasPrefix(e.Tag, "target.") {
-			s.viewTargetEvent(e)
+		} else if strings.HasPrefix(e.Tag, "endpoint.") {
+			s.viewEndpointEvent(e)
 		} else if strings.HasPrefix(e.Tag, "mod.") {
 			s.viewModuleEvent(e)
 		} else if strings.HasPrefix(e.Tag, "net.sniff.") {

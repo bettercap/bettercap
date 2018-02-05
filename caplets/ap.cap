@@ -7,7 +7,7 @@ set net.sniff.filter not arp and not udp port 53
 events.stream off
 events.clear 
 
-set events.stream.filter target.
+set events.stream.filter endpoint.
 events.stream on
 
 api.rest on

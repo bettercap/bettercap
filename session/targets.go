@@ -128,7 +128,7 @@ func (tp *Targets) Remove(ip, mac string) {
 	if e, found := tp.Targets[mac]; found {
 		tp.TTL[mac]--
 		if tp.TTL[mac] == 0 {
-			tp.Session.Events.Add("target.lost", e)
+			tp.Session.Events.Add("endpoint.lost", e)
 			delete(tp.Targets, mac)
 			delete(tp.TTL, mac)
 		}
@@ -171,7 +171,7 @@ func (tp *Targets) AddIfNew(ip, mac string) *net.Endpoint {
 
 	e := net.NewEndpoint(ip, mac)
 	e.ResolvedCallback = func(e *net.Endpoint) {
-		tp.Session.Events.Add("target.resolved", e)
+		tp.Session.Events.Add("endpoint.resolved", e)
 	}
 
 	if alias, found := tp.Aliases[mac]; found {
@@ -181,7 +181,7 @@ func (tp *Targets) AddIfNew(ip, mac string) *net.Endpoint {
 	tp.Targets[mac] = e
 	tp.TTL[mac] = TargetsDefaultTTL
 
-	tp.Session.Events.Add("target.new", e)
+	tp.Session.Events.Add("endpoint.new", e)
 
 	return nil
 }
