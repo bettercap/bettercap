@@ -15,6 +15,7 @@ import (
 
 type SnifferContext struct {
 	Handle       *pcap.Handle
+	Source       string
 	DumpLocal    bool
 	Verbose      bool
 	Filter       string
@@ -30,8 +31,18 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 
 	ctx := NewSnifferContext()
 
-	if ctx.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+	if err, ctx.Source = s.StringParam("net.sniff.source"); err != nil {
 		return err, ctx
+	}
+
+	if ctx.Source == "" {
+		if ctx.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+			return err, ctx
+		}
+	} else {
+		if ctx.Handle, err = pcap.OpenOffline(ctx.Source); err != nil {
+			return err, ctx
+		}
 	}
 
 	if err, ctx.Verbose = s.BoolParam("net.sniff.verbose"); err != nil {

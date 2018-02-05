@@ -39,12 +39,17 @@ func NewSniffer(s *session.Session) *Sniffer {
 	sniff.AddParam(session.NewStringParameter("net.sniff.regexp",
 		"",
 		"",
-		"If filled, only packets matching this regular expression will be considered."))
+		"If set, only packets matching this regular expression will be considered."))
 
 	sniff.AddParam(session.NewStringParameter("net.sniff.output",
 		"",
 		"",
 		"If set, the sniffer will write captured packets to this file."))
+
+	sniff.AddParam(session.NewStringParameter("net.sniff.source",
+		"",
+		"",
+		"If set, the sniffer will read from this pcap file instead of the current interface."))
 
 	sniff.AddHandler(session.NewModuleHandler("net.sniff stats", "",
 		"Print sniffer session configuration and statistics.",
