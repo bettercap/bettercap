@@ -24,7 +24,7 @@ func NewSniffer(s *session.Session) *Sniffer {
 	}
 
 	sniff.AddParam(session.NewBoolParameter("net.sniff.truncate",
-		"true",
+		"false",
 		"If true, will truncate long request URLs so user-agent fits on same line when possible, otherwise extra verbose / full URLs."))
 
 	sniff.AddParam(session.NewBoolParameter("net.sniff.verbose",
