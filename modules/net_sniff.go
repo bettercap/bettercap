@@ -25,7 +25,7 @@ func NewSniffer(s *session.Session) *Sniffer {
 
 	sniff.AddParam(session.NewBoolParameter("net.sniff.verbose",
 		"true",
-		"If true, will print every captured packet, otherwise it will only create events and send them to the main queue."))
+		"If true, every captured and parsed packet will be sent to the events.stream for displaying, otherwise only the ones parsed at the application layer (sni, http, etc)."))
 
 	sniff.AddParam(session.NewBoolParameter("net.sniff.local",
 		"false",
