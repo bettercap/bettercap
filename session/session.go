@@ -271,7 +271,11 @@ func (s *Session) Start() error {
 	// keep reading network events in order to add / update endpoints
 	go func() {
 		for event := range s.Queue.Activities {
-			if event.Source == true {
+			if s.Active == false {
+				return
+			}
+
+			if s.IsOn("net.recon") == true && event.Source == true {
 				addr := event.IP.String()
 				mac := event.MAC.String()
 
@@ -280,16 +284,21 @@ func (s *Session) Start() error {
 					existing.LastSeen = time.Now()
 				}
 			}
-
-			if s.Active == false {
-				return
-			}
 		}
 	}()
 
 	s.Events.Add("session.started", nil)
 
 	return nil
+}
+
+func (s *Session) IsOn(moduleName string) bool {
+	for _, m := range s.Modules {
+		if m.Name() == moduleName {
+			return m.Running()
+		}
+	}
+	return false
 }
 
 func (s *Session) Refresh() {
