@@ -37,11 +37,9 @@ func (s EventsStream) viewModuleEvent(e session.Event) {
 
 func (s EventsStream) viewSnifferEvent(e session.Event) {
 	se := e.Data.(SnifferEvent)
-	fmt.Printf("[%s] [%s] %s > %s | %s\n",
+	fmt.Printf("[%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
 		core.Green(e.Tag),
-		se.Source,
-		se.Destination,
 		se.Message)
 }
 

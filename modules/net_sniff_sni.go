@@ -39,8 +39,7 @@ func sniParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 		SniffData{
 			"Domain": domain,
 		},
-		"[%s] %s %s > %s",
-		vTime(pkt.Metadata().Timestamp),
+		"%s %s > %s",
 		core.W(core.BG_YELLOW+core.FG_WHITE, "sni"),
 		vIP(ip.SrcIP),
 		core.Yellow("https://"+domain),

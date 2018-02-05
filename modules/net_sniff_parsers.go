@@ -28,8 +28,7 @@ func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 			SniffData{
 				"Size": len(ip.Payload),
 			},
-			"[%s] %s %s:%s > %s:%s %s",
-			vTime(pkt.Metadata().Timestamp),
+			"%s %s:%s > %s:%s %s",
 			core.W(core.BG_LBLUE+core.FG_BLACK, "tcp"),
 			vIP(ip.SrcIP),
 			vPort(tcp.SrcPort),
@@ -56,8 +55,7 @@ func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 			SniffData{
 				"Size": len(ip.Payload),
 			},
-			"[%s] %s %s:%s > %s:%s %s",
-			vTime(pkt.Metadata().Timestamp),
+			"%s %s:%s > %s:%s %s",
 			core.W(core.BG_DGRAY+core.FG_WHITE, "udp"),
 			vIP(ip.SrcIP),
 			vPort(udp.SrcPort),
@@ -78,8 +76,7 @@ func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 			SniffData{
 				"Size": len(ip.Payload),
 			},
-			"[%s] %s %s > %s %s",
-			vTime(pkt.Metadata().Timestamp),
+			"%s %s > %s %s",
 			core.W(core.BG_DGRAY+core.FG_WHITE, pkt.TransportLayer().LayerType().String()),
 			vIP(ip.SrcIP),
 			vIP(ip.DstIP),
