@@ -16,7 +16,6 @@ import (
 type SnifferContext struct {
 	Handle       *pcap.Handle
 	DumpLocal    bool
-	Truncate     bool
 	Verbose      bool
 	Filter       string
 	Expression   string
@@ -40,10 +39,6 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 	}
 
 	if err, ctx.DumpLocal = s.BoolParam("net.sniff.local"); err != nil {
-		return err, ctx
-	}
-
-	if err, ctx.Truncate = s.BoolParam("net.sniff.truncate"); err != nil {
 		return err, ctx
 	}
 
@@ -82,7 +77,6 @@ func NewSnifferContext() *SnifferContext {
 	return &SnifferContext{
 		Handle:       nil,
 		DumpLocal:    false,
-		Truncate:     true,
 		Verbose:      true,
 		Filter:       "",
 		Expression:   "",
@@ -103,12 +97,6 @@ func (c *SnifferContext) Log(sess *session.Session) {
 		log.Info("Skip local packets : %s", no)
 	} else {
 		log.Info("Skip local packets : %s", yes)
-	}
-
-	if c.Truncate {
-		log.Info("Truncate            : %s", yes)
-	} else {
-		log.Info("Truncate            : %s", no)
 	}
 
 	if c.Verbose {

@@ -11,10 +11,8 @@ import (
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
-const sniffTimeFormat = "2006-01-02 15:04:05"
-
 func vTime(t time.Time) string {
-	return t.Format(sniffTimeFormat)
+	return t.Format("15:04:05")
 }
 
 func vIP(ip net.IP) string {
