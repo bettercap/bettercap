@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
 )
@@ -57,7 +56,7 @@ func (f LinuxFirewall) IsForwardingEnabled() bool {
 	if out, err := ioutil.ReadFile(IPV4ForwardingFile); err != nil {
 		return false
 	} else {
-		return strings.Trim(string(out), "\r\n\t ") == "1"
+		return core.Trim(string(out)) == "1"
 	}
 }
 

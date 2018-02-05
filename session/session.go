@@ -52,7 +52,7 @@ type Session struct {
 func ParseCommands(buffer string) []string {
 	cmds := make([]string, 0)
 	for _, cmd := range strings.Split(buffer, ";") {
-		cmd = strings.Trim(cmd, "\r\n\t ")
+		cmd = core.Trim(cmd)
 		if cmd != "" || (len(cmd) > 0 && cmd[0] != '#') {
 			cmds = append(cmds, cmd)
 		}
@@ -338,7 +338,7 @@ func (s *Session) RunCaplet(filename string) error {
 }
 
 func (s *Session) Run(line string) error {
-	line = strings.TrimRight(line, " ")
+	line = core.TrimRight(line)
 	for _, h := range s.CoreHandlers {
 		if parsed, args := h.Parse(line); parsed == true {
 			return h.Exec(args, s)

@@ -2,6 +2,8 @@ package net
 
 import (
 	"strings"
+
+	"github.com/evilsocket/bettercap-ng/core"
 )
 
 var (
@@ -18,7 +20,7 @@ func OuiInit() {
 	lines := strings.Split(data, "\n")
 
 	for _, line := range lines {
-		line = strings.Trim(line, " \n\r\t")
+		line = core.Trim(line)
 		if len(line) == 0 || line[0] == '#' {
 			continue
 		}
@@ -28,8 +30,8 @@ func OuiInit() {
 			continue
 		}
 
-		prefix := strings.ToLower(strings.Trim(parts[0], " \n\r\t"))
-		vendor := strings.Trim(parts[1], " \n\r\t")
+		prefix := strings.ToLower(core.Trim(parts[0]))
+		vendor := core.Trim(parts[1])
 
 		oui[prefix] = vendor
 	}

@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/elazarl/goproxy"
+
+	"github.com/evilsocket/bettercap-ng/core"
 )
 
 type JSResponse struct {
@@ -47,7 +49,7 @@ func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
 	resp = goproxy.NewResponse(req, j.ContentType, j.Status, j.Body)
 	if j.Headers != "" {
 		for _, header := range strings.Split(j.Headers, "\n") {
-			header = strings.Trim(header, "\n\r\t ")
+			header = core.Trim(header)
 			if header == "" {
 				continue
 			}

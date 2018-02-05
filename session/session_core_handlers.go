@@ -15,7 +15,7 @@ import (
 func (s *Session) helpHandler(args []string, sess *Session) error {
 	filter := ""
 	if len(args) == 2 {
-		filter = strings.Trim(args[1], "\r\n\t ")
+		filter = core.Trim(args[1])
 	}
 
 	if filter == "" {
@@ -181,7 +181,7 @@ func (s *Session) shHandler(args []string, sess *Session) error {
 
 func (s *Session) aliasHandler(args []string, sess *Session) error {
 	mac := args[0]
-	alias := strings.Trim(args[1], "\r\n\t ")
+	alias := core.Trim(args[1])
 
 	if s.Targets.SetAliasFor(mac, alias) == true {
 		return nil
@@ -201,7 +201,7 @@ func (s *Session) registerCoreHandlers() {
 		"List available commands or show module specific help if no module name is provided.",
 		s.helpHandler),
 		readline.PcItem("help", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = strings.Trim(prefix[4:], "\t\r\n ")
+			prefix = core.Trim(prefix[4:])
 			modNames := []string{""}
 			for _, m := range s.Modules {
 				if prefix == "" || strings.HasPrefix(m.Name(), prefix) == true {
@@ -234,7 +234,7 @@ func (s *Session) registerCoreHandlers() {
 		"Get the value of variable NAME, use * for all.",
 		s.getHandler),
 		readline.PcItem("get", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = strings.Trim(prefix[3:], "\t\r\n ")
+			prefix = core.Trim(prefix[3:])
 			varNames := []string{""}
 			for key := range s.Env.Storage {
 				if prefix == "" || strings.HasPrefix(key, prefix) == true {
@@ -249,7 +249,7 @@ func (s *Session) registerCoreHandlers() {
 		"Set the VALUE of variable NAME.",
 		s.setHandler),
 		readline.PcItem("set", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = strings.Trim(prefix[3:], "\t\r\n ")
+			prefix = core.Trim(prefix[3:])
 			varNames := []string{""}
 			for key, _ := range s.Env.Storage {
 				if prefix == "" || strings.HasPrefix(key, prefix) == true {
@@ -270,7 +270,7 @@ func (s *Session) registerCoreHandlers() {
 		"Load and run this caplet in the current session.",
 		s.includeHandler),
 		readline.PcItem("include", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = strings.Trim(prefix[8:], "\t\r\n ")
+			prefix = core.Trim(prefix[8:])
 			if prefix == "" {
 				prefix = "."
 			}
@@ -291,7 +291,7 @@ func (s *Session) registerCoreHandlers() {
 		"Assign an alias to a given endpoint given its MAC address.",
 		s.aliasHandler),
 		readline.PcItem("alias", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = strings.Trim(prefix[5:], "\t\r\n ")
+			prefix = core.Trim(prefix[5:])
 			macs := []string{""}
 			for mac, _ := range s.Targets.Targets {
 				if prefix == "" || strings.HasPrefix(mac, prefix) == true {

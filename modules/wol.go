@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"regexp"
-	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
@@ -53,7 +52,7 @@ func NewWOL(s *session.Session) *WOL {
 func parseMAC(args []string) (string, error) {
 	mac := "ff:ff:ff:ff:ff:ff"
 	if len(args) == 1 {
-		tmp := strings.Trim(args[0], "\r\n\t ")
+		tmp := core.Trim(args[0])
 		if tmp != "" {
 			if reMAC.MatchString(tmp) == false {
 				return "", fmt.Errorf("%s is not a valid MAC address.", tmp)

@@ -71,8 +71,8 @@ func (tp *Targets) loadAliases() error {
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.SplitN(line, " ", 2)
-		mac := strings.Trim(parts[0], "\r\n\t ")
-		alias := strings.Trim(parts[1], "\r\n\t ")
+		mac := core.Trim(parts[0])
+		alias := core.Trim(parts[1])
 		tp.Session.Events.Log(core.DEBUG, " aliases[%s] = '%s'", mac, alias)
 		tp.Aliases[mac] = alias
 	}

@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+func Trim(s string) string {
+	return strings.Trim(s, "\r\n\t ")
+}
+
+func TrimRight(s string) string {
+	return strings.TrimRight(s, "\r\n\t ")
+}
+
 func Exec(executable string, args []string) (string, error) {
 	path, err := exec.LookPath(executable)
 	if err != nil {
@@ -20,7 +28,7 @@ func Exec(executable string, args []string) (string, error) {
 		fmt.Printf("ERROR: path=%s args=%s err=%s out='%s'\n", path, args, err, raw)
 		return "", err
 	} else {
-		return strings.Trim(string(raw), "\r\n\t "), nil
+		return Trim(string(raw)), nil
 	}
 }
 

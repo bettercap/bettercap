@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/evilsocket/bettercap-ng/core"
 )
 
 type Module interface {
@@ -62,7 +64,7 @@ func (m SessionModule) ListParam(name string) (err error, values []string) {
 	} else {
 		parts := strings.Split(list, ",")
 		for _, part := range parts {
-			part = strings.Trim(part, "\t\n\r ")
+			part = core.Trim(part)
 			if part != "" {
 				values = append(values, part)
 			}
