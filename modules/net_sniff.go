@@ -147,7 +147,6 @@ func (s *Sniffer) Start() error {
 
 	go func() {
 		s.Stats = NewSnifferStats()
-		defer s.Ctx.Close()
 
 		src := gopacket.NewPacketSource(s.Ctx.Handle, s.Ctx.Handle.LinkType())
 		for packet := range src.Packets() {
@@ -191,6 +190,7 @@ func (s *Sniffer) Stop() error {
 		return session.ErrAlreadyStopped
 	}
 	s.SetRunning(false)
+	s.Ctx.Close()
 
 	return nil
 }
