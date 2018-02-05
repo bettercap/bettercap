@@ -14,6 +14,7 @@ import (
 
 type MacChanger struct {
 	session.SessionModule
+	iface       string
 	originalMac net.HardwareAddr
 	fakeMac     net.HardwareAddr
 }
@@ -22,6 +23,11 @@ func NewMacChanger(s *session.Session) *MacChanger {
 	mc := &MacChanger{
 		SessionModule: session.NewSessionModule("mac.changer", s),
 	}
+
+	mc.AddParam(session.NewStringParameter("mac.changer.iface",
+		session.ParamIfaceName,
+		"",
+		"Name of the interface to use."))
 
 	mc.AddParam(session.NewStringParameter("mac.changer.address",
 		session.ParamRandomMAC,
@@ -58,6 +64,10 @@ func (mc *MacChanger) Author() string {
 func (mc *MacChanger) Configure() (err error) {
 	var changeTo string
 
+	if err, mv.iface = mc.StringParam("mac.changer.iface"); err != nil {
+		return err
+	}
+
 	if err, changeTo = mc.StringParam("mac.changer.address"); err != nil {
 		return err
 	}
@@ -77,11 +87,11 @@ func (mc *MacChanger) setMac(mac net.HardwareAddr) error {
 	args := []string{}
 
 	if strings.Contains(os, "bsd") || os == "darwin" {
-		args = []string{mc.Session.Interface.Name(), "ether", mac.String()}
+		args = []string{mc.iface, "ether", mac.String()}
 	} else if os == "linux" {
-		args = []string{mc.Session.Interface.Name(), "hw", "ether", mac.String()}
+		args = []string{mc.iface, "hw", "ether", mac.String()}
 	} else {
-		return fmt.Errorf("OS %s not supported by mac.changer module.", os)
+		return fmt.Errorf("OS %s is not supported by mac.changer module.", os)
 	}
 
 	_, err := core.Exec("ifconfig", args)

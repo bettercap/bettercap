@@ -82,6 +82,7 @@ func (p ModuleParam) Validate(value string) (error, interface{}) {
 	return fmt.Errorf("Unhandled module parameter type %d.", p.Type), nil
 }
 
+const ParamIfaceName = "<interface name>"
 const ParamIfaceAddress = "<interface address>"
 const ParamSubnet = "<entire subnet>"
 const ParamRandomMAC = "<random mac>"
@@ -96,7 +97,9 @@ func (p ModuleParam) Get(s *Session) (error, interface{}) {
 		v = ""
 	}
 
-	if v == ParamIfaceAddress {
+	if v == ParamIfaceName {
+		v = s.Interface.Name()
+	} else if v == ParamIfaceAddress {
 		v = s.Interface.IpAddress
 	} else if v == ParamSubnet {
 		v = s.Interface.CIDR()
