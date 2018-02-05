@@ -9,12 +9,16 @@ import (
 	"strings"
 )
 
+const (
+	defaultTrimSet = "\r\n\t "
+)
+
 func Trim(s string) string {
-	return strings.Trim(s, "\r\n\t ")
+	return strings.Trim(s, defaultTrimSet)
 }
 
 func TrimRight(s string) string {
-	return strings.TrimRight(s, "\r\n\t ")
+	return strings.TrimRight(s, defaultTrimSet)
 }
 
 func Exec(executable string, args []string) (string, error) {
