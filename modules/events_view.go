@@ -2,7 +2,7 @@ package modules
 
 import (
 	"fmt"
-	"sort"
+	// "sort"
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -37,25 +37,12 @@ func (s EventsStream) viewModuleEvent(e session.Event) {
 
 func (s EventsStream) viewSnifferEvent(e session.Event) {
 	se := e.Data.(SnifferEvent)
-
-	fmt.Printf("[%s] [%s] %s > %s | ",
+	fmt.Printf("[%s] [%s] %s > %s | %s\n",
 		e.Time.Format(eventTimeFormat),
 		core.Green(e.Tag),
 		se.Source,
-		se.Destination)
-
-	keys := make([]string, 0)
-	for k, _ := range se.Data {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
-
-	for _, k := range keys {
-		fmt.Printf("%s=%s ", core.Green(k), se.Data[k])
-	}
-
-	fmt.Println()
+		se.Destination,
+		se.Message)
 }
 
 func (s *EventsStream) View(e session.Event, refresh bool) {

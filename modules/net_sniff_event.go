@@ -30,7 +30,6 @@ func NewSnifferEvent(t time.Time, proto string, src string, dst string, data Sni
 }
 
 func (e SnifferEvent) Push() {
-	fmt.Printf("%s\n", e.Message)
 	session.I.Events.Add("net.sniff.leak."+e.Protocol, e)
 	session.I.Refresh()
 }
