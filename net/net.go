@@ -18,11 +18,19 @@ func FindInterface(name string) (*Endpoint, error) {
 
 	for _, iface := range ifaces {
 		mac := iface.HardwareAddr.String()
-		addrs, err := iface.Addrs()
-		// is interface active?
-		if err == nil && len(addrs) > 0 {
-			if (name == "" && iface.Name != "lo" && iface.Name != "lo0") || iface.Name == name {
-				var e *Endpoint = nil
+		if (name == "" && iface.Name != "lo" && iface.Name != "lo0") || iface.Name == name {
+			var e *Endpoint = nil
+
+			addrs, err := iface.Addrs()
+			if err != nil {
+				fmt.Printf("%s\n", err)
+				continue
+			}
+
+			// interface is in monitor mode (or it's just down and the user is dumb)
+			if len(addrs) == 0 {
+				e = NewEndpointNoResolve("0.0.0.0", mac, iface.Name, 0)
+			} else {
 				// For every address of the interface.
 				for _, addr := range addrs {
 					ip := addr.String()
@@ -48,13 +56,13 @@ func FindInterface(name string) (*Endpoint, error) {
 						}
 					}
 				}
+			}
 
-				if e != nil {
-					if len(e.HW) == 0 {
-						return nil, fmt.Errorf("Could not detect interface hardware address.")
-					}
-					return e, nil
+			if e != nil {
+				if len(e.HW) == 0 {
+					return nil, fmt.Errorf("Could not detect interface hardware address.")
 				}
+				return e, nil
 			}
 		}
 	}
