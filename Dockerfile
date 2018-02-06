@@ -8,7 +8,7 @@ COPY . $SRC_DIR
 WORKDIR $SRC_DIR
 
 RUN apk add --update ca-certificates
-RUN apk add --no-cache --update bash build-base libpcap-dev
+RUN apk add --no-cache --update bash iptables build-base libpcap-dev
 RUN make deps
 RUN make
 
