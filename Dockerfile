@@ -1,6 +1,7 @@
 FROM iron/go:dev
 MAINTAINER Simone Margaritelli <https://evilsocket.net/>
 
+ENV GOPATH=/gocode
 ENV SRC_DIR=/gocode/src/github.com/evilsocket/bettercap-ng
 COPY . $SRC_DIR
 
