@@ -10,6 +10,8 @@ import (
 	"github.com/evilsocket/bettercap-ng/core"
 )
 
+const MonitorModeAddress = "0.0.0.0"
+
 func FindInterface(name string) (*Endpoint, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
@@ -29,7 +31,7 @@ func FindInterface(name string) (*Endpoint, error) {
 
 			// interface is in monitor mode (or it's just down and the user is dumb)
 			if len(addrs) == 0 {
-				e = NewEndpointNoResolve("0.0.0.0", mac, iface.Name, 0)
+				e = NewEndpointNoResolve(MonitorModeAddress, mac, iface.Name, 0)
 			} else {
 				// For every address of the interface.
 				for _, addr := range addrs {
