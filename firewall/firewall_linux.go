@@ -14,9 +14,7 @@ type LinuxFirewall struct {
 }
 
 const (
-	IPV4ForwardingFile    = "/proc/sys/net/ipv4/ip_forward"
-	IPV4ICMPBcastFile     = "/proc/sys/net/ipv4/icmp_echo_ignore_broadcasts"
-	IPV4SendRedirectsFile = "/proc/sys/net/ipv4/conf/all/send_redirects"
+	IPV4ForwardingFile = "/proc/sys/net/ipv4/ip_forward"
 )
 
 func Make() FirewallManager {
@@ -62,14 +60,6 @@ func (f LinuxFirewall) IsForwardingEnabled() bool {
 
 func (f LinuxFirewall) EnableForwarding(enabled bool) error {
 	return f.enableFeature(IPV4ForwardingFile, enabled)
-}
-
-func (f LinuxFirewall) EnableIcmpBcast(enabled bool) error {
-	return f.enableFeature(IPV4ICMPBcastFile, enabled)
-}
-
-func (f LinuxFirewall) EnableSendRedirects(enabled bool) error {
-	return f.enableFeature(IPV4SendRedirectsFile, enabled)
 }
 
 func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {

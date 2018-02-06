@@ -89,14 +89,6 @@ func (f PfFirewall) EnableForwarding(enabled bool) error {
 	return f.enableParam("net.inet.ip.forwarding", enabled)
 }
 
-func (f PfFirewall) EnableIcmpBcast(enabled bool) error {
-	return f.enableParam("net.inet.icmp.bmcastecho", enabled)
-}
-
-func (f PfFirewall) EnableSendRedirects(enabled bool) error {
-	return nil
-}
-
 func (f PfFirewall) generateRule(r *Redirection) string {
 	src_a := "any"
 	dst_a := "any"
