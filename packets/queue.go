@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"runtime"
 	"sync"
 	"sync/atomic"
 
@@ -60,12 +59,7 @@ func NewQueue(iface *bnet.Endpoint) (*Queue, error) {
 		Activities:  make(chan Activity),
 	}
 
-	byName := iface.Name()
-	if runtime.GOOS == "windows" {
-		byName = iface.IpAddress
-	}
-
-	q.handle, err = pcap.OpenLive(byName, 1024, true, pcap.BlockForever)
+	q.handle, err = pcap.OpenLive(iface.Name(), 1024, true, pcap.BlockForever)
 	if err != nil {
 		return nil, err
 	}
