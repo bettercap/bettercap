@@ -16,9 +16,11 @@ import (
 const MonitorModeAddress = "0.0.0.0"
 
 func areTheSame(iface net.Interface, piface pcap.Interface) bool {
+	fmt.Printf("%+v\n", piface)
 	if addrs, err := iface.Addrs(); err == nil {
 		for _, ia := range addrs {
 			for _, ib := range piface.Addresses {
+				fmt.Printf("  %+v\n", ib)
 				if ia.String() == ib.IP.String() {
 					return true
 				}
