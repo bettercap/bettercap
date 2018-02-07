@@ -20,17 +20,30 @@ func FindInterface(name string) (*Endpoint, error) {
 
 	for _, iface := range ifaces {
 		mac := iface.HardwareAddr.String()
-		if (name == "" && iface.Name != "lo" && iface.Name != "lo0") || iface.Name == name {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			fmt.Printf("%s\n", err)
+			continue
+		}
+		nAddrs := len(addrs)
+
+		/*
+		 * If no interface has been specified, return the first active
+		 * one with at least an ip address, otherwise just the match
+		 * whatever it has, in order to also consider monitor interfaces
+		 * if passed explicitly.
+		 */
+		doCheck := false
+		if name == "" && iface.Name != "lo" && iface.Name != "lo0" && nAddrs > 0 {
+			doCheck = true
+		} else if iface.Name == name {
+			doCheck = true
+		}
+
+		if doCheck {
 			var e *Endpoint = nil
-
-			addrs, err := iface.Addrs()
-			if err != nil {
-				fmt.Printf("%s\n", err)
-				continue
-			}
-
 			// interface is in monitor mode (or it's just down and the user is dumb)
-			if len(addrs) == 0 {
+			if nAddrs == 0 {
 				e = NewEndpointNoResolve(MonitorModeAddress, mac, iface.Name, 0)
 			} else {
 				// For every address of the interface.
