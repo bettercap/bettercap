@@ -15,27 +15,34 @@ import (
 
 const MonitorModeAddress = "0.0.0.0"
 
+func areTheSame(iface net.Interface, piface pcap.Interface) bool {
+	if addrs, err := iface.Addrs(); err == nil {
+		for _, ia := range addrs {
+			for _, ib := range piface.Addresses {
+				if ia.String() == ib.IP.String() {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func getInterfaceName(iface net.Interface) string {
-	// all normal OS
+	// all normal operating systems
 	if runtime.GOOS != "windows" {
 		return iface.Name
 	}
 
+	// Microsoft Windows
 	devs, err := pcap.FindAllDevs()
 	if err != nil {
 		return iface.Name
 	}
 
 	for _, dev := range devs {
-		fmt.Printf("%v\n", dev)
-		if dev.Name == iface.Name {
-			fmt.Printf("%+v\n", dev)
-			desc := dev.Description
-			name := dev.Name
-			if desc != "" {
-				name = fmt.Sprintf("%s (%s)", name, desc)
-			}
-			return name
+		if areTheSame(iface, dev) {
+			return dev.Name
 		}
 	}
 
