@@ -207,7 +207,8 @@ func (s *Session) Start() error {
 	s.Env.Set("iface.mac", s.Interface.HwAddress)
 
 	if s.Queue, err = packets.NewQueue(s.Interface); err != nil {
-		return fmt.Errorf("Error while creating packet queue: %s", err)
+		fmt.Printf("iface = '%s'\n", s.Interface.Name())
+		return err
 	}
 
 	if s.Gateway, err = net.FindGateway(s.Interface); err != nil {
