@@ -59,6 +59,7 @@ func NewQueue(iface *bnet.Endpoint) (*Queue, error) {
 		Activities:  make(chan Activity),
 	}
 
+	fmt.Printf("OpenLive(%s)\n", iface.Name())
 	q.handle, err = pcap.OpenLive(iface.Name(), 1024, true, pcap.BlockForever)
 	if err != nil {
 		return nil, err
