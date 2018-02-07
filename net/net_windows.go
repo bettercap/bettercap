@@ -13,7 +13,7 @@ var IPv4RouteCmdOpts = []string{"interface", "ipv4", "show", "route"}
 
 func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (*Endpoint, error)) (*Endpoint, error) {
 	subnet := tokens[1]
-	gateway = tokens[2]
+	gateway := tokens[2]
 
 	fmt.Printf("subnet='%s' ip='%s'\n", subnet, gateway)
 
