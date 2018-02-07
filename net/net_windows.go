@@ -22,6 +22,9 @@ func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (
  * net.Interface does not have the correct name on Windows and pcap.Interface
  * does not have the hardware address for some reason ... so this is what I
  * had to do in Windows ... tnx Microsoft <3
+ *
+ * FIXME: Just to be clear *THIS IS SHIT*. Please someone test, find a more
+ * elegant solution and refactor ... i'm seriously tired of this.
  */
 
 func areTheSame(iface net.Interface, piface pcap.Interface) bool {
