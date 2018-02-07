@@ -63,6 +63,7 @@ func main() {
 
 	for sess.Active {
 		line, err := sess.ReadLine()
+		fmt.Printf("line='%s' err='%s'\n", line, err)
 		if err != nil {
 			if err == io.EOF {
 				continue
