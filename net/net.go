@@ -28,6 +28,7 @@ func getInterfaceName(iface net.Interface) string {
 
 	for _, dev := range devs {
 		if dev.Name == iface.Name {
+			fmt.Printf("%+v\n", dev)
 			desc := dev.Description
 			name := dev.Name
 			if desc != "" {
@@ -36,6 +37,8 @@ func getInterfaceName(iface net.Interface) string {
 			return name
 		}
 	}
+
+	fmt.Println("NOOPE")
 
 	return iface.Name
 }
