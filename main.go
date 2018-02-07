@@ -63,7 +63,7 @@ func main() {
 	for sess.Active {
 		line, err := sess.ReadLine()
 		if err != nil {
-			log.Fatal("%s", err)
+			log.Fatal("WOOT %s", err)
 		}
 
 		for _, cmd := range session.ParseCommands(line) {
