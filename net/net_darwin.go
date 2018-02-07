@@ -1,6 +1,9 @@
 package net
 
-import "regexp"
+import (
+	"net"
+	"regexp"
+)
 
 var IPv4RouteParser = regexp.MustCompile("^([a-z]+)+\\s+(\\d+\\.+\\d+.\\d.+\\d)+\\s+([a-zA-z]+)+\\s+(\\d+)+\\s+(\\d+)+\\s+([a-zA-Z]+\\d+)$")
 var IPv4RouteTokens = 7
@@ -17,4 +20,9 @@ func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (
 	}
 
 	return nil, nil
+}
+
+// see Windows version to understand why ....
+func getInterfaceName(iface net.Interface) string {
+	return iface.Name
 }

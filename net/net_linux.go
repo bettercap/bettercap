@@ -1,6 +1,9 @@
 package net
 
-import "regexp"
+import (
+	"net"
+	"regexp"
+)
 
 // only matches gateway lines
 var IPv4RouteParser = regexp.MustCompile("^(default|[0-9\\.]+)\\svia\\s([0-9\\.]+)\\sdev\\s(\\w+)\\s.*$")
@@ -17,4 +20,9 @@ func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (
 	}
 
 	return nil, nil
+}
+
+// see Windows version to understand why ....
+func getInterfaceName(iface net.Interface) string {
+	return iface.Name
 }
