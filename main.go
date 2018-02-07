@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -63,7 +64,10 @@ func main() {
 	for sess.Active {
 		line, err := sess.ReadLine()
 		if err != nil {
-			log.Fatal("WOOT %s", err)
+			if err == io.EOF {
+				continue
+			}
+			log.Fatal("%s", err)
 		}
 
 		for _, cmd := range session.ParseCommands(line) {
