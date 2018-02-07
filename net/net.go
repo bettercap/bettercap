@@ -4,13 +4,41 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
+
+	"github.com/google/gopacket/pcap"
 )
 
 const MonitorModeAddress = "0.0.0.0"
+
+func getInterfaceName(iface net.Interface) string {
+	// all normal OS
+	if runtime.GOOS != "windows" {
+		return iface.Name
+	}
+
+	devs, err := pcap.FindAllDevs()
+	if err != nil {
+		return iface.Name
+	}
+
+	for _, dev := range devs {
+		if dev.Name == iface.Name {
+			desc := dev.Description
+			name := dev.Name
+			if desc != "" {
+				name = fmt.Sprintf("%s (%s)", name, desc)
+			}
+			return name
+		}
+	}
+
+	return iface.Name
+}
 
 func FindInterface(name string) (*Endpoint, error) {
 	ifaces, err := net.Interfaces()
@@ -19,6 +47,7 @@ func FindInterface(name string) (*Endpoint, error) {
 	}
 
 	for _, iface := range ifaces {
+		ifName := getInterfaceName(iface)
 		mac := iface.HardwareAddr.String()
 		addrs, err := iface.Addrs()
 		if err != nil {
@@ -34,9 +63,9 @@ func FindInterface(name string) (*Endpoint, error) {
 		 * if passed explicitly.
 		 */
 		doCheck := false
-		if name == "" && iface.Name != "lo" && iface.Name != "lo0" && nAddrs > 0 {
+		if name == "" && ifName != "lo" && ifName != "lo0" && nAddrs > 0 {
 			doCheck = true
-		} else if iface.Name == name {
+		} else if ifName == name {
 			doCheck = true
 		}
 
@@ -44,7 +73,7 @@ func FindInterface(name string) (*Endpoint, error) {
 			var e *Endpoint = nil
 			// interface is in monitor mode (or it's just down and the user is dumb)
 			if nAddrs == 0 {
-				e = NewEndpointNoResolve(MonitorModeAddress, mac, iface.Name, 0)
+				e = NewEndpointNoResolve(MonitorModeAddress, mac, ifName, 0)
 			} else {
 				// For every address of the interface.
 				for _, addr := range addrs {
@@ -53,14 +82,14 @@ func FindInterface(name string) (*Endpoint, error) {
 					if m, _ := regexp.MatchString("^[0-9\\.]+/?\\d*$", ip); m == true {
 						if strings.IndexRune(ip, '/') == -1 {
 							// plain ip
-							e = NewEndpointNoResolve(ip, mac, iface.Name, 0)
+							e = NewEndpointNoResolve(ip, mac, ifName, 0)
 						} else {
 							// ip/bits
 							parts := strings.Split(ip, "/")
 							ip_part := parts[0]
 							bits, err := strconv.Atoi(parts[1])
 							if err == nil {
-								e = NewEndpointNoResolve(ip_part, mac, iface.Name, uint32(bits))
+								e = NewEndpointNoResolve(ip_part, mac, ifName, uint32(bits))
 							}
 						}
 					} else if e != nil {
