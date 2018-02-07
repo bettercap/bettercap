@@ -1,8 +1,10 @@
 package net
 
 import (
+	"net"
 	"regexp"
-	"runtime"
+
+	"github.com/google/gopacket/pcap"
 )
 
 // only matches gateway lines
