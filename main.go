@@ -43,9 +43,9 @@ func main() {
 
 	if err = sess.Run("events.stream on"); err != nil {
 		log.Fatal("%", err)
-	} /*else if err = sess.Run("net.recon on"); err != nil {
+	} else if err = sess.Run("net.recon on"); err != nil {
 		log.Fatal("%", err)
-	}*/
+	}
 
 	defer sess.Close()
 
@@ -63,7 +63,6 @@ func main() {
 
 	for sess.Active {
 		line, err := sess.ReadLine()
-		fmt.Printf("line='%s' err='%s'\n", line, err)
 		if err != nil {
 			if err == io.EOF {
 				continue
