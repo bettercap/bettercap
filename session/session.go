@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"os/user"
 	"sort"
 	"strings"
 	"syscall"
@@ -82,12 +81,6 @@ func New() (*Session, error) {
 
 	s.Env = NewEnvironment(s)
 	s.Events = NewEventPool(*s.Options.Debug, *s.Options.Silent)
-
-	if u, err := user.Current(); err != nil {
-		return nil, err
-	} else if u.Uid != "0" {
-		return nil, fmt.Errorf("This software must run as root.")
-	}
 
 	s.registerCoreHandlers()
 
