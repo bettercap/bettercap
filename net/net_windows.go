@@ -11,7 +11,8 @@ var IPv4RouteCmd = "netsh"
 var IPv4RouteCmdOpts = []string{"interface", "ipv4", "show", "route"}
 
 func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (*Endpoint, error)) (*Endpoint, error) {
-	subnet := tokens[1]
+	// TODO check if the subnet is the same as iface ?
+	// subnet := tokens[1]
 	gateway := tokens[2]
 	return f(gateway)
 }
