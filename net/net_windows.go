@@ -3,6 +3,7 @@ package net
 import (
 	"net"
 	"regexp"
+	"strings"
 
 	"github.com/google/gopacket/pcap"
 )
