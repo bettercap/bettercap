@@ -301,7 +301,7 @@ func (s *Session) Refresh() {
 }
 
 func (s *Session) ReadLine() (string, error) {
-	s.Refresh()
+	// s.Refresh()
 	return s.Input.Readline()
 }
 
