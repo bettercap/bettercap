@@ -1,3 +1,5 @@
+// +build !windows
+
 package core
 
 func Shell(cmd string) (string, error) {
