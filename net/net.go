@@ -49,6 +49,22 @@ func getInterfaceName(iface net.Interface) string {
 	return iface.Name
 }
 
+func NormalizeMac(mac string) string {
+	var parts []string
+	if strings.ContainsRune(mac, '-') {
+		parts = strings.Split(mac, "-")
+	} else {
+		parts = strings.Split(mac, ":")
+	}
+
+	for i, p := range parts {
+		if len(p) < 2 {
+			parts[i] = "0" + p
+		}
+	}
+	return strings.Join(parts, ":")
+}
+
 func FindInterface(name string) (*Endpoint, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
