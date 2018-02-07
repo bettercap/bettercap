@@ -13,14 +13,12 @@ import (
 const MonitorModeAddress = "0.0.0.0"
 
 func FindInterface(name string) (*Endpoint, error) {
-	fmt.Printf("FindInterface(%s)\n", name)
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return nil, err
 	}
 
 	for _, iface := range ifaces {
-		fmt.Printf("  %v\n", iface)
 		mac := iface.HardwareAddr.String()
 		addrs, err := iface.Addrs()
 		if err != nil {
@@ -28,7 +26,6 @@ func FindInterface(name string) (*Endpoint, error) {
 			continue
 		}
 		nAddrs := len(addrs)
-		fmt.Printf("    %s\n", addrs)
 
 		/*
 		 * If no interface has been specified, return the first active
@@ -42,8 +39,6 @@ func FindInterface(name string) (*Endpoint, error) {
 		} else if iface.Name == name {
 			doCheck = true
 		}
-
-		fmt.Printf("  doCheck = %v\n", doCheck)
 
 		if doCheck {
 			var e *Endpoint = nil
@@ -79,7 +74,6 @@ func FindInterface(name string) (*Endpoint, error) {
 			}
 
 			if e != nil {
-				fmt.Printf("e = %+v\n", e)
 				if len(e.HW) == 0 {
 					return nil, fmt.Errorf("Could not detect interface hardware address.")
 				}
