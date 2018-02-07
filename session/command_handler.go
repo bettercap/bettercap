@@ -1,7 +1,7 @@
 package session
 
 import (
-	"github.com/chzyer/readline"
+	"github.com/evilsocket/readline"
 	"regexp"
 )
 

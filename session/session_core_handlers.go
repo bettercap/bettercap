@@ -9,7 +9,7 @@ import (
 
 	"github.com/evilsocket/bettercap-ng/core"
 
-	"github.com/chzyer/readline"
+	"github.com/evilsocket/readline"
 )
 
 func (s *Session) helpHandler(args []string, sess *Session) error {
