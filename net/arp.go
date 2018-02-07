@@ -33,9 +33,17 @@ func ArpUpdate(iface string) (ArpTable, error) {
 	for _, line := range strings.Split(output, "\n") {
 		m := ArpTableParser.FindStringSubmatch(line)
 		if len(m) == ArpTableTokens {
-			address := m[ArpTableTokenIndex[0]]
-			mac := m[ArpTableTokenIndex[1]]
-			ifname := m[ArpTableTokenIndex[2]]
+			ipIndex := ArpTableTokenIndex[0]
+			hwIndex := ArpTableTokenIndex[1]
+			ifIndex := ArpTableTokenIndex[2]
+
+			address := m[ipIndex]
+			mac := m[hwIndex]
+			ifname := iface
+
+			if ifIndex != -1 {
+				ifname = m[ifIndex]
+			}
 
 			if ifname == iface {
 				newTable[address] = mac
