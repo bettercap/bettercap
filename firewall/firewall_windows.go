@@ -52,14 +52,17 @@ func (f WindowsFirewall) EnableForwarding(enabled bool) error {
 	return nil
 }
 
-func (f WindowsFirewall) generateRule(r *Redirection) []string {
+func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
 	rule := []string{
-		fmt.Sprintf("connectport=%d", r.SrcPort),
 		fmt.Sprintf("listenport=%d", r.DstPort),
 	}
 
-	if r.SrcAddress != "" {
-		rule = append(rule, fmt.Sprintf("connectaddress=%s", r.SrcAddress))
+	if enabled == true {
+		rule = append(rule, fmt.Sprintf("connectport=%d", r.SrcPort))
+
+		if r.SrcAddress != "" {
+			rule = append(rule, fmt.Sprintf("connectaddress=%s", r.SrcAddress))
+		}
 	}
 
 	if r.DstAddress != "" {
