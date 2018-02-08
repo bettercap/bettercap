@@ -84,13 +84,14 @@ func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error 
 		rule = append([]string{"interface", "portproxy", "delete", "v4tov4"}, rule...)
 	}
 
-	fmt.Printf("%v\n", rule)
 	out, err := core.Exec("netsh", rule)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("enableredir=%s\n", out)
+	if core.Trim(out) != "" {
+		return fmt.Errorf("Unexpected netsh output: %s", out)
+	}
 
 	return nil
 }
