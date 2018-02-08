@@ -9,7 +9,7 @@ import (
 )
 
 type WindowsFirewall struct {
-	iface        *net.Enpoint
+	iface        *net.Endpoint
 	forwarding   bool
 	redirections map[string]*Redirection
 }
