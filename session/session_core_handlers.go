@@ -95,18 +95,13 @@ func (s *Session) activeHandler(args []string, sess *Session) error {
 
 func (s *Session) exitHandler(args []string, sess *Session) error {
 	for _, mod := range s.Modules {
-		fmt.Println("loop")
 		if mod.Running() {
-			fmt.Printf("Stopping %s\n", mod.Name())
 			mod.Stop()
-			fmt.Printf("DONE\n")
 		}
 	}
 
-	fmt.Printf("Closing input\n")
 	s.Active = false
 	s.Input.Close()
-	fmt.Printf("input closed\n")
 	return nil
 }
 
