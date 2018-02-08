@@ -42,7 +42,7 @@ func main() {
 	sess.Register(modules.NewWOL(sess))
 
 	if err = sess.Start(); err != nil {
-		log.Fatal("%", err)
+		log.Fatal("%s", err)
 	}
 	defer sess.Close()
 
