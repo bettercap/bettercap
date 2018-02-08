@@ -247,7 +247,6 @@ func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, sc
 }
 
 func (p *HTTPProxy) httpWorker() error {
-	fmt.Printf("  httpWorker\n")
 	p.isRunning = true
 	return p.Server.ListenAndServe()
 }
@@ -276,7 +275,6 @@ func (dumb dumbResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 func (p *HTTPProxy) httpsWorker() error {
-	fmt.Printf("  httpsWorker\n")
 	var err error
 
 	// listen to the TLS ClientHello but make it a CONNECT request instead
@@ -330,9 +328,7 @@ func (p *HTTPProxy) httpsWorker() error {
 }
 
 func (p *HTTPProxy) Start() {
-	fmt.Printf("httpproxybase.start\n")
 	go func() {
-		fmt.Printf("httpproxybase.start go routine\n")
 		var err error
 
 		if p.isTLS == true {

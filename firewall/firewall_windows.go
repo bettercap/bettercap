@@ -64,7 +64,7 @@ func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
 		if r.SrcAddress != "" {
 			rule = append(rule, fmt.Sprintf("connectaddress=%s", r.SrcAddress))
 		} else {
-			rule = append(rule, fmt.Sprintf("connectaddress=%s", r.DstAddress))
+			// rule = append(rule, fmt.Sprintf("connectaddress=%s", r.DstAddress))
 		}
 	}
 
