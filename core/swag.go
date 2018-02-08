@@ -1,7 +1,12 @@
 package core
 
+import (
+	"github.com/mattn/go-isatty"
+	"os"
+)
+
 // https://misc.flogisoft.com/bash/tip_colors_and_formatting
-const (
+var (
 	BOLD = "\033[1m"
 	DIM  = "\033[2m"
 
@@ -20,10 +25,30 @@ const (
 	BG_LBLUE  = "\033[104m"
 
 	RESET = "\033[0m"
+
+	NoColors = false
 )
 
-const ON = GREEN + "✔" + RESET
-const OFF = RED + "✘" + RESET
+func init() {
+	NoColors := os.Getenv("TERM") == "dumb" ||
+		(!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()))
+	if NoColors {
+		BOLD = ""
+		DIM = ""
+		RED = ""
+		GREEN = ""
+		BLUE = ""
+		YELLOW = ""
+		FG_BLACK = ""
+		FG_WHITE = ""
+		BG_DGRAY = ""
+		BG_RED = ""
+		BG_GREEN = ""
+		BG_YELLOW = ""
+		BG_LBLUE = ""
+		RESET = ""
+	}
+}
 
 const (
 	DEBUG = iota
