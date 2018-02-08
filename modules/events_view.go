@@ -34,13 +34,6 @@ func (s EventsStream) viewEndpointEvent(e session.Event) {
 			t.HwAddress,
 			core.Bold(t.IpAddress),
 			extra)
-	} else if e.Tag == "endpoint.resolved" {
-		if *session.I.Options.Debug {
-			fmt.Printf("[%s] Endpoint %s resolved as %s.\n",
-				e.Time.Format(eventTimeFormat),
-				core.Bold(t.IpAddress),
-				core.Yellow(t.Hostname))
-		}
 	} else if e.Tag == "endpoint.lost" {
 		fmt.Printf("[%s] Endpoint %s lost.\n",
 			e.Time.Format(eventTimeFormat),
@@ -54,12 +47,12 @@ func (s EventsStream) viewEndpointEvent(e session.Event) {
 }
 
 func (s EventsStream) viewModuleEvent(e session.Event) {
-	if *session.I.Options.Debug == true {
-		fmt.Printf("[%s] [%s] %s\n",
-			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
-			e.Data)
-	}
+	// if *session.I.Options.Debug == true {
+	fmt.Printf("[%s] [%s] %s\n",
+		e.Time.Format(eventTimeFormat),
+		core.Green(e.Tag),
+		e.Data)
+	// }
 }
 
 func (s EventsStream) viewSnifferEvent(e session.Event) {

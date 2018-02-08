@@ -185,9 +185,11 @@ func (tp *Targets) AddIfNew(ip, mac string) *bnet.Endpoint {
 	}
 
 	e := bnet.NewEndpoint(ip, mac)
-	e.ResolvedCallback = func(e *bnet.Endpoint) {
-		tp.Session.Events.Add("endpoint.resolved", e)
-	}
+	/*
+		e.ResolvedCallback = func(e *bnet.Endpoint) {
+			tp.Session.Events.Add("endpoint.resolved", e)
+		}
+	*/
 
 	if alias, found := tp.Aliases[mac]; found {
 		e.Alias = alias

@@ -1,6 +1,9 @@
 package modules
 
 import (
+	"strconv"
+
+	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
@@ -34,10 +37,15 @@ func NewEventsStream(s *session.Session) *EventsStream {
 			return stream.Stop()
 		}))
 
-	stream.AddHandler(session.NewModuleHandler("events.show", "",
+	stream.AddHandler(session.NewModuleHandler("events.show LIMIT?", "events.show(\\s\\d+)?",
 		"Show events stream.",
 		func(args []string) error {
-			return stream.Show()
+			limit := -1
+			if len(args) == 1 {
+				arg := core.Trim(args[0])
+				limit, _ = strconv.Atoi(arg)
+			}
+			return stream.Show(limit)
 		}))
 
 	stream.AddHandler(session.NewModuleHandler("events.clear", "",
@@ -96,8 +104,16 @@ func (s *EventsStream) Start() error {
 	return nil
 }
 
-func (s *EventsStream) Show() error {
-	for _, e := range s.Session.Events.Sorted() {
+func (s *EventsStream) Show(limit int) error {
+	events := s.Session.Events.Sorted()
+	num := len(events)
+	from := 0
+
+	if limit > 0 && num > limit {
+		from = num - limit
+	}
+
+	for _, e := range events[from:num] {
 		s.View(e, false)
 	}
 

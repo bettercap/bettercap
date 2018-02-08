@@ -127,9 +127,11 @@ func (m *SessionModule) SetRunning(running bool) {
 	defer m.StatusLock.Unlock()
 	m.Started = running
 
-	if running {
-		m.Session.Events.Add("mod.started", m.Name)
-	} else {
-		m.Session.Events.Add("mod.stopped", m.Name)
+	if *m.Session.Options.Debug == true {
+		if running {
+			m.Session.Events.Add("mod.started", m.Name)
+		} else {
+			m.Session.Events.Add("mod.stopped", m.Name)
+		}
 	}
 }
