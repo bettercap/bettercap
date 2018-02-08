@@ -2,6 +2,10 @@ package firewall
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/session"
 )
 
 type WindowsFirewall struct {
@@ -21,10 +25,16 @@ func Make() FirewallManager {
 }
 
 func (f WindowsFirewall) IsForwardingEnabled() bool {
-	return false
+	if out, err := core.Exec("netsh", []string{"interface", "ipv4", "dump"}); err != nil {
+		fmt.Printf("%s\n", err)
+		return false
+	} else {
+		return strings.Contains(out, "forwarding=enabled")
+	}
 }
 
 func (f WindowsFirewall) EnableForwarding(enabled bool) error {
+	fmt.Printf("iface idx=%d\n", session.I.Interface.Index)
 	return fmt.Errorf("Not implemented")
 }
 
