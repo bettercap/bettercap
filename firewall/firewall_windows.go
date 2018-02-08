@@ -73,7 +73,7 @@ func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
 }
 
 func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error {
-	rule := f.generateRule(r)
+	rule := f.generateRule(r, enabled)
 	if enabled == true {
 		rule = append([]string{"interface", "portproxy", "add", "v4tov4"}, rule...)
 
