@@ -36,9 +36,9 @@ func (f WindowsFirewall) IsForwardingEnabled() bool {
 }
 
 func (f WindowsFirewall) EnableForwarding(enabled bool) error {
-	v := "true"
+	v := "enabled"
 	if enabled == false {
-		v = "false"
+		v = "disabled"
 	}
 	out, err := core.Exec("netsh", []string{"interface", "ipv4", "set", "interface", fmt.Sprintf("%d", f.iface.Index), fmt.Sprintf("forwarding=\"%s\"", v)})
 	if err != nil {
