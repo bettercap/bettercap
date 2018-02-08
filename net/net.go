@@ -94,6 +94,7 @@ func FindInterface(name string) (*Endpoint, error) {
 				if len(e.HW) == 0 {
 					return nil, fmt.Errorf("Could not detect interface hardware address.")
 				}
+				e.Index = iface.Index
 				return e, nil
 			}
 		}
