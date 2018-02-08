@@ -337,7 +337,7 @@ func (p *HTTPProxy) Start() {
 		}
 
 		if err != nil {
-			log.Warning("%s", err)
+			log.Fatal("%s", err)
 		}
 	}()
 }
