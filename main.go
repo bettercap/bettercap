@@ -62,7 +62,6 @@ func main() {
 	}
 
 	for sess.Active {
-		fmt.Printf("sess.Active = %v\n", sess.Active)
 		line, err := sess.ReadLine()
 		if err != nil {
 			if err == io.EOF {
