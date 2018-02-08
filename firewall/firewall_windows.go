@@ -36,8 +36,16 @@ func (f WindowsFirewall) IsForwardingEnabled() bool {
 }
 
 func (f WindowsFirewall) EnableForwarding(enabled bool) error {
-	fmt.Printf("iface idx=%d\n", f.iface.Index)
-	return fmt.Errorf("Not implemented")
+	out, err := core.Exec("netsh", []string{"interface", "ipv4", "set", "interface", fmt.Sprintf("%d", f.iface.Index), fmt.Sprintf("forwarding=\"%s\"", enabled)})
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(out, "OK") == false {
+		return fmt.Errorf("Unexpected netsh output: %s", out)
+	}
+
+	return nil
 }
 
 func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error {
