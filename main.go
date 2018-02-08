@@ -78,5 +78,6 @@ func main() {
 		}
 	}
 
+	// Windows requires this otherwise the app never exits ...
 	os.Exit(0)
 }
