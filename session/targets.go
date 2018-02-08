@@ -137,7 +137,7 @@ func (tp *Targets) Remove(ip, mac string) {
 }
 
 func (tp *Targets) shouldIgnore(ip string) bool {
-	return (ip == tp.Interface.IpAddress || ip == tp.Gateway.IpAddress)
+	return (ip == tp.Interface.IpAddress || ip == tp.Gateway.IpAddress || ip == "255.255.255.255")
 }
 
 func (tp *Targets) Has(ip string) bool {
