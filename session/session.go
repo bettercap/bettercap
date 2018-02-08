@@ -224,7 +224,7 @@ func (s *Session) Start() error {
 	s.Env.Set("gateway.mac", s.Gateway.HwAddress)
 
 	s.Targets = NewTargets(s, s.Interface, s.Gateway)
-	s.Firewall = firewall.Make()
+	s.Firewall = firewall.Make(s.Interface)
 
 	if err := s.setupInput(); err != nil {
 		return err

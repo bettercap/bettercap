@@ -6,9 +6,11 @@ import (
 	"os"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/net"
 )
 
 type LinuxFirewall struct {
+	iface        *net.Endpoint
 	forwarding   bool
 	redirections map[string]*Redirection
 }
@@ -17,8 +19,9 @@ const (
 	IPV4ForwardingFile = "/proc/sys/net/ipv4/ip_forward"
 )
 
-func Make() FirewallManager {
+func Make(iface *net.Endpoint) FirewallManager {
 	firewall := &LinuxFirewall{
+		iface:        iface,
 		forwarding:   false,
 		redirections: make(map[string]*Redirection, 0),
 	}

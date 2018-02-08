@@ -5,16 +5,18 @@ import (
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/evilsocket/bettercap-ng/net"
 )
 
 type WindowsFirewall struct {
+	iface        *net.Enpoint
 	forwarding   bool
 	redirections map[string]*Redirection
 }
 
-func Make() FirewallManager {
+func Make(iface *net.Endpoint) FirewallManager {
 	firewall := &WindowsFirewall{
+		iface:        iface,
 		forwarding:   false,
 		redirections: make(map[string]*Redirection, 0),
 	}
@@ -34,7 +36,7 @@ func (f WindowsFirewall) IsForwardingEnabled() bool {
 }
 
 func (f WindowsFirewall) EnableForwarding(enabled bool) error {
-	fmt.Printf("iface idx=%d\n", session.I.Interface.Index)
+	fmt.Printf("iface idx=%d\n", f.iface.Index)
 	return fmt.Errorf("Not implemented")
 }
 

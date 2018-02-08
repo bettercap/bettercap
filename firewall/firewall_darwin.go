@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/net"
 )
 
 var (
@@ -18,12 +19,14 @@ var (
 )
 
 type PfFirewall struct {
+	iface      *net.Endpoint
 	filename   string
 	forwarding bool
 }
 
-func Make() FirewallManager {
+func Make(iface *net.Endpoint) FirewallManager {
 	firewall := &PfFirewall{
+		iface:      iface,
 		filename:   pfFilePath,
 		forwarding: false,
 	}
