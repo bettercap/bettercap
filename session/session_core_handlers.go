@@ -101,7 +101,7 @@ func (s *Session) exitHandler(args []string, sess *Session) error {
 	}
 
 	s.Active = false
-	s.Input.Close()
+	// s.Input.Close()
 	return nil
 }
 
