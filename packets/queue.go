@@ -28,18 +28,19 @@ type Traffic struct {
 type Queue struct {
 	sync.Mutex
 
-	iface  *bnet.Endpoint
-	handle *pcap.Handle
-	source *gopacket.PacketSource
-	active bool
-
-	Activities  chan Activity `json:"-"`
 	Sent        uint64
 	Received    uint64
 	PktReceived uint64
 	Errors      uint64
-	Protos      map[string]uint64
-	Traffic     map[string]*Traffic
+
+	Activities chan Activity `json:"-"`
+	Protos     map[string]uint64
+	Traffic    map[string]*Traffic
+
+	iface  *bnet.Endpoint
+	handle *pcap.Handle
+	source *gopacket.PacketSource
+	active bool
 }
 
 func NewQueue(iface *bnet.Endpoint) (*Queue, error) {
