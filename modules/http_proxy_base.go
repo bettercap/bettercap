@@ -337,7 +337,7 @@ func (p *HTTPProxy) Start() {
 			err = p.httpWorker()
 		}
 
-		if err != nil {
+		if err != nil && err.Error() != "http: Server closed" {
 			log.Fatal("%s", err)
 		}
 	}()
