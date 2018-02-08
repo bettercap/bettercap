@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/net"
 )
 
@@ -68,6 +69,7 @@ func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
 }
 
 func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error {
+	log.Warning("Port redirection is not supported on Windows, packets will NOT be automatically forwarded to the proxy.")
 	/*
 		TODO: This doesn't work :/
 
@@ -87,7 +89,7 @@ func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error 
 			return fmt.Errorf("Unexpected netsh output: %s", out)
 		}
 	*/
-	return fmt.Errorf("Port redirection is not supported on Windows.")
+	return nil
 }
 
 func (f WindowsFirewall) Restore() {
