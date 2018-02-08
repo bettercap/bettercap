@@ -246,7 +246,7 @@ func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, sc
 }
 
 func (p *HTTPProxy) httpWorker() error {
-	fmt.Printf("  httpWorker\n")
+	fmt.Printf("  httpWorker, server=%v\n", p.Server)
 	p.isRunning = true
 	return p.Server.ListenAndServe()
 }
