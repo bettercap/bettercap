@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"fmt"
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
@@ -36,6 +37,7 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 	p.AddHandler(session.NewModuleHandler("http.proxy on", "",
 		"Start HTTP proxy.",
 		func(args []string) error {
+			fmt.Printf("\nproxy.start\n")
 			return p.Start()
 		}))
 
