@@ -13,9 +13,8 @@ import (
 const eventTimeFormat = "2006-01-02 15:04:05"
 
 func (s EventsStream) viewLogEvent(e session.Event) {
-	fmt.Printf("[%s] [%s] (%s) %s\n",
+	fmt.Printf("[%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
-		core.Green(e.Tag),
 		e.Label(),
 		e.Data.(session.LogMessage).Message)
 }
@@ -23,21 +22,20 @@ func (s EventsStream) viewLogEvent(e session.Event) {
 func (s EventsStream) viewEndpointEvent(e session.Event) {
 	t := e.Data.(*net.Endpoint)
 	if e.Tag == "endpoint.new" {
-		fmt.Printf("[%s] [%s] Endpoint %s detected as %s\n",
+		fmt.Printf("[%s] Endpoint %s detected as %s.\n",
 			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
 			core.Bold(t.IpAddress),
-			t.HwAddress)
+			core.Green(t.HwAddress))
 	} else if e.Tag == "endpoint.resolved" {
-		fmt.Printf("[%s] [%s] Endpoint %s resolved as %s\n",
-			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
-			core.Bold(t.IpAddress),
-			core.Yellow(t.Hostname))
+		if *session.I.Options.Debug {
+			fmt.Printf("[%s] Endpoint %s resolved as %s.\n",
+				e.Time.Format(eventTimeFormat),
+				core.Bold(t.IpAddress),
+				core.Yellow(t.Hostname))
+		}
 	} else if e.Tag == "endpoint.lost" {
-		fmt.Printf("[%s] [%s] Endpoint %s lost\n",
+		fmt.Printf("[%s] Endpoint %s lost.\n",
 			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
 			core.Red(t.IpAddress))
 	} else {
 		fmt.Printf("[%s] [%s] %s\n",
