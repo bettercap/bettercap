@@ -68,7 +68,7 @@ func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
 }
 
 func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error {
-	fmt.Printf("\n%s: Port redirection is not supported on Windows, packets will NOT be automatically forwarded to the proxy.", core.Yellow("WARNING"))
+	fmt.Printf("%s: Port redirection is not supported on Windows, packets will NOT be automatically forwarded to the proxy.", core.Yellow("WARNING"))
 	/*
 		TODO: This doesn't work :/
 
