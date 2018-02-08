@@ -168,7 +168,8 @@ func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
 			return nil
 		}
 
-		if jsres.wasUpdated == true {
+		if jsres.WasModified() {
+			jsres.UpdateHash()
 			return jsres
 		}
 	}
@@ -193,7 +194,8 @@ func (s *ProxyScript) OnResponse(res *http.Response) *JSResponse {
 			return nil
 		}
 
-		if jsres.wasUpdated == true {
+		if jsres.WasModified() {
+			jsres.UpdateHash()
 			return jsres
 		}
 	}

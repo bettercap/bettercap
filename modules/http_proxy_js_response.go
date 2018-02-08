@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -16,8 +17,8 @@ type JSResponse struct {
 	Headers     string
 	Body        string
 
-	wasUpdated bool
-	resp       *http.Response
+	refHash string
+	resp    *http.Response
 }
 
 func NewJSResponse(res *http.Response) *JSResponse {
@@ -33,16 +34,31 @@ func NewJSResponse(res *http.Response) *JSResponse {
 		}
 	}
 
-	return &JSResponse{
+	resp := &JSResponse{
 		Status:      res.StatusCode,
 		ContentType: cType,
 		Headers:     headers,
 		resp:        res,
 	}
+	resp.UpdateHash()
+
+	return resp
 }
 
-func (j *JSResponse) Updated() {
-	j.wasUpdated = true
+func (j *JSResponse) NewHash() string {
+	return fmt.Sprintf("%d.%s.%s.%s", j.Status, j.ContentType, j.Headers, j.Body)
+}
+
+func (j *JSResponse) UpdateHash() {
+	j.refHash = j.NewHash()
+}
+
+func (j *JSResponse) WasModified() bool {
+	newHash := j.NewHash()
+	if newHash != j.refHash {
+		return true
+	}
+	return false
 }
 
 func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
@@ -71,6 +87,7 @@ func (j *JSResponse) ReadBody() string {
 	}
 
 	j.Body = string(raw)
+	j.UpdateHash()
 
 	return j.Body
 }

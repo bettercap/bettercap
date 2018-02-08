@@ -26,7 +26,6 @@ function onRequest(req, res) {
         res.ContentType = "text/html";
         res.Headers     = "Connection: close";
         res.Body        = "";
-        res.Updated();
     }
 }
 
@@ -42,7 +41,6 @@ function onResponse(req, res) {
                 '</script>' +
                 '</head>'
             ); 
-            res.Updated();
         }
     }
 }

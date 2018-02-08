@@ -19,6 +19,5 @@ function onRequest(req, res) {
         res.Status      = 301;
         res.Headers     = "Location: https://www.facebook.com/\n" +
                           "Connection: close";
-        res.Updated()
     }
 }
