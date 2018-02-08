@@ -102,7 +102,7 @@ func buildPayload(mac string) []byte {
 
 func (w *WOL) wolETH(mac string) error {
 	payload := buildPayload(mac)
-	log.Info("Sending %d bytes of ethernet WOL packet to %s\n", len(payload), core.Bold(mac))
+	log.Info("Sending %d bytes of ethernet WOL packet to %s", len(payload), core.Bold(mac))
 	w.SetRunning(true)
 	defer w.SetRunning(false)
 
@@ -127,7 +127,7 @@ func (w *WOL) wolETH(mac string) error {
 
 func (w *WOL) wolUDP(mac string) error {
 	payload := buildPayload(mac)
-	log.Info("Sending %d bytes of UDP WOL packet to %s\n", len(payload), core.Bold(mac))
+	log.Info("Sending %d bytes of UDP WOL packet to %s", len(payload), core.Bold(mac))
 	w.SetRunning(true)
 	defer w.SetRunning(false)
 
