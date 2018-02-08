@@ -208,7 +208,6 @@ func (s *Session) Start() error {
 	s.Env.Set("iface.mac", s.Interface.HwAddress)
 
 	if s.Queue, err = packets.NewQueue(s.Interface); err != nil {
-		fmt.Printf("iface = '%s'\n", s.Interface.Name())
 		return err
 	}
 

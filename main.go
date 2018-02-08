@@ -20,6 +20,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	if core.NoColors == true {
+		fmt.Printf("\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")
+	}
+
 	fmt.Printf(core.Bold("%s v%s\n\n"), core.Name, core.Version)
 
 	sess.Register(modules.NewEventsStream(sess))
