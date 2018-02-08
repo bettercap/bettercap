@@ -68,23 +68,26 @@ func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
 }
 
 func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error {
-	rule := f.generateRule(r, enabled)
-	if enabled == true {
-		rule = append([]string{"interface", "portproxy", "add", "v4tov4"}, rule...)
-	} else {
-		rule = append([]string{"interface", "portproxy", "delete", "v4tov4"}, rule...)
-	}
+	/*
+		TODO: This doesn't work :/
 
-	out, err := core.Exec("netsh", rule)
-	if err != nil {
-		return err
-	}
+		rule := f.generateRule(r, enabled)
+		if enabled == true {
+			rule = append([]string{"interface", "portproxy", "add", "v4tov4"}, rule...)
+		} else {
+			rule = append([]string{"interface", "portproxy", "delete", "v4tov4"}, rule...)
+		}
 
-	if core.Trim(out) != "" {
-		return fmt.Errorf("Unexpected netsh output: %s", out)
-	}
+		out, err := core.Exec("netsh", rule)
+		if err != nil {
+			return err
+		}
 
-	return nil
+		if core.Trim(out) != "" {
+			return fmt.Errorf("Unexpected netsh output: %s", out)
+		}
+	*/
+	return fmt.Errorf("Port redirection is not supported on Windows.")
 }
 
 func (f WindowsFirewall) Restore() {
