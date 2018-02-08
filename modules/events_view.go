@@ -29,10 +29,12 @@ func (s EventsStream) viewEndpointEvent(e session.Event) {
 }
 
 func (s EventsStream) viewModuleEvent(e session.Event) {
-	fmt.Printf("[%s] [%s] %s\n",
-		e.Time.Format(eventTimeFormat),
-		core.Green(e.Tag),
-		e.Data)
+	if *session.I.Options.Debug == true {
+		fmt.Printf("[%s] [%s] %s\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			e.Data)
+	}
 }
 
 func (s EventsStream) viewSnifferEvent(e session.Event) {
