@@ -44,27 +44,40 @@ func main() {
 	if err = sess.Start(); err != nil {
 		log.Fatal("%", err)
 	}
-
-	if err = sess.Run("events.stream on"); err != nil {
-		log.Fatal("%", err)
-	} else if err = sess.Run("net.recon on"); err != nil {
-		log.Fatal("%", err)
-	}
-
 	defer sess.Close()
 
-	if *sess.Options.Caplet != "" {
-		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
-			log.Fatal("%s", err)
+	// Some modules are enabled by default in order
+	// to make the interactive session useful.
+	autoEnableList := []string{
+		"events.stream",
+		"net.recon",
+	}
+	for _, modName := range autoEnableList {
+		if err = sess.Run(modName + " on"); err != nil {
+			log.Fatal("Error while starting module %s: %", modName, err)
 		}
 	}
 
+	/*
+	 * Commands sent with -eval are used to set specific
+	 * caplet parameters (i.e. arp.spoof.targets) via command
+	 * line, therefore they need to be executed first otherwise
+	 * modules might already be started.
+	 */
 	for _, cmd := range session.ParseCommands(*sess.Options.Commands) {
 		if err = sess.Run(cmd); err != nil {
 			log.Fatal("%s", err)
 		}
 	}
 
+	// Then run the caplet if specified.
+	if *sess.Options.Caplet != "" {
+		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
+			log.Fatal("%s", err)
+		}
+	}
+
+	// Eventually start the interactive session.
 	for sess.Active {
 		line, err := sess.ReadLine()
 		if err != nil {
