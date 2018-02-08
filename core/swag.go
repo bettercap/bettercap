@@ -30,7 +30,8 @@ var (
 )
 
 func init() {
-	NoColors := os.Getenv("TERM") == "dumb" ||
+	NoColors = os.Getenv("TERM") == "dumb" ||
+		os.Getenv("TERM") == "" ||
 		(!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()))
 	if NoColors {
 		BOLD = ""
