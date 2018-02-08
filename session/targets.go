@@ -138,8 +138,21 @@ func (tp *Targets) Remove(ip, mac string) {
 }
 
 func (tp *Targets) shouldIgnore(ip string) bool {
+	// skip our own address
+	if ip == tp.Interface.IpAddress {
+		return true
+	}
+	// skip the gateway
+	if ip == tp.Gateway.IpAddress {
+		return true
+	}
+	// skip broadcast addresses
+	if strings.HasSuffix(ip, ".255") {
+		return true
+	}
+	// skip everything which is not in our subnet (multicast noise)
 	addr := net.ParseIP(ip)
-	return (ip == tp.Interface.IpAddress || ip == tp.Gateway.IpAddress || tp.Session.Interface.Net.Contains(addr) == false)
+	return tp.Session.Interface.Net.Contains(addr) == false
 }
 
 func (tp *Targets) Has(ip string) bool {
