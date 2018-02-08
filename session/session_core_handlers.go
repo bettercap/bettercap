@@ -96,12 +96,14 @@ func (s *Session) activeHandler(args []string, sess *Session) error {
 func (s *Session) exitHandler(args []string, sess *Session) error {
 	for _, mod := range s.Modules {
 		if mod.Running() {
+			fmt.Printf("Stopping %s\n", mod.Name())
 			mod.Stop()
+			fmt.Printf("DONE\n")
 		}
 	}
 
 	s.Active = false
-	// s.Input.Close()
+	s.Input.Close()
 	return nil
 }
 
