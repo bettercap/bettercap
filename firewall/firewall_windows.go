@@ -52,8 +52,40 @@ func (f WindowsFirewall) EnableForwarding(enabled bool) error {
 	return nil
 }
 
+func (f WindowsFirewall) generateRule(r *Redirection) []string {
+	rule := []string{
+		fmt.Sprintf("connectport=%d", r.SrcPort),
+		fmt.Sprintf("listenport=%d", r.DstPort),
+	}
+
+	if r.SrcAddress != "" {
+		rule = append(rule, fmt.Sprintf("connectaddress=%s", r.SrcAddress))
+	}
+
+	if r.DstAddress != "" {
+		rule = append(rule, fmt.Sprintf("listenaddress=%s", r.DstAddress))
+	}
+
+	return rule
+}
+
 func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error {
-	return fmt.Errorf("Not implemented")
+	rule := f.generateRule(r)
+	if enabled == true {
+		rule = append([]string{"interface", "portproxy", "add", "v4tov4"}, rule...)
+
+	} else {
+		rule = append([]string{"interface", "portproxy", "delete", "v4tov4"}, rule...)
+	}
+
+	out, err := core.Exec("netsh", rule)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("enableredir=%s\n", out)
+
+	return nil
 }
 
 func (f WindowsFirewall) Restore() {
