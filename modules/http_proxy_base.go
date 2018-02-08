@@ -275,6 +275,7 @@ func (dumb dumbResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 func (p *HTTPProxy) httpsWorker() error {
+	fmt.Printf("  httpsWorker, server=%v\n", p.Server)
 	var err error
 
 	// listen to the TLS ClientHello but make it a CONNECT request instead
