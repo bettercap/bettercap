@@ -78,5 +78,5 @@ func main() {
 		}
 	}
 
-	fmt.Println("All done")
+	os.Exit(0)
 }
