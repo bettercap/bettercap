@@ -33,7 +33,7 @@ const (
 type HTTPProxy struct {
 	Name        string
 	Address     string
-	Server      http.Server
+	Server      *http.Server
 	Redirection *firewall.Redirection
 	Proxy       *goproxy.ProxyHttpServer
 	Script      *ProxyScript
@@ -56,10 +56,11 @@ func stripPort(s string) string {
 
 func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	p := &HTTPProxy{
-		Name:  "http.proxy",
-		Proxy: goproxy.NewProxyHttpServer(),
-		sess:  s,
-		isTLS: false,
+		Name:   "http.proxy",
+		Proxy:  goproxy.NewProxyHttpServer(),
+		sess:   s,
+		isTLS:  false,
+		Server: nil,
 	}
 
 	p.Proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -153,7 +154,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 		}
 	}
 
-	p.Server = http.Server{
+	p.Server = &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", p.Address, proxyPort),
 		Handler:      p.Proxy,
 		ReadTimeout:  httpReadTimeout,
