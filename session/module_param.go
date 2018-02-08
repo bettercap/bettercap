@@ -59,7 +59,7 @@ func NewIntParameter(name string, def_value string, desc string) *ModuleParam {
 func (p ModuleParam) Validate(value string) (error, interface{}) {
 	if p.Validator != nil {
 		if p.Validator.MatchString(value) == false {
-			return fmt.Errorf("%s: value '%s' does not validate '%s'.", core.Bold(p.Name), value, p.Validator.String()), nil
+			return fmt.Errorf("Parameter %s not valid: '%s' does not match rule '%s'.", core.Bold(p.Name), value, p.Validator.String()), nil
 		}
 	}
 
