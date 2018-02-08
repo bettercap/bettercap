@@ -95,7 +95,9 @@ func (s *Session) activeHandler(args []string, sess *Session) error {
 
 func (s *Session) exitHandler(args []string, sess *Session) error {
 	for _, mod := range s.Modules {
-		mod.Stop()
+		if mod.Running() {
+			mod.Stop()
+		}
 	}
 
 	s.Active = false
