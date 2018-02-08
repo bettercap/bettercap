@@ -49,6 +49,8 @@ func (f WindowsFirewall) EnableForwarding(enabled bool) error {
 		return fmt.Errorf("Unexpected netsh output: %s", out)
 	}
 
+	fmt.Printf("%s\n", out)
+
 	return nil
 }
 
