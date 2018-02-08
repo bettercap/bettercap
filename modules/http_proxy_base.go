@@ -340,6 +340,7 @@ func (p *HTTPProxy) Start() {
 		}
 
 		if err != nil {
+			p.Server.Shutdown(nil)
 			log.Fatal("%s", err)
 		}
 	}()
