@@ -22,10 +22,29 @@ func (s EventsStream) viewLogEvent(e session.Event) {
 
 func (s EventsStream) viewEndpointEvent(e session.Event) {
 	t := e.Data.(*net.Endpoint)
-	fmt.Printf("[%s] [%s] %s\n",
-		e.Time.Format(eventTimeFormat),
-		core.Green(e.Tag),
-		t)
+	if e.Tag == "endpoint.new" {
+		fmt.Printf("[%s] [%s] Endpoint %s detected as %s\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			core.Bold(t.IpAddress),
+			t.HwAddress)
+	} else if e.Tag == "endpoint.resolved" {
+		fmt.Printf("[%s] [%s] Endpoint %s resolved as %s\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			core.Bold(t.IpAddress),
+			core.Yellow(t.Hostname))
+	} else if e.Tag == "endpoint.lost" {
+		fmt.Printf("[%s] [%s] Endpoint %s lost\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			core.Red(t.IpAddress))
+	} else {
+		fmt.Printf("[%s] [%s] %s\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			t)
+	}
 }
 
 func (s EventsStream) viewModuleEvent(e session.Event) {
