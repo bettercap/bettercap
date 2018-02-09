@@ -221,7 +221,7 @@ api.rest on
 
 Get information about the current session:
 
-    curl -k --user bpcap:bcap https://bettercap-ip:8083/api/session
+    curl -k --user bcap:bcap https://bettercap-ip:8083/api/session
 
 Execute a command in the current interactive session:
 
@@ -229,11 +229,11 @@ Execute a command in the current interactive session:
 
 Get last 50 events:
 
-    curl -k --user bpcap:bcap https://bettercap-ip:8083/api/events?n=50
+    curl -k --user bcap:bcap https://bettercap-ip:8083/api/events?n=50
 
 Clear events:
 
-    curl -k --user bpcap:bcap -X DELETE https://bettercap-ip:8083/api/events
+    curl -k --user bcap:bcap -X DELETE https://bettercap-ip:8083/api/events
 
 <center>
     <img src="https://pbs.twimg.com/media/DTAreSCX4AAXX6v.jpg:large" width="100%"/>
