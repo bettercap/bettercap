@@ -21,21 +21,30 @@ func (s EventsStream) viewLogEvent(e session.Event) {
 
 func (s EventsStream) viewEndpointEvent(e session.Event) {
 	t := e.Data.(*net.Endpoint)
-	if e.Tag == "endpoint.new" {
-		vend := ""
-		if t.Vendor != "" {
-			vend = fmt.Sprintf(" (%s)", t.Vendor)
-		}
+	vend := ""
+	name := ""
 
+	if t.Vendor != "" {
+		vend = fmt.Sprintf(" (%s)", t.Vendor)
+	}
+
+	if t.Hostname != "" {
+		name = fmt.Sprintf(" (%s)", t.Hostname)
+	} else if t.Alias != "" {
+		name = fmt.Sprintf(" (%s)", t.Alias)
+	}
+
+	if e.Tag == "endpoint.new" {
 		fmt.Printf("[%s] Endpoint %s detected as %s%s.\n",
 			e.Time.Format(eventTimeFormat),
 			core.Bold(t.IpAddress),
 			core.Green(t.HwAddress),
 			vend)
 	} else if e.Tag == "endpoint.lost" {
-		fmt.Printf("[%s] Endpoint %s lost.\n",
+		fmt.Printf("[%s] Endpoint %s%s lost.\n",
 			e.Time.Format(eventTimeFormat),
-			core.Red(t.IpAddress))
+			core.Red(t.IpAddress),
+			name)
 	} else {
 		fmt.Printf("[%s] [%s] %s\n",
 			e.Time.Format(eventTimeFormat),
