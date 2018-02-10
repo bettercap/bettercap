@@ -67,27 +67,54 @@ func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
 	return rule
 }
 
+func (f *WindowsFirewall) AllowPort(int port, string address, string proto, bool allow) error {
+	ruleName := fmt.Sprintf("bettercap-rule-%s-%s-%d", address, proto, port)
+	nameField := fmt.Sprintf("name=\"%s\"", ruleName)
+	protoField := fmt.Sprintf("protocol=%s", proto)
+	ipField := fmt.Sprintf("lolcalip=%s", address)
+	portField := fmt.Sprintf("localport=%d", port)
+
+	cmd := []string{"advfirewall"}
+
+	if allow {
+		cmd = append(cmd, []string{"add", "rule", nameField, protoField, "dir=in", ipField, portField, "action=allow"})
+	} else {
+		cmd = append(cmd, []string{"del", "rule", nameField})
+	}
+
+	out, err := core.Exec("netsh", cmd)
+	if err != nil {
+		return err
+	}
+
+	if core.Trim(out) != "" {
+		return fmt.Errorf("Unexpected netsh output: %s", out)
+	}
+
+}
+
 func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error {
-	fmt.Printf("%s: Port redirection is not supported on Windows, packets will NOT be automatically forwarded to the proxy.", core.Yellow("WARNING"))
-	/*
-		TODO: This doesn't work :/
+	if err := f.AllowPort(r.SrcPort, r.DstAddress, enabled); err != nil {
+		return err
+	} else if err := f.AllowPort(r.DstPort, r.DstAddress, enabled); err != nil {
+		return err
+	}
 
-		rule := f.generateRule(r, enabled)
-		if enabled == true {
-			rule = append([]string{"interface", "portproxy", "add", "v4tov4"}, rule...)
-		} else {
-			rule = append([]string{"interface", "portproxy", "delete", "v4tov4"}, rule...)
-		}
+	rule := f.generateRule(r, enabled)
+	if enabled == true {
+		rule = append([]string{"interface", "portproxy", "add", "v4tov4"}, rule...)
+	} else {
+		rule = append([]string{"interface", "portproxy", "delete", "v4tov4"}, rule...)
+	}
 
-		out, err := core.Exec("netsh", rule)
-		if err != nil {
-			return err
-		}
+	out, err := core.Exec("netsh", rule)
+	if err != nil {
+		return err
+	}
 
-		if core.Trim(out) != "" {
-			return fmt.Errorf("Unexpected netsh output: %s", out)
-		}
-	*/
+	if core.Trim(out) != "" {
+		return fmt.Errorf("Unexpected netsh output: %s", out)
+	}
 	return nil
 }
 
