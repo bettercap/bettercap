@@ -53,18 +53,26 @@ func (f WindowsFirewall) EnableForwarding(enabled bool) error {
 }
 
 func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
-	rule := []string{
-		"listenaddress=0.0.0.0",
+	return []string{
 		fmt.Sprintf("listenport=%d", r.SrcPort),
+		fmt.Sprintf("connectport=%d", r.DstPort),
+		fmt.Sprintf("connectaddress=%s", r.DstAddress),
+		fmt.Sprintf("protocol=%s", r.Protocol),
 	}
+	/*
+			rule := []string{
+				"listenaddress=0.0.0.0",
+				fmt.Sprintf("listenport=%d", r.SrcPort),
+			}
 
-	if enabled == true {
-		rule = append(rule, fmt.Sprintf("protocol=%s", r.Protocol))
-		rule = append(rule, fmt.Sprintf("connectport=%d", r.DstPort))
-		rule = append(rule, fmt.Sprintf("connectaddress=%s", r.DstAddress))
-	}
+			if enabled == true {
+				rule = append(rule, fmt.Sprintf("protocol=%s", r.Protocol))
+				rule = append(rule, fmt.Sprintf("connectport=%d", r.DstPort))
+				rule = append(rule, fmt.Sprintf("connectaddress=%s", r.DstAddress))
+			}
 
-	return rule
+		return rule
+	*/
 }
 
 func (f *WindowsFirewall) AllowPort(port int, address string, proto string, allow bool) error {
