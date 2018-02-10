@@ -77,9 +77,9 @@ func (f *WindowsFirewall) AllowPort(port int, address string, proto string, allo
 	cmd := []string{}
 
 	if allow {
-		cmd = []string{"advfirewall", "add", "rule", nameField, protoField, "dir=in", ipField, portField, "action=allow"}
+		cmd = []string{"advfirewall", "firewall", "add", "rule", nameField, protoField, "dir=in", ipField, portField, "action=allow"}
 	} else {
-		cmd = []string{"advfirewall", "del", "rule", nameField}
+		cmd = []string{"advfirewall", "firewall", "del", "rule", nameField}
 	}
 
 	out, err := core.Exec("netsh", cmd)
