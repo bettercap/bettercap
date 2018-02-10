@@ -28,9 +28,9 @@ func (s EventsStream) viewEndpointEvent(e session.Event) {
 		vend = fmt.Sprintf(" (%s)", t.Vendor)
 	}
 
-	if t.Hostname != "" {
+	if t.Alias != "" {
 		name = fmt.Sprintf(" (%s)", t.Hostname)
-	} else if t.Alias != "" {
+	} else if t.Hostname != "" {
 		name = fmt.Sprintf(" (%s)", t.Alias)
 	}
 
