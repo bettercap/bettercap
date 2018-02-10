@@ -60,8 +60,7 @@ func FindInterface(name string) (*Endpoint, error) {
 		// Also search by ip if needed.
 		if name != "" {
 			for _, a := range addrs {
-				fmt.Printf("a.String()='%s' name='%s'\n", a.String(), name)
-				if a.String() == name {
+				if a.String() == name || strings.HasPrefix(a.String(), name) {
 					doCheck = true
 					break
 				}
