@@ -48,7 +48,8 @@ deps:
 	@go get ./...
 
 clean:
-	@rm -rf $(TARGET) net/oui_compiled.go
+	@rm -rf bettercap-ng*.*
+	@rm -rf bettercap-ng*
 
 clear_arp:
 	@ip -s -s neigh flush all
