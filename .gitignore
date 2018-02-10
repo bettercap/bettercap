@@ -1,4 +1,5 @@
 *.sw*
 pcaps
-bettercap-ng
+bettercap-ng*.*
+bettercap-ng*
 bettercap.history
