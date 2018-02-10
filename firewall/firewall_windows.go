@@ -71,7 +71,7 @@ func (f *WindowsFirewall) AllowPort(port int, address string, proto string, allo
 	ruleName := fmt.Sprintf("bettercap-rule-%s-%s-%d", address, proto, port)
 	nameField := fmt.Sprintf("name=\"%s\"", ruleName)
 	protoField := fmt.Sprintf("protocol=%s", proto)
-	ipField := fmt.Sprintf("lolcalip=%s", address)
+	// ipField := fmt.Sprintf("lolcalip=%s", address)
 	portField := fmt.Sprintf("localport=%d", port)
 
 	cmd := []string{}
