@@ -168,7 +168,9 @@ func (s *Session) setupInput() error {
 }
 
 func (s *Session) Close() {
-	s.Events.Add("session.closing", nil)
+	if *s.Options.Debug {
+		s.Events.Add("session.closing", nil)
+	}
 
 	for _, m := range s.Modules {
 		if m.Running() {
@@ -281,7 +283,9 @@ func (s *Session) Start() error {
 		}
 	}()
 
-	s.Events.Add("session.started", nil)
+	if *s.Options.Debug {
+		s.Events.Add("session.started", nil)
+	}
 
 	return nil
 }
