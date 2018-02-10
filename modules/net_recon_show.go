@@ -69,9 +69,9 @@ func (d *Discovery) getRow(e *net.Endpoint) []string {
 	} else if e == d.Session.Gateway {
 		name = "gateway"
 	} else if e.Alias != "" {
-		name = core.Yellow(e.Alias)
+		name = core.Green(e.Alias)
 	} else if e.Hostname != "" {
-		name = core.Green(e.Hostname)
+		name = core.Yellow(e.Hostname)
 	}
 
 	var traffic *packets.Traffic
