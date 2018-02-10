@@ -57,6 +57,16 @@ func FindInterface(name string) (*Endpoint, error) {
 			doCheck = true
 		}
 
+		// Also search by ip if needed.
+		if name != "" {
+			for _, a := range addrs {
+				if a.String() == name {
+					doCheck = true
+					break
+				}
+			}
+		}
+
 		if doCheck {
 			var e *Endpoint = nil
 			// interface is in monitor mode (or it's just down and the user is dumb)
