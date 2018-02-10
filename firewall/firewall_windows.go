@@ -67,7 +67,7 @@ func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
 	return rule
 }
 
-func (f *WindowsFirewall) AllowPort(int port, string address, string proto, bool allow) error {
+func (f *WindowsFirewall) AllowPort(port int, address string, proto string, allow bool) error {
 	ruleName := fmt.Sprintf("bettercap-rule-%s-%s-%d", address, proto, port)
 	nameField := fmt.Sprintf("name=\"%s\"", ruleName)
 	protoField := fmt.Sprintf("protocol=%s", proto)
