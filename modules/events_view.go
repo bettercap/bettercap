@@ -29,9 +29,9 @@ func (s EventsStream) viewEndpointEvent(e session.Event) {
 	}
 
 	if t.Alias != "" {
-		name = fmt.Sprintf(" (%s)", t.Hostname)
-	} else if t.Hostname != "" {
 		name = fmt.Sprintf(" (%s)", t.Alias)
+	} else if t.Hostname != "" {
+		name = fmt.Sprintf(" (%s)", t.Hostname)
 	}
 
 	if e.Tag == "endpoint.new" {
