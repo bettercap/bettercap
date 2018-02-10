@@ -74,12 +74,12 @@ func (f *WindowsFirewall) AllowPort(port int, address string, proto string, allo
 	ipField := fmt.Sprintf("lolcalip=%s", address)
 	portField := fmt.Sprintf("localport=%d", port)
 
-	cmd := []string{"advfirewall"}
+	cmd := []string{}
 
 	if allow {
-		cmd = append(cmd, []string{"add", "rule", nameField, protoField, "dir=in", ipField, portField, "action=allow"}...)
+		cmd = []string{"advfirewall", "add", "rule", nameField, protoField, "dir=in", ipField, portField, "action=allow"}
 	} else {
-		cmd = append(cmd, []string{"del", "rule", nameField}...)
+		cmd = []string{"advfirewall", "del", "rule", nameField}
 	}
 
 	out, err := core.Exec("netsh", cmd)
