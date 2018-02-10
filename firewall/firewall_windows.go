@@ -91,12 +91,13 @@ func (f *WindowsFirewall) AllowPort(port int, address string, proto string, allo
 		return fmt.Errorf("Unexpected netsh output: %s", out)
 	}
 
+	return nil
 }
 
 func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error {
-	if err := f.AllowPort(r.SrcPort, r.DstAddress, enabled); err != nil {
+	if err := f.AllowPort(r.SrcPort, r.DstAddress, r.Protocol, enabled); err != nil {
 		return err
-	} else if err := f.AllowPort(r.DstPort, r.DstAddress, enabled); err != nil {
+	} else if err := f.AllowPort(r.DstPort, r.DstAddress, r.Protocol, enabled); err != nil {
 		return err
 	}
 
