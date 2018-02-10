@@ -87,7 +87,7 @@ func (f *WindowsFirewall) AllowPort(port int, address string, proto string, allo
 		return err
 	}
 
-	if core.Trim(out) != "" {
+	if core.Trim(out) != "OK." {
 		return fmt.Errorf("Unexpected netsh output: %s", out)
 	}
 
