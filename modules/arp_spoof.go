@@ -17,6 +17,7 @@ type ArpSpoofer struct {
 	session.SessionModule
 	done      chan bool
 	addresses []net.IP
+	ban       bool
 }
 
 func NewArpSpoofer(s *session.Session) *ArpSpoofer {
@@ -24,6 +25,7 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 		SessionModule: session.NewSessionModule("arp.spoof", s),
 		done:          make(chan bool),
 		addresses:     make([]net.IP, 0),
+		ban:           false,
 	}
 
 	p.AddParam(session.NewStringParameter("arp.spoof.targets", session.ParamSubnet, "", "IP addresses to spoof."))
@@ -34,7 +36,14 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 			return p.Start()
 		}))
 
-	p.AddHandler(session.NewModuleHandler("arp.spoof off", "",
+	p.AddHandler(session.NewModuleHandler("arp.ban on", "",
+		"Start ARP spoofer in ban mode, meaning the target(s) connectivity will not work.",
+		func(args []string) error {
+			p.ban = true
+			return p.Start()
+		}))
+
+	p.AddHandler(session.NewModuleHandler("arp.spoof/ban off", "arp\\.(spoof|ban) off",
 		"Stop ARP spoofer.",
 		func(args []string) error {
 			return p.Stop()
@@ -152,7 +161,10 @@ func (p *ArpSpoofer) Configure() error {
 	}
 	p.addresses = list.Expand()
 
-	if p.Session.Firewall.IsForwardingEnabled() == false {
+	if p.ban == true {
+		log.Warning("Running in BAN mode, forwarding not enabled!")
+		p.Session.Firewall.EnableForwarding(false)
+	} else if p.Session.Firewall.IsForwardingEnabled() == false {
 		log.Info("Enabling forwarding.")
 		p.Session.Firewall.EnableForwarding(true)
 	}
@@ -197,6 +209,7 @@ func (p *ArpSpoofer) Stop() error {
 	<-p.done
 
 	p.unSpoof()
+	p.ban = false
 
 	return nil
 }
