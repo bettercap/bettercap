@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="BetterCap" src="https://i.imgur.com/BcaI12T.png" height="140" />
+  <img alt="BetterCap" src="https://raw.githubusercontent.com/evilsocket/bettercap-ng/master/media/logo.png" height="140" />
   <p align="center">
     <a href="https://github.com/evilsocket/bettercap-ng/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/evilsocket/bettercap-ng.svg?style=flat-square"></a>
     <a href="/LICENSE"><img alt="Software License" src="https://img.shields.io/badge/license-GPL3-brightgreen.svg?style=flat-square"></a>
