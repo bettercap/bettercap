@@ -1,6 +1,6 @@
 # nothing to see here, just what i use to build for OS X
 DIR=/Users/evilsocket/gocode/src/github.com/evilsocket/bettercap-ng
-AMD64_EXE=bettercap-ng_darwin_x86_64
+AMD64_EXE=bettercap-ng_macos_amd64
 
 echo "@ Updating repo ..."
 ssh osxvm "cd $DIR && rm -rf $AMD64_EXE && git pull"

@@ -2,7 +2,7 @@
 #
 # -> https://stackoverflow.com/questions/38047858/compile-gopacket-on-windows-64bit
 DIR=c:/Users/evilsocket/gopath/src/github.com/evilsocket/bettercap-ng
-AMD64_EXE=bettercap-ng_win32_x86_64.exe
+AMD64_EXE=bettercap-ng_win32_amd64.exe
 I386_EXE=bettercap-ng_win32_i386.exe
 
 echo "@ Updating repo ..."

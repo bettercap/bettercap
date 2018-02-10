@@ -1,6 +1,6 @@
 # nothing to see here, just what i use to cross compile for ARM
 DIR=/Users/evilsocket/gocode/src/github.com/evilsocket/bettercap-ng
-EXE=bettercap-ng_arm7
+EXE=bettercap-ng_linux_arm7
 
 echo "@ Updating repo ..."
 rm -rf $EXE && git pull
