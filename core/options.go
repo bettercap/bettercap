@@ -9,6 +9,8 @@ type Options struct {
 	Silent        *bool
 	NoHistory     *bool
 	Commands      *string
+	CpuProfile    *string
+	MemProfile    *string
 }
 
 func ParseOptions() (Options, error) {
@@ -19,6 +21,8 @@ func ParseOptions() (Options, error) {
 		Silent:        flag.Bool("silent", false, "Suppress all logs which are not errors."),
 		NoHistory:     flag.Bool("no-history", false, "Disable interactive session history file."),
 		Commands:      flag.String("eval", "", "Run one or more commands separated by ; in the interactive session, used to set variables via command line."),
+		CpuProfile:    flag.String("cpuprofile", "", "Write cpu profile `file`."),
+		MemProfile:    flag.String("memprofile", "", "Write memory profile to `file`."),
 	}
 
 	flag.Parse()

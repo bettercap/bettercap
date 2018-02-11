@@ -44,7 +44,6 @@ func main() {
 	if err = sess.Start(); err != nil {
 		log.Fatal("%s", err)
 	}
-	defer sess.Close()
 
 	// Some modules are enabled by default in order
 	// to make the interactive session useful.
@@ -93,6 +92,8 @@ func main() {
 			}
 		}
 	}
+
+	sess.Close()
 
 	// Windows requires this otherwise the app never exits ...
 	os.Exit(0)

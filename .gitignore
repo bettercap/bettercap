@@ -1,5 +1,6 @@
 *.sw*
 *.tar.gz
+*.prof*
 pcaps
 bettercap-ng*.*
 bettercap-ng*

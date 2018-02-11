@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
+	"runtime/pprof"
 	"sort"
 	"strings"
 	"syscall"
@@ -77,6 +79,14 @@ func New() (*Session, error) {
 
 	if s.Options, err = core.ParseOptions(); err != nil {
 		return nil, err
+	}
+
+	if *s.Options.CpuProfile != "" {
+		if f, err := os.Create(*s.Options.CpuProfile); err != nil {
+			return nil, err
+		} else if err := pprof.StartCPUProfile(f); err != nil {
+			return nil, err
+		}
 	}
 
 	s.Env = NewEnvironment(s)
@@ -180,6 +190,23 @@ func (s *Session) Close() {
 
 	s.Firewall.Restore()
 	s.Queue.Stop()
+
+	if *s.Options.CpuProfile != "" {
+		pprof.StopCPUProfile()
+	}
+
+	if *s.Options.MemProfile != "" {
+		f, err := os.Create(*s.Options.MemProfile)
+		if err != nil {
+			fmt.Printf("Could not create memory profile: %s\n", err)
+			return
+		}
+		defer f.Close()
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			fmt.Printf("Could not write memory profile: %s\n", err)
+		}
+	}
 }
 
 func (s *Session) Register(mod Module) error {
