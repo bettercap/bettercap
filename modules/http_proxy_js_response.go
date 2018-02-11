@@ -24,18 +24,22 @@ type JSResponse struct {
 func NewJSResponse(res *http.Response) *JSResponse {
 	cType := ""
 	headers := ""
+	code := 200
 
-	for name, values := range res.Header {
-		for _, value := range values {
-			if name == "Content-Type" {
-				cType = value
+	if res != nil {
+		code = res.StatusCode
+		for name, values := range res.Header {
+			for _, value := range values {
+				if name == "Content-Type" {
+					cType = value
+				}
+				headers += name + ": " + value + "\r\n"
 			}
-			headers += name + ": " + value + "\r\n"
 		}
 	}
 
 	resp := &JSResponse{
-		Status:      res.StatusCode,
+		Status:      code,
 		ContentType: cType,
 		Headers:     headers,
 		resp:        res,

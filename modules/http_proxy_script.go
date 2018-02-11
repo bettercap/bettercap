@@ -126,7 +126,7 @@ func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSR
 		return
 	}
 
-	jsres = &JSResponse{}
+	jsres = NewJSResponse(nil)
 	if err = s.VM.Set("res", jsres); err != nil {
 		log.Error("Error while defining response: %s", err)
 		return
