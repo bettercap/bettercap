@@ -10,21 +10,11 @@ import (
 
 type Discovery struct {
 	session.SessionModule
-
-	refresh int
-	before  net.ArpTable
-	current net.ArpTable
-	quit    chan bool
 }
 
 func NewDiscovery(s *session.Session) *Discovery {
 	d := &Discovery{
 		SessionModule: session.NewSessionModule("net.recon", s),
-
-		refresh: 1,
-		before:  nil,
-		current: nil,
-		quit:    make(chan bool),
 	}
 
 	d.AddHandler(session.NewModuleHandler("net.recon on", "",
@@ -40,25 +30,25 @@ func NewDiscovery(s *session.Session) *Discovery {
 		}))
 
 	d.AddHandler(session.NewModuleHandler("net.show", "",
-		"Show current hosts list (default sorting by ip).",
+		"Show cache hosts list (default sorting by ip).",
 		func(args []string) error {
 			return d.Show("address")
 		}))
 
 	d.AddHandler(session.NewModuleHandler("net.show by seen", "",
-		"Show current hosts list (sort by last seen).",
+		"Show cache hosts list (sort by last seen).",
 		func(args []string) error {
 			return d.Show("seen")
 		}))
 
 	d.AddHandler(session.NewModuleHandler("net.show by sent", "",
-		"Show current hosts list (sort by sent packets).",
+		"Show cache hosts list (sort by sent packets).",
 		func(args []string) error {
 			return d.Show("sent")
 		}))
 
 	d.AddHandler(session.NewModuleHandler("net.show by rcvd", "",
-		"Show current hosts list (sort by received packets).",
+		"Show cache hosts list (sort by received packets).",
 		func(args []string) error {
 			return d.Show("rcvd")
 		}))
@@ -78,11 +68,11 @@ func (d Discovery) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (d *Discovery) runDiff() {
+func (d *Discovery) runDiff(cache net.ArpTable) {
 	// check for endpoints who disappeared
 	var rem net.ArpTable = make(net.ArpTable)
 	for mac, t := range d.Session.Targets.Targets {
-		if _, found := d.current[mac]; found == false {
+		if _, found := cache[mac]; found == false {
 			rem[mac] = t.IpAddress
 		}
 	}
@@ -92,7 +82,7 @@ func (d *Discovery) runDiff() {
 	}
 
 	// now check for new friends ^_^
-	for ip, mac := range d.current {
+	for ip, mac := range cache {
 		d.Session.Targets.AddIfNew(ip, mac)
 	}
 }
@@ -107,29 +97,20 @@ func (d *Discovery) Start() error {
 	}
 
 	return d.SetRunning(true, func() {
-		for {
-			select {
-			case <-time.After(time.Duration(d.refresh) * time.Second):
-				var err error
+		every := time.Duration(1) * time.Second
+		iface := d.Session.Interface.Name()
 
-				if d.current, err = net.ArpUpdate(d.Session.Interface.Name()); err != nil {
-					log.Error("%s", err)
-					continue
-				}
-
-				d.runDiff()
-
-				d.before = d.current
-
-			case <-d.quit:
-				return
+		for d.Running() {
+			if table, err := net.ArpUpdate(iface); err != nil {
+				log.Error("%s", err)
+			} else {
+				d.runDiff(table)
 			}
+			time.Sleep(every)
 		}
 	})
 }
 
 func (d *Discovery) Stop() error {
-	return d.SetRunning(false, func() {
-		d.quit <- true
-	})
+	return d.SetRunning(false, nil)
 }
