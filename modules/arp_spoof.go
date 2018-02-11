@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"time"
@@ -65,12 +66,11 @@ func (p ArpSpoofer) Author() string {
 }
 
 func (p *ArpSpoofer) shouldSpoof(ip net.IP) bool {
-	addr := ip.String()
 	if ip.IsLoopback() == true {
 		return false
-	} else if addr == p.Session.Interface.IpAddress {
+	} else if bytes.Compare(ip, p.Session.Interface.IP) == 0 {
 		return false
-	} else if addr == p.Session.Gateway.IpAddress {
+	} else if bytes.Compare(ip, p.Session.Gateway.IP) == 0 {
 		return false
 	}
 	return true
