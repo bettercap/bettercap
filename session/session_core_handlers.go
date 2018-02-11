@@ -195,6 +195,9 @@ func (s *Session) aliasHandler(args []string, sess *Session) error {
 func (s *Session) addHandler(h CommandHandler, c *readline.PrefixCompleter) {
 	h.Completer = c
 	s.CoreHandlers = append(s.CoreHandlers, h)
+	if len(h.Name) > s.HelpPadding {
+		s.HelpPadding = len(h.Name)
+	}
 }
 
 func (s *Session) registerCoreHandlers() {
