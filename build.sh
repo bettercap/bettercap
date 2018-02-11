@@ -22,7 +22,6 @@ build_linux_amd64() {
     go build -o "$OUTPUT" ..
 }
 
-
 download_pcap() {
     bin_dep 'wget'
     bin_dep 'tar'
