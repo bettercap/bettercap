@@ -125,15 +125,11 @@ func (d *Discovery) Configure() error {
 }
 
 func (d *Discovery) Start() error {
-	if d.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := d.Configure(); err != nil {
+	if err := d.Configure(); err != nil {
 		return err
 	}
 
-	d.SetRunning(true)
-
-	go func() {
+	return d.SetRunning(true, func() {
 		for {
 			select {
 			case <-time.After(time.Duration(d.refresh) * time.Second):
@@ -152,16 +148,11 @@ func (d *Discovery) Start() error {
 				return
 			}
 		}
-	}()
-
-	return nil
+	})
 }
 
 func (d *Discovery) Stop() error {
-	if d.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-	d.quit <- true
-	d.SetRunning(false)
-	return nil
+	return d.SetRunning(false, func() {
+		d.quit <- true
+	})
 }

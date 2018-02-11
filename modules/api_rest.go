@@ -161,24 +161,21 @@ func (api *RestAPI) Start() error {
 		return err
 	}
 
-	api.SetRunning(true)
-	go func() {
+	api.SetRunning(true, func() {
 		log.Info("API server starting on https://%s", api.server.Addr)
 		err := api.server.ListenAndServeTLS(api.certFile, api.keyFile)
 		if err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}
-	}()
+	})
 
 	return nil
 }
 
 func (api *RestAPI) Stop() error {
-	if api.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-	api.SetRunning(false)
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-	return api.server.Shutdown(ctx)
+	return api.SetRunning(false, func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+		api.server.Shutdown(ctx)
+	})
 }

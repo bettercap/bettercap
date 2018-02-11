@@ -79,15 +79,11 @@ func (s *EventsStream) Configure() error {
 }
 
 func (s *EventsStream) Start() error {
-	if s.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := s.Configure(); err != nil {
+	if err := s.Configure(); err != nil {
 		return err
 	}
 
-	s.SetRunning(true)
-
-	go func() {
+	return s.SetRunning(true, func() {
 		for {
 			var e session.Event
 			select {
@@ -99,9 +95,7 @@ func (s *EventsStream) Start() error {
 				return
 			}
 		}
-	}()
-
-	return nil
+	})
 }
 
 func (s *EventsStream) Show(limit int) error {
@@ -123,10 +117,7 @@ func (s *EventsStream) Show(limit int) error {
 }
 
 func (s *EventsStream) Stop() error {
-	if s.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-	s.SetRunning(false)
-	s.quit <- true
-	return nil
+	return s.SetRunning(false, func() {
+		s.quit <- true
+	})
 }

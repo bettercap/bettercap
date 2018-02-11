@@ -369,9 +369,7 @@ func (s *DHCP6Spoofer) Start() error {
 		return err
 	}
 
-	s.SetRunning(true)
-
-	go func() {
+	return s.SetRunning(true, func() {
 		defer s.Handle.Close()
 
 		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
@@ -382,16 +380,11 @@ func (s *DHCP6Spoofer) Start() error {
 
 			s.onPacket(packet)
 		}
-	}()
-
-	return nil
+	})
 }
 
 func (s *DHCP6Spoofer) Stop() error {
-	if s.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-	s.SetRunning(false)
-	s.Handle.Close()
-	return nil
+	return s.SetRunning(false, func() {
+		s.Handle.Close()
+	})
 }

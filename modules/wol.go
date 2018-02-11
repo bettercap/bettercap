@@ -101,11 +101,11 @@ func buildPayload(mac string) []byte {
 }
 
 func (w *WOL) wolETH(mac string) error {
+	w.SetRunning(true, nil)
+	defer w.SetRunning(false, nil)
+
 	payload := buildPayload(mac)
 	log.Info("Sending %d bytes of ethernet WOL packet to %s", len(payload), core.Bold(mac))
-	w.SetRunning(true)
-	defer w.SetRunning(false)
-
 	eth := layers.Ethernet{
 		SrcMAC:       w.Session.Interface.HW,
 		DstMAC:       layers.EthernetBroadcast,
@@ -126,10 +126,11 @@ func (w *WOL) wolETH(mac string) error {
 }
 
 func (w *WOL) wolUDP(mac string) error {
+	w.SetRunning(true, nil)
+	defer w.SetRunning(false, nil)
+
 	payload := buildPayload(mac)
 	log.Info("Sending %d bytes of UDP WOL packet to %s", len(payload), core.Bold(mac))
-	w.SetRunning(true)
-	defer w.SetRunning(false)
 
 	eth := layers.Ethernet{
 		SrcMAC:       w.Session.Interface.HW,

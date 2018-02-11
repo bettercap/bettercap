@@ -122,9 +122,16 @@ func (m *SessionModule) Running() bool {
 	return m.Started
 }
 
-func (m *SessionModule) SetRunning(running bool) {
+func (m *SessionModule) SetRunning(running bool, cb func()) error {
 	m.StatusLock.Lock()
 	defer m.StatusLock.Unlock()
+
+	if running && m.Started == true {
+		return ErrAlreadyStarted
+	} else if running == false && m.Started == false {
+		return ErrAlreadyStopped
+	}
+
 	m.Started = running
 
 	if *m.Session.Options.Debug == true {
@@ -134,4 +141,16 @@ func (m *SessionModule) SetRunning(running bool) {
 			m.Session.Events.Add("mod.stopped", m.Name)
 		}
 	}
+
+	if cb != nil {
+		if running == true {
+			// this is the worker, start async
+			go cb()
+		} else {
+			// stop callback, this is sync
+			cb()
+		}
+	}
+
+	return nil
 }

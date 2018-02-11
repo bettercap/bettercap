@@ -103,24 +103,19 @@ func (httpd *HttpServer) Start() error {
 		return err
 	}
 
-	httpd.SetRunning(true)
-	go func() {
+	return httpd.SetRunning(true, func() {
 		log.Info("httpd server starting on http://%s", httpd.server.Addr)
 		err := httpd.server.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}
-	}()
-
-	return nil
+	})
 }
 
 func (httpd *HttpServer) Stop() error {
-	if httpd.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-	httpd.SetRunning(false)
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-	return httpd.server.Shutdown(ctx)
+	return httpd.SetRunning(false, func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+		httpd.server.Shutdown(ctx)
+	})
 }

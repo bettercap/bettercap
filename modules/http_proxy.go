@@ -93,17 +93,13 @@ func (p *HttpProxy) Start() error {
 		return err
 	}
 
-	p.SetRunning(true)
-	p.proxy.Start()
-
-	return nil
+	return p.SetRunning(true, func() {
+		p.proxy.Start()
+	})
 }
 
 func (p *HttpProxy) Stop() error {
-	if p.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-	p.SetRunning(false)
-
-	return p.proxy.Stop()
+	return p.SetRunning(false, func() {
+		p.proxy.Stop()
+	})
 }

@@ -80,8 +80,7 @@ func (t *Ticker) Start() error {
 		return err
 	}
 
-	t.SetRunning(true)
-	go func() {
+	return t.SetRunning(true, func() {
 		log.Info("Ticker running with period %.fs.", t.Period.Seconds())
 		tick := time.Tick(t.Period)
 		for _ = range tick {
@@ -95,15 +94,9 @@ func (t *Ticker) Start() error {
 				}
 			}
 		}
-	}()
-
-	return nil
+	})
 }
 
 func (t *Ticker) Stop() error {
-	if t.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-	t.SetRunning(false)
-	return nil
+	return t.SetRunning(false, nil)
 }

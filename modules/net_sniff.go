@@ -143,9 +143,7 @@ func (s *Sniffer) Start() error {
 		return err
 	}
 
-	s.SetRunning(true)
-
-	go func() {
+	return s.SetRunning(true, func() {
 		s.Stats = NewSnifferStats()
 
 		src := gopacket.NewPacketSource(s.Ctx.Handle, s.Ctx.Handle.LinkType())
@@ -180,17 +178,11 @@ func (s *Sniffer) Start() error {
 				}
 			}
 		}
-	}()
-
-	return nil
+	})
 }
 
 func (s *Sniffer) Stop() error {
-	if s.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-	s.SetRunning(false)
-	s.Ctx.Close()
-
-	return nil
+	return s.SetRunning(false, func() {
+		s.Ctx.Close()
+	})
 }

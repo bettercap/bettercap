@@ -87,15 +87,11 @@ func (p *Prober) Configure() error {
 }
 
 func (p *Prober) Start() error {
-	if p.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := p.Configure(); err != nil {
+	if err := p.Configure(); err != nil {
 		return err
 	}
 
-	p.SetRunning(true)
-
-	go func() {
+	return p.SetRunning(true, func() {
 		list, err := iprange.Parse(p.Session.Interface.CIDR())
 		if err != nil {
 			log.Fatal("%s", err)
@@ -121,15 +117,9 @@ func (p *Prober) Start() error {
 
 			time.Sleep(5 * time.Second)
 		}
-	}()
-
-	return nil
+	})
 }
 
 func (p *Prober) Stop() error {
-	if p.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-	p.SetRunning(false)
-	return nil
+	return p.SetRunning(false, nil)
 }

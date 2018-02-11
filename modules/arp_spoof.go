@@ -173,14 +173,11 @@ func (p *ArpSpoofer) Configure() error {
 }
 
 func (p *ArpSpoofer) Start() error {
-	if p.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := p.Configure(); err != nil {
+	if err := p.Configure(); err != nil {
 		return err
 	}
 
-	p.SetRunning(true)
-	go func() {
+	return p.SetRunning(true, func() {
 		from := p.Session.Gateway.IP
 		from_hw := p.Session.Interface.HW
 
@@ -192,24 +189,14 @@ func (p *ArpSpoofer) Start() error {
 		}
 
 		p.done <- true
-	}()
-
-	return nil
+	})
 }
 
 func (p *ArpSpoofer) Stop() error {
-	if p.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-
-	log.Info("Waiting for ARP spoofer to stop ...")
-
-	p.SetRunning(false)
-
-	<-p.done
-
-	p.unSpoof()
-	p.ban = false
-
-	return nil
+	return p.SetRunning(false, func() {
+		log.Info("Waiting for ARP spoofer to stop ...")
+		<-p.done
+		p.unSpoof()
+		p.ban = false
+	})
 }

@@ -103,28 +103,23 @@ func (mc *MacChanger) setMac(mac net.HardwareAddr) error {
 }
 
 func (mc *MacChanger) Start() error {
-	if mc.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := mc.Configure(); err != nil {
+	if err := mc.Configure(); err != nil {
 		return err
 	} else if err := mc.setMac(mc.fakeMac); err != nil {
 		return err
 	}
 
-	mc.SetRunning(true)
-	log.Info("Interface mac address set to %s", core.Bold(mc.fakeMac.String()))
-
-	return nil
+	return mc.SetRunning(true, func() {
+		log.Info("Interface mac address set to %s", core.Bold(mc.fakeMac.String()))
+	})
 }
 
 func (mc *MacChanger) Stop() error {
-	if mc.Running() == false {
-		return session.ErrAlreadyStopped
-	} else if err := mc.setMac(mc.originalMac); err != nil {
+	if err := mc.setMac(mc.originalMac); err != nil {
 		return err
 	}
 
-	mc.SetRunning(false)
-	log.Info("Interface mac address restored to %s", core.Bold(mc.originalMac.String()))
-	return nil
+	return mc.SetRunning(false, func() {
+		log.Info("Interface mac address restored to %s", core.Bold(mc.originalMac.String()))
+	})
 }
