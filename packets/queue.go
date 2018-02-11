@@ -91,9 +91,6 @@ func (q *Queue) trackProtocols(pkt gopacket.Packet) {
 }
 
 func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, pktSize uint64) {
-	q.Lock()
-	defer q.Unlock()
-
 	// detrmine direction
 	isSent := bytes.Compare(address, ip4.SrcIP) == 0
 	// push to activity channel
@@ -102,6 +99,9 @@ func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address ne
 		MAC:    eth.SrcMAC,
 		Source: isSent,
 	}
+
+	q.Lock()
+	defer q.Unlock()
 
 	// initialize or update stats
 	addr := address.String()
