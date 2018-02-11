@@ -57,7 +57,7 @@ func (httpd *HttpServer) Name() string {
 }
 
 func (httpd *HttpServer) Description() string {
-	return "A simple HTTP server, to be used to serve files and scripts accross the network."
+	return "A simple HTTP server, to be used to serve files and scripts across the network."
 }
 
 func (httpd *HttpServer) Author() string {
