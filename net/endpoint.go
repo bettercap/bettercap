@@ -100,7 +100,7 @@ func (t *Endpoint) String() string {
 		return fmt.Sprintf("%s : %s", t.IpAddress, t.HwAddress)
 	} else if t.Hostname == "" {
 		return fmt.Sprintf("%s : %s ( %s )", t.IpAddress, t.HwAddress, t.Vendor)
-	} else {
-		return fmt.Sprintf("%s : %s ( %s ) - "+core.BOLD+t.Hostname+core.RESET, t.IpAddress, t.HwAddress, t.Vendor)
 	}
+
+	return fmt.Sprintf("%s : %s ( %s ) - %s", t.IpAddress, t.HwAddress, t.Vendor, core.Bold(t.Hostname))
 }

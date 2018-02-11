@@ -78,29 +78,6 @@ func (d Discovery) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (d *Discovery) checkShared(new net.ArpTable) {
-	n_gw_shared := 0
-	for ip, mac := range new {
-		if ip != d.Session.Gateway.IpAddress && mac == d.Session.Gateway.HwAddress {
-			n_gw_shared++
-		}
-	}
-
-	if n_gw_shared > 0 {
-		a := ""
-		b := ""
-		if n_gw_shared == 1 {
-			a = ""
-			b = "s"
-		} else {
-			a = "s"
-			b = ""
-		}
-
-		log.Warning("Found %d endpoint%s which share%s the same MAC of the gateway (%s), there're might be some IP isolation going on, skipping.", n_gw_shared, a, b, d.Session.Gateway.HwAddress)
-	}
-}
-
 func (d *Discovery) runDiff() {
 	// check for endpoints who disappeared
 	var rem net.ArpTable = make(net.ArpTable)

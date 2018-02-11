@@ -40,15 +40,12 @@ func (h *ModuleHandler) Parse(line string) (bool, []string) {
 	if h.Parser == nil {
 		if line == h.Name {
 			return true, nil
-		} else {
-			return false, nil
 		}
-	} else {
-		result := h.Parser.FindStringSubmatch(line)
-		if len(result) == h.Parser.NumSubexp()+1 {
-			return true, result[1:]
-		} else {
-			return false, nil
-		}
+		return false, nil
 	}
+	result := h.Parser.FindStringSubmatch(line)
+	if len(result) == h.Parser.NumSubexp()+1 {
+		return true, result[1:]
+	}
+	return false, nil
 }
