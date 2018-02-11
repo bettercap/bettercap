@@ -88,6 +88,7 @@ func (p *Prober) Start() error {
 		from := p.Session.Interface.IP
 		from_hw := p.Session.Interface.HW
 		addresses := list.Expand()
+		throttle := time.Duration(p.throttle) * time.Millisecond
 
 		for p.Running() {
 			for _, ip := range addresses {
@@ -98,9 +99,7 @@ func (p *Prober) Start() error {
 
 				p.sendProbe(from, from_hw, ip)
 
-				if p.throttle > 0 {
-					time.Sleep(time.Duration(p.throttle) * time.Millisecond)
-				}
+				time.Sleep(throttle)
 			}
 
 			time.Sleep(5 * time.Second)
