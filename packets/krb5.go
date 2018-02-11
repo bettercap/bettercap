@@ -72,7 +72,6 @@ type Krb5Request struct {
 	ReqBody    Krb5ReqBody  `asn1:"explicit,tag:4"`
 }
 
-// $krb5$Krb5PnData[0].Krb5PnDataValue.Etype$Cname.NameString[0]$Realm$nodata$cipher
 func (kdc Krb5Request) String() (string, error) {
 	var eType, cipher string
 	var crypt []string
