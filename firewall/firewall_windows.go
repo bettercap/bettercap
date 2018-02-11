@@ -113,7 +113,7 @@ func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error 
 		return err
 	}
 
-	if core.Trim(out) != "" {
+	if strings.Contains(out, "OK") == false {
 		return fmt.Errorf("Unexpected netsh output: %s", out)
 	}
 	return nil
