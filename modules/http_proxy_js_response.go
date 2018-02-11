@@ -17,8 +17,9 @@ type JSResponse struct {
 	Headers     string
 	Body        string
 
-	refHash string
-	resp    *http.Response
+	refHash  string
+	resp     *http.Response
+	bodyRead bool
 }
 
 func NewJSResponse(res *http.Response) *JSResponse {
@@ -43,6 +44,7 @@ func NewJSResponse(res *http.Response) *JSResponse {
 		ContentType: cType,
 		Headers:     headers,
 		resp:        res,
+		bodyRead:    false,
 	}
 	resp.UpdateHash()
 
@@ -50,7 +52,7 @@ func NewJSResponse(res *http.Response) *JSResponse {
 }
 
 func (j *JSResponse) NewHash() string {
-	return fmt.Sprintf("%d.%s.%s.%s", j.Status, j.ContentType, j.Headers, j.Body)
+	return fmt.Sprintf("%d.%s.%s", j.Status, j.ContentType, j.Headers)
 }
 
 func (j *JSResponse) UpdateHash() {
@@ -58,6 +60,11 @@ func (j *JSResponse) UpdateHash() {
 }
 
 func (j *JSResponse) WasModified() bool {
+	// body was read
+	if j.bodyRead == true {
+		return true
+	}
+	// check if any of the fields has been changed
 	newHash := j.NewHash()
 	if newHash != j.refHash {
 		return true
