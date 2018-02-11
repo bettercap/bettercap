@@ -1,10 +1,6 @@
 #!/bin/bash
+BUILD_FOLDER=build
 VERSION=$(cat core/banner.go | grep Version | cut -d '"' -f 2)
-
-clean() {
-    rm -rf build
-    mkdir build
-}
 
 bin_dep() {
     BIN=$1
@@ -94,8 +90,9 @@ build_windows_amd64() {
     scp -C winvm:$DIR/$OUTPUT . > /dev/null
 }
 
-clean
-cd build
+rm -rf $BUILD_FOLDER
+mkdir $BUILD_FOLDER
+cd $BUILD_FOLDER
 
 build_linux_amd64 bettercap-ng_linux_amd64_$VERSION
 build_linux_arm7 bettercap-ng_linux_arm7_$VERSION
