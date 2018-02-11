@@ -182,6 +182,7 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"net": &bintree{nil, map[string]*bintree{
 		"oui.dat": &bintree{netOuiDat, map[string]*bintree{}},
@@ -234,4 +235,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

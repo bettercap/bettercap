@@ -253,7 +253,7 @@ func (s *Session) registerCoreHandlers() {
 		readline.PcItem("set", readline.PcItemDynamic(func(prefix string) []string {
 			prefix = core.Trim(prefix[3:])
 			varNames := []string{""}
-			for key, _ := range s.Env.Storage {
+			for key := range s.Env.Storage {
 				if prefix == "" || strings.HasPrefix(key, prefix) == true {
 					varNames = append(varNames, key)
 				}
@@ -295,7 +295,7 @@ func (s *Session) registerCoreHandlers() {
 		readline.PcItem("alias", readline.PcItemDynamic(func(prefix string) []string {
 			prefix = core.Trim(prefix[5:])
 			macs := []string{""}
-			for mac, _ := range s.Targets.Targets {
+			for mac := range s.Targets.Targets {
 				if prefix == "" || strings.HasPrefix(mac, prefix) == true {
 					macs = append(macs, mac)
 				}
