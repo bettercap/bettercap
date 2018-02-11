@@ -35,6 +35,8 @@ xcompile_pcap() {
     ARCH=$1
 
     bin_dep 'make'
+    bin_dep 'yacc'
+    bin_dep 'flex'
     bin_dep "$ARCH-linux-gnueabi-gcc"
 
     echo "@ Cross compiling libpcap for $ARCH ..."
