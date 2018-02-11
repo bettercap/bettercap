@@ -24,7 +24,7 @@ To run:
 
 ## Compilation
 
-Make sure you have a correctly configured Go >= 1.8 environment, that `$GOPATH/bin` is in `$PATH` and the `libpcap-dev` package installed for your system, then:
+Make sure you have a correctly configured **Go >= 1.8** environment, that `$GOPATH/bin` is in `$PATH` and the `libpcap-dev` package installed for your system, then:
 
     $ go get github.com/evilsocket/bettercap-ng
 
