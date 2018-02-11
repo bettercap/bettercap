@@ -98,7 +98,7 @@ func (j *JSResponse) ReadBody() string {
 	}
 
 	j.Body = string(raw)
-	j.UpdateHash()
+	j.bodyRead = true
 
 	return j.Body
 }
