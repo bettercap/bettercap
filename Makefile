@@ -1,6 +1,4 @@
 TARGET=bettercap-ng
-PCAP=http://www.tcpdump.org/release/libpcap-1.8.1.tar.gz
-LDFLAGS='-linkmode external -extldflags "-static -s -w"'
 
 all: fmt vet build
 	@echo "@ Done"
@@ -10,7 +8,7 @@ test: build
 
 build: resources
 	@echo "@ Building ..."
-	@go build $(FLAGS) -o $(TARGET) .
+	@go build -o $(TARGET) .
 
 resources: oui
 
@@ -31,6 +29,6 @@ deps:
 	@go get ./...
 
 clean:
-	@rm -rf bettercap-ng*.*
-	@rm -rf bettercap-ng*
+	@rm -rf $(TARGET).*
+	@rm -rf $(TARGET)*
 	@rm -rf build
