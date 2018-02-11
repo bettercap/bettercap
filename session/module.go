@@ -21,10 +21,10 @@ type Module interface {
 }
 
 type SessionModule struct {
-	Name       string      `json:"name"`
-	Session    *Session    `json:"-"`
-	Started    bool        `json:"started"`
-	StatusLock *sync.Mutex `json:"-"`
+	Name       string        `json:"name"`
+	Session    *Session      `json:"-"`
+	Started    bool          `json:"started"`
+	StatusLock *sync.RWMutex `json:"-"`
 
 	handlers []ModuleHandler
 	params   map[string]*ModuleParam
@@ -35,7 +35,7 @@ func NewSessionModule(name string, s *Session) SessionModule {
 		Name:       name,
 		Session:    s,
 		Started:    false,
-		StatusLock: &sync.Mutex{},
+		StatusLock: &sync.RWMutex{},
 
 		handlers: make([]ModuleHandler, 0),
 		params:   make(map[string]*ModuleParam),
@@ -117,22 +117,23 @@ func (m *SessionModule) AddParam(p *ModuleParam) *ModuleParam {
 }
 
 func (m *SessionModule) Running() bool {
-	m.StatusLock.Lock()
-	defer m.StatusLock.Unlock()
+	m.StatusLock.RLock()
+	defer m.StatusLock.RUnlock()
 	return m.Started
 }
 
 func (m *SessionModule) SetRunning(running bool, cb func()) error {
-	m.StatusLock.Lock()
-	defer m.StatusLock.Unlock()
-
-	if running && m.Started == true {
-		return ErrAlreadyStarted
-	} else if running == false && m.Started == false {
-		return ErrAlreadyStopped
+	if running == m.Running() {
+		if m.Started {
+			return ErrAlreadyStarted
+		} else {
+			return ErrAlreadyStopped
+		}
 	}
 
+	m.StatusLock.Lock()
 	m.Started = running
+	m.StatusLock.Unlock()
 
 	if *m.Session.Options.Debug == true {
 		if running {
