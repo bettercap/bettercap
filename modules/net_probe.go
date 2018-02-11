@@ -52,18 +52,6 @@ func (p Prober) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (p *Prober) shouldProbe(ip net.IP) bool {
-	addr := ip.String()
-	if ip.IsLoopback() == true {
-		return false
-	} else if addr == p.Session.Interface.IpAddress {
-		return false
-	} else if addr == p.Session.Gateway.IpAddress {
-		return false
-	}
-	return true
-}
-
 func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 	var wg sync.WaitGroup
 
@@ -103,7 +91,7 @@ func (p *Prober) Start() error {
 
 		for p.Running() {
 			for _, ip := range addresses {
-				if p.shouldProbe(ip) == false {
+				if p.Session.Skip(ip) == true {
 					log.Debug("Skipping address %s from UDP probing.", ip)
 					continue
 				}

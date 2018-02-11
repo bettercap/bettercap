@@ -2,8 +2,10 @@ package session
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"runtime"
@@ -17,7 +19,7 @@ import (
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/firewall"
-	"github.com/evilsocket/bettercap-ng/net"
+	bnet "github.com/evilsocket/bettercap-ng/net"
 	"github.com/evilsocket/bettercap-ng/packets"
 )
 
@@ -32,8 +34,8 @@ var (
 
 type Session struct {
 	Options   core.Options             `json:"options"`
-	Interface *net.Endpoint            `json:"interface"`
-	Gateway   *net.Endpoint            `json:"gateway"`
+	Interface *bnet.Endpoint           `json:"interface"`
+	Gateway   *bnet.Endpoint           `json:"gateway"`
 	Firewall  firewall.FirewallManager `json:"-"`
 	Env       *Environment             `json:"env"`
 	Targets   *Targets                 `json:"targets"`
@@ -280,9 +282,9 @@ func (s *Session) Start() error {
 		return s.Modules[i].Name() < s.Modules[j].Name()
 	})
 
-	net.OuiInit()
+	bnet.OuiInit()
 
-	if s.Interface, err = net.FindInterface(*s.Options.InterfaceName); err != nil {
+	if s.Interface, err = bnet.FindInterface(*s.Options.InterfaceName); err != nil {
 		return err
 	}
 
@@ -290,7 +292,7 @@ func (s *Session) Start() error {
 		return err
 	}
 
-	if s.Gateway, err = net.FindGateway(s.Interface); err != nil {
+	if s.Gateway, err = bnet.FindGateway(s.Interface); err != nil {
 		s.Events.Log(core.WARNING, "%s", err.Error())
 	}
 
@@ -319,6 +321,17 @@ func (s *Session) Start() error {
 	}
 
 	return nil
+}
+
+func (s *Session) Skip(ip net.IP) bool {
+	if ip.IsLoopback() == true {
+		return true
+	} else if bytes.Compare(ip, s.Interface.IP) == 0 {
+		return true
+	} else if bytes.Compare(ip, s.Gateway.IP) == 0 {
+		return true
+	}
+	return false
 }
 
 func (s *Session) IsOn(moduleName string) bool {

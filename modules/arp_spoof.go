@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"time"
@@ -65,17 +64,6 @@ func (p ArpSpoofer) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (p *ArpSpoofer) shouldSpoof(ip net.IP) bool {
-	if ip.IsLoopback() == true {
-		return false
-	} else if bytes.Compare(ip, p.Session.Interface.IP) == 0 {
-		return false
-	} else if bytes.Compare(ip, p.Session.Gateway.IP) == 0 {
-		return false
-	}
-	return true
-}
-
 func (p *ArpSpoofer) getMAC(ip net.IP, probe bool) (net.HardwareAddr, error) {
 	var mac string
 	var hw net.HardwareAddr
@@ -115,7 +103,7 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 	for _, ip := range p.addresses {
 		if check_running && p.Running() == false {
 			return
-		} else if p.shouldSpoof(ip) == false {
+		} else if p.Session.Skip(ip) == true {
 			log.Debug("Skipping address %s from ARP spoofing.", ip)
 			continue
 		}
