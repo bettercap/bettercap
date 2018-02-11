@@ -14,6 +14,13 @@ import (
 var sess *session.Session
 var err error
 
+// Some modules are enabled by default in order
+// to make the interactive session useful.
+var autoEnableList = []string{
+	"events.stream",
+	"net.recon",
+}
+
 func main() {
 	if sess, err = session.New(); err != nil {
 		fmt.Println(err)
@@ -24,7 +31,9 @@ func main() {
 		fmt.Printf("\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")
 	}
 
-	fmt.Printf(core.Bold("%s v%s\n\n"), core.Name, core.Version)
+	appName := fmt.Sprintf("%s v%s", core.Name, core.Version)
+
+	fmt.Printf("%s (type '%s' for a list of commands)\n\n", core.Bold(appName), core.Bold("help"))
 
 	sess.Register(modules.NewEventsStream(sess))
 	sess.Register(modules.NewTicker(sess))
@@ -45,12 +54,6 @@ func main() {
 		log.Fatal("%s", err)
 	}
 
-	// Some modules are enabled by default in order
-	// to make the interactive session useful.
-	autoEnableList := []string{
-		"events.stream",
-		"net.recon",
-	}
 	for _, modName := range autoEnableList {
 		if err = sess.Run(modName + " on"); err != nil {
 			log.Fatal("Error while starting module %s: %", modName, err)
