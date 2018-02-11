@@ -71,16 +71,17 @@ func (q *Queue) trackProtocols(pkt gopacket.Packet) {
 	// gather protocols stats
 	pktLayers := pkt.Layers()
 	for _, layer := range pktLayers {
-		proto := layer.LayerType().String()
-		if proto == "DecodeFailure" || proto == "Payload" || proto == "Ethernet" {
+		proto := layer.LayerType()
+		if proto == gopacket.LayerTypeDecodeFailure || proto == gopacket.LayerTypePayload {
 			continue
 		}
 
 		q.Lock()
-		if _, found := q.Protos[proto]; found == false {
-			q.Protos[proto] = 1
+		name := proto.String()
+		if _, found := q.Protos[name]; found == false {
+			q.Protos[name] = 1
 		} else {
-			q.Protos[proto] += 1
+			q.Protos[name] += 1
 		}
 		q.Unlock()
 	}
