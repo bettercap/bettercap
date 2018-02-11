@@ -25,17 +25,21 @@ type Traffic struct {
 	Received uint64
 }
 
-type Queue struct {
-	sync.Mutex
-
+type Stats struct {
 	Sent        uint64
 	Received    uint64
 	PktReceived uint64
 	Errors      uint64
+}
+
+type Queue struct {
+	sync.Mutex
 
 	Activities chan Activity `json:"-"`
-	Protos     map[string]uint64
-	Traffic    map[string]*Traffic
+
+	Stats   Stats
+	Protos  map[string]uint64
+	Traffic map[string]*Traffic
 
 	iface  *bnet.Endpoint
 	handle *pcap.Handle
@@ -43,32 +47,24 @@ type Queue struct {
 	active bool
 }
 
-func NewQueue(iface *bnet.Endpoint) (*Queue, error) {
-	var err error
+func NewQueue(iface *bnet.Endpoint) (q *Queue, err error) {
+	q = &Queue{
+		Protos:     make(map[string]uint64),
+		Traffic:    make(map[string]*Traffic),
+		Activities: make(chan Activity),
 
-	q := &Queue{
-		iface:       iface,
-		handle:      nil,
-		active:      true,
-		source:      nil,
-		Sent:        0,
-		Received:    0,
-		PktReceived: 0,
-		Errors:      0,
-		Protos:      make(map[string]uint64),
-		Traffic:     make(map[string]*Traffic),
-		Activities:  make(chan Activity),
+		iface:  iface,
+		active: true,
 	}
 
-	q.handle, err = pcap.OpenLive(iface.Name(), 1024, true, pcap.BlockForever)
-	if err != nil {
-		return nil, err
+	if q.handle, err = pcap.OpenLive(iface.Name(), 1024, true, pcap.BlockForever); err != nil {
+		return
 	}
 
 	q.source = gopacket.NewPacketSource(q.handle, q.handle.LinkType())
 	go q.worker()
 
-	return q, nil
+	return
 }
 
 func (q *Queue) trackProtocols(pkt gopacket.Packet) {
@@ -90,9 +86,7 @@ func (q *Queue) trackProtocols(pkt gopacket.Packet) {
 	}
 }
 
-func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, pktSize uint64) {
-	// detrmine direction
-	isSent := bytes.Compare(address, ip4.SrcIP) == 0
+func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, pktSize uint64, isSent bool) {
 	// push to activity channel
 	q.Activities <- Activity{
 		IP:     address,
@@ -130,8 +124,8 @@ func (q *Queue) worker() {
 
 		pktSize := uint64(len(pkt.Data()))
 
-		atomic.AddUint64(&q.PktReceived, 1)
-		atomic.AddUint64(&q.Received, pktSize)
+		atomic.AddUint64(&q.Stats.PktReceived, 1)
+		atomic.AddUint64(&q.Stats.Received, pktSize)
 
 		// decode eth and ipv4 layers
 		leth := pkt.Layer(layers.LayerTypeEthernet)
@@ -142,11 +136,11 @@ func (q *Queue) worker() {
 
 			// coming from our network
 			if bytes.Compare(q.iface.IP, ip4.SrcIP) != 0 && q.iface.Net.Contains(ip4.SrcIP) {
-				q.trackActivity(eth, ip4, ip4.SrcIP, pktSize)
+				q.trackActivity(eth, ip4, ip4.SrcIP, pktSize, true)
 			}
 			// coming to our network
 			if bytes.Compare(q.iface.IP, ip4.DstIP) != 0 && q.iface.Net.Contains(ip4.DstIP) {
-				q.trackActivity(eth, ip4, ip4.DstIP, pktSize)
+				q.trackActivity(eth, ip4, ip4.DstIP, pktSize, false)
 			}
 		}
 	}
@@ -161,10 +155,10 @@ func (q *Queue) Send(raw []byte) error {
 	}
 
 	if err := q.handle.WritePacketData(raw); err != nil {
-		q.Errors += 1
+		atomic.AddUint64(&q.Stats.Errors, 1)
 		return err
 	} else {
-		q.Sent += uint64(len(raw))
+		atomic.AddUint64(&q.Stats.Sent, uint64(len(raw)))
 	}
 
 	return nil

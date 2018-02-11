@@ -144,11 +144,11 @@ func (d *Discovery) Show(by string) error {
 
 	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
 		core.Red("↑"),
-		humanize.Bytes(atomic.LoadUint64(&d.Session.Queue.Sent)),
+		humanize.Bytes(atomic.LoadUint64(&d.Session.Queue.Stats.Sent)),
 		core.Green("↓"),
-		humanize.Bytes(atomic.LoadUint64(&d.Session.Queue.Received)),
-		atomic.LoadUint64(&d.Session.Queue.PktReceived),
-		atomic.LoadUint64(&d.Session.Queue.Errors))
+		humanize.Bytes(atomic.LoadUint64(&d.Session.Queue.Stats.Received)),
+		atomic.LoadUint64(&d.Session.Queue.Stats.PktReceived),
+		atomic.LoadUint64(&d.Session.Queue.Stats.Errors))
 
 	s := EventsStream{}
 	events := d.Session.Events.Sorted()

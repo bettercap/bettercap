@@ -37,22 +37,22 @@ var PromptCallbacks = map[string]func(s *Session) string{
 		return s.Interface.CIDR()
 	},
 	"{net.sent}": func(s *Session) string {
-		return fmt.Sprintf("%d", s.Queue.Sent)
+		return fmt.Sprintf("%d", s.Queue.Stats.Sent)
 	},
 	"{net.sent.human}": func(s *Session) string {
-		return humanize.Bytes(s.Queue.Sent)
+		return humanize.Bytes(s.Queue.Stats.Sent)
 	},
 	"{net.received}": func(s *Session) string {
-		return fmt.Sprintf("%d", s.Queue.Received)
+		return fmt.Sprintf("%d", s.Queue.Stats.Received)
 	},
 	"{net.received.human}": func(s *Session) string {
-		return humanize.Bytes(s.Queue.Received)
+		return humanize.Bytes(s.Queue.Stats.Received)
 	},
 	"{net.packets}": func(s *Session) string {
-		return fmt.Sprintf("%d", s.Queue.PktReceived)
+		return fmt.Sprintf("%d", s.Queue.Stats.PktReceived)
 	},
 	"{net.errors}": func(s *Session) string {
-		return fmt.Sprintf("%d", s.Queue.Errors)
+		return fmt.Sprintf("%d", s.Queue.Stats.Errors)
 	},
 }
 
