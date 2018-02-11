@@ -35,6 +35,14 @@ func (f WindowsFirewall) IsForwardingEnabled() bool {
 	}
 }
 
+func (f WindowsFirewall) isSuccess(output string) {
+	if trimmed := core.Trim(output); trimmed == "" || strings.Contains(trimmed, "OK") == true {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (f WindowsFirewall) EnableForwarding(enabled bool) error {
 	v := "enabled"
 	if enabled == false {
@@ -45,7 +53,7 @@ func (f WindowsFirewall) EnableForwarding(enabled bool) error {
 		return err
 	}
 
-	if strings.Contains(out, "OK") == false {
+	if f.isSuccess(out) == false {
 		return fmt.Errorf("Unexpected netsh output: %s", out)
 	}
 
@@ -87,7 +95,7 @@ func (f *WindowsFirewall) AllowPort(port int, address string, proto string, allo
 		return err
 	}
 
-	if core.Trim(out) != "OK." {
+	if f.isSuccess(out) == false {
 		return fmt.Errorf("Unexpected netsh output: %s", out)
 	}
 
@@ -113,7 +121,7 @@ func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error 
 		return err
 	}
 
-	if core.Trim(out) != "" && strings.Contains(out, "OK") == false {
+	if f.isSuccess(out) == false {
 		return fmt.Errorf("Unexpected netsh output: %s", out)
 	}
 	return nil
