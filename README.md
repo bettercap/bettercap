@@ -48,7 +48,7 @@ To show the command line options:
 
 ## Compilation on Windows
 
-Despite Windows support [is not yet 100% complete](https://github.com/evilsocket/bettercap-ng/issues/45), it is possible to build bettercap-ng for Microsoft platforms and enjoy 99.99% of the experience. The steps to prepare the building environment are.
+Despite Windows support [is not yet 100% complete](https://github.com/evilsocket/bettercap-ng/issues/45), it is possible to build bettercap-ng for Microsoft platforms and enjoy 99.99% of the experience. The steps to prepare the building environment are:
 
 1. Install [go amd64](https://golang.org/dl/) (add go binaries to your `%PATH%`).
 2. Install [TDM GCC for amd64](http://tdm-gcc.tdragon.net/download) (add TDM-GCC binaries to your `%PATH%`).
