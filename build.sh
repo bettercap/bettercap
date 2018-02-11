@@ -22,25 +22,42 @@ build_linux_amd64() {
     go build -o "$OUTPUT" ..
 }
 
-build_linux_arm7() {
-    bin_dep 'arm-linux-gnueabi-gcc'
 
-    OUTPUT=$1
-    OLD=$(pwd)
-    echo "@ Building $OUTPUT ..."
+download_pcap() {
+    bin_dep 'wget'
+    bin_dep 'tar'
+
     cd /tmp
     rm -rf libpcap-1.8.1
     if [ ! -f /tmp/libpcap-1.8.1.tar.gz ]; then
         echo "@ Downloading  http://www.tcpdump.org/release/libpcap-1.8.1.tar.gz ..."
         wget -q http://www.tcpdump.org/release/libpcap-1.8.1.tar.gz -O /tmp/libpcap-1.8.1.tar.gz
     fi
-    echo "@ Cross compiling libpcap for ARM ..."
     tar xf libpcap-1.8.1.tar.gz
-    cd libpcap-1.8.1
-    export CC=arm-linux-gnueabi-gcc
-    ./configure --host=arm-linux-gnueabi --with-pcap=linux > /dev/null
+}
+
+xcompile_pcap() {
+    ARCH=$1
+
+    bin_dep 'make'
+    bin_dep "$ARCH-linux-gnueabi-gcc"
+
+    echo "@ Cross compiling libpcap for $ARCH ..."
+    cd /tmp/libpcap-1.8.1
+    export CC=$ARCH-linux-gnueabi-gcc
+    ./configure --host=$ARCH-linux-gnueabi --with-pcap=linux > /dev/null
     make CFLAGS='-w' -j4 > /dev/null
-    echo "@ Compiling $OUTPUT ..."
+}
+
+build_linux_arm7() {
+
+    OUTPUT=$1
+    OLD=$(pwd)
+    
+    download_pcap
+    xcompile_pcap 'arm'
+
+    echo "@ Building $OUTPUT ..."
     cd "$OLD"
     env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
     rm -rf /tmp/libpcap-1.8.1
