@@ -95,12 +95,16 @@ By issuing `bettercap-ng -h` the main command line options will be shown:
     Usage of ./bettercap-ng:
       -caplet string
             Read commands from this file and execute them in the interactive session.
+      -cpu-profile file
+            Write cpu profile file.
       -debug
             Print debug messages.
       -eval string
             Run one or more commands separated by ; in the interactive session, used to set variables via command line.
       -iface string
             Network interface to bind to, if empty the default interface will be auto selected.
+      -mem-profile file
+            Write memory profile to file.
       -no-history
             Disable interactive session history file.
       -silent
