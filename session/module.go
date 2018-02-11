@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
 )
@@ -148,8 +149,19 @@ func (m *SessionModule) SetRunning(running bool, cb func()) error {
 			// this is the worker, start async
 			go cb()
 		} else {
-			// stop callback, this is sync
-			cb()
+			// stop callback, this is sync with a 10 seconds timeout
+			done := make(chan bool, 1)
+			go func() {
+				cb()
+				done <- true
+			}()
+
+			select {
+			case _ = <-done:
+				return nil
+			case <-time.After(10 * time.Second):
+				fmt.Printf("%s: Stopping module %s timed out.", core.Yellow(core.Bold("WARNING")), m.Name)
+			}
 		}
 	}
 
