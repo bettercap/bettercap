@@ -2,6 +2,7 @@ package packets
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -17,8 +18,11 @@ const (
 	Krb5CryptRc4Hmac          = 23
 )
 
-//https://github.com/heimdal/heimdal/blob/master/lib/asn1/krb5.asn1
 var (
+	ErrNoCrypt  = errors.New("No crypt alg found")
+	ErrReqData  = errors.New("Failed to extract pnData from as-req")
+	ErrNoCipher = errors.New("No encryption type or cipher found")
+
 	Krb5AsReqParam = "application,explicit,tag:10"
 )
 
@@ -74,37 +78,37 @@ type Krb5Request struct {
 
 func (kdc Krb5Request) String() (string, error) {
 	var eType, cipher string
-	var crypt []string
-	realm := kdc.ReqBody.Realm
 
-	if kdc.ReqBody.Cname.NameType == Krb5Krb5PrincipalNameType {
-		crypt = kdc.ReqBody.Cname.NameString
+	if kdc.ReqBody.Cname.NameType != Krb5Krb5PrincipalNameType {
+		return "", ErrNoCrypt
 	}
-	if len(crypt) != 1 {
-		return "", errors.New("No crypt alg found")
-	}
+
+	realm := kdc.ReqBody.Realm
+	crypt := kdc.ReqBody.Cname.NameString
+
 	for _, pn := range kdc.Krb5PnData {
 		if pn.Krb5PnDataType == 2 {
 			enc, err := pn.getParsedValue()
 			if err != nil {
-				return "", errors.New("Failed to extract pnData from as-req")
+				return "", ErrReqData
 			}
 			eType = strconv.Itoa(enc.Etype)
 			cipher = hex.EncodeToString(enc.Cipher)
 		}
 	}
+
 	if eType == "" || cipher == "" {
-		return "", errors.New("No encryption type or cipher found")
+		return "", ErrNoCipher
 	}
-	hash := "$krb5$" + eType + "$" + crypt[0] + "$" + realm + "$nodata$" + cipher
-	return hash, nil
+
+	return fmt.Sprintf("$krb5$%s$%s$%s$nodata$%s", eType, crypt[0], realm, cipher), nil
 }
 
 func (pd Krb5PnData) getParsedValue() (Krb5EncryptedData, error) {
 	var encData Krb5EncryptedData
 	_, err := asn1.Unmarshal(pd.Krb5PnDataValue, &encData)
 	if err != nil {
-		return Krb5EncryptedData{}, errors.New("Failed to parse pdata value")
+		return Krb5EncryptedData{}, ErrReqData
 	}
 	return encData, nil
 }

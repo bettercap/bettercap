@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -14,6 +15,7 @@ var (
 	ntlmRe  = regexp.MustCompile("(WWW-|Proxy-|)(Authenticate|Authorization): (NTLM|Negotiate)")
 	challRe = regexp.MustCompile("(WWW-|Proxy-|)(Authenticate): (NTLM|Negotiate)")
 	respRe  = regexp.MustCompile("(WWW-|Proxy-|)(Authorization): (NTLM|Negotiate)")
+	ntlm    = packets.NewNTLMState()
 )
 
 func isNtlm(s string) bool {
@@ -36,27 +38,26 @@ func ntlmParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 			if len(tokens) != 3 {
 				continue
 			}
-			what := "?"
 			if isChallenge(line) {
-				what = "challenge"
+				ntlm.AddServerResponse(tcp.Ack, tokens[2])
 			} else if isResponse(line) {
-				what = "response"
+				ntlm.AddClientResponse(tcp.Seq, tokens[2], func(data packets.NTLMChallengeResponseParsed) {
+					NewSnifferEvent(
+						pkt.Metadata().Timestamp,
+						"ntlm.response",
+						ip.SrcIP.String(),
+						ip.DstIP.String(),
+						SniffData{
+							"data": data,
+						},
+						"%s %s > %s | %s",
+						core.W(core.BG_DGRAY+core.FG_WHITE, "ntlm.response"),
+						vIP(ip.SrcIP),
+						vIP(ip.DstIP),
+						data.LcString(),
+					).Push()
+				})
 			}
-
-			NewSnifferEvent(
-				pkt.Metadata().Timestamp,
-				"ntlm."+what,
-				ip.SrcIP.String(),
-				ip.DstIP.String(),
-				SniffData{
-					what: tokens[2],
-				},
-				"%s %s > %s | %s",
-				core.W(core.BG_DGRAY+core.FG_WHITE, "ntlm."+what),
-				vIP(ip.SrcIP),
-				vIP(ip.DstIP),
-				tokens[2],
-			).Push()
 		}
 	}
 	return true
