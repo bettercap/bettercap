@@ -101,32 +101,18 @@ func NewSnifferContext() *SnifferContext {
 var (
 	no  = core.Red("no")
 	yes = core.Green("yes")
+	yn  = map[bool]string{
+		true:  yes,
+		false: no,
+	}
 )
 
 func (c *SnifferContext) Log(sess *session.Session) {
-	if c.DumpLocal {
-		log.Info("Skip local packets : %s", no)
-	} else {
-		log.Info("Skip local packets : %s", yes)
-	}
-
-	if c.Verbose {
-		log.Info("Verbose            : %s", yes)
-	} else {
-		log.Info("Verbose            : %s", no)
-	}
-
-	if c.Filter != "" {
-		log.Info("BPF Filter         : '%s'", core.Yellow(c.Filter))
-	}
-
-	if c.Expression != "" {
-		log.Info("Regular expression : '%s'", core.Yellow(c.Expression))
-	}
-
-	if c.Output != "" {
-		log.Info("File output        : '%s'", core.Yellow(c.Output))
-	}
+	log.Info("Skip local packets : %s", yn[c.DumpLocal])
+	log.Info("Verbose            : %s", yn[c.Verbose])
+	log.Info("BPF Filter         : '%s'", core.Yellow(c.Filter))
+	log.Info("Regular expression : '%s'", core.Yellow(c.Expression))
+	log.Info("File output        : '%s'", core.Yellow(c.Output))
 }
 
 func (c *SnifferContext) Close() {
