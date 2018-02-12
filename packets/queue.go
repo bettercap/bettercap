@@ -32,6 +32,8 @@ type Stats struct {
 	Errors      uint64
 }
 
+type PacketHandler func(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopacket.Packet)
+
 type Queue struct {
 	sync.Mutex
 
@@ -45,6 +47,7 @@ type Queue struct {
 	handle *pcap.Handle
 	source *gopacket.PacketSource
 	active bool
+	router PacketHandler
 }
 
 func NewQueue(iface *bnet.Endpoint) (q *Queue, err error) {
@@ -55,6 +58,7 @@ func NewQueue(iface *bnet.Endpoint) (q *Queue, err error) {
 
 		iface:  iface,
 		active: true,
+		router: nil,
 	}
 
 	if q.handle, err = pcap.OpenLive(iface.Name(), 1024, true, pcap.BlockForever); err != nil {
@@ -115,6 +119,13 @@ func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address ne
 	}
 }
 
+func (q *Queue) Route(r PacketHandler) {
+	q.Lock()
+	defer q.Unlock()
+
+	q.router = r
+}
+
 func (q *Queue) worker() {
 	for pkt := range q.source.Packets() {
 		if q.active == false {
@@ -134,6 +145,10 @@ func (q *Queue) worker() {
 		if leth != nil && lip4 != nil {
 			eth := leth.(*layers.Ethernet)
 			ip4 := lip4.(*layers.IPv4)
+
+			if q.router != nil {
+				q.router(eth, ip4, pkt)
+			}
 
 			// coming from our network
 			if bytes.Compare(q.iface.IP, ip4.SrcIP) != 0 && q.iface.Net.Contains(ip4.SrcIP) {

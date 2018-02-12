@@ -1,8 +1,10 @@
 package modules
 
 import (
+	"bytes"
 	"fmt"
 	"net"
+	"runtime"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/log"
@@ -10,6 +12,8 @@ import (
 	"github.com/evilsocket/bettercap-ng/packets"
 	"github.com/evilsocket/bettercap-ng/session"
 
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/malfunkt/iprange"
 )
 
@@ -135,6 +139,20 @@ func (p *ArpSpoofer) unSpoof() error {
 	return nil
 }
 
+func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopacket.Packet) {
+	if eth == nil || ip4 == nil {
+		return
+	}
+
+	for _, target := range p.addresses {
+		if bytes.Compare(ip4.SrcIP, target) == 0 {
+			// TODO: get real mac && patch
+		} else if bytes.Compare(ip4.DstIP, target) == 0 {
+			// TODO: get real mac && patch
+		}
+	}
+}
+
 func (p *ArpSpoofer) Configure() error {
 	var err error
 	var targets string
@@ -153,8 +171,14 @@ func (p *ArpSpoofer) Configure() error {
 		log.Warning("Running in BAN mode, forwarding not enabled!")
 		p.Session.Firewall.EnableForwarding(false)
 	} else if p.Session.Firewall.IsForwardingEnabled() == false {
-		log.Info("Enabling forwarding.")
-		p.Session.Firewall.EnableForwarding(true)
+		if runtime.GOOS == "windows" {
+			log.Info("Using user space packet routing, disable forwarding.")
+			p.Session.Firewall.EnableForwarding(false)
+			p.Session.Queue.Route(p.pktRouter)
+		} else {
+			log.Info("Enabling forwarding.")
+			p.Session.Firewall.EnableForwarding(true)
+		}
 	}
 
 	return nil
@@ -186,5 +210,6 @@ func (p *ArpSpoofer) Stop() error {
 		<-p.done
 		p.unSpoof()
 		p.ban = false
+		p.Session.Queue.Route(nil)
 	})
 }
