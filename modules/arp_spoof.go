@@ -144,13 +144,21 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 		return
 	}
 
+	// check if this packet is from or to one of the spoofing targets
+	// and therefore needs patching and forwarding.
+	doForward := false
 	for _, target := range p.addresses {
-		if bytes.Compare(ip4.SrcIP, target) == 0 {
-			// TODO: get real mac && patch
-		} else if bytes.Compare(ip4.DstIP, target) == 0 {
-			// TODO: get real mac && patch
+		if bytes.Compare(ip4.SrcIP, target) == 0 || bytes.Compare(ip4.DstIP, target) == 0 {
+			doForward = true
+			break
 		}
 	}
+
+	if doForward == false {
+		return
+	}
+
+	// TODO: update mac address either in src or in dst and reinject the packet.
 }
 
 func (p *ArpSpoofer) Configure() error {
