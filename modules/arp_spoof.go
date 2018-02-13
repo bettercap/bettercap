@@ -170,15 +170,14 @@ func (p *ArpSpoofer) Configure() error {
 	if p.ban == true {
 		log.Warning("Running in BAN mode, forwarding not enabled!")
 		p.Session.Firewall.EnableForwarding(false)
+	} else if runtime.GOOS == "windows" {
+		// TODO Clean. Forwarding should be removed from Windows OS.
+		//log.Info("Using user space packet routing, disable forwarding.")
+		//p.Session.Firewall.EnableForwarding(false)
+		p.Session.Queue.Route(p.pktRouter)
 	} else if p.Session.Firewall.IsForwardingEnabled() == false {
-		if runtime.GOOS == "windows" {
-			log.Info("Using user space packet routing, disable forwarding.")
-			p.Session.Firewall.EnableForwarding(false)
-			p.Session.Queue.Route(p.pktRouter)
-		} else {
-			log.Info("Enabling forwarding.")
-			p.Session.Firewall.EnableForwarding(true)
-		}
+		log.Info("Enabling forwarding.")
+		p.Session.Firewall.EnableForwarding(true)
 	}
 
 	return nil
