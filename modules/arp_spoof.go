@@ -146,10 +146,9 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 
 	// check if this packet is from or to one of the spoofing targets
 	// and therefore needs patching and forwarding.
-	doForward := false
 	for _, target := range p.addresses {
 
-		targetMAC, err := p.getMAC(target, true);
+		targetMAC, err := p.getMAC(target, true)
 		if err != nil {
 			log.Error("Error retrieving target MAC address for %s", target.String(), err)
 			return
