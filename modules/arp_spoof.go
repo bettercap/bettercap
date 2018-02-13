@@ -151,7 +151,7 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 		targetMAC, err := p.getMAC(target, true)
 		if err != nil {
 			log.Error("Error retrieving target MAC address for %s", target.String(), err)
-			return
+			continue
 		}
 
 		// If SRC_MAC is different from both TARGET(s) & GW ignore
@@ -175,29 +175,36 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 		}
 
 		// TODO Craft packet
-		craftedEth := eth
+		var craftedEth = new(layers.Ethernet)
+		craftedEth.BaseLayer = eth.BaseLayer
+		craftedEth.EthernetType = eth.EthernetType
+		craftedEth.Length = eth.Length
 
 		if bytes.Compare(eth.SrcMAC, targetMAC) == 0 {
+			// TODO Delete this debug
 			log.Error("[Reinject] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
-			// TODO Fix Layers
 			craftedEth.SrcMAC = p.Session.Interface.HW
 			craftedEth.DstMAC = p.Session.Gateway.HW
 
 		} else {
+			// TODO Delete this debug
 			log.Warning("[Reinject] [(%s) %s] <=== [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
-			// TODO Fix Layers
 			craftedEth.SrcMAC = p.Session.Interface.HW
 			craftedEth.DstMAC = targetMAC
 		}
 
-		err, serial := packets.Serialize(craftedEth);
+		err, serial := packets.Serialize(craftedEth)
 		if err != nil {
-			log.Error("Error while ReInjecting: [%s] ==> [%s]", craftedEth.SrcMAC, craftedEth.DstMAC, )
-			return
+			log.Error("Error Serializing the crafted packet!")
+			continue
 		}
 
-		log.Warning("[Injectin] [(%s) %s] ===> [%s (%s)] - %v+", craftedEth.SrcMAC, ip4.SrcIP, ip4.DstIP, craftedEth.DstMAC, craftedEth.EthernetType.String())
-		p.Session.Queue.Send(serial)
+		if err := p.Session.Queue.Send(serial); err != nil {
+			log.Error("Error ReInjecting: [%s] ==> [%s]", craftedEth.SrcMAC, craftedEth.DstMAC)
+			continue
+		}
+
+		log.Info("[INJECTED] [(%s) %s] ===> [%s (%s)]\n", craftedEth.SrcMAC, ip4.SrcIP, ip4.DstIP, craftedEth.DstMAC)
 	}
 
 }
