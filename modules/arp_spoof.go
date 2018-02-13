@@ -145,12 +145,59 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 	}
 
 	for _, target := range p.addresses {
-		if bytes.Compare(ip4.SrcIP, target) == 0 {
-			// TODO: get real mac && patch
-		} else if bytes.Compare(ip4.DstIP, target) == 0 {
-			// TODO: get real mac && patch
+
+		targetMAC, err := p.getMAC(target, true);
+		if err != nil {
+			log.Error("Error retrieving target MAC address for %s", target.String(), err)
+			return
 		}
+
+		// If SRC_MAC is different from both TARGET(s) & GW ignore
+		if bytes.Compare(eth.SrcMAC, targetMAC) != 0 && bytes.Compare(eth.SrcMAC, p.Session.Gateway.HW) != 0 {
+			// TODO Delete this debug
+			//log.Debug("[ignored] [%s] ===> [%s]", eth.SrcMAC, eth.DstMAC)
+			continue
+		}
+
+		// If DST_MAC is not our Interface.IP ignore
+		if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
+			// TODO Delete this debug
+			//log.Warning("[notForMiTM] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
+			continue
+		}
+
+		if !ip4.SrcIP.Equal(target) && !ip4.DstIP.Equal(target) {
+			// TODO Delete this debug
+			//log.Warning("[notTarget] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
+			continue
+		}
+
+		// TODO Craft packet
+		craftedEth := eth
+
+		if bytes.Compare(eth.SrcMAC, targetMAC) == 0 {
+			log.Error("[Reinject] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
+			// TODO Fix Layers
+			craftedEth.SrcMAC = p.Session.Interface.HW
+			craftedEth.DstMAC = p.Session.Gateway.HW
+
+		} else {
+			log.Warning("[Reinject] [(%s) %s] <=== [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
+			// TODO Fix Layers
+			craftedEth.SrcMAC = p.Session.Interface.HW
+			craftedEth.DstMAC = targetMAC
+		}
+
+		err, serial := packets.Serialize(craftedEth);
+		if err != nil {
+			log.Error("Error while ReInjecting: [%s] ==> [%s]", craftedEth.SrcMAC, craftedEth.DstMAC, )
+			return
+		}
+
+		log.Warning("[Injectin] [(%s) %s] ===> [%s (%s)] - %v+", craftedEth.SrcMAC, ip4.SrcIP, ip4.DstIP, craftedEth.DstMAC, craftedEth.EthernetType.String())
+		p.Session.Queue.Send(serial)
 	}
+
 }
 
 func (p *ArpSpoofer) Configure() error {
