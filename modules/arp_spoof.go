@@ -125,28 +125,6 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 			log.Debug("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip.String(), hw.String())
 			p.Session.Queue.Send(pkt)
 		}
-
-		// full duplex since we need to route packets
-		// in user land as netsh is dumb
-		if runtime.GOOS == "windows" {
-			// restoring
-			if bytes.Compare(smac, p.Session.Gateway.HW) == 0 {
-				if err, pkt := packets.NewARPReply(ip, hw, p.Session.Gateway.IP, p.Session.Gateway.HW); err != nil {
-					log.Error("Error while creating ARP spoof packet for %s: %s", ip.String(), err)
-				} else {
-					log.Debug("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip.String(), hw.String())
-					p.Session.Queue.Send(pkt)
-				}
-
-			} else {
-				if err, pkt := packets.NewARPReply(ip, smac, p.Session.Gateway.IP, p.Session.Gateway.HW); err != nil {
-					log.Error("Error while creating ARP spoof packet for %s: %s", ip.String(), err)
-				} else {
-					log.Info("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip.String(), hw.String())
-					p.Session.Queue.Send(pkt)
-				}
-			}
-		}
 	}
 }
 
