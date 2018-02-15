@@ -162,6 +162,10 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 		}
 
 		log.Warning("Got packet to route: %s\n", pkt.String())
+
+		copy(eth.DstMAC, p.Session.Gateway.HW)
+
+		log.Warning("After: %s\n", pkt.String())
 	}
 
 }
