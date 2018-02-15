@@ -148,18 +148,19 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 		return
 	}
 
-	log.Info("Got packet to %s -> %s (%s)\n", ip4.SrcIP.String(), ip4.DstIP.String(), eth.DstMAC.String())
+	// log.Info("Got packet to %s -> %s (%s)", ip4.SrcIP.String(), ip4.DstIP.String(), eth.DstMAC.String())
 
 	copy(eth.DstMAC, p.Session.Gateway.HW)
 
-	log.Info("FIXED: %s -> %s (%s)\n", ip4.SrcIP.String(), ip4.DstIP.String(), eth.DstMAC.String())
+	// log.Info("FIXED: %s -> %s (%s)", ip4.SrcIP.String(), ip4.DstIP.String(), eth.DstMAC.String())
 
 	data := pkt.Data()
 	if err := p.Session.Queue.Send(data); err != nil {
 		log.Error("Could not reinject packet: %s", err)
-	} else {
-		log.Info("Reinjected %d bytes.", len(data))
 	}
+	/*else {
+		log.Info("Reinjected %d bytes.", len(data))
+	}*/
 }
 
 func (p *ArpSpoofer) Configure() error {
