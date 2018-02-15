@@ -152,20 +152,51 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 		// 1. generated from one of our targets.
 		// 2. going to the router IP
 		// 3. but with our mac addresses as destination
+		targetMAC, err := p.getMAC(target, true);
+		if err != nil {
+			log.Error("Error retrieving target MAC address for %s", target.String(), err)
+			return
+		}
 
-		if ip4.SrcIP.Equal(target) == false {
-			continue
-		} else if ip4.DstIP.Equal(p.Session.Gateway.IP) == false {
-			continue
-		} else if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
+		// If SRC_MAC is different from both TARGET(s) & GW ignore
+		if bytes.Compare(eth.SrcMAC, targetMAC) != 0 && bytes.Compare(eth.SrcMAC, p.Session.Gateway.HW) != 0 {
+			// TODO Delete this debug
+			//log.Debug("[ignored] [%s] ===> [%s]", eth.SrcMAC, eth.DstMAC)
 			continue
 		}
 
-		log.Info("Got packet to route: %s\n", pkt.String())
+		// If DST_MAC is not our Interface.IP ignore
+		if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
+			// TODO Delete this debug
+			//log.Warning("[notForMiTM] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
+			continue
+		}
 
-		copy(eth.DstMAC, p.Session.Gateway.HW)
+		if !ip4.SrcIP.Equal(target) && !ip4.DstIP.Equal(target) {
+			// TODO Delete this debug
+			//log.Warning("[notTarget] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
+			continue
+		}
 
-		log.Info("After: %s\n", pkt.String())
+		// log.Info("Got packet to route: %s\n", pkt.String())
+
+		if bytes.Compare(eth.SrcMAC, targetMAC) == 0 {
+			copy(eth.SrcMAC, p.Session.Interface.HW)
+			copy(ip4.SrcIP, p.Session.Interface.IP)
+			copy(eth.DstMAC, p.Session.Gateway.HW)
+			copy(ip4.DstIP, ip4.DstIP)
+
+			log.Info("Target is sending")
+		} else {
+			copy(eth.SrcMAC, p.Session.Interface.HW)
+			copy(ip4.SrcIP, p.Session.Interface.IP)
+			copy(eth.DstMAC, targetMAC)
+			copy(ip4.DstIP, target)
+
+			log.Info("Gatway is sending")
+		}
+
+		//log.Info("After: %s\n", pkt.String())
 
 		data := pkt.Data()
 		if err := p.Session.Queue.Send(data); err != nil {
