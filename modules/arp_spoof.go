@@ -143,44 +143,34 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 	if eth == nil || ip4 == nil {
 		return
 	}
+	// If DST_MAC is not our Interface.IP ignore
+	if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
+		return
+	}
 
 	// check if this packet is from or to one of the spoofing targets
 	// and therefore needs patching and forwarding.
 	for _, target := range p.addresses {
-		// we're only interested in packets:
-		//
-		// 1. generated from one of our targets.
-		// 2. going to the router IP
-		// 3. but with our mac addresses as destination
-		targetMAC, err := p.getMAC(target, true)
+		// packet not from/to this target
+		if !ip4.SrcIP.Equal(target) && !ip4.DstIP.Equal(target) {
+			continue
+		}
+
+		targetMAC, err := p.getMAC(target, false)
 		if err != nil {
 			log.Error("Error retrieving target MAC address for %s", target.String(), err)
-			return
+			continue
 		}
 
+		isEthFromTarget := bytes.Compare(eth.SrcMAC, targetMAC) == 0
 		// If SRC_MAC is different from both TARGET(s) & GW ignore
-		if bytes.Compare(eth.SrcMAC, targetMAC) != 0 && bytes.Compare(eth.SrcMAC, p.Session.Gateway.HW) != 0 {
-			// TODO Delete this debug
-			//log.Debug("[ignored] [%s] ===> [%s]", eth.SrcMAC, eth.DstMAC)
-			continue
-		}
-
-		// If DST_MAC is not our Interface.IP ignore
-		if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
-			// TODO Delete this debug
-			//log.Warning("[notForMiTM] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
-			continue
-		}
-
-		if !ip4.SrcIP.Equal(target) && !ip4.DstIP.Equal(target) {
-			// TODO Delete this debug
-			//log.Warning("[notTarget] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
+		if isEthFromTarget == false && bytes.Compare(eth.SrcMAC, p.Session.Gateway.HW) != 0 {
 			continue
 		}
 
 		// log.Info("Got packet to route: %s\n", pkt.String())
 
-		if bytes.Compare(eth.SrcMAC, targetMAC) == 0 {
+		if isEthFromTarget {
 			copy(eth.SrcMAC, p.Session.Interface.HW)
 			copy(ip4.SrcIP, p.Session.Interface.IP)
 			copy(eth.DstMAC, p.Session.Gateway.HW)
@@ -193,10 +183,8 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 			copy(eth.DstMAC, targetMAC)
 			copy(ip4.DstIP, target)
 
-			log.Info("Gatway is sending")
+			log.Info("Gateway is sending")
 		}
-
-		//log.Info("After: %s\n", pkt.String())
 
 		data := pkt.Data()
 		if err := p.Session.Queue.Send(data); err != nil {
