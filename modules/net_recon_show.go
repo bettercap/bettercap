@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/net"
+	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/packets"
 
 	"github.com/dustin/go-humanize"
@@ -47,7 +47,7 @@ func rankByProtoHits(protos map[string]uint64) (ProtoPairList, uint64) {
 	return pl, max
 }
 
-func (d *Discovery) getRow(e *net.Endpoint) []string {
+func (d *Discovery) getRow(e *network.Endpoint) []string {
 	sinceStarted := time.Since(d.Session.StartedAt)
 	sinceFirstSeen := time.Since(e.FirstSeen)
 
@@ -127,9 +127,9 @@ func (d *Discovery) Show(by string) error {
 	pad := 1
 	if d.Session.Interface.HwAddress == d.Session.Gateway.HwAddress {
 		pad = 0
-		targets = append([]*net.Endpoint{d.Session.Interface}, targets...)
+		targets = append([]*network.Endpoint{d.Session.Interface}, targets...)
 	} else {
-		targets = append([]*net.Endpoint{d.Session.Interface, d.Session.Gateway}, targets...)
+		targets = append([]*network.Endpoint{d.Session.Interface, d.Session.Gateway}, targets...)
 	}
 
 	rows := make([][]string, 0)

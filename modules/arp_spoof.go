@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/log"
-	network "github.com/evilsocket/bettercap-ng/net"
+	network "github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/packets"
 	"github.com/evilsocket/bettercap-ng/session"
 

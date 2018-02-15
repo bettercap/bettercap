@@ -1,4 +1,4 @@
-package net
+package network
 
 import (
 	"strings"
@@ -11,7 +11,7 @@ var (
 )
 
 func OuiInit() {
-	bytes, err := Asset("net/oui.dat")
+	bytes, err := Asset("network/oui.dat")
 	if err != nil {
 		panic(err)
 	}

@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/evilsocket/bettercap-ng/core"
-	bnet "github.com/evilsocket/bettercap-ng/net"
+	"github.com/evilsocket/bettercap-ng/network"
 )
 
 const TargetsDefaultTTL = 10
@@ -20,21 +20,21 @@ type Targets struct {
 	sync.Mutex
 
 	Session   *Session `json:"-"`
-	Interface *bnet.Endpoint
-	Gateway   *bnet.Endpoint
-	Targets   map[string]*bnet.Endpoint
+	Interface *network.Endpoint
+	Gateway   *network.Endpoint
+	Targets   map[string]*network.Endpoint
 	TTL       map[string]uint
 	Aliases   map[string]string
 
 	aliasesFileName string
 }
 
-func NewTargets(s *Session, iface, gateway *bnet.Endpoint) *Targets {
+func NewTargets(s *Session, iface, gateway *network.Endpoint) *Targets {
 	t := &Targets{
 		Session:   s,
 		Interface: iface,
 		Gateway:   gateway,
-		Targets:   make(map[string]*bnet.Endpoint),
+		Targets:   make(map[string]*network.Endpoint),
 		TTL:       make(map[string]uint),
 		Aliases:   make(map[string]string),
 	}
@@ -49,11 +49,11 @@ func NewTargets(s *Session, iface, gateway *bnet.Endpoint) *Targets {
 	return t
 }
 
-func (tp *Targets) List() (list []*bnet.Endpoint) {
+func (tp *Targets) List() (list []*network.Endpoint) {
 	tp.Lock()
 	defer tp.Unlock()
 
-	list = make([]*bnet.Endpoint, 0)
+	list = make([]*network.Endpoint, 0)
 	for _, t := range tp.Targets {
 		list = append(list, t)
 	}
@@ -168,7 +168,7 @@ func (tp *Targets) Has(ip string) bool {
 	return false
 }
 
-func (tp *Targets) AddIfNew(ip, mac string) *bnet.Endpoint {
+func (tp *Targets) AddIfNew(ip, mac string) *network.Endpoint {
 	tp.Lock()
 	defer tp.Unlock()
 
@@ -176,7 +176,7 @@ func (tp *Targets) AddIfNew(ip, mac string) *bnet.Endpoint {
 		return nil
 	}
 
-	mac = bnet.NormalizeMac(mac)
+	mac = network.NormalizeMac(mac)
 	if t, found := tp.Targets[mac]; found {
 		if tp.TTL[mac] < TargetsDefaultTTL {
 			tp.TTL[mac]++
@@ -184,9 +184,9 @@ func (tp *Targets) AddIfNew(ip, mac string) *bnet.Endpoint {
 		return t
 	}
 
-	e := bnet.NewEndpoint(ip, mac)
+	e := network.NewEndpoint(ip, mac)
 	/*
-		e.ResolvedCallback = func(e *bnet.Endpoint) {
+		e.ResolvedCallback = func(e *network.Endpoint) {
 			tp.Session.Events.Add("endpoint.resolved", e)
 		}
 	*/

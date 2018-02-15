@@ -13,7 +13,7 @@ build: resources
 resources: oui
 
 oui:
-	@$(GOPATH)/bin/go-bindata -o net/oui_compiled.go -pkg net net/oui.dat
+	@$(GOPATH)/bin/go-bindata -o network/oui_compiled.go -pkg network network/oui.dat
 
 vet:
 	@go vet ./...

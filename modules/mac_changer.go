@@ -8,7 +8,7 @@ import (
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
-	bnet "github.com/evilsocket/bettercap-ng/net"
+	bnet "github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/session"
 )
 

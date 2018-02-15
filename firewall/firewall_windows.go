@@ -5,16 +5,16 @@ import (
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/net"
+	"github.com/evilsocket/bettercap-ng/network"
 )
 
 type WindowsFirewall struct {
-	iface        *net.Endpoint
+	iface        *network.Endpoint
 	forwarding   bool
 	redirections map[string]*Redirection
 }
 
-func Make(iface *net.Endpoint) FirewallManager {
+func Make(iface *network.Endpoint) FirewallManager {
 	firewall := &WindowsFirewall{
 		iface:        iface,
 		forwarding:   false,

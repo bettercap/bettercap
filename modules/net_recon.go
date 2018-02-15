@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/net"
+	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
@@ -68,9 +68,9 @@ func (d Discovery) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (d *Discovery) runDiff(cache net.ArpTable) {
+func (d *Discovery) runDiff(cache network.ArpTable) {
 	// check for endpoints who disappeared
-	var rem net.ArpTable = make(net.ArpTable)
+	var rem network.ArpTable = make(network.ArpTable)
 	for mac, t := range d.Session.Targets.Targets {
 		if _, found := cache[mac]; found == false {
 			rem[mac] = t.IpAddress
@@ -101,7 +101,7 @@ func (d *Discovery) Start() error {
 		iface := d.Session.Interface.Name()
 
 		for d.Running() {
-			if table, err := net.ArpUpdate(iface); err != nil {
+			if table, err := network.ArpUpdate(iface); err != nil {
 				log.Error("%s", err)
 			} else {
 				d.runDiff(table)

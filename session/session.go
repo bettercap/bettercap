@@ -19,7 +19,7 @@ import (
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/firewall"
-	bnet "github.com/evilsocket/bettercap-ng/net"
+	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/packets"
 )
 
@@ -34,8 +34,8 @@ var (
 
 type Session struct {
 	Options   core.Options             `json:"options"`
-	Interface *bnet.Endpoint           `json:"interface"`
-	Gateway   *bnet.Endpoint           `json:"gateway"`
+	Interface *network.Endpoint        `json:"interface"`
+	Gateway   *network.Endpoint        `json:"gateway"`
 	Firewall  firewall.FirewallManager `json:"-"`
 	Env       *Environment             `json:"env"`
 	Targets   *Targets                 `json:"targets"`
@@ -306,9 +306,9 @@ func (s *Session) Start() error {
 		return s.Modules[i].Name() < s.Modules[j].Name()
 	})
 
-	bnet.OuiInit()
+	network.OuiInit()
 
-	if s.Interface, err = bnet.FindInterface(*s.Options.InterfaceName); err != nil {
+	if s.Interface, err = network.FindInterface(*s.Options.InterfaceName); err != nil {
 		return err
 	}
 
@@ -316,7 +316,7 @@ func (s *Session) Start() error {
 		return err
 	}
 
-	if s.Gateway, err = bnet.FindGateway(s.Interface); err != nil {
+	if s.Gateway, err = network.FindGateway(s.Interface); err != nil {
 		s.Events.Log(core.WARNING, "%s", err.Error())
 	}
 

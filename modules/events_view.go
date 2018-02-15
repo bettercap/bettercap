@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/net"
+	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
@@ -20,7 +20,7 @@ func (s EventsStream) viewLogEvent(e session.Event) {
 }
 
 func (s EventsStream) viewEndpointEvent(e session.Event) {
-	t := e.Data.(*net.Endpoint)
+	t := e.Data.(*network.Endpoint)
 	vend := ""
 	name := ""
 

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	bnet "github.com/evilsocket/bettercap-ng/net"
+	"github.com/evilsocket/bettercap-ng/network"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -41,13 +41,13 @@ type Queue struct {
 	Protos  map[string]uint64
 	Traffic map[string]*Traffic
 
-	iface  *bnet.Endpoint
+	iface  *network.Endpoint
 	handle *pcap.Handle
 	source *gopacket.PacketSource
 	active bool
 }
 
-func NewQueue(iface *bnet.Endpoint) (q *Queue, err error) {
+func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 	q = &Queue{
 		Protos:     make(map[string]uint64),
 		Traffic:    make(map[string]*Traffic),
