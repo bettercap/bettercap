@@ -174,37 +174,75 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 			continue
 		}
 
-		// TODO Craft packet
-		var craftedEth = new(layers.Ethernet)
-		craftedEth.BaseLayer = eth.BaseLayer
-		craftedEth.EthernetType = eth.EthernetType
-		craftedEth.Length = eth.Length
+		//
+		// Craft packet
+		// TODO Is it possible craft directly pkt?! So we don't have to mess with anything other than IP and ETH layers?
+		//
+
+		var cETH = new(layers.Ethernet)
+		cETH.BaseLayer = eth.BaseLayer
+		cETH.EthernetType = eth.EthernetType
+		cETH.Length = eth.Length
+
+		var cIPV4 = new(layers.IPv4)
 
 		if bytes.Compare(eth.SrcMAC, targetMAC) == 0 {
 			// TODO Delete this debug
 			log.Error("[Reinject] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
-			craftedEth.SrcMAC = p.Session.Interface.HW
-			craftedEth.DstMAC = p.Session.Gateway.HW
+
+			cETH.SrcMAC = p.Session.Interface.HW
+			cETH.DstMAC = p.Session.Gateway.HW
+
+			cIPV4.SrcIP = p.Session.Interface.IP
+			cIPV4.DstIP = ip4.DstIP
 
 		} else {
+			// Receiving from Gateway
 			// TODO Delete this debug
 			log.Warning("[Reinject] [(%s) %s] <=== [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
-			craftedEth.SrcMAC = p.Session.Interface.HW
-			craftedEth.DstMAC = targetMAC
+
+			cETH.SrcMAC = p.Session.Interface.HW
+			cETH.DstMAC = targetMAC
+
+			cIPV4.SrcIP = ip4.SrcIP
+			cIPV4.DstIP = target
 		}
 
-		err, serial := packets.Serialize(craftedEth)
-		if err != nil {
-			log.Error("Error Serializing the crafted packet!")
+		var buffer gopacket.SerializeBuffer
+		var options gopacket.SerializeOptions
+
+		// TCP
+		tcpLayer := pkt.Layer(layers.LayerTypeTCP)
+		if tcpLayer == nil {
+			log.Error("[Not a TCP .. better handle in another way this PKT Injection .. TODO!]")
+			continue
+		}
+		tcp, _ := tcpLayer.(*layers.TCP)
+
+		// App Layer
+		applicationLayer := pkt.ApplicationLayer()
+		var payload []byte
+		if applicationLayer != nil {
+			payload = applicationLayer.Payload()
+		}
+
+		// Crafted packet
+		buffer = gopacket.NewSerializeBuffer()
+		gopacket.SerializeLayers(buffer, options,
+			cETH,
+			cIPV4,
+			tcp,
+			gopacket.Payload(payload),
+		)
+
+		outgoingPacket := buffer.Bytes()
+		if err := p.Session.Queue.Send(outgoingPacket); err != nil {
+			log.Error("Error ReInjecting: [(%s) %s] ===> [%s (%s)]\n", cETH.SrcMAC, cIPV4.SrcIP, cIPV4.DstIP, cETH.DstMAC)
 			continue
 		}
 
-		if err := p.Session.Queue.Send(serial); err != nil {
-			log.Error("Error ReInjecting: [%s] ==> [%s]", craftedEth.SrcMAC, craftedEth.DstMAC)
-			continue
-		}
-
-		log.Info("[INJECTED] [(%s) %s] ===> [%s (%s)]\n", craftedEth.SrcMAC, ip4.SrcIP, ip4.DstIP, craftedEth.DstMAC)
+		// TODO Are packets really injected?! Can't see them using Wireshark
+		log.Warning("[INJECTED???!] [(%s) %s] ===> [%s (%s)]\n", cETH.SrcMAC, cIPV4.SrcIP, cIPV4.DstIP, cETH.DstMAC)
 	}
 
 }
