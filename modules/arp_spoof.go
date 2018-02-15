@@ -165,7 +165,12 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 
 		copy(eth.DstMAC, p.Session.Gateway.HW)
 
-		log.Warning("After: %s\n", pkt.String())
+		// log.Warning("After: %s\n", pkt.String())
+
+		data := pkt.Data()
+		if err := p.Session.Queue.Send(data); err != nil {
+			log.Error("Could not reinject packet: %s", err)
+		}
 	}
 
 }
