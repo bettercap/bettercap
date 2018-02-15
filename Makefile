@@ -13,7 +13,7 @@ build: resources
 resources: oui
 
 oui:
-	@$(GOPATH)/bin/go-bindata -o network/oui_compiled.go -pkg network network/oui.dat
+	@./network/make_oui.py
 
 vet:
 	@go vet ./...
@@ -25,7 +25,6 @@ lint:
 	@golint ./...
 
 deps:
-	@go get -u github.com/jteeuwen/go-bindata/...
 	@go get ./...
 
 clean:

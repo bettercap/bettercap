@@ -306,8 +306,6 @@ func (s *Session) Start() error {
 		return s.Modules[i].Name() < s.Modules[j].Name()
 	})
 
-	network.OuiInit()
-
 	if s.Interface, err = network.FindInterface(*s.Options.InterfaceName); err != nil {
 		return err
 	}
