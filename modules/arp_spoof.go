@@ -161,21 +161,17 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 			continue
 		}
 
-		log.Warning("Got packet to route: %s\n", pkt.String())
+		log.Info("Got packet to route: %s\n", pkt.String())
 
 		copy(eth.DstMAC, p.Session.Gateway.HW)
 
-		err, raw := packets.Serialize(eth, ip4)
-		if err != nil {
-			log.Error("Error serializing packet: %s.", err)
-			continue
-		}
+		log.Info("After: %s\n", pkt.String())
 
-		// log.Warning("After: %s\n", pkt.String())
-
-		// data := pkt.Data()
-		if err := p.Session.Queue.Send(raw); err != nil {
+		data := pkt.Data()
+		if err := p.Session.Queue.Send(data); err != nil {
 			log.Error("Could not reinject packet: %s", err)
+		} else {
+			log.Info("Reinjected %d bytes.", len(data))
 		}
 	}
 
