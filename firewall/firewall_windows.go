@@ -26,18 +26,13 @@ func Make(iface *net.Endpoint) FirewallManager {
 	return firewall
 }
 
-// TODO: This should be obsolete now .. Clean
 func (f WindowsFirewall) IsForwardingEnabled() bool {
-
-	fmt.Errorf("Forwarding is dead in Windows .. cleanup")
-	return false
-
-	//if out, err := core.Exec("netsh", []string{"interface", "ipv4", "dump"}); err != nil {
-	//	fmt.Printf("%s\n", err)
-	//	return false
-	//} else {
-	//	return strings.Contains(out, "forwarding=enabled")
-	//}
+	if out, err := core.Exec("netsh", []string{"interface", "ipv4", "dump"}); err != nil {
+		fmt.Printf("%s\n", err)
+		return false
+	} else {
+		return strings.Contains(out, "forwarding=enabled")
+	}
 }
 
 func (f WindowsFirewall) isSuccess(output string) bool {
@@ -48,27 +43,21 @@ func (f WindowsFirewall) isSuccess(output string) bool {
 	}
 }
 
-// TODO: This should be obsolete now .. Clean
 func (f WindowsFirewall) EnableForwarding(enabled bool) error {
+	v := "enabled"
+	if enabled == false {
+		v = "disabled"
+	}
+	out, err := core.Exec("netsh", []string{"interface", "ipv4", "set", "interface", fmt.Sprintf("%d", f.iface.Index), fmt.Sprintf("forwarding=\"%s\"", v)})
+	if err != nil {
+		return err
+	}
 
-	fmt.Errorf("Forwarding is dead in Windows .. cleanup")
+	if f.isSuccess(out) == false {
+		return fmt.Errorf("Unexpected netsh output: %s", out)
+	}
+
 	return nil
-
-	//
-	//v := "enabled"
-	//if enabled == false {
-	//	v = "disabled"
-	//}
-	//out, err := core.Exec("netsh", []string{"interface", "ipv4", "set", "interface", fmt.Sprintf("%d", f.iface.Index), fmt.Sprintf("forwarding=\"%s\"", v)})
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//if f.isSuccess(out) == false {
-	//	return fmt.Errorf("Unexpected netsh output: %s", out)
-	//}
-	//
-	//return nil
 }
 
 func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
@@ -145,7 +134,7 @@ func (f WindowsFirewall) Restore() {
 		}
 	}
 
-	//if err := f.EnableForwarding(f.forwarding); err != nil {
-	//	fmt.Printf("%s", err)
-	//}
+	if err := f.EnableForwarding(f.forwarding); err != nil {
+		fmt.Printf("%s", err)
+	}
 }
