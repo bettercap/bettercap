@@ -142,39 +142,24 @@ func (p *ArpSpoofer) unSpoof() error {
 func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopacket.Packet) {
 	if eth == nil || ip4 == nil {
 		return
+	} else if ip4.DstIP.Equal(p.Session.Gateway.IP) {
+		return
+	} else if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
+		return
 	}
 
-	// check if this packet is from or to one of the spoofing targets
-	// and therefore needs patching and forwarding.
-	for _, target := range p.addresses {
-		// we're only interested in packets:
-		//
-		// 1. generated from one of our targets.
-		// 2. going to the router IP
-		// 3. but with our mac addresses as destination
+	log.Info("Got packet to route: %s\n", pkt.String())
 
-		if ip4.SrcIP.Equal(target) == false {
-			continue
-		} else if ip4.DstIP.Equal(p.Session.Gateway.IP) == false {
-			continue
-		} else if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
-			continue
-		}
+	copy(eth.DstMAC, p.Session.Gateway.HW)
 
-		log.Info("Got packet to route: %s\n", pkt.String())
+	log.Info("After: %s\n", pkt.String())
 
-		copy(eth.DstMAC, p.Session.Gateway.HW)
-
-		log.Info("After: %s\n", pkt.String())
-
-		data := pkt.Data()
-		if err := p.Session.Queue.Send(data); err != nil {
-			log.Error("Could not reinject packet: %s", err)
-		} else {
-			log.Info("Reinjected %d bytes.", len(data))
-		}
+	data := pkt.Data()
+	if err := p.Session.Queue.Send(data); err != nil {
+		log.Error("Could not reinject packet: %s", err)
+	} else {
+		log.Info("Reinjected %d bytes.", len(data))
 	}
-
 }
 
 func (p *ArpSpoofer) Configure() error {
