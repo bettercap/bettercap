@@ -144,18 +144,59 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 		return
 	}
 
-	// we want everything which is directed to our mac but not our ip
-	if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) == 0 && ip4.DstIP.Equal(p.Session.Interface.IP) == false {
-		// get the real mac of the destination ip
-		hw, err := p.getMAC(ip4.DstIP, false)
+	// check if this packet is from or to one of the spoofing targets
+	// and therefore needs patching and forwarding.
+	for _, target := range p.addresses {
+		// we're only interested in packets:
+		//
+		// 1. generated from one of our targets.
+		// 2. going to the router IP
+		// 3. but with our mac addresses as destination
+		targetMAC, err := p.getMAC(target, true)
 		if err != nil {
-			log.Error("Error while looking up hardware address for %s: %s", ip4.DstIP.String(), err)
+			log.Error("Error retrieving target MAC address for %s", target.String(), err)
 			return
 		}
 
-		log.Info("Rerouting packet: %s -> %s (%s)", ip4.SrcIP.String(), ip4.DstIP.String(), eth.DstMAC.String())
+		// If SRC_MAC is different from both TARGET(s) & GW ignore
+		if bytes.Compare(eth.SrcMAC, targetMAC) != 0 && bytes.Compare(eth.SrcMAC, p.Session.Gateway.HW) != 0 {
+			// TODO Delete this debug
+			//log.Debug("[ignored] [%s] ===> [%s]", eth.SrcMAC, eth.DstMAC)
+			continue
+		}
 
-		copy(eth.DstMAC, hw)
+		// If DST_MAC is not our Interface.IP ignore
+		if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
+			// TODO Delete this debug
+			//log.Warning("[notForMiTM] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
+			continue
+		}
+
+		if !ip4.SrcIP.Equal(target) && !ip4.DstIP.Equal(target) {
+			// TODO Delete this debug
+			//log.Warning("[notTarget] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
+			continue
+		}
+
+		// log.Info("Got packet to route: %s\n", pkt.String())
+
+		if bytes.Compare(eth.SrcMAC, targetMAC) == 0 {
+			copy(eth.SrcMAC, p.Session.Interface.HW)
+			copy(ip4.SrcIP, p.Session.Interface.IP)
+			copy(eth.DstMAC, p.Session.Gateway.HW)
+			copy(ip4.DstIP, ip4.DstIP)
+
+			log.Info("Target is sending")
+		} else {
+			copy(eth.SrcMAC, p.Session.Interface.HW)
+			copy(ip4.SrcIP, p.Session.Interface.IP)
+			copy(eth.DstMAC, targetMAC)
+			copy(ip4.DstIP, target)
+
+			log.Info("Gatway is sending")
+		}
+
+		//log.Info("After: %s\n", pkt.String())
 
 		data := pkt.Data()
 		if err := p.Session.Queue.Send(data); err != nil {
