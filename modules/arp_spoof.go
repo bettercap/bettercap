@@ -125,6 +125,28 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 			log.Debug("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip.String(), hw.String())
 			p.Session.Queue.Send(pkt)
 		}
+
+		// full duplex since we need to route packets
+		// in user land as netsh is dumb
+		if runtime.GOOS == "windows" {
+			// restoring
+			if bytes.Compare(smac, p.Session.Gateway.HW) == 0 {
+				if err, pkt := packets.NewARPReply(ip, hw, p.Session.Gateway.IP, p.Session.Gateway.HW); err != nil {
+					log.Error("Error while creating ARP spoof packet for %s: %s", ip.String(), err)
+				} else {
+					log.Debug("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip.String(), hw.String())
+					p.Session.Queue.Send(pkt)
+				}
+
+			} else {
+				if err, pkt := packets.NewARPReply(ip, smac, p.Session.Gateway.IP, p.Session.Gateway.HW); err != nil {
+					log.Error("Error while creating ARP spoof packet for %s: %s", ip.String(), err)
+				} else {
+					log.Debug("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip.String(), hw.String())
+					p.Session.Queue.Send(pkt)
+				}
+			}
+		}
 	}
 }
 
@@ -142,25 +164,26 @@ func (p *ArpSpoofer) unSpoof() error {
 func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopacket.Packet) {
 	if eth == nil || ip4 == nil {
 		return
-	} else if ip4.DstIP.Equal(p.Session.Gateway.IP) {
-		return
-	} else if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
-		return
 	}
 
-	// log.Info("Got packet to %s -> %s (%s)", ip4.SrcIP.String(), ip4.DstIP.String(), eth.DstMAC.String())
+	// we want everything which is directed to our mac but not our ip
+	if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) == 0 && ip4.DstIP.Equal(p.Session.Interface.IP) == false {
+		// get the real mac of the destination ip
+		hw, err := p.getMAC(ip4.DstIP, false)
+		if err != nil {
+			log.Error("Error while looking up hardware address for %s: %s", ip4.DstIP.String(), err)
+			return
+		}
 
-	copy(eth.DstMAC, p.Session.Gateway.HW)
+		log.Info("Rerouting packet: %s -> %s (%s)", ip4.SrcIP.String(), ip4.DstIP.String(), eth.DstMAC.String())
 
-	// log.Info("FIXED: %s -> %s (%s)", ip4.SrcIP.String(), ip4.DstIP.String(), eth.DstMAC.String())
+		copy(eth.DstMAC, hw)
 
-	data := pkt.Data()
-	if err := p.Session.Queue.Send(data); err != nil {
-		log.Error("Could not reinject packet: %s", err)
+		data := pkt.Data()
+		if err := p.Session.Queue.Send(data); err != nil {
+			log.Error("Could not reinject packet: %s", err)
+		}
 	}
-	/*else {
-		log.Info("Reinjected %d bytes.", len(data))
-	}*/
 }
 
 func (p *ArpSpoofer) Configure() error {
