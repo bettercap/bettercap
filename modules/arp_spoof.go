@@ -147,102 +147,21 @@ func (p *ArpSpoofer) pktRouter(eth *layers.Ethernet, ip4 *layers.IPv4, pkt gopac
 	// check if this packet is from or to one of the spoofing targets
 	// and therefore needs patching and forwarding.
 	for _, target := range p.addresses {
-
-		targetMAC, err := p.getMAC(target, true)
-		if err != nil {
-			log.Error("Error retrieving target MAC address for %s", target.String(), err)
-			continue
-		}
-
-		// If SRC_MAC is different from both TARGET(s) & GW ignore
-		if bytes.Compare(eth.SrcMAC, targetMAC) != 0 && bytes.Compare(eth.SrcMAC, p.Session.Gateway.HW) != 0 {
-			// TODO Delete this debug
-			//log.Debug("[ignored] [%s] ===> [%s]", eth.SrcMAC, eth.DstMAC)
-			continue
-		}
-
-		// If DST_MAC is not our Interface.IP ignore
-		if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
-			// TODO Delete this debug
-			//log.Warning("[notForMiTM] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
-			continue
-		}
-
-		if !ip4.SrcIP.Equal(target) && !ip4.DstIP.Equal(target) {
-			// TODO Delete this debug
-			//log.Warning("[notTarget] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
-			continue
-		}
-
+		// we're only interested in packets:
 		//
-		// Craft packet
-		// TODO Is it possible craft directly pkt?! So we don't have to mess with anything other than IP and ETH layers?
-		//
+		// 1. generated from one of our targets.
+		// 2. going to the router IP
+		// 3. but with our mac addresses as destination
 
-		var cETH = new(layers.Ethernet)
-		cETH.BaseLayer = eth.BaseLayer
-		cETH.EthernetType = eth.EthernetType
-		cETH.Length = eth.Length
-
-		var cIPV4 = new(layers.IPv4)
-
-		if bytes.Compare(eth.SrcMAC, targetMAC) == 0 {
-			// TODO Delete this debug
-			log.Error("[Reinject] [(%s) %s] ===> [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
-
-			cETH.SrcMAC = p.Session.Interface.HW
-			cETH.DstMAC = p.Session.Gateway.HW
-
-			cIPV4.SrcIP = p.Session.Interface.IP
-			cIPV4.DstIP = ip4.DstIP
-
-		} else {
-			// Receiving from Gateway
-			// TODO Delete this debug
-			log.Warning("[Reinject] [(%s) %s] <=== [%s (%s)]", eth.SrcMAC, ip4.SrcIP, ip4.DstIP, eth.DstMAC)
-
-			cETH.SrcMAC = p.Session.Interface.HW
-			cETH.DstMAC = targetMAC
-
-			cIPV4.SrcIP = ip4.SrcIP
-			cIPV4.DstIP = target
-		}
-
-		var buffer gopacket.SerializeBuffer
-		var options gopacket.SerializeOptions
-
-		// TCP
-		tcpLayer := pkt.Layer(layers.LayerTypeTCP)
-		if tcpLayer == nil {
-			log.Error("[Not a TCP .. better handle in another way this PKT Injection .. TODO!]")
+		if ip4.SrcIP.Equal(target) == false {
 			continue
-		}
-		tcp, _ := tcpLayer.(*layers.TCP)
-
-		// App Layer
-		applicationLayer := pkt.ApplicationLayer()
-		var payload []byte
-		if applicationLayer != nil {
-			payload = applicationLayer.Payload()
-		}
-
-		// Crafted packet
-		buffer = gopacket.NewSerializeBuffer()
-		gopacket.SerializeLayers(buffer, options,
-			cETH,
-			cIPV4,
-			tcp,
-			gopacket.Payload(payload),
-		)
-
-		outgoingPacket := buffer.Bytes()
-		if err := p.Session.Queue.Send(outgoingPacket); err != nil {
-			log.Error("Error ReInjecting: [(%s) %s] ===> [%s (%s)]\n", cETH.SrcMAC, cIPV4.SrcIP, cIPV4.DstIP, cETH.DstMAC)
+		} else if ip4.DstIP.Equal(p.Session.Gateway.IP) == false {
+			continue
+		} else if bytes.Compare(eth.DstMAC, p.Session.Interface.HW) != 0 {
 			continue
 		}
 
-		// TODO Are packets really injected?! Can't see them using Wireshark
-		log.Warning("[INJECTED???!] [(%s) %s] ===> [%s (%s)]\n", cETH.SrcMAC, cIPV4.SrcIP, cIPV4.DstIP, cETH.DstMAC)
+		log.Warning("Got packet to route: %s\n", pkt.String())
 	}
 
 }
