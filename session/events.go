@@ -54,6 +54,18 @@ func NewEventPool(debug bool, silent bool) *EventPool {
 	}
 }
 
+func (p *EventPool) SetSilent(s bool) {
+	p.Lock()
+	defer p.Unlock()
+	p.silent = s
+}
+
+func (p *EventPool) SetDebug(d bool) {
+	p.Lock()
+	defer p.Unlock()
+	p.debug = d
+}
+
 func (p *EventPool) Add(tag string, data interface{}) {
 	p.Lock()
 	defer p.Unlock()

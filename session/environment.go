@@ -9,12 +9,16 @@ import (
 	"github.com/evilsocket/bettercap-ng/core"
 )
 
+type SetCallback func(newValue string)
+
 type Environment struct {
 	sync.Mutex
 
 	Padding int               `json:"-"`
 	Storage map[string]string `json:"storage"`
-	sess    *Session
+
+	cbs  map[string]SetCallback
+	sess *Session
 }
 
 func NewEnvironment(s *Session) *Environment {
@@ -22,6 +26,7 @@ func NewEnvironment(s *Session) *Environment {
 		Padding: 0,
 		Storage: make(map[string]string),
 		sess:    s,
+		cbs:     make(map[string]SetCallback),
 	}
 
 	return env
@@ -36,12 +41,28 @@ func (env *Environment) Has(name string) bool {
 	return found
 }
 
+func (env *Environment) SetCallback(name string, cb SetCallback) {
+	env.Lock()
+	defer env.Unlock()
+	env.cbs[name] = cb
+}
+
+func (env *Environment) WithCallback(name, value string, cb SetCallback) string {
+	ret := env.Set(name, value)
+	env.SetCallback(name, cb)
+	return ret
+}
+
 func (env *Environment) Set(name, value string) string {
 	env.Lock()
 	defer env.Unlock()
 
 	old, _ := env.Storage[name]
 	env.Storage[name] = value
+
+	if cb, hasCallback := env.cbs[name]; hasCallback == true {
+		cb(value)
+	}
 
 	env.sess.Events.Log(core.DEBUG, "env.change: %s -> '%s'", name, value)
 

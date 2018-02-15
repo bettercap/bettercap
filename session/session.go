@@ -272,6 +272,30 @@ func (s *Session) setupEnv() {
 	s.Env.Set("iface.mac", s.Interface.HwAddress)
 	s.Env.Set("gateway.address", s.Gateway.IpAddress)
 	s.Env.Set("gateway.mac", s.Gateway.HwAddress)
+
+	dbg := "false"
+	if *s.Options.Debug {
+		dbg = "true"
+	}
+	s.Env.WithCallback("log.debug", dbg, func(newValue string) {
+		newDbg := false
+		if newValue == "true" {
+			newDbg = true
+		}
+		s.Events.SetDebug(newDbg)
+	})
+
+	silent := "false"
+	if *s.Options.Silent {
+		silent = "true"
+	}
+	s.Env.WithCallback("log.silent", silent, func(newValue string) {
+		newSilent := false
+		if newValue == "true" {
+			newSilent = true
+		}
+		s.Events.SetSilent(newSilent)
+	})
 }
 
 func (s *Session) Start() error {
