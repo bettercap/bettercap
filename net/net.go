@@ -12,6 +12,10 @@ import (
 
 const MonitorModeAddress = "0.0.0.0"
 
+var (
+	IPv4Validator = regexp.MustCompile("^[0-9\\.]+/?\\d*$")
+)
+
 func NormalizeMac(mac string) string {
 	var parts []string
 	if strings.ContainsRune(mac, '-') {
@@ -77,7 +81,7 @@ func FindInterface(name string) (*Endpoint, error) {
 				for _, addr := range addrs {
 					ip := addr.String()
 					// Make sure this is an IPv4 address.
-					if m, _ := regexp.MatchString("^[0-9\\.]+/?\\d*$", ip); m == true {
+					if IPv4Validator.MatchString(ip) {
 						if strings.IndexRune(ip, '/') == -1 {
 							// plain ip
 							e = NewEndpointNoResolve(ip, mac, ifName, 0)
