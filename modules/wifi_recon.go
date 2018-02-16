@@ -321,7 +321,7 @@ func (w *WiFiRecon) startDeauth() error {
 	return errors.New("No base station or client set.")
 }
 
-func (w *WiFiRecon) discoverAccessPoints(radiotapLayer gopacket.Layer, dot11 *layers.Dot11, packet gopacket.Packet) {
+func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	dot11infoLayer := packet.Layer(layers.LayerTypeDot11InformationElement)
 	if dot11infoLayer == nil {
 		return
@@ -335,7 +335,6 @@ func (w *WiFiRecon) discoverAccessPoints(radiotapLayer gopacket.Layer, dot11 *la
 	dst := dot11.Address1
 	// packet sent to broadcast mac with a SSID set?
 	if bytes.Compare(dst, network.BroadcastMac) == 0 && len(dot11info.Info) > 0 {
-		radiotap, _ := radiotapLayer.(*layers.RadioTap)
 		ssid := string(dot11info.Info)
 		bssid := dot11.Address3.String()
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
@@ -343,7 +342,7 @@ func (w *WiFiRecon) discoverAccessPoints(radiotapLayer gopacket.Layer, dot11 *la
 	}
 }
 
-func (w *WiFiRecon) discoverClients(radiotapLayer gopacket.Layer, dot11 *layers.Dot11, ap net.HardwareAddr, packet gopacket.Packet) {
+func (w *WiFiRecon) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot11, ap net.HardwareAddr, packet gopacket.Packet) {
 	// only check data packets of connected stations
 	if dot11.Type.MainType() != layers.Dot11TypeData {
 		return
@@ -352,7 +351,6 @@ func (w *WiFiRecon) discoverClients(radiotapLayer gopacket.Layer, dot11 *layers.
 	bssid := dot11.Address1
 	// packet going to this specific BSSID?
 	if bytes.Compare(bssid, ap) == 0 {
-		radiotap, _ := radiotapLayer.(*layers.RadioTap)
 		src := dot11.Address2
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
 		w.wifi.AddIfNew("", src.String(), false, channel)
@@ -386,29 +384,17 @@ func (w *WiFiRecon) Start() error {
 				break
 			}
 
-			radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
-			if radiotapLayer == nil {
-				continue
-			}
-
-			dot11Layer := packet.Layer(layers.LayerTypeDot11)
-			if dot11Layer == nil {
-				continue
-			}
-
-			dot11, ok := dot11Layer.(*layers.Dot11)
-			if ok == false {
-				continue
-			}
-
-			w.updateStats(dot11, packet)
-
-			if w.isApSelected() == false {
+			// perform initial dot11 parsing and layers validation
+			if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok == true {
+				// keep collecting traffic statistics
+				w.updateStats(dot11, packet)
 				// no access point bssid selected, keep scanning for other aps
-				w.discoverAccessPoints(radiotapLayer, dot11, packet)
-			} else {
-				// discover stations connected to the selected access point bssid
-				w.discoverClients(radiotapLayer, dot11, w.accessPoint, packet)
+				if w.isApSelected() == false {
+					w.discoverAccessPoints(radiotap, dot11, packet)
+				} else {
+					// discover stations connected to the selected access point bssid
+					w.discoverClients(radiotap, dot11, w.accessPoint, packet)
+				}
 			}
 		}
 	})
