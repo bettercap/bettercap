@@ -143,7 +143,7 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 		traffic = humanize.Bytes(bytes)
 	}
 
-	return []string{
+	row := []string{
 		bssid,
 		station.ESSID(),
 		station.Vendor,
@@ -151,6 +151,17 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 		traffic,
 		seen,
 	}
+	if w.isApSelected() {
+		row = []string{
+			bssid,
+			station.Vendor,
+			strconv.Itoa(station.Channel),
+			traffic,
+			seen,
+		}
+	}
+
+	return row
 }
 
 func mhz2chan(freq int) int {
@@ -189,6 +200,14 @@ func (w *WiFiRecon) showTable(header []string, rows [][]string) {
 	table.Render()
 }
 
+func (w *WiFiRecon) isApSelected() bool {
+	return len(w.accessPoint) > 0
+}
+
+func (w *WiFiRecon) isClientSelected() bool {
+	return len(w.client) > 0
+}
+
 func (w *WiFiRecon) Show(by string) error {
 	if w.wifi == nil {
 		return errors.New("WiFi is not yet initialized.")
@@ -206,7 +225,14 @@ func (w *WiFiRecon) Show(by string) error {
 		rows = append(rows, w.getRow(s))
 	}
 
-	w.showTable([]string{"BSSID", "SSID", "Vendor", "Channel", "Traffic", "Last Seen"}, rows)
+	columns := []string{"BSSID", "SSID", "Vendor", "Channel", "Traffic", "Last Seen"}
+	if w.isApSelected() {
+		// these are clients
+		columns = []string{"MAC", "Vendor", "Channel", "Traffic", "Last Seen"}
+		fmt.Printf("\n%s clients:\n", w.accessPoint.String())
+	}
+
+	w.showTable(columns, rows)
 
 	w.Session.Refresh()
 
@@ -260,10 +286,8 @@ func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAdd
 }
 
 func (w *WiFiRecon) startDeauth() error {
-	isTargetingAP := len(w.accessPoint) > 0
-	if isTargetingAP {
-		isTargetingCLI := len(w.client) > 0
-		if isTargetingCLI {
+	if w.isApSelected() {
+		if w.isClientSelected() {
 			// deauth a specific client
 			w.sendDeauthPacket(w.accessPoint, w.client)
 		} else {
@@ -300,22 +324,19 @@ func (w *WiFiRecon) discoverAccessPoints(radiotapLayer gopacket.Layer, dot11 *la
 	}
 }
 
-func (w *WiFiRecon) discoverClients(radiotapLayer gopacket.Layer, dot11 *layers.Dot11, bs net.HardwareAddr, packet gopacket.Packet) {
+func (w *WiFiRecon) discoverClients(radiotapLayer gopacket.Layer, dot11 *layers.Dot11, ap net.HardwareAddr, packet gopacket.Packet) {
+	// only check data packets of connected stations
 	if dot11.Type.MainType() != layers.Dot11TypeData {
 		return
 	}
 
-	toDS := dot11.Flags.ToDS()
-	fromDS := dot11.Flags.FromDS()
-	if toDS && !fromDS {
-		src := dot11.Address2
-		bssid := dot11.Address1
-		// packet going to this specific BSSID?
-		if bytes.Compare(bssid, bs) == 0 {
-			radiotap, _ := radiotapLayer.(*layers.RadioTap)
-			channel := mhz2chan(int(radiotap.ChannelFrequency))
-			w.wifi.AddIfNew("", src.String(), false, channel)
-		}
+	src := dot11.Address2
+	bssid := dot11.Address1
+	// packet going to this specific BSSID?
+	if bytes.Compare(bssid, ap) == 0 {
+		radiotap, _ := radiotapLayer.(*layers.RadioTap)
+		channel := mhz2chan(int(radiotap.ChannelFrequency))
+		w.wifi.AddIfNew("", src.String(), false, channel)
 	}
 }
 
@@ -363,7 +384,7 @@ func (w *WiFiRecon) Start() error {
 
 			w.updateStats(dot11, packet)
 
-			if len(w.accessPoint) == 0 {
+			if w.isApSelected() == false {
 				// no access point bssid selected, keep scanning for other aps
 				w.discoverAccessPoints(radiotapLayer, dot11, packet)
 			} else {
