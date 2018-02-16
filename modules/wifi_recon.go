@@ -247,7 +247,7 @@ func (w *WiFiRecon) Configure() error {
 	defer ihandle.CleanUp()
 
 	if err = ihandle.SetRFMon(true); err != nil {
-		return err
+		return fmt.Errorf("Interface not in monitor mode? %s", err)
 	} else if err = ihandle.SetSnapLen(65536); err != nil {
 		return err
 	} else if err = ihandle.SetTimeout(pcap.BlockForever); err != nil {
