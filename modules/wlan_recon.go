@@ -255,9 +255,8 @@ func (w *WDiscovery) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAd
 
 func (w *WDiscovery) startDeauth() error {
 	isTargetingAP := len(w.apTarget) > 0
-	isTargetingCLI := len(w.cliTarget) > 0
-
 	if isTargetingAP {
+		isTargetingCLI := len(w.cliTarget) > 0
 		if isTargetingCLI {
 			// deauth a specific client
 			w.sendDeauthPacket(w.apTarget, w.cliTarget)
