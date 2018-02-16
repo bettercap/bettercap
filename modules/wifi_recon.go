@@ -27,12 +27,11 @@ import (
 type WDiscovery struct {
 	session.SessionModule
 
-	wifi         *WiFi
-	stats        *WiFiStats
-	handle       *pcap.Handle
-	BroadcastMac []byte
-	cliTarget    net.HardwareAddr
-	apTarget     net.HardwareAddr
+	wifi      *WiFi
+	stats     *WiFiStats
+	handle    *pcap.Handle
+	cliTarget net.HardwareAddr
+	apTarget  net.HardwareAddr
 }
 
 func NewWDiscovery(s *session.Session) *WDiscovery {
@@ -283,7 +282,7 @@ func (w *WDiscovery) discoverAccessPoints(packet gopacket.Packet) {
 	dst := dot11.Address1
 
 	// packet sent to broadcast mac with a SSID set?
-	if bytes.Compare(dst, w.BroadcastMac) == 0 && len(ssid) > 0 {
+	if bytes.Compare(dst, network.BroadcastMac) == 0 && len(ssid) > 0 {
 		radiotap, _ := radiotapLayer.(*layers.RadioTap)
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
 		w.wifi.AddIfNew(ssid, bssid, true, channel)
@@ -341,7 +340,6 @@ func (w *WDiscovery) Configure() error {
 	}
 
 	w.wifi = NewWiFi(w.Session, w.Session.Interface)
-	w.BroadcastMac, _ = net.ParseMAC(network.BroadcastMac)
 
 	return nil
 }

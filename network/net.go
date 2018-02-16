@@ -12,12 +12,12 @@ import (
 
 const (
 	MonitorModeAddress = "0.0.0.0"
-	BroadcastMac       = "ff:ff:ff:ff:ff:ff"
 	IPv4MulticastStart = "01:00:5e:00:00:00"
 	IPv4MulticastEnd   = "01:00:5e:7f:ff:ff"
 )
 
 var (
+	BroadcastMac  = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 	IPv4Validator = regexp.MustCompile("^[0-9\\.]+/?\\d*$")
 )
 
