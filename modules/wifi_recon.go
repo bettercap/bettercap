@@ -286,6 +286,15 @@ func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAdd
 }
 
 func (w *WiFiRecon) startDeauth() error {
+	// if not already running, temporarily enable the pcap handle
+	// for packet injection
+	if w.Running() == false {
+		if err := w.Configure(); err != nil {
+			return err
+		}
+		defer w.handle.Close()
+	}
+
 	if w.isApSelected() {
 		if w.isClientSelected() {
 			// deauth a specific client
