@@ -277,12 +277,7 @@ func (w *WiFiRecon) startDeauth() error {
 	return errors.New("No base station or client set.")
 }
 
-func (w *WiFiRecon) discoverAccessPoints(packet gopacket.Packet) {
-	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
-	if radiotapLayer == nil {
-		return
-	}
-
+func (w *WiFiRecon) discoverAccessPoints(radiotapLayer gopacket.Layer, dot11 *layers.Dot11, packet gopacket.Packet) {
 	dot11infoLayer := packet.Layer(layers.LayerTypeDot11InformationElement)
 	if dot11infoLayer == nil {
 		return
@@ -293,12 +288,6 @@ func (w *WiFiRecon) discoverAccessPoints(packet gopacket.Packet) {
 		return
 	}
 
-	dot11Layer := packet.Layer(layers.LayerTypeDot11)
-	if dot11Layer == nil {
-		return
-	}
-
-	dot11, _ := dot11Layer.(*layers.Dot11)
 	ssid := string(dot11info.Info)
 	bssid := dot11.Address3.String()
 	dst := dot11.Address1
@@ -311,25 +300,13 @@ func (w *WiFiRecon) discoverAccessPoints(packet gopacket.Packet) {
 	}
 }
 
-func (w *WiFiRecon) discoverClients(bs net.HardwareAddr, packet gopacket.Packet) {
-	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
-	if radiotapLayer == nil {
-		return
-	}
-
-	dot11Layer := packet.Layer(layers.LayerTypeDot11)
-	if dot11Layer == nil {
-		return
-	}
-
-	dot11, _ := dot11Layer.(*layers.Dot11)
+func (w *WiFiRecon) discoverClients(radiotapLayer gopacket.Layer, dot11 *layers.Dot11, bs net.HardwareAddr, packet gopacket.Packet) {
 	if dot11.Type.MainType() != layers.Dot11TypeData {
 		return
 	}
 
 	toDS := dot11.Flags.ToDS()
 	fromDS := dot11.Flags.FromDS()
-
 	if toDS && !fromDS {
 		src := dot11.Address2
 		bssid := dot11.Address1
@@ -342,29 +319,7 @@ func (w *WiFiRecon) discoverClients(bs net.HardwareAddr, packet gopacket.Packet)
 	}
 }
 
-func (w *WiFiRecon) updateStats(packet gopacket.Packet) {
-	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
-	if radiotapLayer == nil {
-		return
-	}
-
-	dot11infoLayer := packet.Layer(layers.LayerTypeDot11InformationElement)
-	if dot11infoLayer == nil {
-		return
-	}
-
-	dot11info, _ := dot11infoLayer.(*layers.Dot11InformationElement)
-	if dot11info.ID != layers.Dot11InformationElementIDSSID {
-		return
-	}
-
-	dot11Layer := packet.Layer(layers.LayerTypeDot11)
-	if dot11Layer == nil {
-		return
-	}
-
-	dot11, _ := dot11Layer.(*layers.Dot11)
-
+func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	// FIXME: This doesn't consider the actual direction of the
 	// packet (which address is the source, which the destination,
 	// etc). It should be fixed and counter splitted into two
@@ -391,14 +346,29 @@ func (w *WiFiRecon) Start() error {
 				break
 			}
 
-			w.updateStats(packet)
+			radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
+			if radiotapLayer == nil {
+				continue
+			}
+
+			dot11Layer := packet.Layer(layers.LayerTypeDot11)
+			if dot11Layer == nil {
+				continue
+			}
+
+			dot11, ok := dot11Layer.(*layers.Dot11)
+			if ok == false {
+				continue
+			}
+
+			w.updateStats(dot11, packet)
 
 			if len(w.accessPoint) == 0 {
 				// no access point bssid selected, keep scanning for other aps
-				w.discoverAccessPoints(packet)
+				w.discoverAccessPoints(radiotapLayer, dot11, packet)
 			} else {
 				// discover stations connected to the selected access point bssid
-				w.discoverClients(w.accessPoint, packet)
+				w.discoverClients(radiotapLayer, dot11, w.accessPoint, packet)
 			}
 		}
 	})
