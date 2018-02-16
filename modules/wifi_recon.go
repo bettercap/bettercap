@@ -13,6 +13,7 @@ import (
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/network"
+	"github.com/evilsocket/bettercap-ng/packets"
 	"github.com/evilsocket/bettercap-ng/session"
 
 	"github.com/google/gopacket"
@@ -213,47 +214,22 @@ func (w *WDiscovery) Show(by string) error {
 	return nil
 }
 
-func (w *WDiscovery) buildDeauthPkt(address1 net.HardwareAddr, address2 net.HardwareAddr, address3 net.HardwareAddr, _type layers.Dot11Type, reason layers.Dot11Reason, seq uint16) []byte {
-	var (
-		deauthLayer   layers.Dot11MgmtDeauthentication
-		dot11Layer    layers.Dot11
-		radioTapLayer layers.RadioTap
-	)
-
-	deauthLayer.Reason = reason
-
-	dot11Layer.Address1 = address1
-	dot11Layer.Address2 = address2
-	dot11Layer.Address3 = address3
-	dot11Layer.Type = _type
-	dot11Layer.SequenceNumber = seq
-
-	buffer := gopacket.NewSerializeBuffer()
-	gopacket.SerializeLayers(buffer,
-		gopacket.SerializeOptions{
-			ComputeChecksums: true,
-			FixLengths:       true,
-		},
-		&radioTapLayer,
-		&dot11Layer,
-		&deauthLayer,
-	)
-
-	return buffer.Bytes()
-}
-
 func (w *WDiscovery) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
 	for seq := uint16(0); seq < 64; seq++ {
-		pkt := w.buildDeauthPkt(ap, client, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq)
-		if err := w.handle.WritePacketData(pkt); err != nil {
+		if err, pkt := packets.NewDot11Deauth(ap, client, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq); err != nil {
+			log.Error("Could not create deauth packet: %s", err)
+			continue
+		} else if err := w.handle.WritePacketData(pkt); err != nil {
 			log.Error("Could not send deauth packet: %s", err)
 			continue
 		} else {
 			time.Sleep(2 * time.Millisecond)
 		}
 
-		pkt = w.buildDeauthPkt(client, ap, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq)
-		if err := w.handle.WritePacketData(pkt); err != nil {
+		if err, pkt := packets.NewDot11Deauth(client, ap, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq); err != nil {
+			log.Error("Could not create deauth packet: %s", err)
+			continue
+		} else if err := w.handle.WritePacketData(pkt); err != nil {
 			log.Error("Could not send deauth packet: %s", err)
 			continue
 		} else {
