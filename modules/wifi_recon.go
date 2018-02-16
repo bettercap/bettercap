@@ -27,19 +27,19 @@ import (
 type WiFiRecon struct {
 	session.SessionModule
 
-	wifi      *WiFi
-	stats     *WiFiStats
-	handle    *pcap.Handle
-	cliTarget net.HardwareAddr
-	apTarget  net.HardwareAddr
+	wifi        *WiFi
+	stats       *WiFiStats
+	handle      *pcap.Handle
+	client      net.HardwareAddr
+	accessPoint net.HardwareAddr
 }
 
 func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	w := &WiFiRecon{
 		SessionModule: session.NewSessionModule("wifi.recon", s),
 		stats:         NewWiFiStats(),
-		cliTarget:     make([]byte, 0),
-		apTarget:      make([]byte, 0),
+		client:        make([]byte, 0),
+		accessPoint:   make([]byte, 0),
 	}
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon on", "",
@@ -64,14 +64,14 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 		"Set client to deauth (single target).",
 		func(args []string) error {
 			var err error
-			w.cliTarget, err = net.ParseMAC(args[0])
+			w.client, err = net.ParseMAC(args[0])
 			return err
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon clear client", "",
 		"Remove client to deauth.",
 		func(args []string) error {
-			w.cliTarget = make([]byte, 0)
+			w.client = make([]byte, 0)
 			return nil
 		}))
 
@@ -82,7 +82,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 			if w.wifi != nil {
 				w.wifi.Clear()
 			}
-			w.apTarget, err = net.ParseMAC(args[0])
+			w.accessPoint, err = net.ParseMAC(args[0])
 			return err
 		}))
 
@@ -92,7 +92,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 			if w.wifi != nil {
 				w.wifi.Clear()
 			}
-			w.apTarget = make([]byte, 0)
+			w.accessPoint = make([]byte, 0)
 			return nil
 		}))
 
@@ -238,16 +238,16 @@ func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAdd
 }
 
 func (w *WiFiRecon) startDeauth() error {
-	isTargetingAP := len(w.apTarget) > 0
+	isTargetingAP := len(w.accessPoint) > 0
 	if isTargetingAP {
-		isTargetingCLI := len(w.cliTarget) > 0
+		isTargetingCLI := len(w.client) > 0
 		if isTargetingCLI {
 			// deauth a specific client
-			w.sendDeauthPacket(w.apTarget, w.cliTarget)
+			w.sendDeauthPacket(w.accessPoint, w.client)
 		} else {
 			// deauth all AP's clients
 			for _, station := range w.wifi.Stations {
-				w.sendDeauthPacket(w.apTarget, station.HW)
+				w.sendDeauthPacket(w.accessPoint, station.HW)
 			}
 		}
 		return nil
@@ -321,10 +321,8 @@ func (w *WiFiRecon) discoverClients(bs net.HardwareAddr, packet gopacket.Packet)
 }
 
 func (w *WiFiRecon) Configure() error {
-	var err error
-	var ihandle *pcap.InactiveHandle
-
-	if ihandle, err = pcap.NewInactiveHandle(w.Session.Interface.Name()); err != nil {
+	ihandle, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
+	if err != nil {
 		return err
 	}
 	defer ihandle.CleanUp()
@@ -395,10 +393,12 @@ func (w *WiFiRecon) Start() error {
 
 			w.updateStats(packet)
 
-			if len(w.apTarget) > 0 {
-				w.discoverClients(w.apTarget, packet)
-			} else {
+			if len(w.accessPoint) == 0 {
+				// no access point bssid selected, keep scanning for other aps
 				w.discoverAccessPoints(packet)
+			} else {
+				// discover stations connected to the selected access point bssid
+				w.discoverClients(w.accessPoint, packet)
 			}
 		}
 	})
