@@ -24,7 +24,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-type WDiscovery struct {
+type WiFiRecon struct {
 	session.SessionModule
 
 	wifi      *WiFi
@@ -34,8 +34,8 @@ type WDiscovery struct {
 	apTarget  net.HardwareAddr
 }
 
-func NewWDiscovery(s *session.Session) *WDiscovery {
-	w := &WDiscovery{
+func NewWiFiRecon(s *session.Session) *WiFiRecon {
+	w := &WiFiRecon{
 		SessionModule: session.NewSessionModule("wifi.recon", s),
 		stats:         NewWiFiStats(),
 		cliTarget:     make([]byte, 0),
@@ -105,19 +105,19 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 	return w
 }
 
-func (w WDiscovery) Name() string {
+func (w WiFiRecon) Name() string {
 	return "wifi.recon"
 }
 
-func (w WDiscovery) Description() string {
+func (w WiFiRecon) Description() string {
 	return "A module to monitor and perform wireless attacks on 802.11."
 }
 
-func (w WDiscovery) Author() string {
+func (w WiFiRecon) Author() string {
 	return "Gianluca Braga <matrix86@protonmail.com>"
 }
 
-func (w *WDiscovery) getRow(station *WiFiStation) []string {
+func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 	sinceStarted := time.Since(w.Session.StartedAt)
 	sinceFirstSeen := time.Since(station.FirstSeen)
 
@@ -180,7 +180,7 @@ func (a BywifiSeenSorter) Less(i, j int) bool {
 	return a[i].LastSeen.After(a[j].LastSeen)
 }
 
-func (w *WDiscovery) showTable(header []string, rows [][]string) {
+func (w *WiFiRecon) showTable(header []string, rows [][]string) {
 	fmt.Println()
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader(header)
@@ -189,7 +189,7 @@ func (w *WDiscovery) showTable(header []string, rows [][]string) {
 	table.Render()
 }
 
-func (w *WDiscovery) Show(by string) error {
+func (w *WiFiRecon) Show(by string) error {
 	if w.wifi == nil {
 		return errors.New("WiFi is not yet initialized.")
 	}
@@ -213,7 +213,7 @@ func (w *WDiscovery) Show(by string) error {
 	return nil
 }
 
-func (w *WDiscovery) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
+func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
 	for seq := uint16(0); seq < 64; seq++ {
 		if err, pkt := packets.NewDot11Deauth(ap, client, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq); err != nil {
 			log.Error("Could not create deauth packet: %s", err)
@@ -237,7 +237,7 @@ func (w *WDiscovery) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAd
 	}
 }
 
-func (w *WDiscovery) startDeauth() error {
+func (w *WiFiRecon) startDeauth() error {
 	isTargetingAP := len(w.apTarget) > 0
 	if isTargetingAP {
 		isTargetingCLI := len(w.cliTarget) > 0
@@ -255,7 +255,7 @@ func (w *WDiscovery) startDeauth() error {
 	return errors.New("No base station or client set.")
 }
 
-func (w *WDiscovery) discoverAccessPoints(packet gopacket.Packet) {
+func (w *WiFiRecon) discoverAccessPoints(packet gopacket.Packet) {
 	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
 	if radiotapLayer == nil {
 		return
@@ -289,7 +289,7 @@ func (w *WDiscovery) discoverAccessPoints(packet gopacket.Packet) {
 	}
 }
 
-func (w *WDiscovery) discoverClients(bs net.HardwareAddr, packet gopacket.Packet) {
+func (w *WiFiRecon) discoverClients(bs net.HardwareAddr, packet gopacket.Packet) {
 	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
 	if radiotapLayer == nil {
 		return
@@ -320,7 +320,7 @@ func (w *WDiscovery) discoverClients(bs net.HardwareAddr, packet gopacket.Packet
 	}
 }
 
-func (w *WDiscovery) Configure() error {
+func (w *WiFiRecon) Configure() error {
 	var err error
 	var ihandle *pcap.InactiveHandle
 
@@ -344,7 +344,7 @@ func (w *WDiscovery) Configure() error {
 	return nil
 }
 
-func (w *WDiscovery) updateStats(packet gopacket.Packet) {
+func (w *WiFiRecon) updateStats(packet gopacket.Packet) {
 	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
 	if radiotapLayer == nil {
 		return
@@ -378,7 +378,7 @@ func (w *WDiscovery) updateStats(packet gopacket.Packet) {
 	w.stats.Collect(dot11.Address4, bytes)
 }
 
-func (w *WDiscovery) Start() error {
+func (w *WiFiRecon) Start() error {
 	if w.Running() == true {
 		return session.ErrAlreadyStarted
 	} else if err := w.Configure(); err != nil {
@@ -406,6 +406,6 @@ func (w *WDiscovery) Start() error {
 	return nil
 }
 
-func (w *WDiscovery) Stop() error {
+func (w *WiFiRecon) Stop() error {
 	return w.SetRunning(false, nil)
 }
