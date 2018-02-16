@@ -32,19 +32,9 @@ To show the command line options:
 
     $ sudo bettercap-ng -h
     
-    Usage of ./bettercap-ng:
-      -caplet string
-            Read commands from this file and execute them in the interactive session.
-      -debug
-            Print debug messages.
-      -eval string
-            Run a command, used to set variables via command line.
-      -iface string
-            Network interface to bind to.
-      -no-history
-            Disable history file.
-      -silent
-            Suppress all logs which are not errors.
+To start an interactive session:
+
+    $ sudo bettercap-ng
 
 ## Compilation on Windows
 
@@ -88,64 +78,13 @@ As an example, let's cross compile bettercap for ARM (requires `gcc-arm-linux-gn
 
 **Done**
 
-## Command Line Options
-
-By issuing `bettercap-ng -h` the main command line options will be shown:
-
-    Usage of ./bettercap-ng:
-      -caplet string
-            Read commands from this file and execute them in the interactive session.
-      -cpu-profile file
-            Write cpu profile file.
-      -debug
-            Print debug messages.
-      -eval string
-            Run one or more commands separated by ; in the interactive session, used to set variables via command line.
-      -iface string
-            Network interface to bind to, if empty the default interface will be auto selected.
-      -mem-profile file
-            Write memory profile to file.
-      -no-history
-            Disable interactive session history file.
-      -silent
-            Suppress all logs which are not errors.
-
-If no `-caplet` option is specified, bettercap-ng will start in interactive mode.
-
 ## Interactive Mode
 
-By default, bettercap-ng will start in interactive mode, allowing you to start and stop modules manually, change options and apply new firewall rules on the fly, to show the help menu type `help`:
+If no `-caplet` option is specified, bettercap-ng will start in interactive mode, allowing you to start and stop modules manually, change options and apply new firewall rules on the fly.
 
-    MAIN COMMANDS
-    
-                  help MODULE : List available commands or show module specific help if no module name is provided.
-                       active : Show information about active modules.
-                         quit : Close the session and exit.
-                sleep SECONDS : Sleep for the given amount of seconds.
-                     get NAME : Get the value of variable NAME, use * for all.
-               set NAME VALUE : Set the VALUE of variable NAME.
-                        clear : Clear the screen.
-               include CAPLET : Load and run this caplet in the current session.
-                    ! COMMAND : Execute a shell command and print its output.
-               alias MAC NAME : Assign an alias to a given endpoint given its MAC address.
+To get a grasp of what you can do, type `help` and the general help menu will be shown, you can also have module specific help by using `help module-name` (for instance try with `help net.recon`).
 
-    MODULES
-                     api.rest > not running
-                    arp.spoof > not running
-                  dhcp6.spoof > not running
-                    dns.spoof > not running
-                events.stream > running
-                   http.proxy > not running
-                  http.server > not running
-                  https.proxy > not running
-                  mac.changer > not running
-                    net.probe > not running
-                    net.recon > running
-                    net.sniff > not running
-                       ticker > not running
-                          wol > not running
-
-You can have module specific help by using `help module-name` (for instance try with `help net.recon`), to print all variables you can use `get *`.
+To print all variables and their values instead, you can use `get *` or `get variable-name` to get a single variable (try with `get gateway.address`), to set a new value you can simply `set variable-name new-value` (a value of `""` will clear the variable contents).
 
 ## Caplets
 
@@ -153,7 +92,7 @@ Interactive sessions can be scripted with `.cap` files, or `caplets`, the follow
 
 #### caplets/http-req-dump.cap
 
-Execute an ARP spoofing attack on the whole network (by default) or on a host (using `-eval` as described), intercept HTTP and HTTPS requests with the `http.proxy` and `https.proxy` modules and dump them using the `http-req-dump.js` proxy script.
+Execute an ARP spoofing attack on the whole network (by default) or on a host (using `-eval` as described), intercept HTTP and HTTPS requests with the `http.proxy` and `https.proxy` modules and dump them using the `http-req-dumsp.js` proxy script.
 
 ```sh
 # targeting the whole subnet by default, to make it selective:
