@@ -8,33 +8,33 @@ import (
 	"github.com/evilsocket/bettercap-ng/session"
 )
 
-type WLan struct {
+type WiFi struct {
 	sync.Mutex
 	Session   *session.Session
 	Interface *network.Endpoint
-	Stations  map[string]*WirelessStation
+	Stations  map[string]*WiFiStation
 }
 
-func NewWLan(s *session.Session, iface *network.Endpoint) *WLan {
-	return &WLan{
+func NewWiFi(s *session.Session, iface *network.Endpoint) *WiFi {
+	return &WiFi{
 		Session:   s,
 		Interface: iface,
-		Stations:  make(map[string]*WirelessStation),
+		Stations:  make(map[string]*WiFiStation),
 	}
 }
 
-func (w *WLan) List() (list []*WirelessStation) {
+func (w *WiFi) List() (list []*WiFiStation) {
 	w.Lock()
 	defer w.Unlock()
 
-	list = make([]*WirelessStation, 0)
+	list = make([]*WiFiStation, 0)
 	for _, t := range w.Stations {
 		list = append(list, t)
 	}
 	return
 }
 
-func (w *WLan) Remove(mac string) {
+func (w *WiFi) Remove(mac string) {
 	w.Lock()
 	defer w.Unlock()
 
@@ -44,7 +44,7 @@ func (w *WLan) Remove(mac string) {
 	}
 }
 
-func (w *WLan) AddIfNew(ssid, mac string, isAp bool, channel int) *WirelessStation {
+func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int) *WiFiStation {
 	w.Lock()
 	defer w.Unlock()
 
@@ -54,7 +54,7 @@ func (w *WLan) AddIfNew(ssid, mac string, isAp bool, channel int) *WirelessStati
 		return station
 	}
 
-	newStation := NewWirelessStation(ssid, mac, isAp, channel)
+	newStation := NewWiFiStation(ssid, mac, isAp, channel)
 	w.Stations[mac] = newStation
 
 	w.Session.Events.Add("wifi.station.new", newStation)
@@ -62,7 +62,7 @@ func (w *WLan) AddIfNew(ssid, mac string, isAp bool, channel int) *WirelessStati
 	return nil
 }
 
-func (w *WLan) Clear() error {
-	w.Stations = make(map[string]*WirelessStation)
+func (w *WiFi) Clear() error {
+	w.Stations = make(map[string]*WiFiStation)
 	return nil
 }

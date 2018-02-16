@@ -4,24 +4,24 @@ import (
 	"github.com/evilsocket/bettercap-ng/network"
 )
 
-type WirelessStation struct {
+type WiFiStation struct {
 	*network.Endpoint
 	IsAP    bool
 	Channel int
 }
 
-func NewWirelessStation(essid, bssid string, isAp bool, channel int) *WirelessStation {
-	return &WirelessStation{
+func NewWiFiStation(essid, bssid string, isAp bool, channel int) *WiFiStation {
+	return &WiFiStation{
 		Endpoint: network.NewEndpointNoResolve(network.MonitorModeAddress, bssid, essid, 0),
 		IsAP:     isAp,
 		Channel:  channel,
 	}
 }
 
-func (s WirelessStation) BSSID() string {
+func (s WiFiStation) BSSID() string {
 	return s.HwAddress
 }
 
-func (s *WirelessStation) ESSID() string {
+func (s *WiFiStation) ESSID() string {
 	return s.Hostname
 }

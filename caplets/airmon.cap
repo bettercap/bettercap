@@ -1,0 +1,4 @@
+set ticker.commands clear; wifi.show
+wifi.recon on
+clear
+ticker on

@@ -25,7 +25,7 @@ import (
 type WDiscovery struct {
 	session.SessionModule
 
-	wlan         *WLan
+	wifi         *WiFi
 	handle       *pcap.Handle
 	BroadcastMac []byte
 	cliTarget    net.HardwareAddr
@@ -34,30 +34,30 @@ type WDiscovery struct {
 
 func NewWDiscovery(s *session.Session) *WDiscovery {
 	w := &WDiscovery{
-		SessionModule: session.NewSessionModule("wlan.recon", s),
+		SessionModule: session.NewSessionModule("wifi.recon", s),
 		cliTarget:     make([]byte, 0),
 		apTarget:      make([]byte, 0),
 	}
 
-	w.AddHandler(session.NewModuleHandler("wlan.recon on", "",
+	w.AddHandler(session.NewModuleHandler("wifi.recon on", "",
 		"Start 802.11 wireless base stations discovery.",
 		func(args []string) error {
 			return w.Start()
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wlan.recon off", "",
+	w.AddHandler(session.NewModuleHandler("wifi.recon off", "",
 		"Stop 802.11 wireless base stations discovery.",
 		func(args []string) error {
 			return w.Stop()
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wlan.deauth", "",
+	w.AddHandler(session.NewModuleHandler("wifi.deauth", "",
 		"Start a 802.11 deauth attack (use ticker to iterate the attack).",
 		func(args []string) error {
 			return w.startDeauth()
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wlan.recon set client MAC", "wlan.recon set client ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
+	w.AddHandler(session.NewModuleHandler("wifi.recon set client MAC", "wifi.recon set client ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
 		"Set client to deauth (single target).",
 		func(args []string) error {
 			var err error
@@ -65,35 +65,35 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 			return err
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wlan.recon clear client", "",
+	w.AddHandler(session.NewModuleHandler("wifi.recon clear client", "",
 		"Remove client to deauth.",
 		func(args []string) error {
 			w.cliTarget = make([]byte, 0)
 			return nil
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wlan.recon set bs MAC", "wlan.recon set bs ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
+	w.AddHandler(session.NewModuleHandler("wifi.recon set bs MAC", "wifi.recon set bs ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
 		"Set 802.11 base station address to filter for.",
 		func(args []string) error {
 			var err error
-			if w.wlan != nil {
-				w.wlan.Clear()
+			if w.wifi != nil {
+				w.wifi.Clear()
 			}
 			w.apTarget, err = net.ParseMAC(args[0])
 			return err
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wlan.recon clear bs", "",
+	w.AddHandler(session.NewModuleHandler("wifi.recon clear bs", "",
 		"Remove the 802.11 base station filter.",
 		func(args []string) error {
-			if w.wlan != nil {
-				w.wlan.Clear()
+			if w.wifi != nil {
+				w.wifi.Clear()
 			}
 			w.apTarget = make([]byte, 0)
 			return nil
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wlan.show", "",
+	w.AddHandler(session.NewModuleHandler("wifi.show", "",
 		"Show current hosts list (default sorting by essid).",
 		func(args []string) error {
 			return w.Show("essid")
@@ -103,7 +103,7 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 }
 
 func (w WDiscovery) Name() string {
-	return "wlan.recon"
+	return "wifi.recon"
 }
 
 func (w WDiscovery) Description() string {
@@ -114,7 +114,7 @@ func (w WDiscovery) Author() string {
 	return "Gianluca Braga <matrix86@protonmail.com>"
 }
 
-func (w *WDiscovery) getRow(station *WirelessStation) []string {
+func (w *WDiscovery) getRow(station *WiFiStation) []string {
 	sinceStarted := time.Since(w.Session.StartedAt)
 	sinceFirstSeen := time.Since(station.FirstSeen)
 
@@ -151,7 +151,7 @@ func mhz2chan(freq int) int {
 	return 0
 }
 
-type ByEssidSorter []*WirelessStation
+type ByEssidSorter []*WiFiStation
 
 func (a ByEssidSorter) Len() int      { return len(a) }
 func (a ByEssidSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
@@ -162,11 +162,11 @@ func (a ByEssidSorter) Less(i, j int) bool {
 	return a[i].ESSID() < a[j].ESSID()
 }
 
-type ByWlanSeenSorter []*WirelessStation
+type BywifiSeenSorter []*WiFiStation
 
-func (a ByWlanSeenSorter) Len() int      { return len(a) }
-func (a ByWlanSeenSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByWlanSeenSorter) Less(i, j int) bool {
+func (a BywifiSeenSorter) Len() int      { return len(a) }
+func (a BywifiSeenSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a BywifiSeenSorter) Less(i, j int) bool {
 	return a[i].LastSeen.After(a[j].LastSeen)
 }
 
@@ -180,13 +180,13 @@ func (w *WDiscovery) showTable(header []string, rows [][]string) {
 }
 
 func (w *WDiscovery) Show(by string) error {
-	if w.wlan == nil {
-		return errors.New("WLan is not yet initialized.")
+	if w.wifi == nil {
+		return errors.New("WiFi is not yet initialized.")
 	}
 
-	stations := w.wlan.List()
+	stations := w.wifi.List()
 	if by == "seen" {
-		sort.Sort(ByWlanSeenSorter(stations))
+		sort.Sort(BywifiSeenSorter(stations))
 	} else {
 		sort.Sort(ByEssidSorter(stations))
 	}
@@ -261,7 +261,7 @@ func (w *WDiscovery) startDeauth() error {
 			w.sendDeauthPacket(w.apTarget, w.cliTarget)
 		} else {
 			// deauth all AP's clients
-			for _, station := range w.wlan.Stations {
+			for _, station := range w.wifi.Stations {
 				w.sendDeauthPacket(w.apTarget, station.HW)
 			}
 		}
@@ -300,7 +300,7 @@ func (w *WDiscovery) discoverAccessPoints(packet gopacket.Packet) {
 	if bytes.Compare(dst, w.BroadcastMac) == 0 && len(ssid) > 0 {
 		radiotap, _ := radiotapLayer.(*layers.RadioTap)
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
-		w.wlan.AddIfNew(ssid, bssid, true, channel)
+		w.wifi.AddIfNew(ssid, bssid, true, channel)
 	}
 }
 
@@ -330,7 +330,7 @@ func (w *WDiscovery) discoverClients(bs net.HardwareAddr, packet gopacket.Packet
 		if bytes.Compare(bssid, bs) == 0 {
 			radiotap, _ := radiotapLayer.(*layers.RadioTap)
 			channel := mhz2chan(int(radiotap.ChannelFrequency))
-			w.wlan.AddIfNew("", src.String(), false, channel)
+			w.wifi.AddIfNew("", src.String(), false, channel)
 		}
 	}
 }
@@ -354,7 +354,7 @@ func (w *WDiscovery) Configure() error {
 		return err
 	}
 
-	w.wlan = NewWLan(w.Session, w.Session.Interface)
+	w.wifi = NewWiFi(w.Session, w.Session.Interface)
 	w.BroadcastMac, _ = net.ParseMAC(network.BroadcastMac)
 
 	return nil
