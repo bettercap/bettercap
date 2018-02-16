@@ -393,6 +393,10 @@ func (w *WDiscovery) updateStats(packet gopacket.Packet) {
 
 	dot11, _ := dot11Layer.(*layers.Dot11)
 
+	// FIXME: This doesn't consider the actual direction of the
+	// packet (which address is the source, which the destination,
+	// etc). It should be fixed and counter splitted into two
+	// separete "Recvd" and "Sent" uint64 counters.
 	bytes := uint64(len(packet.Data()))
 	w.stats.Collect(dot11.Address1, bytes)
 	w.stats.Collect(dot11.Address2, bytes)
