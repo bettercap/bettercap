@@ -8,7 +8,6 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	//"sync/atomic"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -18,7 +17,6 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 
-	//"github.com/dustin/go-humanize"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -47,25 +45,25 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 	}
 
 	w.AddHandler(session.NewModuleHandler("wlan.recon on", "",
-		"Start wireless Base Station discovery.",
+		"Start 802.11 wireless base stations discovery.",
 		func(args []string) error {
 			return w.Start()
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wlan.recon off", "",
-		"Stop wireless Base Station discovery.",
+		"Stop 802.11 wireless base stations discovery.",
 		func(args []string) error {
 			return w.Stop()
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wlan.deauth", "",
-		"Send Deauthentication attack on the targets (use ticker to iterate the attack).",
+		"Start a 802.11 deauth attack (use ticker to iterate the attack).",
 		func(args []string) error {
 			return w.SendDeauth()
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wlan.recon set client MAC", "wlan.recon set client ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
-		"Set Client to deauth (single target).",
+		"Set client to deauth (single target).",
 		func(args []string) error {
 			var err error
 			w.ClientTarget, err = net.ParseMAC(args[0])
@@ -73,14 +71,14 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wlan.recon clear client", "",
-		"Remove Client to deauth.",
+		"Remove client to deauth.",
 		func(args []string) error {
 			w.ClientTarget = make([]byte, 0)
 			return nil
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wlan.recon set bs MAC", "wlan.recon set bs ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
-		"Set Base Station to filter.",
+		"Set 802.11 base station address to filter for.",
 		func(args []string) error {
 			var err error
 			if w.Targets != nil {
@@ -91,9 +89,8 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wlan.recon clear bs", "",
-		"Remove the Base Station filter.",
+		"Remove the 802.11 base station filter.",
 		func(args []string) error {
-			fmt.Println("Clear BS")
 			if w.Targets != nil {
 				w.Targets.ClearAll()
 			}
@@ -115,7 +112,7 @@ func (w WDiscovery) Name() string {
 }
 
 func (w WDiscovery) Description() string {
-	return "Sniff 802.11 packets and perform some attack."
+	return "A module to monitor and perform wireless attacks on 802.11."
 }
 
 func (w WDiscovery) Author() string {
@@ -221,14 +218,6 @@ func (w *WDiscovery) Show(by string) error {
 
 	w.showTable([]string{"MAC", "ALIAS", "SSID", "Vendor", "Channel", "Last Seen"}, rows)
 
-	//fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
-	//	core.Red("↑"),
-	//	humanize.Bytes(atomic.LoadUint64(&w.Session.Queue.Sent)),
-	//	core.Green("↓"),
-	//	humanize.Bytes(atomic.LoadUint64(&w.Session.Queue.Received)),
-	//	atomic.LoadUint64(&w.Session.Queue.PktReceived),
-	//	atomic.LoadUint64(&w.Session.Queue.Errors))
-
 	s := EventsStream{}
 	events := w.Session.Events.Sorted()
 	size := len(events)
@@ -319,7 +308,7 @@ func (w *WDiscovery) SendDeauth() error {
 		}
 
 	default:
-		fmt.Println("Base Station is not setted.")
+		return errors.New("Base station is not set.")
 	}
 
 	return nil
@@ -439,7 +428,6 @@ func (w *WDiscovery) Start() error {
 
 	w.SetRunning(true, func() {
 		defer w.Handle.Close()
-
 		src := gopacket.NewPacketSource(w.Handle, w.Handle.LinkType())
 		for packet := range src.Packets() {
 			if w.Running() == false {
@@ -458,10 +446,5 @@ func (w *WDiscovery) Start() error {
 }
 
 func (w *WDiscovery) Stop() error {
-	if w.Running() == false {
-		return session.ErrAlreadyStopped
-	}
-
-	return w.SetRunning(false, func() {
-	})
+	return w.SetRunning(false, nil)
 }
