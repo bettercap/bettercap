@@ -27,7 +27,7 @@ type WiFi struct {
 
 func NewWirelessStation(essid, mac string, isAp bool, channel int) *WirelessStation {
 	return &WirelessStation{
-		Endpoint: network.NewEndpointNoResolve("0.0.0.0", mac, "", 0),
+		Endpoint: network.NewEndpointNoResolve(network.MonitorModeAddress, mac, "", 0),
 		Essid:    essid,
 		IsAP:     isAp,
 		Channel:  channel,
