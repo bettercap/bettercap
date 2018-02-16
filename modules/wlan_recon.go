@@ -256,20 +256,22 @@ func (w *WDiscovery) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAd
 }
 
 func (w *WDiscovery) startDeauth() error {
-	switch {
-	case len(w.apTarget) > 0 && len(w.cliTarget) > 0:
-		w.sendDeauthPacket(w.apTarget, w.cliTarget)
+	isTargetingAP := len(w.apTarget) > 0
+	isTargetingCLI := len(w.cliTarget) > 0
 
-	case len(w.apTarget) > 0:
-		for _, t := range w.Stations.Stations {
-			w.sendDeauthPacket(w.apTarget, t.Endpoint.HW)
+	if isTargetingAP {
+		if isTargetingCLI {
+			// deauth a specific client
+			w.sendDeauthPacket(w.apTarget, w.cliTarget)
+		} else {
+			// deauth all AP's clients
+			for _, t := range w.Stations.Stations {
+				w.sendDeauthPacket(w.apTarget, t.Endpoint.HW)
+			}
 		}
-
-	default:
-		return errors.New("Base station is not set.")
+		return nil
 	}
-
-	return nil
+	return errors.New("No base station or client set.")
 }
 
 func (w *WDiscovery) discoverAccessPoints(packet gopacket.Packet) {
