@@ -25,8 +25,8 @@ type WDiscovery struct {
 	session.SessionModule
 	Stations *WiFi
 
-	ClientTarget net.HardwareAddr
-	BSTarget     net.HardwareAddr
+	cliTarget net.HardwareAddr
+	apTarget  net.HardwareAddr
 
 	Handle       *pcap.Handle
 	BroadcastMac []byte
@@ -35,8 +35,8 @@ type WDiscovery struct {
 func NewWDiscovery(s *session.Session) *WDiscovery {
 	w := &WDiscovery{
 		SessionModule: session.NewSessionModule("wlan.recon", s),
-		ClientTarget:  make([]byte, 0),
-		BSTarget:      make([]byte, 0),
+		cliTarget:     make([]byte, 0),
+		apTarget:      make([]byte, 0),
 	}
 
 	w.AddHandler(session.NewModuleHandler("wlan.recon on", "",
@@ -61,14 +61,14 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 		"Set client to deauth (single target).",
 		func(args []string) error {
 			var err error
-			w.ClientTarget, err = net.ParseMAC(args[0])
+			w.cliTarget, err = net.ParseMAC(args[0])
 			return err
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wlan.recon clear client", "",
 		"Remove client to deauth.",
 		func(args []string) error {
-			w.ClientTarget = make([]byte, 0)
+			w.cliTarget = make([]byte, 0)
 			return nil
 		}))
 
@@ -79,7 +79,7 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 			if w.Stations != nil {
 				w.Stations.Clear()
 			}
-			w.BSTarget, err = net.ParseMAC(args[0])
+			w.apTarget, err = net.ParseMAC(args[0])
 			return err
 		}))
 
@@ -89,7 +89,7 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 			if w.Stations != nil {
 				w.Stations.Clear()
 			}
-			w.BSTarget = make([]byte, 0)
+			w.apTarget = make([]byte, 0)
 			return nil
 		}))
 
@@ -234,7 +234,7 @@ func (w *WDiscovery) buildDeauthPkt(address1 net.HardwareAddr, address2 net.Hard
 	return buffer.Bytes()
 }
 
-func (w *WDiscovery) SendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
+func (w *WDiscovery) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
 	var pkt []byte
 	var err error
 
@@ -260,12 +260,12 @@ func (w *WDiscovery) SendDeauthPacket(ap net.HardwareAddr, client net.HardwareAd
 
 func (w *WDiscovery) startDeauth() error {
 	switch {
-	case len(w.BSTarget) > 0 && len(w.ClientTarget) > 0:
-		w.SendDeauthPacket(w.BSTarget, w.ClientTarget)
+	case len(w.apTarget) > 0 && len(w.cliTarget) > 0:
+		w.sendDeauthPacket(w.apTarget, w.cliTarget)
 
-	case len(w.BSTarget) > 0:
+	case len(w.apTarget) > 0:
 		for _, t := range w.Stations.Stations {
-			w.SendDeauthPacket(w.BSTarget, t.Endpoint.HW)
+			w.sendDeauthPacket(w.apTarget, t.Endpoint.HW)
 		}
 
 	default:
@@ -275,7 +275,7 @@ func (w *WDiscovery) startDeauth() error {
 	return nil
 }
 
-func (w *WDiscovery) BSScan(packet gopacket.Packet) {
+func (w *WDiscovery) discoverAccessPoints(packet gopacket.Packet) {
 	var bssid string
 	var dst net.HardwareAddr
 	var ssid string
@@ -316,7 +316,7 @@ func (w *WDiscovery) BSScan(packet gopacket.Packet) {
 	}
 }
 
-func (w *WDiscovery) ClientScan(bs net.HardwareAddr, packet gopacket.Packet) {
+func (w *WDiscovery) discoverClients(bs net.HardwareAddr, packet gopacket.Packet) {
 	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
 	if radiotapLayer == nil {
 		return
@@ -392,10 +392,10 @@ func (w *WDiscovery) Start() error {
 				break
 			}
 
-			if len(w.BSTarget) > 0 {
-				w.ClientScan(w.BSTarget, packet)
+			if len(w.apTarget) > 0 {
+				w.discoverClients(w.apTarget, packet)
 			} else {
-				w.BSScan(packet)
+				w.discoverAccessPoints(packet)
 			}
 		}
 	})
