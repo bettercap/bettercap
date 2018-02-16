@@ -129,15 +129,6 @@ func (w *WDiscovery) getRow(e *WirelessStation) []string {
 		mac = core.Bold(mac)
 	}
 
-	name := ""
-	if e.Endpoint == w.Session.Interface {
-		name = e.Endpoint.Name()
-	} else if e.Endpoint.Hostname != "" {
-		name = core.Yellow(e.Endpoint.Hostname)
-	} else if e.Endpoint.Alias != "" {
-		name = core.Green(e.Endpoint.Alias)
-	}
-
 	seen := e.Endpoint.LastSeen.Format("15:04:05")
 	sinceLastSeen := time.Since(e.Endpoint.LastSeen)
 	if sinceStarted > aliveTimeInterval && sinceLastSeen <= aliveTimeInterval {
@@ -152,7 +143,6 @@ func (w *WDiscovery) getRow(e *WirelessStation) []string {
 
 	return []string{
 		mac,
-		name,
 		e.Essid,
 		e.Endpoint.Vendor,
 		strconv.Itoa(e.Channel),
@@ -160,7 +150,7 @@ func (w *WDiscovery) getRow(e *WirelessStation) []string {
 	}
 }
 
-func WlanMhzToChannel(freq int) int {
+func mhz2chan(freq int) int {
 	if freq <= 2484 {
 		return ((freq - 2412) / 5) + 1
 	}
@@ -213,28 +203,7 @@ func (w *WDiscovery) Show(by string) error {
 		rows = append(rows, w.getRow(t))
 	}
 
-	w.showTable([]string{"MAC", "ALIAS", "SSID", "Vendor", "Channel", "Last Seen"}, rows)
-
-	s := EventsStream{}
-	events := w.Session.Events.Sorted()
-	size := len(events)
-
-	if size > 0 {
-		max := 20
-		if size > max {
-			from := size - max
-			size = max
-			events = events[from:]
-		}
-
-		fmt.Printf("Last %d events:\n\n", size)
-
-		for _, e := range events {
-			s.View(e, false)
-		}
-
-		fmt.Println()
-	}
+	w.showTable([]string{"MAC", "SSID", "Vendor", "Channel", "Last Seen"}, rows)
 
 	w.Session.Refresh()
 
@@ -347,13 +316,12 @@ func (w *WDiscovery) BSScan(packet gopacket.Packet) {
 	dst = dot11.Address1
 
 	if bytes.Compare(dst, w.BroadcastMac) == 0 && len(ssid) > 0 {
-		channel = WlanMhzToChannel(int(radiotap.ChannelFrequency))
+		channel = mhz2chan(int(radiotap.ChannelFrequency))
 		w.Stations.AddIfNew(ssid, bssid, true, channel)
 	}
 }
 
 func (w *WDiscovery) ClientScan(bs net.HardwareAddr, packet gopacket.Packet) {
-
 	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
 	if radiotapLayer == nil {
 		return
@@ -376,11 +344,10 @@ func (w *WDiscovery) ClientScan(bs net.HardwareAddr, packet gopacket.Packet) {
 
 	if toDS && !fromDS {
 		src := dot11.Address2
-		//dst := dot11.Address3
 		bssid := dot11.Address1
 
 		if bytes.Compare(bssid, bs) == 0 {
-			channel := WlanMhzToChannel(int(radiotap.ChannelFrequency))
+			channel := mhz2chan(int(radiotap.ChannelFrequency))
 			w.Stations.AddIfNew("", src.String(), false, channel)
 		}
 	}
