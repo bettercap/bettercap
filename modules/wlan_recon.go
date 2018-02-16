@@ -275,19 +275,11 @@ func (w *WDiscovery) startDeauth() error {
 }
 
 func (w *WDiscovery) discoverAccessPoints(packet gopacket.Packet) {
-	var bssid string
-	var dst net.HardwareAddr
-	var ssid string
-	var channel int
-
 	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
 	if radiotapLayer == nil {
 		return
 	}
 
-	radiotap, _ := radiotapLayer.(*layers.RadioTap)
-
-	//! InformationElement Layer found
 	dot11infoLayer := packet.Layer(layers.LayerTypeDot11InformationElement)
 	if dot11infoLayer == nil {
 		return
@@ -298,19 +290,20 @@ func (w *WDiscovery) discoverAccessPoints(packet gopacket.Packet) {
 		return
 	}
 
-	//! Dot11 Layer Found
 	dot11Layer := packet.Layer(layers.LayerTypeDot11)
 	if dot11Layer == nil {
 		return
 	}
 
 	dot11, _ := dot11Layer.(*layers.Dot11)
-	ssid = string(dot11info.Info)
-	bssid = dot11.Address3.String()
-	dst = dot11.Address1
+	ssid := string(dot11info.Info)
+	bssid := dot11.Address3.String()
+	dst := dot11.Address1
 
+	// packet sent to broadcast mac with a SSID set?
 	if bytes.Compare(dst, w.BroadcastMac) == 0 && len(ssid) > 0 {
-		channel = mhz2chan(int(radiotap.ChannelFrequency))
+		radiotap, _ := radiotapLayer.(*layers.RadioTap)
+		channel := mhz2chan(int(radiotap.ChannelFrequency))
 		w.Stations.AddIfNew(ssid, bssid, true, channel)
 	}
 }
@@ -320,8 +313,6 @@ func (w *WDiscovery) discoverClients(bs net.HardwareAddr, packet gopacket.Packet
 	if radiotapLayer == nil {
 		return
 	}
-
-	radiotap, _ := radiotapLayer.(*layers.RadioTap)
 
 	dot11Layer := packet.Layer(layers.LayerTypeDot11)
 	if dot11Layer == nil {
@@ -339,8 +330,9 @@ func (w *WDiscovery) discoverClients(bs net.HardwareAddr, packet gopacket.Packet
 	if toDS && !fromDS {
 		src := dot11.Address2
 		bssid := dot11.Address1
-
+		// packet going to this specific BSSID?
 		if bytes.Compare(bssid, bs) == 0 {
+			radiotap, _ := radiotapLayer.(*layers.RadioTap)
 			channel := mhz2chan(int(radiotap.ChannelFrequency))
 			w.Stations.AddIfNew("", src.String(), false, channel)
 		}
