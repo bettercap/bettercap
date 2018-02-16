@@ -213,6 +213,28 @@ func (w *WiFiRecon) Show(by string) error {
 	return nil
 }
 
+func (w *WiFiRecon) Configure() error {
+	ihandle, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
+	if err != nil {
+		return err
+	}
+	defer ihandle.CleanUp()
+
+	if err = ihandle.SetRFMon(true); err != nil {
+		return err
+	} else if err = ihandle.SetSnapLen(65536); err != nil {
+		return err
+	} else if err = ihandle.SetTimeout(pcap.BlockForever); err != nil {
+		return err
+	} else if w.handle, err = ihandle.Activate(); err != nil {
+		return err
+	}
+
+	w.wifi = NewWiFi(w.Session, w.Session.Interface)
+
+	return nil
+}
+
 func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
 	for seq := uint16(0); seq < 64; seq++ {
 		if err, pkt := packets.NewDot11Deauth(ap, client, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq); err != nil {
@@ -318,28 +340,6 @@ func (w *WiFiRecon) discoverClients(bs net.HardwareAddr, packet gopacket.Packet)
 			w.wifi.AddIfNew("", src.String(), false, channel)
 		}
 	}
-}
-
-func (w *WiFiRecon) Configure() error {
-	ihandle, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
-	if err != nil {
-		return err
-	}
-	defer ihandle.CleanUp()
-
-	if err = ihandle.SetRFMon(true); err != nil {
-		return err
-	} else if err = ihandle.SetSnapLen(65536); err != nil {
-		return err
-	} else if err = ihandle.SetTimeout(pcap.BlockForever); err != nil {
-		return err
-	} else if w.handle, err = ihandle.Activate(); err != nil {
-		return err
-	}
-
-	w.wifi = NewWiFi(w.Session, w.Session.Interface)
-
-	return nil
 }
 
 func (w *WiFiRecon) updateStats(packet gopacket.Packet) {
