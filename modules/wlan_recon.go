@@ -54,7 +54,7 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 	w.AddHandler(session.NewModuleHandler("wlan.deauth", "",
 		"Start a 802.11 deauth attack (use ticker to iterate the attack).",
 		func(args []string) error {
-			return w.SendDeauth()
+			return w.startDeauth()
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wlan.recon set client MAC", "wlan.recon set client ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
@@ -258,7 +258,7 @@ func (w *WDiscovery) SendDeauthPacket(ap net.HardwareAddr, client net.HardwareAd
 	}
 }
 
-func (w *WDiscovery) SendDeauth() error {
+func (w *WDiscovery) startDeauth() error {
 	switch {
 	case len(w.BSTarget) > 0 && len(w.ClientTarget) > 0:
 		w.SendDeauthPacket(w.BSTarget, w.ClientTarget)
