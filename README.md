@@ -60,7 +60,7 @@ Despite Windows support [is not yet 100% complete](https://github.com/evilsocket
 
 As an example, let's cross compile bettercap for ARM (requires `gcc-arm-linux-gnueabi`, `yacc` and `flex` packages).
 
-**Step 1**: download and cross compile libpcap-1.8.1 for ARM (adjust `PCAPV` to use a different libpcap version):
+**Step 1**: Download and cross compile libpcap-1.8.1 for ARM (adjust `PCAPV` to use a different libpcap version):
 
     cd /tmp
     export PCAPV=1.8.1
@@ -71,12 +71,10 @@ As an example, let's cross compile bettercap for ARM (requires `gcc-arm-linux-gn
     ./configure --host=arm-linux --with-pcap=linux
     make
 
-**Step 2**: now cross compile bettercap-ng itself:
+**Step 2**: Cross compile bettercap-ng itself:
 
     cd $GOPATH/src/github.com/evilsocket/bettercap-ng
     env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm CGO_LDFLAGS="-L/tmp/libpcap-$PCAPV" make
-
-**Done**
 
 ## Interactive Mode
 
