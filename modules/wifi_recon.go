@@ -327,18 +327,17 @@ func (w *WiFiRecon) discoverAccessPoints(radiotapLayer gopacket.Layer, dot11 *la
 		return
 	}
 
-	dot11info, _ := dot11infoLayer.(*layers.Dot11InformationElement)
-	if dot11info.ID != layers.Dot11InformationElementIDSSID {
+	dot11info, ok := dot11infoLayer.(*layers.Dot11InformationElement)
+	if ok == false || (dot11info.ID != layers.Dot11InformationElementIDSSID) {
 		return
 	}
 
-	ssid := string(dot11info.Info)
-	bssid := dot11.Address3.String()
 	dst := dot11.Address1
-
 	// packet sent to broadcast mac with a SSID set?
-	if bytes.Compare(dst, network.BroadcastMac) == 0 && len(ssid) > 0 {
+	if bytes.Compare(dst, network.BroadcastMac) == 0 && len(dot11info.Info) > 0 {
 		radiotap, _ := radiotapLayer.(*layers.RadioTap)
+		ssid := string(dot11info.Info)
+		bssid := dot11.Address3.String()
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
 		w.wifi.AddIfNew(ssid, bssid, true, channel)
 	}
@@ -350,11 +349,11 @@ func (w *WiFiRecon) discoverClients(radiotapLayer gopacket.Layer, dot11 *layers.
 		return
 	}
 
-	src := dot11.Address2
 	bssid := dot11.Address1
 	// packet going to this specific BSSID?
 	if bytes.Compare(bssid, ap) == 0 {
 		radiotap, _ := radiotapLayer.(*layers.RadioTap)
+		src := dot11.Address2
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
 		w.wifi.AddIfNew("", src.String(), false, channel)
 	}
