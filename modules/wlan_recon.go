@@ -130,10 +130,8 @@ func (w *WDiscovery) getRow(e *WirelessStation) []string {
 	if sinceStarted > aliveTimeInterval && sinceLastSeen <= aliveTimeInterval {
 		// if endpoint seen in the last 10 seconds
 		seen = core.Bold(seen)
-	} else if sinceLastSeen <= presentTimeInterval {
-		// if endpoint seen in the last 60 seconds
-	} else {
-		// not seen in a while
+	} else if sinceLastSeen > presentTimeInterval {
+		// if endpoint not  seen in the last 60 seconds
 		seen = core.Dim(seen)
 	}
 
