@@ -28,7 +28,7 @@ const MAC48Validator = "((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))"
 
 type WDiscovery struct {
 	session.SessionModule
-	Targets *WlanTargets
+	Stations *WiFi
 
 	ClientTarget net.HardwareAddr
 	BSTarget     net.HardwareAddr
@@ -81,8 +81,8 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 		"Set 802.11 base station address to filter for.",
 		func(args []string) error {
 			var err error
-			if w.Targets != nil {
-				w.Targets.ClearAll()
+			if w.Stations != nil {
+				w.Stations.Clear()
 			}
 			w.BSTarget, err = net.ParseMAC(args[0])
 			return err
@@ -91,8 +91,8 @@ func NewWDiscovery(s *session.Session) *WDiscovery {
 	w.AddHandler(session.NewModuleHandler("wlan.recon clear bs", "",
 		"Remove the 802.11 base station filter.",
 		func(args []string) error {
-			if w.Targets != nil {
-				w.Targets.ClearAll()
+			if w.Stations != nil {
+				w.Stations.Clear()
 			}
 			w.BSTarget = make([]byte, 0)
 			return nil
@@ -119,15 +119,12 @@ func (w WDiscovery) Author() string {
 	return "Gianluca Braga <matrix86@protonmail.com>"
 }
 
-func (w *WDiscovery) getRow(e *WlanEndpoint) []string {
+func (w *WDiscovery) getRow(e *WirelessStation) []string {
 	sinceStarted := time.Since(w.Session.StartedAt)
 	sinceFirstSeen := time.Since(e.Endpoint.FirstSeen)
 
 	mac := e.Endpoint.HwAddress
-	if w.Targets.WasMissed(e.Endpoint.HwAddress) == true {
-		// if endpoint was not found at least once
-		mac = core.Dim(mac)
-	} else if sinceStarted > (justJoinedTimeInterval*2) && sinceFirstSeen <= justJoinedTimeInterval {
+	if sinceStarted > (justJoinedTimeInterval*2) && sinceFirstSeen <= justJoinedTimeInterval {
 		// if endpoint was first seen in the last 10 seconds
 		mac = core.Bold(mac)
 	}
@@ -171,7 +168,7 @@ func WlanMhzToChannel(freq int) int {
 	return 0
 }
 
-type ByEssidSorter []*WlanEndpoint
+type ByEssidSorter []*WirelessStation
 
 func (a ByEssidSorter) Len() int      { return len(a) }
 func (a ByEssidSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
@@ -182,7 +179,7 @@ func (a ByEssidSorter) Less(i, j int) bool {
 	return a[i].Essid < a[j].Essid
 }
 
-type ByWlanSeenSorter []*WlanEndpoint
+type ByWlanSeenSorter []*WirelessStation
 
 func (a ByWlanSeenSorter) Len() int      { return len(a) }
 func (a ByWlanSeenSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
@@ -200,11 +197,11 @@ func (w *WDiscovery) showTable(header []string, rows [][]string) {
 }
 
 func (w *WDiscovery) Show(by string) error {
-	if w.Targets == nil {
-		return errors.New("Targets are not yet initialized")
+	if w.Stations == nil {
+		return errors.New("Stations are not yet initialized")
 	}
 
-	targets := w.Targets.List()
+	targets := w.Stations.List()
 	if by == "seen" {
 		sort.Sort(ByWlanSeenSorter(targets))
 	} else {
@@ -303,7 +300,7 @@ func (w *WDiscovery) SendDeauth() error {
 		w.SendDeauthPacket(w.BSTarget, w.ClientTarget)
 
 	case len(w.BSTarget) > 0:
-		for _, t := range w.Targets.Targets {
+		for _, t := range w.Stations.Stations {
 			w.SendDeauthPacket(w.BSTarget, t.Endpoint.HW)
 		}
 
@@ -351,7 +348,7 @@ func (w *WDiscovery) BSScan(packet gopacket.Packet) {
 
 	if bytes.Compare(dst, w.BroadcastMac) == 0 && len(ssid) > 0 {
 		channel = WlanMhzToChannel(int(radiotap.ChannelFrequency))
-		w.Targets.AddIfNew(ssid, bssid, true, channel)
+		w.Stations.AddIfNew(ssid, bssid, true, channel)
 	}
 }
 
@@ -384,7 +381,7 @@ func (w *WDiscovery) ClientScan(bs net.HardwareAddr, packet gopacket.Packet) {
 
 		if bytes.Compare(bssid, bs) == 0 {
 			channel := WlanMhzToChannel(int(radiotap.ChannelFrequency))
-			w.Targets.AddIfNew("", src.String(), false, channel)
+			w.Stations.AddIfNew("", src.String(), false, channel)
 		}
 	}
 }
@@ -392,8 +389,7 @@ func (w *WDiscovery) ClientScan(bs net.HardwareAddr, packet gopacket.Packet) {
 func (w *WDiscovery) Configure() error {
 	var err error
 
-	w.Targets = NewWlanTargets(w.Session, w.Session.Interface)
-
+	w.Stations = NewWiFi(w.Session, w.Session.Interface)
 	w.BroadcastMac, _ = net.ParseMAC(BROADCAST_MAC)
 
 	inactive, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
