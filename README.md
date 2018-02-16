@@ -28,13 +28,9 @@ Make sure you have a correctly configured **Go >= 1.8** environment, that `$GOPA
 
     $ go get github.com/evilsocket/bettercap-ng
 
-To show the command line options:
+This command will download bettercap-ng, install its dependencies, compile it and move the `bettercap-ng` executable to `$GOPATH/bin`.
 
-    $ sudo bettercap-ng -h
-    
-To start an interactive session:
-
-    $ sudo bettercap-ng
+Now you can use `sudo bettercap-ng -h` to show the basic command line options and just `sudo bettercap-ng` to start an interactive session on your default network interface.
 
 ## Compilation on Windows
 
