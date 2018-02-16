@@ -10,7 +10,12 @@ import (
 	"github.com/evilsocket/bettercap-ng/core"
 )
 
-const MonitorModeAddress = "0.0.0.0"
+const (
+	MonitorModeAddress = "0.0.0.0"
+	BroadcastMac       = "ff:ff:ff:ff:ff:ff"
+	IPv4MulticastStart = "01:00:5e:00:00:00"
+	IPv4MulticastEnd   = "01:00:5e:7f:ff:ff"
+)
 
 var (
 	IPv4Validator = regexp.MustCompile("^[0-9\\.]+/?\\d*$")

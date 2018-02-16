@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/session"
 
 	"github.com/google/gopacket"
@@ -19,12 +20,6 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 )
-
-const IPV4_MULTICAST_ADDR_START = "01:00:5e:00:00:00"
-const IPV4_MULTICAST_ADDR_END = "01:00:5e:7f:ff:ff"
-const BROADCAST_MAC = "ff:ff:ff:ff:ff:ff"
-
-const MAC48Validator = "((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))"
 
 type WDiscovery struct {
 	session.SessionModule
@@ -357,7 +352,7 @@ func (w *WDiscovery) Configure() error {
 	var err error
 
 	w.Stations = NewWiFi(w.Session, w.Session.Interface)
-	w.BroadcastMac, _ = net.ParseMAC(BROADCAST_MAC)
+	w.BroadcastMac, _ = net.ParseMAC(network.BroadcastMac)
 
 	inactive, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
 	defer inactive.CleanUp()
