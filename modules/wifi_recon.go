@@ -19,6 +19,7 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 
+	"github.com/dustin/go-humanize"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -26,6 +27,7 @@ type WDiscovery struct {
 	session.SessionModule
 
 	wifi         *WiFi
+	stats        *WiFiStats
 	handle       *pcap.Handle
 	BroadcastMac []byte
 	cliTarget    net.HardwareAddr
@@ -35,6 +37,7 @@ type WDiscovery struct {
 func NewWDiscovery(s *session.Session) *WDiscovery {
 	w := &WDiscovery{
 		SessionModule: session.NewSessionModule("wifi.recon", s),
+		stats:         NewWiFiStats(),
 		cliTarget:     make([]byte, 0),
 		apTarget:      make([]byte, 0),
 	}
@@ -134,11 +137,18 @@ func (w *WDiscovery) getRow(station *WiFiStation) []string {
 		seen = core.Dim(seen)
 	}
 
+	traffic := ""
+	bytes := w.stats.For(station.HW)
+	if bytes > 0 {
+		traffic = humanize.Bytes(bytes)
+	}
+
 	return []string{
 		bssid,
 		station.ESSID(),
 		station.Vendor,
 		strconv.Itoa(station.Channel),
+		traffic,
 		seen,
 	}
 }
@@ -196,7 +206,7 @@ func (w *WDiscovery) Show(by string) error {
 		rows = append(rows, w.getRow(s))
 	}
 
-	w.showTable([]string{"BSSID", "SSID", "Vendor", "Channel", "Last Seen"}, rows)
+	w.showTable([]string{"BSSID", "SSID", "Vendor", "Channel", "Traffic", "Last Seen"}, rows)
 
 	w.Session.Refresh()
 
@@ -360,6 +370,36 @@ func (w *WDiscovery) Configure() error {
 	return nil
 }
 
+func (w *WDiscovery) updateStats(packet gopacket.Packet) {
+	radiotapLayer := packet.Layer(layers.LayerTypeRadioTap)
+	if radiotapLayer == nil {
+		return
+	}
+
+	dot11infoLayer := packet.Layer(layers.LayerTypeDot11InformationElement)
+	if dot11infoLayer == nil {
+		return
+	}
+
+	dot11info, _ := dot11infoLayer.(*layers.Dot11InformationElement)
+	if dot11info.ID != layers.Dot11InformationElementIDSSID {
+		return
+	}
+
+	dot11Layer := packet.Layer(layers.LayerTypeDot11)
+	if dot11Layer == nil {
+		return
+	}
+
+	dot11, _ := dot11Layer.(*layers.Dot11)
+
+	bytes := uint64(len(packet.Data()))
+	w.stats.Collect(dot11.Address1, bytes)
+	w.stats.Collect(dot11.Address2, bytes)
+	w.stats.Collect(dot11.Address3, bytes)
+	w.stats.Collect(dot11.Address4, bytes)
+}
+
 func (w *WDiscovery) Start() error {
 	if w.Running() == true {
 		return session.ErrAlreadyStarted
@@ -374,6 +414,8 @@ func (w *WDiscovery) Start() error {
 			if w.Running() == false {
 				break
 			}
+
+			w.updateStats(packet)
 
 			if len(w.apTarget) > 0 {
 				w.discoverClients(w.apTarget, packet)
