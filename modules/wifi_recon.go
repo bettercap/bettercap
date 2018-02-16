@@ -299,10 +299,20 @@ func (w *WiFiRecon) startDeauth() error {
 		if w.isClientSelected() {
 			// deauth a specific client
 			w.sendDeauthPacket(w.accessPoint, w.client)
+			log.Info("Deauth packets sent for client station %s.", w.client.String())
 		} else {
+			n := len(w.wifi.Stations)
 			// deauth all AP's clients
 			for _, station := range w.wifi.Stations {
 				w.sendDeauthPacket(w.accessPoint, station.HW)
+			}
+
+			if n == 0 {
+				log.Warning("No associated clients detected yet, deauth packets not sent.")
+			} else if n == 1 {
+				log.Info("Deauth packets sent for 1 client station.")
+			} else {
+				log.Info("Deauth packets sent for %d client stations.", n)
 			}
 		}
 		return nil
