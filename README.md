@@ -36,27 +36,28 @@ Now you can use `sudo bettercap-ng -h` to show the basic command line options an
 
 Despite Windows support [is not yet 100% complete](https://github.com/evilsocket/bettercap-ng/issues/45), it is possible to build bettercap-ng for Microsoft platforms and enjoy 99.99% of the experience. The steps to prepare the building environment are:
 
-1. Install [go amd64](https://golang.org/dl/) (add go binaries to your `%PATH%`).
-2. Install [TDM GCC for amd64](http://tdm-gcc.tdragon.net/download) (add TDM-GCC binaries to your `%PATH%`).
-3. Also add `TDM-GCC\x86_64-w64-mingw32\bin` to your `%PATH%`.
-4. Install [winpcap](https://www.winpcap.org/install/default.htm).
-5. Download [Winpcap developer's pack](https://www.winpcap.org/devel.htm) and extract it to `C:\`.
-6. Find `wpcap.dll` and `packet.dll` in your PC (typically in `c:\windows\system32`).
-7. Copy them to some other temp folder or else you'll have to supply Admin privs to the following commands.
-8. Run `gendef` on those files: `gendef wpcap.dll` and `gendef packet.dll` (obtainable with `MinGW Installation Manager`, package `mingw32-gendef`).
-9. This will generate .def files.
-10. Now we'll generate the static libraries files:
-11. Run `dlltool --as-flags=--64 -m i386:x86-64 -k --output-lib libwpcap.a --input-def wpcap.def`.
-12. and `dlltool --as-flags=--64 -m i386:x86-64 -k --output-lib libpacket.a --input-def packet.def`.
-13. Now just copy both `libwpcap.a` and `libpacket.a` to `c:\WpdPack\Lib\x64`.
-14. `go get github.com/evilsocket/bettercap-ng`.
-15. Enjoy.
+- Install [go amd64](https://golang.org/dl/) (add go binaries to your `%PATH%`).
+- Install [TDM GCC for amd64](http://tdm-gcc.tdragon.net/download) (add TDM-GCC binaries to your `%PATH%`).
+- Also add `TDM-GCC\x86_64-w64-mingw32\bin` to your `%PATH%`.
+- Install [winpcap](https://www.winpcap.org/install/default.htm).
+- Download [Winpcap developer's pack](https://www.winpcap.org/devel.htm) and extract it to `C:\`.
+- Find `wpcap.dll` and `packet.dll` in your PC (typically in `c:\windows\system32`).
+- Copy them to some other temp folder or else you'll have to supply Admin privs to the following commands.
+- Run `gendef` on those files: `gendef wpcap.dll` and `gendef packet.dll` (obtainable with `MinGW Installation Manager`, package `mingw32-gendef`).
+
+This will generate `.def` files, now we'll generate the static libraries files:
+
+- Run `dlltool --as-flags=--64 -m i386:x86-64 -k --output-lib libwpcap.a --input-def wpcap.def`.
+- and `dlltool --as-flags=--64 -m i386:x86-64 -k --output-lib libpacket.a --input-def packet.def`.
+- Copy both `libwpcap.a` and `libpacket.a` to `c:\WpdPack\Lib\x64`.
+
+And eventually just `go get github.com/evilsocket/bettercap-ng` as you would do on other platforms.
 
 ## Cross Compilation
 
 As an example, let's cross compile bettercap for ARM (requires `gcc-arm-linux-gnueabi`, `yacc` and `flex` packages).
 
-**Step 1**: Download and cross compile libpcap-1.8.1 for ARM (adjust `PCAPV` to use a different libpcap version):
+Download and cross compile libpcap-1.8.1 for ARM (adjust `PCAPV` to use a different libpcap version):
 
     cd /tmp
     export PCAPV=1.8.1
@@ -67,7 +68,7 @@ As an example, let's cross compile bettercap for ARM (requires `gcc-arm-linux-gn
     ./configure --host=arm-linux --with-pcap=linux
     make
 
-**Step 2**: Cross compile bettercap-ng itself:
+Cross compile bettercap-ng itself:
 
     cd $GOPATH/src/github.com/evilsocket/bettercap-ng
     env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm CGO_LDFLAGS="-L/tmp/libpcap-$PCAPV" make
