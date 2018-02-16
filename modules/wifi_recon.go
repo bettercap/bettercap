@@ -97,7 +97,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wifi.show", "",
-		"Show current hosts list (default sorting by essid).",
+		"Show current wireless stations list (default sorting by essid).",
 		func(args []string) error {
 			return w.Show("essid")
 		}))
@@ -307,6 +307,7 @@ func (w *WiFiRecon) startDeauth() error {
 		}
 		return nil
 	}
+
 	return errors.New("No base station or client set.")
 }
 
