@@ -178,6 +178,7 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 }
 
 func mhz2chan(freq int) int {
+	// ambo!
 	if freq <= 2484 {
 		return ((freq - 2412) / 5) + 1
 	}
