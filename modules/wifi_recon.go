@@ -168,7 +168,6 @@ func mhz2chan(freq int) int {
 	if freq <= 2484 {
 		return ((freq - 2412) / 5) + 1
 	}
-
 	return 0
 }
 
@@ -263,7 +262,7 @@ func (w *WiFiRecon) Configure() error {
 
 func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
 	for seq := uint16(0); seq < 64; seq++ {
-		if err, pkt := packets.NewDot11Deauth(ap, client, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq); err != nil {
+		if err, pkt := packets.NewDot11Deauth(ap, client, ap, seq); err != nil {
 			log.Error("Could not create deauth packet: %s", err)
 			continue
 		} else if err := w.handle.WritePacketData(pkt); err != nil {
@@ -273,7 +272,7 @@ func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAdd
 			time.Sleep(2 * time.Millisecond)
 		}
 
-		if err, pkt := packets.NewDot11Deauth(client, ap, ap, layers.Dot11TypeMgmtDeauthentication, layers.Dot11ReasonClass2FromNonAuth, seq); err != nil {
+		if err, pkt := packets.NewDot11Deauth(client, ap, ap, seq); err != nil {
 			log.Error("Could not create deauth packet: %s", err)
 			continue
 		} else if err := w.handle.WritePacketData(pkt); err != nil {
