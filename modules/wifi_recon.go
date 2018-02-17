@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -27,7 +28,6 @@ type WiFiRecon struct {
 	session.SessionModule
 
 	wifi        *WiFi
-	stats       *WiFiStats
 	handle      *pcap.Handle
 	channel     int
 	client      net.HardwareAddr
@@ -37,7 +37,6 @@ type WiFiRecon struct {
 func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	w := &WiFiRecon{
 		SessionModule: session.NewSessionModule("wifi.recon", s),
-		stats:         NewWiFiStats(),
 		channel:       0,
 		client:        make([]byte, 0),
 		accessPoint:   make([]byte, 0),
@@ -143,23 +142,12 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 	}
 
 	ssid := station.ESSID()
-
-	encryption := w.stats.EncryptionOf(station.HW)
+	encryption := station.Encryption
 	if encryption == "OPEN" {
 		encryption = core.Green(encryption)
 	}
-
-	sent := ""
-	bytes := w.stats.SentFrom(station.HW)
-	if bytes > 0 {
-		sent = humanize.Bytes(bytes)
-	}
-
-	recvd := ""
-	bytes = w.stats.SentTo(station.HW)
-	if bytes > 0 {
-		recvd = humanize.Bytes(bytes)
-	}
+	sent := humanize.Bytes(station.Sent)
+	recvd := humanize.Bytes(station.Received)
 
 	row := []string{
 		fmt.Sprintf("%d dBm", station.RSSI),
@@ -374,17 +362,21 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	if dot11.Type.MainType() == layers.Dot11TypeData {
 		bytes := uint64(len(packet.Data()))
 
-		dst := dot11.Address1
-		src := dot11.Address2
+		dst := dot11.Address1.String()
+		if station, found := w.wifi.Stations[dst]; found == true {
+			station.Received += bytes
+		}
 
-		w.stats.CollectReceived(dst, bytes)
-		w.stats.CollectSent(src, bytes)
+		src := dot11.Address2.String()
+		if station, found := w.wifi.Stations[src]; found == true {
+			station.Sent += bytes
+		}
 	}
 
 	if ok, enc := packets.Dot11ParseEncryption(packet, dot11); ok == true {
-		w.stats.ResetEncryption(dot11.Address3)
-		for _, e := range enc {
-			w.stats.CollectEncryption(dot11.Address3, e)
+		bssid := dot11.Address3.String()
+		if station, found := w.wifi.Stations[bssid]; found == true {
+			station.Encryption = strings.Join(enc, ", ")
 		}
 	}
 }

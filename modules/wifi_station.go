@@ -6,9 +6,12 @@ import (
 
 type WiFiStation struct {
 	*network.Endpoint
-	IsAP    bool
-	Channel int
-	RSSI    int8
+	IsAP       bool
+	Channel    int
+	RSSI       int8
+	Sent       uint64
+	Received   uint64
+	Encryption string
 }
 
 func NewWiFiStation(essid, bssid string, isAp bool, channel int, rssi int8) *WiFiStation {
