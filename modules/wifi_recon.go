@@ -285,6 +285,10 @@ func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAdd
 }
 
 func (w *WiFiRecon) startDeauth() error {
+	// at least we need to know what ap we're talking about
+	if w.isApSelected() == false {
+		return errors.New("No access point selected, use 'wifi.recon set bs BSSID' to select one.")
+	}
 	// if not already running, temporarily enable the pcap handle
 	// for packet injection
 	if w.Running() == false {
@@ -294,30 +298,27 @@ func (w *WiFiRecon) startDeauth() error {
 		defer w.handle.Close()
 	}
 
-	if w.isApSelected() {
-		if w.isClientSelected() {
-			// deauth a specific client
-			w.sendDeauthPacket(w.accessPoint, w.client)
-			log.Info("Deauth packets sent for client station %s.", w.client.String())
-		} else {
-			n := len(w.wifi.Stations)
-			// deauth all AP's clients
-			for _, station := range w.wifi.Stations {
-				w.sendDeauthPacket(w.accessPoint, station.HW)
-			}
-
-			if n == 0 {
-				log.Warning("No associated clients detected yet, deauth packets not sent.")
-			} else if n == 1 {
-				log.Info("Deauth packets sent for 1 client station.")
-			} else {
-				log.Info("Deauth packets sent for %d client stations.", n)
-			}
+	// deauth a specific client
+	if w.isClientSelected() {
+		w.sendDeauthPacket(w.accessPoint, w.client)
+		log.Info("Deauth packets sent for client station %s.", w.client.String())
+	} else {
+		// deauth every authenticated client
+		for _, station := range w.wifi.Stations {
+			w.sendDeauthPacket(w.accessPoint, station.HW)
 		}
-		return nil
+
+		n := len(w.wifi.Stations)
+		if n == 0 {
+			log.Warning("No associated clients detected yet, deauth packets not sent.")
+		} else if n == 1 {
+			log.Info("Deauth packets sent for 1 client station.")
+		} else {
+			log.Info("Deauth packets sent for %d client stations.", n)
+		}
 	}
 
-	return errors.New("No base station or client set.")
+	return nil
 }
 
 func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
