@@ -144,19 +144,8 @@ func (w *WiFiRecon) getRow(station *network.WiFiStation) []string {
 	sent := humanize.Bytes(station.Sent)
 	recvd := humanize.Bytes(station.Received)
 
-	row := []string{
-		fmt.Sprintf("%d dBm", station.RSSI),
-		bssid,
-		ssid,
-		station.Vendor,
-		encryption,
-		strconv.Itoa(station.Channel),
-		sent,
-		recvd,
-		seen,
-	}
 	if w.isApSelected() {
-		row = []string{
+		return []string{
 			fmt.Sprintf("%d dBm", station.RSSI),
 			bssid,
 			station.Vendor,
@@ -165,9 +154,19 @@ func (w *WiFiRecon) getRow(station *network.WiFiStation) []string {
 			recvd,
 			seen,
 		}
+	} else {
+		return []string{
+			fmt.Sprintf("%d dBm", station.RSSI),
+			bssid,
+			ssid,
+			station.Vendor,
+			encryption,
+			strconv.Itoa(station.Channel),
+			sent,
+			recvd,
+			seen,
+		}
 	}
-
-	return row
 }
 
 func mhz2chan(freq int) int {
