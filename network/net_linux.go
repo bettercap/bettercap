@@ -1,8 +1,11 @@
 package network
 
 import (
+	"fmt"
 	"net"
 	"regexp"
+
+	"github.com/evilsocket/bettercap-ng/core"
 )
 
 // only matches gateway lines
@@ -25,4 +28,14 @@ func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (
 // see Windows version to understand why ....
 func getInterfaceName(iface net.Interface) string {
 	return iface.Name
+}
+
+func SetInterfaceChannel(iface string, channel int) error {
+	out, err := core.Exec("iwconfig", []string{iface, "channel", fmt.Sprintf("%d", channel)})
+	if err != nil {
+		return err
+	} else if out != "" {
+		return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
+	}
+	return nil
 }

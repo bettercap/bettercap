@@ -11,6 +11,7 @@ import (
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/packets"
 	"github.com/evilsocket/bettercap-ng/session"
 
@@ -28,6 +29,7 @@ type WiFiRecon struct {
 	wifi        *WiFi
 	stats       *WiFiStats
 	handle      *pcap.Handle
+	channel     int
 	client      net.HardwareAddr
 	accessPoint net.HardwareAddr
 }
@@ -36,6 +38,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	w := &WiFiRecon{
 		SessionModule: session.NewSessionModule("wifi.recon", s),
 		stats:         NewWiFiStats(),
+		channel:       0,
 		client:        make([]byte, 0),
 		accessPoint:   make([]byte, 0),
 	}
@@ -97,8 +100,12 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	w.AddHandler(session.NewModuleHandler("wifi.show", "",
 		"Show current wireless stations list (default sorting by essid).",
 		func(args []string) error {
-			return w.Show("essid")
+			return w.Show("channel")
 		}))
+
+	w.AddParam(session.NewIntParameter("wifi.recon.channel",
+		"",
+		"WiFi channel or empty for channel hopping."))
 
 	return w
 }
@@ -177,6 +184,17 @@ func mhz2chan(freq int) int {
 	return 0
 }
 
+type ByChannelSorter []*WiFiStation
+
+func (a ByChannelSorter) Len() int      { return len(a) }
+func (a ByChannelSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByChannelSorter) Less(i, j int) bool {
+	if a[i].Channel == a[j].Channel {
+		return a[i].HwAddress < a[j].HwAddress
+	}
+	return a[i].Channel < a[j].Channel
+}
+
 type ByEssidSorter []*WiFiStation
 
 func (a ByEssidSorter) Len() int      { return len(a) }
@@ -221,8 +239,10 @@ func (w *WiFiRecon) Show(by string) error {
 	stations := w.wifi.List()
 	if by == "seen" {
 		sort.Sort(BywifiSeenSorter(stations))
-	} else {
+	} else if by == "essid" {
 		sort.Sort(ByEssidSorter(stations))
+	} else {
+		sort.Sort(ByChannelSorter(stations))
 	}
 
 	rows := make([][]string, 0)
@@ -259,6 +279,20 @@ func (w *WiFiRecon) Configure() error {
 		return err
 	} else if w.handle, err = ihandle.Activate(); err != nil {
 		return err
+	} else if err, w.channel = w.IntParam("wifi.recon.channel"); err == nil {
+		if err = network.SetInterfaceChannel(w.Session.Interface.Name(), w.channel); err != nil {
+			return err
+		}
+		log.Info("WiFi recon active on channel %d.", w.channel)
+	} else {
+		w.channel = 0
+		// we need to start somewhere, this is just to check if
+		// this OS support switching channel programmatically.
+		if err = network.SetInterfaceChannel(w.Session.Interface.Name(), 1); err != nil {
+			return err
+		}
+		log.Info("WiFi recon active with channel hopping.")
+
 	}
 
 	w.wifi = NewWiFi(w.Session, w.Session.Interface)
@@ -368,6 +402,25 @@ func (w *WiFiRecon) Start() error {
 	}
 
 	w.SetRunning(true, func() {
+		// start channel hopper if needed
+		if w.channel == 0 {
+			go func() {
+				log.Info("Channel hopper started.")
+				for w.Running() == true {
+					for channel := 1; channel < 15; channel++ {
+						if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
+							log.Warning("Error while hopping to channel %d: %s", channel, err)
+						}
+						// this is the default for airodump-ng, good for them, good for us.
+						time.Sleep(250 * time.Millisecond)
+						if w.Running() == false {
+							return
+						}
+					}
+				}
+			}()
+		}
+
 		defer w.handle.Close()
 		src := gopacket.NewPacketSource(w.handle, w.handle.LinkType())
 		for packet := range src.Packets() {

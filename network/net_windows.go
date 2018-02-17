@@ -1,6 +1,7 @@
 package network
 
 import (
+	"fmt"
 	"net"
 	"regexp"
 	"strings"
@@ -56,4 +57,8 @@ func getInterfaceName(iface net.Interface) string {
 	}
 
 	return iface.Name
+}
+
+func SetInterfaceChannel(iface string, channel int) error {
+	return fmt.Errorf("Windows does not support WiFi channel hopping.")
 }
