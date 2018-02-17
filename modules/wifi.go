@@ -44,17 +44,18 @@ func (w *WiFi) Remove(mac string) {
 	}
 }
 
-func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int) *WiFiStation {
+func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *WiFiStation {
 	w.Lock()
 	defer w.Unlock()
 
 	mac = network.NormalizeMac(mac)
 	if station, found := w.Stations[mac]; found {
-		w.Stations[mac].LastSeen = time.Now()
+		station.LastSeen = time.Now()
+		station.RSSI = rssi
 		return station
 	}
 
-	newStation := NewWiFiStation(ssid, mac, isAp, channel)
+	newStation := NewWiFiStation(ssid, mac, isAp, channel, rssi)
 	w.Stations[mac] = newStation
 
 	w.Session.Events.Add("wifi.station.new", newStation)

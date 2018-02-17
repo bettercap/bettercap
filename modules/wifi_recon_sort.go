@@ -1,5 +1,16 @@
 package modules
 
+type ByRSSISorter []*WiFiStation
+
+func (a ByRSSISorter) Len() int      { return len(a) }
+func (a ByRSSISorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByRSSISorter) Less(i, j int) bool {
+	if a[i].RSSI == a[j].RSSI {
+		return a[i].HwAddress < a[j].HwAddress
+	}
+	return a[i].RSSI > a[j].RSSI
+}
+
 type ByChannelSorter []*WiFiStation
 
 func (a ByChannelSorter) Len() int      { return len(a) }
@@ -22,10 +33,10 @@ func (a ByEssidSorter) Less(i, j int) bool {
 	return a[i].ESSID() < a[j].ESSID()
 }
 
-type BywifiSeenSorter []*WiFiStation
+type ByWiFiSeenSorter []*WiFiStation
 
-func (a BywifiSeenSorter) Len() int      { return len(a) }
-func (a BywifiSeenSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a BywifiSeenSorter) Less(i, j int) bool {
+func (a ByWiFiSeenSorter) Len() int      { return len(a) }
+func (a ByWiFiSeenSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByWiFiSeenSorter) Less(i, j int) bool {
 	return a[i].LastSeen.After(a[j].LastSeen)
 }

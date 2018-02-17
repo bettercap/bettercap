@@ -8,13 +8,15 @@ type WiFiStation struct {
 	*network.Endpoint
 	IsAP    bool
 	Channel int
+	RSSI    int8
 }
 
-func NewWiFiStation(essid, bssid string, isAp bool, channel int) *WiFiStation {
+func NewWiFiStation(essid, bssid string, isAp bool, channel int, rssi int8) *WiFiStation {
 	return &WiFiStation{
 		Endpoint: network.NewEndpointNoResolve(network.MonitorModeAddress, bssid, essid, 0),
 		IsAP:     isAp,
 		Channel:  channel,
+		RSSI:     rssi,
 	}
 }
 

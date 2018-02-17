@@ -100,7 +100,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	w.AddHandler(session.NewModuleHandler("wifi.show", "",
 		"Show current wireless stations list (default sorting by essid).",
 		func(args []string) error {
-			return w.Show("channel")
+			return w.Show("rssi")
 		}))
 
 	w.AddParam(session.NewIntParameter("wifi.recon.channel",
@@ -142,6 +142,8 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 		seen = core.Dim(seen)
 	}
 
+	encryption := w.stats.EncryptionOf(station.HW)
+
 	sent := ""
 	bytes := w.stats.SentFrom(station.HW)
 	if bytes > 0 {
@@ -155,9 +157,11 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 	}
 
 	row := []string{
+		fmt.Sprintf("%d dBm", station.RSSI),
 		bssid,
 		station.ESSID(),
 		station.Vendor,
+		encryption,
 		strconv.Itoa(station.Channel),
 		sent,
 		recvd,
@@ -165,6 +169,7 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 	}
 	if w.isApSelected() {
 		row = []string{
+			fmt.Sprintf("%d dBm", station.RSSI),
 			bssid,
 			station.Vendor,
 			strconv.Itoa(station.Channel),
@@ -209,11 +214,13 @@ func (w *WiFiRecon) Show(by string) error {
 
 	stations := w.wifi.List()
 	if by == "seen" {
-		sort.Sort(BywifiSeenSorter(stations))
+		sort.Sort(ByWiFiSeenSorter(stations))
 	} else if by == "essid" {
 		sort.Sort(ByEssidSorter(stations))
-	} else {
+	} else if by == "channel" {
 		sort.Sort(ByChannelSorter(stations))
+	} else {
+		sort.Sort(ByRSSISorter(stations))
 	}
 
 	rows := make([][]string, 0)
@@ -221,10 +228,10 @@ func (w *WiFiRecon) Show(by string) error {
 		rows = append(rows, w.getRow(s))
 	}
 
-	columns := []string{"BSSID", "SSID", "Vendor", "Channel", "Sent", "Recvd", "Last Seen"}
+	columns := []string{"RSSI", "BSSID", "SSID", "Vendor", "Encryption", "Channel", "Sent", "Recvd", "Last Seen"}
 	if w.isApSelected() {
 		// these are clients
-		columns = []string{"MAC", "Vendor", "Channel", "Sent", "Received", "Last Seen"}
+		columns = []string{"RSSI", "MAC", "Vendor", "Channel", "Sent", "Received", "Last Seen"}
 		fmt.Printf("\n%s clients:\n", w.accessPoint.String())
 	}
 
@@ -263,7 +270,6 @@ func (w *WiFiRecon) Configure() error {
 			return err
 		}
 		log.Info("WiFi recon active with channel hopping.")
-
 	}
 
 	w.wifi = NewWiFi(w.Session, w.Session.Interface)
@@ -337,7 +343,7 @@ func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layer
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
 		bssid := dot11.Address3.String()
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
-		w.wifi.AddIfNew(ssid, bssid, true, channel)
+		w.wifi.AddIfNew(ssid, bssid, true, channel, radiotap.DBMAntennaSignal)
 	}
 }
 
@@ -346,23 +352,27 @@ func (w *WiFiRecon) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot
 	if packets.Dot11IsDataFor(dot11, ap) == true {
 		src := dot11.Address2
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
-		w.wifi.AddIfNew("", src.String(), false, channel)
+		w.wifi.AddIfNew("", src.String(), false, channel, radiotap.DBMAntennaSignal)
 	}
 }
 
 func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
-	// only collect stats from data frames
-	if dot11.Type.MainType() != layers.Dot11TypeData {
-		return
+	// collect stats from data frames
+	if dot11.Type.MainType() == layers.Dot11TypeData {
+		bytes := uint64(len(packet.Data()))
+
+		dst := dot11.Address1
+		src := dot11.Address2
+
+		w.stats.CollectReceived(dst, bytes)
+		w.stats.CollectSent(src, bytes)
 	}
 
-	bytes := uint64(len(packet.Data()))
-
-	dst := dot11.Address1
-	src := dot11.Address2
-
-	w.stats.CollectReceived(dst, bytes)
-	w.stats.CollectSent(src, bytes)
+	if ok, enc := packets.Dot11ParseEncryption(packet, dot11); ok == true {
+		for _, e := range enc {
+			w.stats.CollectEncryption(dot11.Address3, e)
+		}
+	}
 }
 
 func (w *WiFiRecon) Start() error {

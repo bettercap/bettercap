@@ -66,6 +66,11 @@ func Dot11ParseIDSSID(packet gopacket.Packet) (bool, string) {
 	}
 }
 
+func Dot11ParseEncryption(packet gopacket.Packet, dot11 *layers.Dot11) (bool, []string) {
+	// TODO :(
+	return false, nil
+}
+
 func Dot11IsDataFor(dot11 *layers.Dot11, station net.HardwareAddr) bool {
 	// only check data packets of connected stations
 	if dot11.Type.MainType() != layers.Dot11TypeData {
