@@ -39,6 +39,7 @@ type Session struct {
 	Firewall  firewall.FirewallManager `json:"-"`
 	Env       *Environment             `json:"env"`
 	Targets   *Targets                 `json:"targets"`
+	WiFi      *network.WiFi            `json:"wifi"`
 	Queue     *packets.Queue           `json:"packets"`
 	Input     *readline.Instance       `json:"-"`
 	StartedAt time.Time                `json:"started_at"`
@@ -375,6 +376,7 @@ func (s *Session) Start() error {
 		s.Gateway = s.Interface
 	}
 
+	s.WiFi = network.NewWiFi(s.Interface)
 	s.Targets = NewTargets(s, s.Interface, s.Gateway)
 	s.Firewall = firewall.Make(s.Interface)
 

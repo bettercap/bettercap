@@ -1,11 +1,7 @@
-package modules
-
-import (
-	"github.com/evilsocket/bettercap-ng/network"
-)
+package network
 
 type WiFiStation struct {
-	*network.Endpoint
+	*Endpoint
 	IsAP       bool
 	Channel    int
 	RSSI       int8
@@ -16,7 +12,7 @@ type WiFiStation struct {
 
 func NewWiFiStation(essid, bssid string, isAp bool, channel int, rssi int8) *WiFiStation {
 	return &WiFiStation{
-		Endpoint: network.NewEndpointNoResolve(network.MonitorModeAddress, bssid, essid, 0),
+		Endpoint: NewEndpointNoResolve(MonitorModeAddress, bssid, essid, 0),
 		IsAP:     isAp,
 		Channel:  channel,
 		RSSI:     rssi,

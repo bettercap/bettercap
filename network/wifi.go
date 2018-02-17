@@ -1,23 +1,18 @@
-package modules
+package network
 
 import (
 	"sync"
 	"time"
-
-	"github.com/evilsocket/bettercap-ng/network"
-	"github.com/evilsocket/bettercap-ng/session"
 )
 
 type WiFi struct {
 	sync.Mutex
-	Session   *session.Session
-	Interface *network.Endpoint
+	Interface *Endpoint
 	Stations  map[string]*WiFiStation
 }
 
-func NewWiFi(s *session.Session, iface *network.Endpoint) *WiFi {
+func NewWiFi(iface *Endpoint) *WiFi {
 	return &WiFi{
-		Session:   s,
 		Interface: iface,
 		Stations:  make(map[string]*WiFiStation),
 	}
@@ -38,8 +33,7 @@ func (w *WiFi) Remove(mac string) {
 	w.Lock()
 	defer w.Unlock()
 
-	if station, found := w.Stations[mac]; found {
-		w.Session.Events.Add("wifi.station.lost", station)
+	if _, found := w.Stations[mac]; found {
 		delete(w.Stations, mac)
 	}
 }
@@ -48,7 +42,7 @@ func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *Wi
 	w.Lock()
 	defer w.Unlock()
 
-	mac = network.NormalizeMac(mac)
+	mac = NormalizeMac(mac)
 	if station, found := w.Stations[mac]; found {
 		station.LastSeen = time.Now()
 		station.RSSI = rssi
@@ -57,8 +51,6 @@ func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *Wi
 
 	newStation := NewWiFiStation(ssid, mac, isAp, channel, rssi)
 	w.Stations[mac] = newStation
-
-	w.Session.Events.Add("wifi.station.new", newStation)
 
 	return nil
 }

@@ -27,7 +27,6 @@ import (
 type WiFiRecon struct {
 	session.SessionModule
 
-	wifi        *WiFi
 	handle      *pcap.Handle
 	channel     int
 	client      net.HardwareAddr
@@ -79,9 +78,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 		"Set 802.11 base station address to filter for.",
 		func(args []string) error {
 			var err error
-			if w.wifi != nil {
-				w.wifi.Clear()
-			}
+			w.Session.WiFi.Clear()
 			w.accessPoint, err = net.ParseMAC(args[0])
 			return err
 		}))
@@ -89,9 +86,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	w.AddHandler(session.NewModuleHandler("wifi.recon clear bs", "",
 		"Remove the 802.11 base station filter.",
 		func(args []string) error {
-			if w.wifi != nil {
-				w.wifi.Clear()
-			}
+			w.Session.WiFi.Clear()
 			w.accessPoint = make([]byte, 0)
 			return nil
 		}))
@@ -121,7 +116,7 @@ func (w WiFiRecon) Author() string {
 	return "Gianluca Braga <matrix86@protonmail.com>"
 }
 
-func (w *WiFiRecon) getRow(station *WiFiStation) []string {
+func (w *WiFiRecon) getRow(station *network.WiFiStation) []string {
 	sinceStarted := time.Since(w.Session.StartedAt)
 	sinceFirstSeen := time.Since(station.FirstSeen)
 
@@ -201,11 +196,7 @@ func (w *WiFiRecon) isClientSelected() bool {
 }
 
 func (w *WiFiRecon) Show(by string) error {
-	if w.wifi == nil {
-		return errors.New("WiFi is not yet initialized.")
-	}
-
-	stations := w.wifi.List()
+	stations := w.Session.WiFi.List()
 	if by == "seen" {
 		sort.Sort(ByWiFiSeenSorter(stations))
 	} else if by == "essid" {
@@ -273,8 +264,6 @@ func (w *WiFiRecon) Configure() error {
 		log.Info("WiFi recon active with channel hopping.")
 	}
 
-	w.wifi = NewWiFi(w.Session, w.Session.Interface)
-
 	return nil
 }
 
@@ -322,11 +311,11 @@ func (w *WiFiRecon) startDeauth() error {
 		log.Info("Deauth packets sent for client station %s.", w.client.String())
 	} else {
 		// deauth every authenticated client
-		for _, station := range w.wifi.Stations {
+		for _, station := range w.Session.WiFi.Stations {
 			w.sendDeauthPacket(w.accessPoint, station.HW)
 		}
 
-		n := len(w.wifi.Stations)
+		n := len(w.Session.WiFi.Stations)
 		if n == 0 {
 			log.Warning("No associated clients detected yet, deauth packets not sent.")
 		} else if n == 1 {
@@ -344,7 +333,7 @@ func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layer
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
 		bssid := dot11.Address3.String()
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
-		w.wifi.AddIfNew(ssid, bssid, true, channel, radiotap.DBMAntennaSignal)
+		w.Session.WiFi.AddIfNew(ssid, bssid, true, channel, radiotap.DBMAntennaSignal)
 	}
 }
 
@@ -353,7 +342,7 @@ func (w *WiFiRecon) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot
 	if packets.Dot11IsDataFor(dot11, ap) == true {
 		src := dot11.Address2
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
-		w.wifi.AddIfNew("", src.String(), false, channel, radiotap.DBMAntennaSignal)
+		w.Session.WiFi.AddIfNew("", src.String(), false, channel, radiotap.DBMAntennaSignal)
 	}
 }
 
@@ -363,19 +352,19 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 		bytes := uint64(len(packet.Data()))
 
 		dst := dot11.Address1.String()
-		if station, found := w.wifi.Stations[dst]; found == true {
+		if station, found := w.Session.WiFi.Stations[dst]; found == true {
 			station.Received += bytes
 		}
 
 		src := dot11.Address2.String()
-		if station, found := w.wifi.Stations[src]; found == true {
+		if station, found := w.Session.WiFi.Stations[src]; found == true {
 			station.Sent += bytes
 		}
 	}
 
 	if ok, enc := packets.Dot11ParseEncryption(packet, dot11); ok == true {
 		bssid := dot11.Address3.String()
-		if station, found := w.wifi.Stations[bssid]; found == true {
+		if station, found := w.Session.WiFi.Stations[bssid]; found == true {
 			station.Encryption = strings.Join(enc, ", ")
 		}
 	}
