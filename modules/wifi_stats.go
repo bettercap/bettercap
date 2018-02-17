@@ -55,6 +55,16 @@ func (s *WiFiStats) CollectReceived(station net.HardwareAddr, bytes uint64) {
 	}
 }
 
+func (s *WiFiStats) ResetEncryption(station net.HardwareAddr) {
+	s.Lock()
+	defer s.Unlock()
+
+	bssid := station.String()
+	if sstats, found := s.stats[bssid]; found == true {
+		sstats.Encryption = make(map[string]bool)
+	}
+}
+
 func (s *WiFiStats) CollectEncryption(station net.HardwareAddr, enc string) {
 	s.Lock()
 	defer s.Unlock()

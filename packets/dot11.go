@@ -49,26 +49,47 @@ func Dot11Parse(packet gopacket.Packet) (ok bool, radiotap *layers.RadioTap, dot
 }
 
 func Dot11ParseIDSSID(packet gopacket.Packet) (bool, string) {
-	dot11infoLayer := packet.Layer(layers.LayerTypeDot11InformationElement)
-	if dot11infoLayer == nil {
-		return false, ""
+	for _, layer := range packet.Layers() {
+		if layer.LayerType() == layers.LayerTypeDot11InformationElement {
+			dot11info, ok := layer.(*layers.Dot11InformationElement)
+			if ok == true && dot11info.ID == layers.Dot11InformationElementIDSSID && len(dot11info.Info) > 0 {
+				return true, string(dot11info.Info)
+			}
+		}
 	}
 
-	dot11info, ok := dot11infoLayer.(*layers.Dot11InformationElement)
-	if ok == false || (dot11info.ID != layers.Dot11InformationElementIDSSID) {
-		return false, ""
-	}
-
-	if len(dot11info.Info) == 0 {
-		return false, ""
-	} else {
-		return true, string(dot11info.Info)
-	}
+	return false, ""
 }
 
 func Dot11ParseEncryption(packet gopacket.Packet, dot11 *layers.Dot11) (bool, []string) {
-	// TODO :(
-	return false, nil
+	enc := make([]string, 0)
+	found := false
+
+	if dot11.Flags.WEP() {
+		found = true
+		enc = append(enc, "WEP")
+	}
+
+	for _, layer := range packet.Layers() {
+		if layer.LayerType() == layers.LayerTypeDot11InformationElement {
+			info, ok := layer.(*layers.Dot11InformationElement)
+			if ok == true {
+				found = true
+				if info.ID == layers.Dot11InformationElementIDRSNInfo {
+					enc = append(enc, "WPA2")
+				} else if info.ID == layers.Dot11InformationElementIDVendor && bytes.Index(info.Info, []byte{0, 0x50, 0xf2, 1, 1, 0}) == 0 {
+					enc = append(enc, "WPA")
+				}
+			}
+		}
+	}
+
+	if found && len(enc) == 0 {
+		enc = append(enc, "OPEN")
+	}
+
+	return found, enc
+
 }
 
 func Dot11IsDataFor(dot11 *layers.Dot11, station net.HardwareAddr) bool {

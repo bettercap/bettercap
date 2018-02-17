@@ -142,7 +142,12 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 		seen = core.Dim(seen)
 	}
 
+	ssid := station.ESSID()
+
 	encryption := w.stats.EncryptionOf(station.HW)
+	if encryption == "OPEN" {
+		encryption = core.Green(encryption)
+	}
 
 	sent := ""
 	bytes := w.stats.SentFrom(station.HW)
@@ -159,7 +164,7 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 	row := []string{
 		fmt.Sprintf("%d dBm", station.RSSI),
 		bssid,
-		station.ESSID(),
+		ssid,
 		station.Vendor,
 		encryption,
 		strconv.Itoa(station.Channel),
@@ -227,15 +232,23 @@ func (w *WiFiRecon) Show(by string) error {
 	for _, s := range stations {
 		rows = append(rows, w.getRow(s))
 	}
+	nrows := len(rows)
 
 	columns := []string{"RSSI", "BSSID", "SSID", "Vendor", "Encryption", "Channel", "Sent", "Recvd", "Last Seen"}
 	if w.isApSelected() {
 		// these are clients
 		columns = []string{"RSSI", "MAC", "Vendor", "Channel", "Sent", "Received", "Last Seen"}
-		fmt.Printf("\n%s clients:\n", w.accessPoint.String())
+
+		if nrows == 0 {
+			fmt.Printf("\nNo authenticated clients detected for %s.\n", w.accessPoint.String())
+		} else {
+			fmt.Printf("\n%s clients:\n", w.accessPoint.String())
+		}
 	}
 
-	w.showTable(columns, rows)
+	if nrows > 0 {
+		w.showTable(columns, rows)
+	}
 
 	w.Session.Refresh()
 
@@ -265,7 +278,7 @@ func (w *WiFiRecon) Configure() error {
 	} else {
 		w.channel = 0
 		// we need to start somewhere, this is just to check if
-		// this OS support switching channel programmatically.
+		// this OS supports switching channel programmatically.
 		if err = network.SetInterfaceChannel(w.Session.Interface.Name(), 1); err != nil {
 			return err
 		}
@@ -369,6 +382,7 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	}
 
 	if ok, enc := packets.Dot11ParseEncryption(packet, dot11); ok == true {
+		w.stats.ResetEncryption(dot11.Address3)
 		for _, e := range enc {
 			w.stats.CollectEncryption(dot11.Address3, e)
 		}
