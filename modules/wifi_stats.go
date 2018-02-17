@@ -6,7 +6,8 @@ import (
 )
 
 type WiFiStationStats struct {
-	Bytes uint64
+	Sent     uint64
+	Received uint64
 }
 
 type WiFiStats struct {
@@ -20,25 +21,48 @@ func NewWiFiStats() *WiFiStats {
 	}
 }
 
-func (s *WiFiStats) Collect(station net.HardwareAddr, bytes uint64) {
+func (s *WiFiStats) CollectSent(station net.HardwareAddr, bytes uint64) {
 	s.Lock()
 	defer s.Unlock()
 
 	bssid := station.String()
 	if sstats, found := s.stats[bssid]; found == true {
-		sstats.Bytes += bytes
+		sstats.Sent += bytes
 	} else {
-		s.stats[bssid] = &WiFiStationStats{Bytes: bytes}
+		s.stats[bssid] = &WiFiStationStats{Sent: bytes}
 	}
 }
 
-func (s *WiFiStats) For(station net.HardwareAddr) uint64 {
+func (s *WiFiStats) CollectReceived(station net.HardwareAddr, bytes uint64) {
 	s.Lock()
 	defer s.Unlock()
 
 	bssid := station.String()
 	if sstats, found := s.stats[bssid]; found == true {
-		return sstats.Bytes
+		sstats.Received += bytes
+	} else {
+		s.stats[bssid] = &WiFiStationStats{Received: bytes}
+	}
+}
+
+func (s *WiFiStats) SentFrom(station net.HardwareAddr) uint64 {
+	s.Lock()
+	defer s.Unlock()
+
+	bssid := station.String()
+	if sstats, found := s.stats[bssid]; found == true {
+		return sstats.Sent
+	}
+	return 0
+}
+
+func (s *WiFiStats) SentTo(station net.HardwareAddr) uint64 {
+	s.Lock()
+	defer s.Unlock()
+
+	bssid := station.String()
+	if sstats, found := s.stats[bssid]; found == true {
+		return sstats.Received
 	}
 	return 0
 }

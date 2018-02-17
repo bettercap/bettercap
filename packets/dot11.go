@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bytes"
 	"net"
 
 	"github.com/google/gopacket"
@@ -45,4 +46,31 @@ func Dot11Parse(packet gopacket.Packet) (ok bool, radiotap *layers.RadioTap, dot
 
 	dot11, ok = dot11Layer.(*layers.Dot11)
 	return
+}
+
+func Dot11ParseIDSSID(packet gopacket.Packet) (bool, string) {
+	dot11infoLayer := packet.Layer(layers.LayerTypeDot11InformationElement)
+	if dot11infoLayer == nil {
+		return false, ""
+	}
+
+	dot11info, ok := dot11infoLayer.(*layers.Dot11InformationElement)
+	if ok == false || (dot11info.ID != layers.Dot11InformationElementIDSSID) {
+		return false, ""
+	}
+
+	if len(dot11info.Info) == 0 {
+		return false, ""
+	} else {
+		return true, string(dot11info.Info)
+	}
+}
+
+func Dot11IsDataFor(dot11 *layers.Dot11, station net.HardwareAddr) bool {
+	// only check data packets of connected stations
+	if dot11.Type.MainType() != layers.Dot11TypeData {
+		return false
+	}
+	// packet going to this specific BSSID?
+	return bytes.Compare(dot11.Address1, station) == 0
 }

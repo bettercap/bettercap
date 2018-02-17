@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"net"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/packets"
 	"github.com/evilsocket/bettercap-ng/session"
 
@@ -137,10 +135,16 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 		seen = core.Dim(seen)
 	}
 
-	traffic := ""
-	bytes := w.stats.For(station.HW)
+	sent := ""
+	bytes := w.stats.SentFrom(station.HW)
 	if bytes > 0 {
-		traffic = humanize.Bytes(bytes)
+		sent = humanize.Bytes(bytes)
+	}
+
+	recvd := ""
+	bytes = w.stats.SentTo(station.HW)
+	if bytes > 0 {
+		recvd = humanize.Bytes(bytes)
 	}
 
 	row := []string{
@@ -148,7 +152,8 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 		station.ESSID(),
 		station.Vendor,
 		strconv.Itoa(station.Channel),
-		traffic,
+		sent,
+		recvd,
 		seen,
 	}
 	if w.isApSelected() {
@@ -156,7 +161,8 @@ func (w *WiFiRecon) getRow(station *WiFiStation) []string {
 			bssid,
 			station.Vendor,
 			strconv.Itoa(station.Channel),
-			traffic,
+			sent,
+			recvd,
 			seen,
 		}
 	}
@@ -224,10 +230,10 @@ func (w *WiFiRecon) Show(by string) error {
 		rows = append(rows, w.getRow(s))
 	}
 
-	columns := []string{"BSSID", "SSID", "Vendor", "Channel", "Traffic", "Last Seen"}
+	columns := []string{"BSSID", "SSID", "Vendor", "Channel", "Sent", "Recvd", "Last Seen"}
 	if w.isApSelected() {
 		// these are clients
-		columns = []string{"MAC", "Vendor", "Channel", "Traffic", "Last Seen"}
+		columns = []string{"MAC", "Vendor", "Channel", "Sent", "Received", "Last Seen"}
 		fmt.Printf("\n%s clients:\n", w.accessPoint.String())
 	}
 
@@ -322,20 +328,8 @@ func (w *WiFiRecon) startDeauth() error {
 }
 
 func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
-	dot11infoLayer := packet.Layer(layers.LayerTypeDot11InformationElement)
-	if dot11infoLayer == nil {
-		return
-	}
-
-	dot11info, ok := dot11infoLayer.(*layers.Dot11InformationElement)
-	if ok == false || (dot11info.ID != layers.Dot11InformationElementIDSSID) {
-		return
-	}
-
-	dst := dot11.Address1
-	// packet sent to broadcast mac with a SSID set?
-	if bytes.Compare(dst, network.BroadcastMac) == 0 && len(dot11info.Info) > 0 {
-		ssid := string(dot11info.Info)
+	// search for Dot11InformationElementIDSSID
+	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
 		bssid := dot11.Address3.String()
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
 		w.wifi.AddIfNew(ssid, bssid, true, channel)
@@ -343,14 +337,8 @@ func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layer
 }
 
 func (w *WiFiRecon) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot11, ap net.HardwareAddr, packet gopacket.Packet) {
-	// only check data packets of connected stations
-	if dot11.Type.MainType() != layers.Dot11TypeData {
-		return
-	}
-
-	bssid := dot11.Address1
 	// packet going to this specific BSSID?
-	if bytes.Compare(bssid, ap) == 0 {
+	if packets.Dot11IsDataFor(dot11, ap) == true {
 		src := dot11.Address2
 		channel := mhz2chan(int(radiotap.ChannelFrequency))
 		w.wifi.AddIfNew("", src.String(), false, channel)
@@ -358,15 +346,18 @@ func (w *WiFiRecon) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot
 }
 
 func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
-	// FIXME: This doesn't consider the actual direction of the
-	// packet (which address is the source, which the destination,
-	// etc). It should be fixed and counter splitted into two
-	// separete "Recvd" and "Sent" uint64 counters.
+	// only collect stats from data frames
+	if dot11.Type.MainType() != layers.Dot11TypeData {
+		return
+	}
+
 	bytes := uint64(len(packet.Data()))
-	w.stats.Collect(dot11.Address1, bytes)
-	w.stats.Collect(dot11.Address2, bytes)
-	w.stats.Collect(dot11.Address3, bytes)
-	w.stats.Collect(dot11.Address4, bytes)
+
+	dst := dot11.Address1
+	src := dot11.Address2
+
+	w.stats.CollectReceived(dst, bytes)
+	w.stats.CollectSent(src, bytes)
 }
 
 func (w *WiFiRecon) Start() error {
