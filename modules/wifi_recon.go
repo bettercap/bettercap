@@ -138,8 +138,8 @@ func (w *WiFiRecon) getRow(station *network.WiFiStation) []string {
 
 	ssid := station.ESSID()
 	encryption := station.Encryption
-	if encryption == "OPEN" {
-		encryption = core.Green(encryption)
+	if encryption == "OPEN" || encryption == "" {
+		encryption = core.Green("OPEN")
 	}
 	sent := humanize.Bytes(station.Sent)
 	recvd := humanize.Bytes(station.Received)
