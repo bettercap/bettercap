@@ -38,7 +38,7 @@ type Session struct {
 	Gateway   *network.Endpoint        `json:"gateway"`
 	Firewall  firewall.FirewallManager `json:"-"`
 	Env       *Environment             `json:"env"`
-	Targets   *Targets                 `json:"targets"`
+	Lan       *network.LAN             `json:"lan"`
 	WiFi      *network.WiFi            `json:"wifi"`
 	Queue     *packets.Queue           `json:"packets"`
 	Input     *readline.Instance       `json:"-"`
@@ -295,7 +295,7 @@ func (s *Session) startNetMon() {
 				addr := event.IP.String()
 				mac := event.MAC.String()
 
-				existing := s.Targets.AddIfNew(addr, mac)
+				existing := s.Lan.AddIfNew(addr, mac)
 				if existing != nil {
 					existing.LastSeen = time.Now()
 				}
@@ -376,9 +376,13 @@ func (s *Session) Start() error {
 		s.Gateway = s.Interface
 	}
 
-	s.WiFi = network.NewWiFi(s.Interface)
-	s.Targets = NewTargets(s, s.Interface, s.Gateway)
 	s.Firewall = firewall.Make(s.Interface)
+	s.WiFi = network.NewWiFi(s.Interface)
+	s.Lan = network.NewLAN(s.Interface, s.Gateway, func(e *network.Endpoint) {
+		s.Events.Add("endpoint.new", e)
+	}, func(e *network.Endpoint) {
+		s.Events.Add("endpoint.lost", e)
+	})
 
 	s.setupEnv()
 

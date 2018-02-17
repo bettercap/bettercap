@@ -185,7 +185,7 @@ func (s *Session) aliasHandler(args []string, sess *Session) error {
 	mac := args[0]
 	alias := core.Trim(args[1])
 
-	if s.Targets.SetAliasFor(mac, alias) == true {
+	if s.Lan.SetAliasFor(mac, alias) == true {
 		return nil
 	} else {
 		return fmt.Errorf("Could not find endpoint %s", mac)
@@ -298,7 +298,7 @@ func (s *Session) registerCoreHandlers() {
 		readline.PcItem("alias", readline.PcItemDynamic(func(prefix string) []string {
 			prefix = core.Trim(prefix[5:])
 			macs := []string{""}
-			for mac := range s.Targets.Targets {
+			for mac := range s.Lan.Hosts {
 				if prefix == "" || strings.HasPrefix(mac, prefix) == true {
 					macs = append(macs, mac)
 				}

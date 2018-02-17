@@ -23,9 +23,9 @@ func vIP(ip net.IP) string {
 	}
 
 	address := ip.String()
-	host, found := session.I.Targets.Targets[address]
+	host := session.I.Lan.Get(address)
 
-	if found == true {
+	if host != nil {
 		if host.Hostname != "" {
 			return host.Hostname
 		}

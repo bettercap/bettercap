@@ -53,7 +53,7 @@ func (d *Discovery) getRow(e *network.Endpoint) []string {
 
 	addr := e.IpAddress
 	mac := e.HwAddress
-	if d.Session.Targets.WasMissed(e.HwAddress) == true {
+	if d.Session.Lan.WasMissed(e.HwAddress) == true {
 		// if endpoint was not found in ARP at least once
 		addr = core.Dim(addr)
 		mac = core.Dim(mac)
@@ -113,7 +113,7 @@ func (d *Discovery) showTable(header []string, rows [][]string) {
 }
 
 func (d *Discovery) Show(by string) error {
-	targets := d.Session.Targets.List()
+	targets := d.Session.Lan.List()
 	if by == "seen" {
 		sort.Sort(BySeenSorter(targets))
 	} else if by == "sent" {

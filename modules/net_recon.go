@@ -71,19 +71,19 @@ func (d Discovery) Author() string {
 func (d *Discovery) runDiff(cache network.ArpTable) {
 	// check for endpoints who disappeared
 	var rem network.ArpTable = make(network.ArpTable)
-	for mac, t := range d.Session.Targets.Targets {
+	for mac, t := range d.Session.Lan.Hosts {
 		if _, found := cache[mac]; found == false {
 			rem[mac] = t.IpAddress
 		}
 	}
 
 	for mac, ip := range rem {
-		d.Session.Targets.Remove(ip, mac)
+		d.Session.Lan.Remove(ip, mac)
 	}
 
 	// now check for new friends ^_^
 	for ip, mac := range cache {
-		d.Session.Targets.AddIfNew(ip, mac)
+		d.Session.Lan.AddIfNew(ip, mac)
 	}
 }
 
