@@ -1,6 +1,6 @@
 package network
 
-type WiFiStation struct {
+type Station struct {
 	*Endpoint
 	IsAP       bool
 	Channel    int
@@ -10,8 +10,8 @@ type WiFiStation struct {
 	Encryption string
 }
 
-func NewWiFiStation(essid, bssid string, isAp bool, channel int, rssi int8) *WiFiStation {
-	return &WiFiStation{
+func NewStation(essid, bssid string, isAp bool, channel int, rssi int8) *Station {
+	return &Station{
 		Endpoint: NewEndpointNoResolve(MonitorModeAddress, bssid, essid, 0),
 		IsAP:     isAp,
 		Channel:  channel,
@@ -19,10 +19,10 @@ func NewWiFiStation(essid, bssid string, isAp bool, channel int, rssi int8) *WiF
 	}
 }
 
-func (s WiFiStation) BSSID() string {
+func (s Station) BSSID() string {
 	return s.HwAddress
 }
 
-func (s *WiFiStation) ESSID() string {
+func (s *Station) ESSID() string {
 	return s.Hostname
 }

@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-type StationNewCallback func(s *WiFiStation)
-type StationLostCallback func(s *WiFiStation)
+type StationNewCallback func(s *Station)
+type StationLostCallback func(s *Station)
 
 type WiFi struct {
 	sync.Mutex
 	Interface *Endpoint
-	Stations  map[string]*WiFiStation
+	Stations  map[string]*Station
 
 	newCb  StationNewCallback
 	lostCb StationLostCallback
@@ -20,17 +20,17 @@ type WiFi struct {
 func NewWiFi(iface *Endpoint, newcb StationNewCallback, lostcb StationLostCallback) *WiFi {
 	return &WiFi{
 		Interface: iface,
-		Stations:  make(map[string]*WiFiStation),
+		Stations:  make(map[string]*Station),
 		newCb:     newcb,
 		lostCb:    lostcb,
 	}
 }
 
-func (w *WiFi) List() (list []*WiFiStation) {
+func (w *WiFi) List() (list []*Station) {
 	w.Lock()
 	defer w.Unlock()
 
-	list = make([]*WiFiStation, 0)
+	list = make([]*Station, 0)
 	for _, t := range w.Stations {
 		list = append(list, t)
 	}
@@ -49,7 +49,7 @@ func (w *WiFi) Remove(mac string) {
 	}
 }
 
-func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *WiFiStation {
+func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *Station {
 	w.Lock()
 	defer w.Unlock()
 
@@ -60,7 +60,7 @@ func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *Wi
 		return station
 	}
 
-	newStation := NewWiFiStation(ssid, mac, isAp, channel, rssi)
+	newStation := NewStation(ssid, mac, isAp, channel, rssi)
 	w.Stations[mac] = newStation
 
 	if w.newCb != nil {
@@ -71,6 +71,6 @@ func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *Wi
 }
 
 func (w *WiFi) Clear() error {
-	w.Stations = make(map[string]*WiFiStation)
+	w.Stations = make(map[string]*Station)
 	return nil
 }

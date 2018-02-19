@@ -118,7 +118,7 @@ func (w WiFiRecon) Author() string {
 	return "Gianluca Braga <matrix86@protonmail.com>"
 }
 
-func (w *WiFiRecon) getRow(station *network.WiFiStation) []string {
+func (w *WiFiRecon) getRow(station *network.Station) []string {
 	sinceStarted := time.Since(w.Session.StartedAt)
 	sinceFirstSeen := time.Since(station.FirstSeen)
 

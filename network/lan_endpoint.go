@@ -10,6 +10,7 @@ import (
 )
 
 type OnHostResolvedCallback func(e *Endpoint)
+
 type Endpoint struct {
 	Index            int                    `json:"-"`
 	IP               net.IP                 `json:"-"`
