@@ -311,7 +311,7 @@ func (w *WiFiRecon) startDeauth(apMac net.HardwareAddr, clMac net.HardwareAddr) 
 	} else {
 		log.Info("Deauthing clients from AP %s ...", apMac.String())
 		// deauth every authenticated client
-		for _, station := range w.Session.WiFi.Stations {
+		for _, station := range w.Session.WiFi.List() {
 			if station.IsAP == false {
 				w.sendDeauthPacket(apMac, station.HW)
 			}
