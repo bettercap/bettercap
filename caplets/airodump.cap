@@ -2,7 +2,7 @@ set $ {by}{fw}{env.iface.name}{reset} {bold}» {reset}
 set ticker.commands clear; wifi.show
 
 # uncomment to disable channel hopping
-# set wifi.recon.channel 5
+# set wifi.recon.channel 1
 
 wifi.recon on
 ticker on
