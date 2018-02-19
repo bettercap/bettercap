@@ -297,7 +297,7 @@ clear
 
 #### caplets/wpa\_handshake.cap
 
-Use various modules to inject wifi frames performding a deauthentication attack, while a sniffer is waiting for WPA handshakes.
+Use various modules to inject wifi frames performing a deauthentication attack, while a sniffer is waiting for WPA handshakes.
 
 ```
 # swag prompt for wifi
