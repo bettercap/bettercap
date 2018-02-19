@@ -5,6 +5,7 @@ import (
 
 	"github.com/evilsocket/bettercap-ng/core"
 	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/evilsocket/bettercap-ng/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -85,33 +86,54 @@ func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	}
 }
 
+func dot11Parser(radiotap *layers.RadioTap, dot11 *layers.Dot11, pkt gopacket.Packet, verbose bool) {
+	if verbose == true {
+		NewSnifferEvent(
+			pkt.Metadata().Timestamp,
+			"802.11",
+			"-",
+			"-",
+			SniffData{
+				"Size": len(pkt.Data()),
+			},
+			"%v",
+			dot11,
+		).Push()
+	}
+}
+
 func mainParser(pkt gopacket.Packet, verbose bool) bool {
+	// simple networking sniffing mode?
 	nlayer := pkt.NetworkLayer()
-	if nlayer == nil {
-		log.Debug("Missing network layer skipping packet.")
-		return false
+	if nlayer != nil {
+		if nlayer.LayerType() != layers.LayerTypeIPv4 {
+			log.Debug("Unexpected layer type %s, skipping packet.", nlayer.LayerType())
+			return false
+		}
+
+		ip := nlayer.(*layers.IPv4)
+
+		tlayer := pkt.TransportLayer()
+		if tlayer == nil {
+			log.Debug("Missing transport layer skipping packet.")
+			return false
+		}
+
+		if tlayer.LayerType() == layers.LayerTypeTCP {
+			tcpParser(ip, pkt, verbose)
+		} else if tlayer.LayerType() == layers.LayerTypeUDP {
+			udpParser(ip, pkt, verbose)
+		} else {
+			unkParser(ip, pkt, verbose)
+		}
+		return true
 	}
 
-	if nlayer.LayerType() != layers.LayerTypeIPv4 {
-		log.Debug("Unexpected layer type %s, skipping packet.", nlayer.LayerType())
-		return false
+	// are we sniffing in monitor mode?
+	if ok, radiotap, dot11 := packets.Dot11Parse(pkt); ok == true {
+		dot11Parser(radiotap, dot11, pkt, verbose)
+		return true
 	}
 
-	ip := nlayer.(*layers.IPv4)
-
-	tlayer := pkt.TransportLayer()
-	if tlayer == nil {
-		log.Debug("Missing transport layer skipping packet.")
-		return false
-	}
-
-	if tlayer.LayerType() == layers.LayerTypeTCP {
-		tcpParser(ip, pkt, verbose)
-	} else if tlayer.LayerType() == layers.LayerTypeUDP {
-		udpParser(ip, pkt, verbose)
-	} else {
-		unkParser(ip, pkt, verbose)
-	}
-
-	return true
+	return false
 }

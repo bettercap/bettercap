@@ -8,7 +8,6 @@ import (
 	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/session"
 
-	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/pcapgo"
 )
@@ -78,7 +77,7 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 		}
 
 		ctx.OutputWriter = pcapgo.NewWriter(ctx.OutputFile)
-		ctx.OutputWriter.WriteFileHeader(65536, layers.LinkTypeEthernet)
+		ctx.OutputWriter.WriteFileHeader(65536, ctx.Handle.LinkType())
 	}
 
 	return nil, ctx
