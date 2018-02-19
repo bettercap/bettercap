@@ -70,6 +70,15 @@ func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *St
 	return nil
 }
 
+func (w *WiFi) Get(mac string) (*Station, bool) {
+	w.Lock()
+	defer w.Unlock()
+
+	mac = NormalizeMac(mac)
+	station, found := w.Stations[mac]
+	return station, found
+}
+
 func (w *WiFi) Clear() error {
 	w.Stations = make(map[string]*Station)
 	return nil

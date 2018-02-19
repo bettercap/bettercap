@@ -345,19 +345,19 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 		bytes := uint64(len(packet.Data()))
 
 		dst := dot11.Address1.String()
-		if station, found := w.Session.WiFi.Stations[dst]; found == true {
+		if station, found := w.Session.WiFi.Get(dst); found == true {
 			station.Received += bytes
 		}
 
 		src := dot11.Address2.String()
-		if station, found := w.Session.WiFi.Stations[src]; found == true {
+		if station, found := w.Session.WiFi.Get(src); found == true {
 			station.Sent += bytes
 		}
 	}
 
 	if ok, enc := packets.Dot11ParseEncryption(packet, dot11); ok == true {
 		bssid := dot11.Address3.String()
-		if station, found := w.Session.WiFi.Stations[bssid]; found == true {
+		if station, found := w.Session.WiFi.Get(bssid); found == true {
 			station.Encryption = strings.Join(enc, ", ")
 		}
 	}
