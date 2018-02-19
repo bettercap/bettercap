@@ -24,6 +24,8 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+var maxStationTTL = 5 * time.Minute
+
 type WiFiRecon struct {
 	session.SessionModule
 
@@ -141,8 +143,15 @@ func (w *WiFiRecon) getRow(station *network.WiFiStation) []string {
 	if encryption == "OPEN" || encryption == "" {
 		encryption = core.Green("OPEN")
 	}
-	sent := humanize.Bytes(station.Sent)
-	recvd := humanize.Bytes(station.Received)
+	sent := ""
+	if station.Sent > 0 {
+		sent = humanize.Bytes(station.Sent)
+	}
+
+	recvd := ""
+	if station.Received > 0 {
+		recvd = humanize.Bytes(station.Received)
+	}
 
 	if w.isApSelected() {
 		return []string{
@@ -369,6 +378,36 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	}
 }
 
+func (w *WiFiRecon) channelHopper() {
+	log.Info("Channel hopper started.")
+	for w.Running() == true {
+		for channel := 1; channel < 15; channel++ {
+			if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
+				log.Warning("Error while hopping to channel %d: %s", channel, err)
+			}
+			// this is the default for airodump-ng, good for them, good for us.
+			time.Sleep(250 * time.Millisecond)
+			if w.Running() == false {
+				return
+			}
+		}
+	}
+}
+
+func (w *WiFiRecon) stationPruner() {
+	log.Debug("WiFi stations pruner started.")
+	for w.Running() == true {
+		for _, s := range w.Session.WiFi.List() {
+			sinceLastSeen := time.Since(s.LastSeen)
+			if sinceLastSeen > maxStationTTL {
+				log.Debug("Station %s not seen in %s, removing.", s.BSSID(), sinceLastSeen)
+				w.Session.WiFi.Remove(s.BSSID())
+			}
+		}
+		time.Sleep(5 * time.Second)
+	}
+}
+
 func (w *WiFiRecon) Start() error {
 	if w.Running() == true {
 		return session.ErrAlreadyStarted
@@ -379,22 +418,11 @@ func (w *WiFiRecon) Start() error {
 	w.SetRunning(true, func() {
 		// start channel hopper if needed
 		if w.channel == 0 {
-			go func() {
-				log.Info("Channel hopper started.")
-				for w.Running() == true {
-					for channel := 1; channel < 15; channel++ {
-						if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
-							log.Warning("Error while hopping to channel %d: %s", channel, err)
-						}
-						// this is the default for airodump-ng, good for them, good for us.
-						time.Sleep(250 * time.Millisecond)
-						if w.Running() == false {
-							return
-						}
-					}
-				}
-			}()
+			go w.channelHopper()
 		}
+
+		// start the pruner
+		go w.stationPruner()
 
 		defer w.handle.Close()
 		src := gopacket.NewPacketSource(w.handle, w.handle.LinkType())

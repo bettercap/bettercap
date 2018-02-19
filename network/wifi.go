@@ -5,16 +5,24 @@ import (
 	"time"
 )
 
+type StationNewCallback func(s *WiFiStation)
+type StationLostCallback func(s *WiFiStation)
+
 type WiFi struct {
 	sync.Mutex
 	Interface *Endpoint
 	Stations  map[string]*WiFiStation
+
+	newCb  StationNewCallback
+	lostCb StationLostCallback
 }
 
-func NewWiFi(iface *Endpoint) *WiFi {
+func NewWiFi(iface *Endpoint, newcb StationNewCallback, lostcb StationLostCallback) *WiFi {
 	return &WiFi{
 		Interface: iface,
 		Stations:  make(map[string]*WiFiStation),
+		newCb:     newcb,
+		lostCb:    lostcb,
 	}
 }
 
@@ -33,8 +41,11 @@ func (w *WiFi) Remove(mac string) {
 	w.Lock()
 	defer w.Unlock()
 
-	if _, found := w.Stations[mac]; found {
+	if s, found := w.Stations[mac]; found {
 		delete(w.Stations, mac)
+		if w.lostCb != nil {
+			w.lostCb(s)
+		}
 	}
 }
 
@@ -51,6 +62,10 @@ func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *Wi
 
 	newStation := NewWiFiStation(ssid, mac, isAp, channel, rssi)
 	w.Stations[mac] = newStation
+
+	if w.newCb != nil {
+		w.newCb(newStation)
+	}
 
 	return nil
 }

@@ -377,7 +377,13 @@ func (s *Session) Start() error {
 	}
 
 	s.Firewall = firewall.Make(s.Interface)
-	s.WiFi = network.NewWiFi(s.Interface)
+
+	s.WiFi = network.NewWiFi(s.Interface, func(st *network.WiFiStation) {
+		s.Events.Add("wifi.station.new", st)
+	}, func(st *network.WiFiStation) {
+		s.Events.Add("wifi.station.lost", st)
+	})
+
 	s.Lan = network.NewLAN(s.Interface, s.Gateway, func(e *network.Endpoint) {
 		s.Events.Add("endpoint.new", e)
 	}, func(e *network.Endpoint) {
