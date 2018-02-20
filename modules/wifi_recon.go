@@ -162,6 +162,10 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 		// method handle both access point and clients
 		// transparently
 		ap, _ := w.Session.WiFi.Get(station.HwAddress)
+		clients := ""
+		if ap.NumClients() > 0 {
+			clients = strconv.Itoa(ap.NumClients())
+		}
 
 		return []string{
 			fmt.Sprintf("%d dBm", station.RSSI),
@@ -170,7 +174,7 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 			station.Vendor,
 			encryption,
 			strconv.Itoa(mhz2chan(station.Frequency)),
-			strconv.Itoa(ap.NumClients()),
+			clients,
 			sent,
 			recvd,
 			seen,
