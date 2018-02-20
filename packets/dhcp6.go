@@ -22,6 +22,7 @@ func DHCP6EncodeList(elements []string) (encoded []byte) {
 	encoded = make([]byte, 0)
 
 	for _, elem := range elements {
+		// this would be worth fuzzing btw
 		encoded = append(encoded, byte(len(elem)&0xff))
 		encoded = append(encoded, []byte(elem)...)
 	}
