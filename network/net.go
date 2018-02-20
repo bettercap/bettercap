@@ -55,6 +55,8 @@ func FindInterface(name string) (*Endpoint, error) {
 		}
 		nAddrs := len(addrs)
 
+		// fmt.Printf("iface=%v\n", iface)
+
 		/*
 		 * If no interface has been specified, return the first active
 		 * one with at least an ip address, otherwise just the match
@@ -62,7 +64,7 @@ func FindInterface(name string) (*Endpoint, error) {
 		 * if passed explicitly.
 		 */
 		doCheck := false
-		if name == mac {
+		if name != "" && name == mac {
 			doCheck = true
 		} else if name == "" && ifName != "lo" && ifName != "lo0" && nAddrs > 0 {
 			doCheck = true
@@ -73,7 +75,10 @@ func FindInterface(name string) (*Endpoint, error) {
 		// Also search by ip if needed.
 		hasIPv4 := false
 		for _, a := range addrs {
-			hasIPv4 = IPv4Validator.MatchString(a.String())
+			if IPv4Validator.MatchString(a.String()) {
+				hasIPv4 = true
+			}
+
 			if name != "" && (a.String() == name || strings.HasPrefix(a.String(), name)) {
 				doCheck = true
 			}
