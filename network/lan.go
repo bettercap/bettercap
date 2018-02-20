@@ -154,7 +154,7 @@ func (lan *LAN) shouldIgnore(ip, mac string) bool {
 		return true
 	}
 	// skip broadcast macs
-	if strings.ToLower(mac) == BroadcastMacS {
+	if strings.ToLower(mac) == BroadcastMac {
 		return true
 	}
 	// skip everything which is not in our subnet (multicast noise)
