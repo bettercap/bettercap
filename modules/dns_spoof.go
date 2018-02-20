@@ -111,7 +111,7 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 	redir := fmt.Sprintf("(->%s)", s.Address)
 	who := target.String()
 
-	if t, found := s.Session.Lan.Hosts[target.String()]; found == true {
+	if t, found := s.Session.Lan.Get(target.String()); found == true {
 		who = t.String()
 	}
 

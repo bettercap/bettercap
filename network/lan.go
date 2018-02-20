@@ -18,8 +18,8 @@ type LAN struct {
 
 	Interface *Endpoint
 	Gateway   *Endpoint
-	Hosts     map[string]*Endpoint
 
+	hosts           map[string]*Endpoint
 	ttl             map[string]uint
 	aliases         *Aliases
 	newCb           EndpointNewCallback
@@ -36,7 +36,7 @@ func NewLAN(iface, gateway *Endpoint, newcb EndpointNewCallback, lostcb Endpoint
 	return &LAN{
 		Interface: iface,
 		Gateway:   gateway,
-		Hosts:     make(map[string]*Endpoint),
+		hosts:     make(map[string]*Endpoint),
 		ttl:       make(map[string]uint),
 		aliases:   aliases,
 		newCb:     newcb,
@@ -49,7 +49,7 @@ func (lan *LAN) SetAliasFor(mac, alias string) bool {
 	defer lan.Unlock()
 
 	mac = NormalizeMac(mac)
-	if e, found := lan.Hosts[mac]; found {
+	if e, found := lan.hosts[mac]; found {
 		lan.aliases.Set(mac, alias)
 		e.Alias = alias
 		return true
@@ -57,12 +57,22 @@ func (lan *LAN) SetAliasFor(mac, alias string) bool {
 	return false
 }
 
+func (lan *LAN) Get(mac string) (*Endpoint, bool) {
+	lan.Lock()
+	defer lan.Unlock()
+
+	if e, found := lan.hosts[mac]; found == true {
+		return e, true
+	}
+	return nil, false
+}
+
 func (lan *LAN) List() (list []*Endpoint) {
 	lan.Lock()
 	defer lan.Unlock()
 
 	list = make([]*Endpoint, 0)
-	for _, t := range lan.Hosts {
+	for _, t := range lan.hosts {
 		list = append(list, t)
 	}
 	return
@@ -86,10 +96,10 @@ func (lan *LAN) Remove(ip, mac string) {
 	lan.Lock()
 	defer lan.Unlock()
 
-	if e, found := lan.Hosts[mac]; found {
+	if e, found := lan.hosts[mac]; found {
 		lan.ttl[mac]--
 		if lan.ttl[mac] == 0 {
-			delete(lan.Hosts, mac)
+			delete(lan.hosts, mac)
 			delete(lan.ttl, mac)
 			lan.lostCb(e)
 		}
@@ -123,7 +133,7 @@ func (lan *LAN) Has(ip string) bool {
 	lan.Lock()
 	defer lan.Unlock()
 
-	for _, e := range lan.Hosts {
+	for _, e := range lan.hosts {
 		if e.IpAddress == ip {
 			return true
 		}
@@ -132,11 +142,20 @@ func (lan *LAN) Has(ip string) bool {
 	return false
 }
 
-func (lan *LAN) Get(ip string) *Endpoint {
+func (lan *LAN) EachHost(cb func(mac string, e *Endpoint)) {
 	lan.Lock()
 	defer lan.Unlock()
 
-	for _, e := range lan.Hosts {
+	for m, h := range lan.hosts {
+		cb(m, h)
+	}
+}
+
+func (lan *LAN) GetByIp(ip string) *Endpoint {
+	lan.Lock()
+	defer lan.Unlock()
+
+	for _, e := range lan.hosts {
 		if e.IpAddress == ip {
 			return e
 		}
@@ -153,7 +172,7 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 
 	if lan.shouldIgnore(ip, mac) {
 		return nil
-	} else if t, found := lan.Hosts[mac]; found {
+	} else if t, found := lan.hosts[mac]; found {
 		if lan.ttl[mac] < LANDefaultttl {
 			lan.ttl[mac]++
 		}
@@ -162,7 +181,7 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 
 	e := NewEndpointWithAlias(ip, mac, lan.aliases.Get(mac))
 
-	lan.Hosts[mac] = e
+	lan.hosts[mac] = e
 	lan.ttl[mac] = LANDefaultttl
 
 	lan.newCb(e)

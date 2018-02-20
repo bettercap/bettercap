@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/evilsocket/bettercap-ng/network"
 
 	"github.com/evilsocket/readline"
 )
@@ -298,11 +299,11 @@ func (s *Session) registerCoreHandlers() {
 		readline.PcItem("alias", readline.PcItemDynamic(func(prefix string) []string {
 			prefix = core.Trim(prefix[5:])
 			macs := []string{""}
-			for mac := range s.Lan.Hosts {
+			s.Lan.EachHost(func(mac string, e *network.Endpoint) {
 				if prefix == "" || strings.HasPrefix(mac, prefix) == true {
 					macs = append(macs, mac)
 				}
-			}
+			})
 			return macs
 		})))
 

@@ -71,11 +71,12 @@ func (d Discovery) Author() string {
 func (d *Discovery) runDiff(cache network.ArpTable) {
 	// check for endpoints who disappeared
 	var rem network.ArpTable = make(network.ArpTable)
-	for mac, t := range d.Session.Lan.Hosts {
+
+	d.Session.Lan.EachHost(func(mac string, e *network.Endpoint) {
 		if _, found := cache[mac]; found == false {
-			rem[mac] = t.IpAddress
+			rem[mac] = e.IpAddress
 		}
-	}
+	})
 
 	for mac, ip := range rem {
 		d.Session.Lan.Remove(ip, mac)
