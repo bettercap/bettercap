@@ -8,6 +8,8 @@ import (
 type StationNewCallback func(s *Station)
 type StationLostCallback func(s *Station)
 
+var Channels5Ghz = [...]int{36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 100, 102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173}
+
 type WiFi struct {
 	sync.Mutex
 	Interface *Endpoint
@@ -49,7 +51,7 @@ func (w *WiFi) Remove(mac string) {
 	}
 }
 
-func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *Station {
+func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, frequency int, rssi int8) *Station {
 	w.Lock()
 	defer w.Unlock()
 
@@ -60,7 +62,7 @@ func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, channel int, rssi int8) *St
 		return station
 	}
 
-	newStation := NewStation(ssid, mac, isAp, channel, rssi)
+	newStation := NewStation(ssid, mac, isAp, frequency, rssi)
 	w.Stations[mac] = newStation
 
 	if w.newCb != nil {

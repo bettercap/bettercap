@@ -28,9 +28,10 @@ var maxStationTTL = 5 * time.Minute
 type WiFiRecon struct {
 	session.SessionModule
 
-	handle  *pcap.Handle
-	channel int
-	apBSSID net.HardwareAddr
+	handle      *pcap.Handle
+	channel     int
+	frequencies []int
+	apBSSID     net.HardwareAddr
 }
 
 func NewWiFiRecon(s *session.Session) *WiFiRecon {
@@ -157,7 +158,7 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 			fmt.Sprintf("%d dBm", station.RSSI),
 			bssid,
 			station.Vendor,
-			strconv.Itoa(station.Channel),
+			strconv.Itoa(mhz2chan(station.Frequency)),
 			sent,
 			recvd,
 			seen,
@@ -169,7 +170,7 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 			ssid,
 			station.Vendor,
 			encryption,
-			strconv.Itoa(station.Channel),
+			strconv.Itoa(mhz2chan(station.Frequency)),
 			sent,
 			recvd,
 			seen,
@@ -179,8 +180,12 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 
 func mhz2chan(freq int) int {
 	// ambo!
-	if freq <= 2484 {
+	if freq <= 2472 {
 		return ((freq - 2412) / 5) + 1
+	} else if freq == 2484 {
+		return 14
+	} else if freq >= 5035 && freq <= 5865 {
+		return ((freq - 5035) / 5) + 7
 	}
 	return 0
 }
@@ -267,6 +272,12 @@ func (w *WiFiRecon) Configure() error {
 		log.Info("WiFi recon active with channel hopping.")
 	}
 
+	if frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
+		return err
+	} else {
+		w.frequencies = frequencies
+	}
+
 	return nil
 }
 
@@ -325,8 +336,8 @@ func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layer
 	// search for Dot11InformationElementIDSSID
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
 		bssid := dot11.Address3.String()
-		channel := mhz2chan(int(radiotap.ChannelFrequency))
-		w.Session.WiFi.AddIfNew(ssid, bssid, true, channel, radiotap.DBMAntennaSignal)
+		frequency := int(radiotap.ChannelFrequency)
+		w.Session.WiFi.AddIfNew(ssid, bssid, true, frequency, radiotap.DBMAntennaSignal)
 	}
 }
 
@@ -334,8 +345,8 @@ func (w *WiFiRecon) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot
 	// packet going to this specific BSSID?
 	if packets.Dot11IsDataFor(dot11, ap) == true {
 		src := dot11.Address2
-		channel := mhz2chan(int(radiotap.ChannelFrequency))
-		w.Session.WiFi.AddIfNew("", src.String(), false, channel, radiotap.DBMAntennaSignal)
+		frequency := int(radiotap.ChannelFrequency)
+		w.Session.WiFi.AddIfNew("", src.String(), false, frequency, radiotap.DBMAntennaSignal)
 	}
 }
 
@@ -366,7 +377,8 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 func (w *WiFiRecon) channelHopper() {
 	log.Info("Channel hopper started.")
 	for w.Running() == true {
-		for channel := 1; channel < 15; channel++ {
+		for _, frequency := range w.frequencies {
+			channel := mhz2chan(frequency)
 			if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
 				log.Warning("Error while hopping to channel %d: %s", channel, err)
 			}

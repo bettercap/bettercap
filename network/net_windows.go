@@ -62,3 +62,8 @@ func getInterfaceName(iface net.Interface) string {
 func SetInterfaceChannel(iface string, channel int) error {
 	return fmt.Errorf("Windows does not support WiFi channel hopping.")
 }
+
+func GetSupportedFrequencies(iface string) ([]int, error) {
+	freqs := make([]int, 0)
+	return freqs, fmt.Errorf("Windows does not support WiFi channel hopping.")
+}

@@ -20,10 +20,10 @@ type ByChannelSorter []*network.Station
 func (a ByChannelSorter) Len() int      { return len(a) }
 func (a ByChannelSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a ByChannelSorter) Less(i, j int) bool {
-	if a[i].Channel == a[j].Channel {
+	if a[i].Frequency == a[j].Frequency {
 		return a[i].HwAddress < a[j].HwAddress
 	}
-	return a[i].Channel < a[j].Channel
+	return a[i].Frequency < a[j].Frequency
 }
 
 type ByEssidSorter []*network.Station
