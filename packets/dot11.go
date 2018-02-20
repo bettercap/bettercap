@@ -52,7 +52,10 @@ func Dot11ParseIDSSID(packet gopacket.Packet) (bool, string) {
 	for _, layer := range packet.Layers() {
 		if layer.LayerType() == layers.LayerTypeDot11InformationElement {
 			dot11info, ok := layer.(*layers.Dot11InformationElement)
-			if ok == true && dot11info.ID == layers.Dot11InformationElementIDSSID && len(dot11info.Info) > 0 {
+			if ok == true && dot11info.ID == layers.Dot11InformationElementIDSSID {
+				if len(dot11info.Info) == 0 {
+					return true, "<hidden>"
+				}
 				return true, string(dot11info.Info)
 			}
 		}

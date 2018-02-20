@@ -133,6 +133,10 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 	}
 
 	ssid := station.ESSID()
+	if ssid == "<hidden>" {
+		ssid = core.Dim(ssid)
+	}
+
 	encryption := station.Encryption
 	if encryption == "OPEN" || encryption == "" {
 		encryption = core.Green("OPEN")
