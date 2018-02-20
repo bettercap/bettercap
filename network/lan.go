@@ -150,7 +150,7 @@ func (lan *LAN) shouldIgnore(ip, mac string) bool {
 		return true
 	}
 	// skip broadcast addresses
-	if strings.HasSuffix(ip, ".255") {
+	if strings.HasSuffix(ip, BroadcastSuffix) {
 		return true
 	}
 	// skip broadcast macs
