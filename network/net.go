@@ -18,6 +18,7 @@ const (
 
 var (
 	BroadcastMac  = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+	BroadcastMacS = "ff:ff:ff:ff:ff:ff"
 	IPv4Validator = regexp.MustCompile("^[0-9\\.]+/?\\d*$")
 )
 
