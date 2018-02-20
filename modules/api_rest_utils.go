@@ -19,9 +19,6 @@ type APIResponse struct {
 
 func SafeBind(c *gin.Context, obj interface{}) error {
 	decoder := json.NewDecoder(io.LimitReader(c.Request.Body, 100*1024))
-	if binding.EnableDecoderUseNumber {
-		decoder.UseNumber()
-	}
 	if err := decoder.Decode(obj); err != nil {
 		return err
 	}
