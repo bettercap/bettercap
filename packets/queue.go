@@ -54,15 +54,17 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 		Activities: make(chan Activity),
 
 		iface:  iface,
-		active: true,
+		active: !iface.IsMonitor(),
 	}
 
-	if q.handle, err = pcap.OpenLive(iface.Name(), 1024, true, pcap.BlockForever); err != nil {
-		return
-	}
+	if q.active == true {
+		if q.handle, err = pcap.OpenLive(iface.Name(), 1024, true, pcap.BlockForever); err != nil {
+			return
+		}
 
-	q.source = gopacket.NewPacketSource(q.handle, q.handle.LinkType())
-	go q.worker()
+		q.source = gopacket.NewPacketSource(q.handle, q.handle.LinkType())
+		go q.worker()
+	}
 
 	return
 }
@@ -168,6 +170,9 @@ func (q *Queue) Send(raw []byte) error {
 func (q *Queue) Stop() {
 	q.Lock()
 	defer q.Unlock()
-	q.handle.Close()
-	q.active = false
+
+	if q.active == true {
+		q.handle.Close()
+		q.active = false
+	}
 }

@@ -100,6 +100,10 @@ func (t *Endpoint) CIDR() string {
 	return fmt.Sprintf("%s/%d", ip.String(), t.SubnetBits)
 }
 
+func (t *Endpoint) IsMonitor() bool {
+	return t.IpAddress == MonitorModeAddress
+}
+
 func (t *Endpoint) String() string {
 	if t.HwAddress == "" {
 		return t.IpAddress
