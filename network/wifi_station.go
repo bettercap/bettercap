@@ -2,18 +2,16 @@ package network
 
 type Station struct {
 	*Endpoint
-	IsAP       bool
-	Frequency  int
-	RSSI       int8
-	Sent       uint64
-	Received   uint64
-	Encryption string
+	Frequency  int    `json:"frequency"`
+	RSSI       int8   `json:"rssi"`
+	Sent       uint64 `json:"sent"`
+	Received   uint64 `json:"received"`
+	Encryption string `json:"encryption"`
 }
 
-func NewStation(essid, bssid string, isAp bool, frequency int, rssi int8) *Station {
+func NewStation(essid, bssid string, frequency int, rssi int8) *Station {
 	return &Station{
 		Endpoint:  NewEndpointNoResolve(MonitorModeAddress, bssid, essid, 0),
-		IsAP:      isAp,
 		Frequency: frequency,
 		RSSI:      rssi,
 	}

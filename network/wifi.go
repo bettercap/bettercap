@@ -6,50 +6,70 @@ import (
 	"time"
 )
 
-type StationNewCallback func(s *Station)
-type StationLostCallback func(s *Station)
+type APNewCallback func(ap *AccessPoint)
+type APLostCallback func(ap *AccessPoint)
 
 type WiFi struct {
 	sync.Mutex
 
-	stations map[string]*Station
-	iface    *Endpoint
-	newCb    StationNewCallback
-	lostCb   StationLostCallback
+	aps    map[string]*AccessPoint
+	iface  *Endpoint
+	newCb  APNewCallback
+	lostCb APLostCallback
 }
 
 type wifiJSON struct {
-	Stations []*Station `json:"stations"`
+	AccessPoints []*AccessPoint `json:"aps"`
 }
 
-func NewWiFi(iface *Endpoint, newcb StationNewCallback, lostcb StationLostCallback) *WiFi {
+func NewWiFi(iface *Endpoint, newcb APNewCallback, lostcb APLostCallback) *WiFi {
 	return &WiFi{
-		stations: make(map[string]*Station),
-		iface:    iface,
-		newCb:    newcb,
-		lostCb:   lostcb,
+		aps:    make(map[string]*AccessPoint),
+		iface:  iface,
+		newCb:  newcb,
+		lostCb: lostcb,
 	}
 }
 
 func (w *WiFi) MarshalJSON() ([]byte, error) {
 	doc := wifiJSON{
-		Stations: make([]*Station, 0),
+		AccessPoints: make([]*AccessPoint, 0),
 	}
 
-	for _, s := range w.stations {
-		doc.Stations = append(doc.Stations, s)
+	for _, ap := range w.aps {
+		doc.AccessPoints = append(doc.AccessPoints, ap)
 	}
 
 	return json.Marshal(doc)
 }
 
-func (w *WiFi) List() (list []*Station) {
+func (w *WiFi) EachAccessPoint(cb func(mac string, ap *AccessPoint)) {
+	w.Lock()
+	defer w.Unlock()
+
+	for m, ap := range w.aps {
+		cb(m, ap)
+	}
+}
+
+func (w *WiFi) Stations() (list []*Station) {
 	w.Lock()
 	defer w.Unlock()
 
 	list = make([]*Station, 0)
-	for _, t := range w.stations {
-		list = append(list, t)
+	for _, ap := range w.aps {
+		list = append(list, ap.Station)
+	}
+	return
+}
+
+func (w *WiFi) List() (list []*AccessPoint) {
+	w.Lock()
+	defer w.Unlock()
+
+	list = make([]*AccessPoint, 0)
+	for _, ap := range w.aps {
+		list = append(list, ap)
 	}
 	return
 }
@@ -58,45 +78,45 @@ func (w *WiFi) Remove(mac string) {
 	w.Lock()
 	defer w.Unlock()
 
-	if s, found := w.stations[mac]; found {
-		delete(w.stations, mac)
+	if ap, found := w.aps[mac]; found {
+		delete(w.aps, mac)
 		if w.lostCb != nil {
-			w.lostCb(s)
+			w.lostCb(ap)
 		}
 	}
 }
 
-func (w *WiFi) AddIfNew(ssid, mac string, isAp bool, frequency int, rssi int8) *Station {
+func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) *AccessPoint {
 	w.Lock()
 	defer w.Unlock()
 
 	mac = NormalizeMac(mac)
-	if station, found := w.stations[mac]; found {
-		station.LastSeen = time.Now()
-		station.RSSI = rssi
-		return station
+	if ap, found := w.aps[mac]; found {
+		ap.LastSeen = time.Now()
+		ap.RSSI = rssi
+		return ap
 	}
 
-	newStation := NewStation(ssid, mac, isAp, frequency, rssi)
-	w.stations[mac] = newStation
+	newAp := NewAccessPoint(ssid, mac, frequency, rssi)
+	w.aps[mac] = newAp
 
 	if w.newCb != nil {
-		w.newCb(newStation)
+		w.newCb(newAp)
 	}
 
 	return nil
 }
 
-func (w *WiFi) Get(mac string) (*Station, bool) {
+func (w *WiFi) Get(mac string) (*AccessPoint, bool) {
 	w.Lock()
 	defer w.Unlock()
 
 	mac = NormalizeMac(mac)
-	station, found := w.stations[mac]
-	return station, found
+	ap, found := w.aps[mac]
+	return ap, found
 }
 
 func (w *WiFi) Clear() error {
-	w.stations = make(map[string]*Station)
+	w.aps = make(map[string]*AccessPoint)
 	return nil
 }
