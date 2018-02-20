@@ -62,7 +62,9 @@ func FindInterface(name string) (*Endpoint, error) {
 		 * if passed explicitly.
 		 */
 		doCheck := false
-		if name == "" && ifName != "lo" && ifName != "lo0" && nAddrs > 0 {
+		if name == mac {
+			doCheck = true
+		} else if name == "" && ifName != "lo" && ifName != "lo0" && nAddrs > 0 {
 			doCheck = true
 		} else if ifName == name {
 			doCheck = true
