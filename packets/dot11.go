@@ -64,13 +64,13 @@ func Dot11ParseIDSSID(packet gopacket.Packet) (bool, string) {
 	return false, ""
 }
 
-func Dot11ParseEncryption(packet gopacket.Packet, dot11 *layers.Dot11) (bool, []string) {
-	enc := make([]string, 0)
+func Dot11ParseEncryption(packet gopacket.Packet, dot11 *layers.Dot11) (bool, string) {
+	enc := ""
 	found := false
 
 	if dot11.Flags.WEP() {
 		found = true
-		enc = append(enc, "WEP")
+		enc = "WEP"
 	}
 
 	for _, layer := range packet.Layers() {
@@ -79,16 +79,16 @@ func Dot11ParseEncryption(packet gopacket.Packet, dot11 *layers.Dot11) (bool, []
 			if ok == true {
 				found = true
 				if info.ID == layers.Dot11InformationElementIDRSNInfo {
-					enc = append(enc, "WPA2")
-				} else if info.ID == layers.Dot11InformationElementIDVendor && bytes.Index(info.Info, []byte{0, 0x50, 0xf2, 1, 1, 0}) == 0 {
-					enc = append(enc, "WPA")
+					enc = "WPA2"
+				} else if info.ID == layers.Dot11InformationElementIDVendor && bytes.Index(info.OUI, []byte{0, 0x50, 0xf2, 1, 1, 0}) == 0 {
+					enc = "WPA"
 				}
 			}
 		}
 	}
 
-	if found && len(enc) == 0 {
-		enc = append(enc, "OPEN")
+	if found && enc == "" {
+		enc = "OPEN"
 	}
 
 	return found, enc

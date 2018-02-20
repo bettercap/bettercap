@@ -6,7 +6,6 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -415,7 +414,7 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	if ok, enc := packets.Dot11ParseEncryption(packet, dot11); ok == true {
 		bssid := dot11.Address3.String()
 		if station, found := w.Session.WiFi.Get(bssid); found == true {
-			station.Encryption = strings.Join(enc, ", ")
+			station.Encryption = enc
 		}
 	}
 }
