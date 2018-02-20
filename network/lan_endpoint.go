@@ -80,6 +80,12 @@ func NewEndpoint(ip, mac string) *Endpoint {
 	return e
 }
 
+func NewEndpointWithAlias(ip, mac, alias string) *Endpoint {
+	e := NewEndpoint(ip, mac)
+	e.Alias = alias
+	return e
+}
+
 func (t *Endpoint) Name() string {
 	return t.Hostname
 }

@@ -1,18 +1,13 @@
 package network
 
 import (
-	"bufio"
 	"fmt"
-	"io/ioutil"
 	"net"
-	"os"
 	"strings"
 	"sync"
-
-	"github.com/evilsocket/bettercap-ng/core"
 )
 
-const LANDefaultTTL = 10
+const LANDefaultttl = 10
 const LANAliasesFile = "~/bettercap.aliases"
 
 type EndpointNewCallback func(e *Endpoint)
@@ -24,33 +19,42 @@ type LAN struct {
 	Interface *Endpoint
 	Gateway   *Endpoint
 	Hosts     map[string]*Endpoint
-	TTL       map[string]uint
-	Aliases   map[string]string
 
+	ttl             map[string]uint
+	aliases         *Aliases
 	newCb           EndpointNewCallback
 	lostCb          EndpointLostCallback
 	aliasesFileName string
 }
 
 func NewLAN(iface, gateway *Endpoint, newcb EndpointNewCallback, lostcb EndpointLostCallback) *LAN {
-	lan := &LAN{
+	err, aliases := LoadAliases()
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+
+	return &LAN{
 		Interface: iface,
 		Gateway:   gateway,
 		Hosts:     make(map[string]*Endpoint),
-		TTL:       make(map[string]uint),
-		Aliases:   make(map[string]string),
+		ttl:       make(map[string]uint),
+		aliases:   aliases,
 		newCb:     newcb,
 		lostCb:    lostcb,
 	}
+}
 
-	lan.aliasesFileName, _ = core.ExpandPath(LANAliasesFile)
-	if core.Exists(lan.aliasesFileName) {
-		if err := lan.loadAliases(); err != nil {
-			fmt.Printf("%s\n", err)
-		}
+func (lan *LAN) SetAliasFor(mac, alias string) bool {
+	lan.Lock()
+	defer lan.Unlock()
+
+	mac = NormalizeMac(mac)
+	if e, found := lan.Hosts[mac]; found {
+		lan.aliases.Set(mac, alias)
+		e.Alias = alias
+		return true
 	}
-
-	return lan
+	return false
 }
 
 func (lan *LAN) List() (list []*Endpoint) {
@@ -64,52 +68,6 @@ func (lan *LAN) List() (list []*Endpoint) {
 	return
 }
 
-func (lan *LAN) loadAliases() error {
-	file, err := os.Open(lan.aliasesFileName)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.SplitN(line, " ", 2)
-		mac := core.Trim(parts[0])
-		alias := core.Trim(parts[1])
-		lan.Aliases[mac] = alias
-	}
-
-	return nil
-}
-
-func (lan *LAN) saveAliases() {
-	data := ""
-	for mac, alias := range lan.Aliases {
-		data += fmt.Sprintf("%s %s\n", mac, alias)
-	}
-	ioutil.WriteFile(lan.aliasesFileName, []byte(data), 0644)
-}
-
-func (lan *LAN) SetAliasFor(mac, alias string) bool {
-	lan.Lock()
-	defer lan.Unlock()
-
-	if t, found := lan.Hosts[mac]; found == true {
-		if alias != "" {
-			lan.Aliases[mac] = alias
-		} else {
-			delete(lan.Aliases, mac)
-		}
-
-		t.Alias = alias
-		lan.saveAliases()
-		return true
-	}
-
-	return false
-}
-
 func (lan *LAN) WasMissed(mac string) bool {
 	if mac == lan.Interface.HwAddress || mac == lan.Gateway.HwAddress {
 		return false
@@ -118,8 +76,8 @@ func (lan *LAN) WasMissed(mac string) bool {
 	lan.Lock()
 	defer lan.Unlock()
 
-	if ttl, found := lan.TTL[mac]; found == true {
-		return ttl < LANDefaultTTL
+	if ttl, found := lan.ttl[mac]; found == true {
+		return ttl < LANDefaultttl
 	}
 	return true
 }
@@ -129,11 +87,10 @@ func (lan *LAN) Remove(ip, mac string) {
 	defer lan.Unlock()
 
 	if e, found := lan.Hosts[mac]; found {
-		lan.TTL[mac]--
-		if lan.TTL[mac] == 0 {
+		lan.ttl[mac]--
+		if lan.ttl[mac] == 0 {
 			delete(lan.Hosts, mac)
-			delete(lan.TTL, mac)
-
+			delete(lan.ttl, mac)
 			lan.lostCb(e)
 		}
 		return
@@ -192,25 +149,21 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 	lan.Lock()
 	defer lan.Unlock()
 
+	mac = NormalizeMac(mac)
+
 	if lan.shouldIgnore(ip, mac) {
 		return nil
-	}
-
-	mac = NormalizeMac(mac)
-	if t, found := lan.Hosts[mac]; found {
-		if lan.TTL[mac] < LANDefaultTTL {
-			lan.TTL[mac]++
+	} else if t, found := lan.Hosts[mac]; found {
+		if lan.ttl[mac] < LANDefaultttl {
+			lan.ttl[mac]++
 		}
 		return t
 	}
 
-	e := NewEndpoint(ip, mac)
-	if alias, found := lan.Aliases[mac]; found {
-		e.Alias = alias
-	}
+	e := NewEndpointWithAlias(ip, mac, lan.aliases.Get(mac))
 
 	lan.Hosts[mac] = e
-	lan.TTL[mac] = LANDefaultTTL
+	lan.ttl[mac] = LANDefaultttl
 
 	lan.newCb(e)
 
