@@ -132,7 +132,7 @@ func (s *Session) getHandler(args []string, sess *Session) error {
 				prev_ns = ns
 			}
 
-			fmt.Printf("  %"+strconv.Itoa(s.Env.Padding)+"s: '%s'\n", k, s.Env.Storage[k])
+			fmt.Printf("  %"+strconv.Itoa(s.Env.Padding)+"s: '%s'\n", k, s.Env.Data[k])
 		}
 		fmt.Println()
 	} else if found, value := s.Env.Get(key); found == true {
@@ -241,7 +241,7 @@ func (s *Session) registerCoreHandlers() {
 		readline.PcItem("get", readline.PcItemDynamic(func(prefix string) []string {
 			prefix = core.Trim(prefix[3:])
 			varNames := []string{""}
-			for key := range s.Env.Storage {
+			for key := range s.Env.Data {
 				if prefix == "" || strings.HasPrefix(key, prefix) == true {
 					varNames = append(varNames, key)
 				}
@@ -256,7 +256,7 @@ func (s *Session) registerCoreHandlers() {
 		readline.PcItem("set", readline.PcItemDynamic(func(prefix string) []string {
 			prefix = core.Trim(prefix[3:])
 			varNames := []string{""}
-			for key := range s.Env.Storage {
+			for key := range s.Env.Data {
 				if prefix == "" || strings.HasPrefix(key, prefix) == true {
 					varNames = append(varNames, key)
 				}

@@ -45,7 +45,7 @@ func LoadProxyScriptSource(path, source string, sess *session.Session) (err erro
 	}
 
 	// define session pointer
-	err = s.VM.Set("env", sess.Env.Storage)
+	err = s.VM.Set("env", sess.Env.Data)
 	if err != nil {
 		log.Error("Error while defining environment: %s", err)
 		return

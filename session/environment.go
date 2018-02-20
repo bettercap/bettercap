@@ -15,7 +15,7 @@ type Environment struct {
 	sync.Mutex
 
 	Padding int               `json:"-"`
-	Storage map[string]string `json:"storage"`
+	Data    map[string]string `json:"data"`
 
 	cbs  map[string]SetCallback
 	sess *Session
@@ -24,7 +24,7 @@ type Environment struct {
 func NewEnvironment(s *Session) *Environment {
 	env := &Environment{
 		Padding: 0,
-		Storage: make(map[string]string),
+		Data:    make(map[string]string),
 		sess:    s,
 		cbs:     make(map[string]SetCallback),
 	}
@@ -36,7 +36,7 @@ func (env *Environment) Has(name string) bool {
 	env.Lock()
 	defer env.Unlock()
 
-	_, found := env.Storage[name]
+	_, found := env.Data[name]
 
 	return found
 }
@@ -57,8 +57,8 @@ func (env *Environment) Set(name, value string) string {
 	env.Lock()
 	defer env.Unlock()
 
-	old, _ := env.Storage[name]
-	env.Storage[name] = value
+	old, _ := env.Data[name]
+	env.Data[name] = value
 
 	if cb, hasCallback := env.cbs[name]; hasCallback == true {
 		cb(value)
@@ -78,7 +78,7 @@ func (env *Environment) Get(name string) (bool, string) {
 	env.Lock()
 	defer env.Unlock()
 
-	if value, found := env.Storage[name]; found == true {
+	if value, found := env.Data[name]; found == true {
 		return true, value
 	}
 
@@ -102,7 +102,7 @@ func (env *Environment) Sorted() []string {
 	defer env.Unlock()
 
 	var keys []string
-	for k := range env.Storage {
+	for k := range env.Data {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
