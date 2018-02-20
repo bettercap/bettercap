@@ -377,13 +377,21 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 func (w *WiFiRecon) channelHopper() {
 	log.Info("Channel hopper started.")
 	for w.Running() == true {
+		delay := 250 * time.Millisecond
+		// if we have both 2.4 and 5ghz capabilities, we have
+		// more channels, therefore we need to increase the time
+		// we hop on each one otherwise me lose information
+		if len(w.frequencies) > 14 {
+			delay = 500 * time.Millisecond
+		}
+
 		for _, frequency := range w.frequencies {
 			channel := mhz2chan(frequency)
 			if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
 				log.Warning("Error while hopping to channel %d: %s", channel, err)
 			}
-			// this is the default for airodump-ng, good for them, good for us.
-			time.Sleep(250 * time.Millisecond)
+
+			time.Sleep(delay)
 			if w.Running() == false {
 				return
 			}
