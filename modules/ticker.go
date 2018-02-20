@@ -61,13 +61,11 @@ func (t *Ticker) Configure() error {
 
 	if err, commands = t.StringParam("ticker.commands"); err != nil {
 		return err
-	}
-	t.Commands = session.ParseCommands(commands)
-
-	if err, period = t.IntParam("ticker.period"); err != nil {
+	} else if err, period = t.IntParam("ticker.period"); err != nil {
 		return err
 	}
 
+	t.Commands = session.ParseCommands(commands)
 	t.Period = time.Duration(period) * time.Second
 
 	return nil
