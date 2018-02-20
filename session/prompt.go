@@ -56,7 +56,7 @@ var PromptCallbacks = map[string]func(s *Session) string{
 	},
 }
 
-var envRe = regexp.MustCompile("{env\\.(.+)}")
+var envRe = regexp.MustCompile("{env\\.([^}]+)}")
 
 type Prompt struct {
 }
@@ -79,11 +79,11 @@ func (p Prompt) Render(s *Session) string {
 		prompt = strings.Replace(prompt, tok, cb(s), -1)
 	}
 
-	m := envRe.FindStringSubmatch(prompt)
-	if len(m) == 2 {
-		name := m[1]
+	m := envRe.FindAllString(prompt, -1)
+	for _, match := range m {
+		name := strings.Trim(strings.Replace(match, "env.", "", -1), "{}")
 		_, value := s.Env.Get(name)
-		prompt = strings.Replace(prompt, m[0], value, -1)
+		prompt = strings.Replace(prompt, match, value, -1)
 	}
 
 	// make sure an user error does not screw all terminal
