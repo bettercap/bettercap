@@ -22,6 +22,7 @@ type PfFirewall struct {
 	iface      *network.Endpoint
 	filename   string
 	forwarding bool
+	enabled    bool
 }
 
 func Make(iface *network.Endpoint) FirewallManager {
