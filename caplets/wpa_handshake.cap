@@ -31,7 +31,11 @@ clear
 #
 # This will deauth every client for this specific access point,
 # you can put it as ticker.commands to have the ticker module
-# periodically deauth clients :D
+# periodically deauth clients, or:
+#
+# wifi.deauth CLIENT-BSSID-HERE
+#
+# This will only deauth a signle client from its access point.
 #
 # For more options `help wifi.recon`.
 
