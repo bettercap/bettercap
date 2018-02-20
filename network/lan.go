@@ -140,7 +140,7 @@ func (lan *LAN) Remove(ip, mac string) {
 	}
 }
 
-func (lan *LAN) shouldIgnore(ip string) bool {
+func (lan *LAN) shouldIgnore(ip, mac string) bool {
 	// skip our own address
 	if ip == lan.Interface.IpAddress {
 		return true
@@ -151,6 +151,10 @@ func (lan *LAN) shouldIgnore(ip string) bool {
 	}
 	// skip broadcast addresses
 	if strings.HasSuffix(ip, ".255") {
+		return true
+	}
+	// skip broadcast macs
+	if strings.ToLower(mac) == "ff:ff:ff:ff:ff:ff" {
 		return true
 	}
 	// skip everything which is not in our subnet (multicast noise)
@@ -188,7 +192,7 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 	lan.Lock()
 	defer lan.Unlock()
 
-	if lan.shouldIgnore(ip) {
+	if lan.shouldIgnore(ip, mac) {
 		return nil
 	}
 
