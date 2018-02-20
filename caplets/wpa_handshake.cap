@@ -12,7 +12,10 @@ net.sniff on
 # interested in otherwise the sniffer might lose packets.
 set wifi.recon.channel 1
 
+# this will enable the wifi recon
+set ticker.commands clear; wifi.show
 wifi.recon on
+ticker on
 
 # uncomment to recon clients of a specific AP given its BSSID
 # wifi.recon DE:AD:BE:EF:DE:AD
@@ -29,3 +32,7 @@ clear
 # This will deauth every client for this specific access point,
 # you can put it as ticker.commands to have the ticker module
 # periodically deauth clients :D
+#
+# For more options `help wifi.recon`.
+
+

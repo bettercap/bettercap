@@ -86,22 +86,6 @@ func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	}
 }
 
-func dot11Parser(radiotap *layers.RadioTap, dot11 *layers.Dot11, pkt gopacket.Packet, verbose bool) {
-	if verbose == true {
-		NewSnifferEvent(
-			pkt.Metadata().Timestamp,
-			"802.11",
-			"-",
-			"-",
-			SniffData{
-				"Size": len(pkt.Data()),
-			},
-			"%v",
-			dot11,
-		).Push()
-	}
-}
-
 func mainParser(pkt gopacket.Packet, verbose bool) bool {
 	// simple networking sniffing mode?
 	nlayer := pkt.NetworkLayer()
