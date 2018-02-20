@@ -69,7 +69,7 @@ func NewEndpoint(ip, mac string) *Endpoint {
 
 	// start resolver goroutine
 	go func() {
-		if names, err := net.LookupAddr(e.IpAddress); err == nil {
+		if names, err := net.LookupAddr(e.IpAddress); err == nil && len(names) > 0 {
 			e.Hostname = names[0]
 			if e.ResolvedCallback != nil {
 				e.ResolvedCallback(e)
@@ -77,6 +77,12 @@ func NewEndpoint(ip, mac string) *Endpoint {
 		}
 	}()
 
+	return e
+}
+
+func NewEndpointWithAlias(ip, mac, alias string) *Endpoint {
+	e := NewEndpoint(ip, mac)
+	e.Alias = alias
 	return e
 }
 

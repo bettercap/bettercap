@@ -100,12 +100,6 @@ func (p *EventPool) Clear() {
 	p.events = make([]Event, 0)
 }
 
-func (p *EventPool) Events() []Event {
-	p.Lock()
-	defer p.Unlock()
-	return p.events
-}
-
 func (p *EventPool) Sorted() []Event {
 	p.Lock()
 	defer p.Unlock()

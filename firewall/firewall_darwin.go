@@ -22,6 +22,7 @@ type PfFirewall struct {
 	iface      *network.Endpoint
 	filename   string
 	forwarding bool
+	enabled    bool
 }
 
 func Make(iface *network.Endpoint) FirewallManager {
@@ -29,6 +30,7 @@ func Make(iface *network.Endpoint) FirewallManager {
 		iface:      iface,
 		filename:   pfFilePath,
 		forwarding: false,
+		enabled:    false,
 	}
 
 	firewall.forwarding = firewall.IsForwardingEnabled()
@@ -108,7 +110,8 @@ func (f PfFirewall) generateRule(r *Redirection) string {
 		r.Interface, r.Protocol, src_a, r.SrcPort, dst_a, r.DstPort)
 }
 
-func (f PfFirewall) enable(enabled bool) {
+func (f *PfFirewall) enable(enabled bool) {
+	f.enabled = enabled
 	if enabled {
 		core.Exec("pfctl", []string{"-e"})
 	} else {
@@ -165,11 +168,9 @@ func (f PfFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 }
 
 func (f PfFirewall) Restore() {
-	err := f.EnableForwarding(f.forwarding)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err)
+	f.EnableForwarding(f.forwarding)
+	if f.enabled {
+		f.enable(false)
 	}
-
-	f.enable(false)
 	os.Remove(f.filename)
 }

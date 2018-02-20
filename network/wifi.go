@@ -12,19 +12,20 @@ var Channels5Ghz = [...]int{36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 
 
 type WiFi struct {
 	sync.Mutex
-	Interface *Endpoint
-	Stations  map[string]*Station
 
+	Stations map[string]*Station
+
+	iface  *Endpoint
 	newCb  StationNewCallback
 	lostCb StationLostCallback
 }
 
 func NewWiFi(iface *Endpoint, newcb StationNewCallback, lostcb StationLostCallback) *WiFi {
 	return &WiFi{
-		Interface: iface,
-		Stations:  make(map[string]*Station),
-		newCb:     newcb,
-		lostCb:    lostcb,
+		Stations: make(map[string]*Station),
+		iface:    iface,
+		newCb:    newcb,
+		lostCb:   lostcb,
 	}
 }
 
