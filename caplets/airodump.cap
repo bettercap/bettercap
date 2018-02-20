@@ -1,3 +1,6 @@
+# let's add some api :D
+include caplets/rest-api.cap
+
 set $ {by}{fw}{env.iface.name}{reset} {bold}» {reset}
 set ticker.commands clear; wifi.show
 

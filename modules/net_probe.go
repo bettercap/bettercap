@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/session"
 
 	"github.com/malfunkt/iprange"
@@ -80,6 +81,11 @@ func (p *Prober) Start() error {
 	}
 
 	return p.SetRunning(true, func() {
+		if p.Session.Interface.IpAddress == network.MonitorModeAddress {
+			log.Info("Interface is in monitor mode, skipping net.probe")
+			return
+		}
+
 		list, err := iprange.Parse(p.Session.Interface.CIDR())
 		if err != nil {
 			log.Fatal("%s", err)
