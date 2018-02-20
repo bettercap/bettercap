@@ -71,19 +71,19 @@ func FindInterface(name string) (*Endpoint, error) {
 		}
 
 		// Also search by ip if needed.
-		if name != "" {
-			for _, a := range addrs {
-				if a.String() == name || strings.HasPrefix(a.String(), name) {
-					doCheck = true
-					break
-				}
+		hasIPv4 := false
+		for _, a := range addrs {
+			hasIPv4 = IPv4Validator.MatchString(a.String())
+			if name != "" && (a.String() == name || strings.HasPrefix(a.String(), name)) {
+				doCheck = true
 			}
 		}
 
 		if doCheck {
 			var e *Endpoint = nil
-			// interface is in monitor mode (or it's just down and the user is dumb)
-			if nAddrs == 0 {
+			// interface is in monitor mode (or it's just down and the user is dumb, or
+			// it only has an IPv6 address).
+			if nAddrs == 0 || hasIPv4 == false {
 				e = NewEndpointNoResolve(MonitorModeAddress, mac, ifName, 0)
 			} else {
 				// For every address of the interface.
