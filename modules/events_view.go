@@ -19,6 +19,33 @@ func (s EventsStream) viewLogEvent(e session.Event) {
 		e.Data.(session.LogMessage).Message)
 }
 
+func (s EventsStream) viewStationEvent(e session.Event) {
+	st := e.Data.(*network.Station)
+	vend := ""
+	if st.Vendor != "" {
+		vend = fmt.Sprintf(" (%s)", st.Vendor)
+	}
+
+	if e.Tag == "wifi.station.new" {
+		fmt.Printf("[%s] WiFi station %s detected as %s%s.\n",
+			e.Time.Format(eventTimeFormat),
+			core.Bold(st.ESSID()),
+			core.Green(st.BSSID()),
+			vend)
+	} else if e.Tag == "wifi.station.lost" {
+		fmt.Printf("[%s] WiFi station %s (%s) lost.\n",
+			e.Time.Format(eventTimeFormat),
+			core.Red(st.ESSID()),
+			st.BSSID())
+	} else {
+		fmt.Printf("[%s] [%s] %s\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			st)
+	}
+
+}
+
 func (s EventsStream) viewEndpointEvent(e session.Event) {
 	t := e.Data.(*network.Endpoint)
 	vend := ""
@@ -74,6 +101,8 @@ func (s *EventsStream) View(e session.Event, refresh bool) {
 			s.viewLogEvent(e)
 		} else if strings.HasPrefix(e.Tag, "endpoint.") {
 			s.viewEndpointEvent(e)
+		} else if strings.HasPrefix(e.Tag, "wifi.station.") {
+			s.viewStationEvent(e)
 		} else if strings.HasPrefix(e.Tag, "mod.") {
 			s.viewModuleEvent(e)
 		} else if strings.HasPrefix(e.Tag, "net.sniff.") {
