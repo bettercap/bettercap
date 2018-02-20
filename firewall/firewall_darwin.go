@@ -165,11 +165,7 @@ func (f PfFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 }
 
 func (f PfFirewall) Restore() {
-	err := f.EnableForwarding(f.forwarding)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err)
-	}
-
+	f.EnableForwarding(f.forwarding)
 	f.enable(false)
 	os.Remove(f.filename)
 }
