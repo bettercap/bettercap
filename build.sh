@@ -25,8 +25,8 @@ download_pcap() {
     cd /tmp
     rm -rf libpcap-1.8.1
     if [ ! -f /tmp/libpcap-1.8.1.tar.gz ]; then
-        echo "@ Downloading  http://www.tcpdump.org/release/libpcap-1.8.1.tar.gz ..."
-        wget -q http://www.tcpdump.org/release/libpcap-1.8.1.tar.gz -O /tmp/libpcap-1.8.1.tar.gz
+        echo "@ Downloading  https://www.tcpdump.org/release/libpcap-1.8.1.tar.gz ..."
+        wget -q https://www.tcpdump.org/release/libpcap-1.8.1.tar.gz -O /tmp/libpcap-1.8.1.tar.gz
     fi
     tar xf libpcap-1.8.1.tar.gz
 }
@@ -50,7 +50,7 @@ build_linux_arm7() {
 
     OUTPUT=$1
     OLD=$(pwd)
-    
+
     download_pcap
     xcompile_pcap 'arm'
 

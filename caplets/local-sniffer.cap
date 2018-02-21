@@ -5,7 +5,7 @@ events.clear
 
 set net.sniff.verbose false
 set net.sniff.local true
-# http://biot.com/capstats/bpf.html
+# https://biot.com/capstats/bpf.html
 # set net.sniff.filter not arp and not udp port 53
 
 net.sniff on
