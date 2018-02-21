@@ -164,10 +164,11 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 		// this is ugly, but necessary in order to have this
 		// method handle both access point and clients
 		// transparently
-		ap, _ := w.Session.WiFi.Get(station.HwAddress)
 		clients := ""
-		if ap.NumClients() > 0 {
-			clients = strconv.Itoa(ap.NumClients())
+		if ap, found := w.Session.WiFi.Get(station.HwAddress); found == true {
+			if ap.NumClients() > 0 {
+				clients = strconv.Itoa(ap.NumClients())
+			}
 		}
 
 		return []string{
