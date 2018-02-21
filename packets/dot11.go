@@ -80,7 +80,7 @@ func Dot11ParseEncryption(packet gopacket.Packet, dot11 *layers.Dot11) (bool, st
 				found = true
 				if info.ID == layers.Dot11InformationElementIDRSNInfo {
 					enc = "WPA2"
-				} else if info.ID == layers.Dot11InformationElementIDVendor && info.Length >= 8 && bytes.Compare(info.OUI, []byte{0, 0x50, 0xf2, 1}) == 0 && bytes.HasPrefix(info.Info, []byte{1, 0}) {
+				} else if enc == "" && info.ID == layers.Dot11InformationElementIDVendor && info.Length >= 8 && bytes.Compare(info.OUI, []byte{0, 0x50, 0xf2, 1}) == 0 && bytes.HasPrefix(info.Info, []byte{1, 0}) {
 					enc = "WPA"
 				}
 			}
