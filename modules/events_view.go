@@ -100,7 +100,7 @@ func (s EventsStream) viewSynScanEvent(e session.Event) {
 		e.Time.Format(eventTimeFormat),
 		core.Green(e.Tag),
 		se.Port,
-		core.Bold(se.Host.IpAddress))
+		core.Bold(se.Address))
 }
 
 func (s *EventsStream) View(e session.Event, refresh bool) {

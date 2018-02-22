@@ -6,14 +6,16 @@ import (
 )
 
 type SynScanEvent struct {
-	Host *network.Endpoint
-	Port int
+	Address string
+	Host    *network.Endpoint
+	Port    int
 }
 
-func NewSynScanEvent(h *network.Endpoint, port int) SynScanEvent {
+func NewSynScanEvent(address string, h *network.Endpoint, port int) SynScanEvent {
 	return SynScanEvent{
-		Host: h,
-		Port: port,
+		Address: address,
+		Host:    h,
+		Port:    port,
 	}
 }
 

@@ -2,7 +2,12 @@ package network
 
 import (
 	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
 	"sync"
+
+	"github.com/evilsocket/bettercap-ng/core"
 )
 
 type Meta struct {
@@ -41,6 +46,29 @@ func (m *Meta) Get(name string) interface{} {
 		return v
 	}
 	return ""
+}
+
+func (m *Meta) GetIntsWith(name string, with int, sorted bool) []int {
+	sints := strings.Split(m.Get(name).(string), ",")
+	ints := []int{with}
+
+	for _, s := range sints {
+		n, err := strconv.Atoi(s)
+		if err == nil {
+			ints = append(ints, n)
+		}
+	}
+
+	return core.UniqueInts(ints, sorted)
+}
+
+func (m *Meta) SetInts(name string, ints []int) {
+	list := make([]string, len(ints))
+	for i, n := range ints {
+		list[i] = fmt.Sprintf("%d", n)
+	}
+
+	m.Set(name, strings.Join(list, ","))
 }
 
 func (m *Meta) GetOr(name string, dflt interface{}) interface{} {

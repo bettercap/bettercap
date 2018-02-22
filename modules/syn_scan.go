@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/core"
@@ -39,7 +38,9 @@ func NewSynScanner(s *session.Session) *SynScanner {
 	ss.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE START-PORT END-PORT", "syn.scan ([^\\s]+) (\\d+)([\\s\\d]*)",
 		"Perform a syn port scanning against an IP address within the provided ports range.",
 		func(args []string) error {
-			var err error
+			if ss.Running() == true {
+				return fmt.Errorf("A scan is already running, wait for it to end before starting a new one.")
+			}
 
 			list, err := iprange.Parse(args[0])
 			if err != nil {
@@ -176,34 +177,15 @@ func (s *SynScanner) onPacket(pkt gopacket.Packet) {
 		}
 
 		if host != nil {
-			sports := strings.Split(host.Meta.Get("tcp-ports").(string), ",")
-			ports := []int{port}
-
-			for _, s := range sports {
-				n, err := strconv.Atoi(s)
-				if err == nil {
-					ports = append(ports, n)
-				}
-			}
-
-			ports = core.UniqueInts(ports, true)
-			list := make([]string, len(ports))
-			for i, p := range ports {
-				list[i] = fmt.Sprintf("%d", p)
-			}
-
-			host.Meta.Set("tcp-ports", strings.Join(list, ","))
-
-			NewSynScanEvent(host, port).Push()
+			ports := host.Meta.GetIntsWith("tcp-ports", port, true)
+			host.Meta.SetInts("tcp-ports", ports)
 		}
+
+		NewSynScanEvent(from, host, port).Push()
 	}
 }
 
 func (s *SynScanner) synScan() error {
-	if s.Running() == true {
-		return fmt.Errorf("A scan is already running, wait for it to end before starting a new one.")
-	}
-
 	s.SetRunning(true, func() {
 		defer s.SetRunning(false, nil)
 
