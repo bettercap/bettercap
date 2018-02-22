@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -19,6 +20,25 @@ func Trim(s string) string {
 
 func TrimRight(s string) string {
 	return strings.TrimRight(s, defaultTrimSet)
+}
+
+func UniqueInts(a []int, sorted bool) []int {
+	tmp := make(map[int]bool)
+	uniq := make([]int, 0)
+
+	for _, n := range a {
+		tmp[n] = true
+	}
+
+	for n, _ := range tmp {
+		uniq = append(uniq, n)
+	}
+
+	if sorted {
+		sort.Ints(uniq)
+	}
+
+	return uniq
 }
 
 func Exec(executable string, args []string) (string, error) {

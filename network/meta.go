@@ -43,6 +43,16 @@ func (m *Meta) Get(name string) interface{} {
 	return ""
 }
 
+func (m *Meta) GetOr(name string, dflt interface{}) interface{} {
+	m.Lock()
+	defer m.Unlock()
+
+	if v, found := m.m[name]; found == true {
+		return v
+	}
+	return dflt
+}
+
 func (m *Meta) Each(cb func(name string, value interface{})) {
 	m.Lock()
 	defer m.Unlock()

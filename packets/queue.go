@@ -32,8 +32,10 @@ type Stats struct {
 	Errors      uint64
 }
 
+type PacketCallback func(pkt gopacket.Packet)
+
 type Queue struct {
-	sync.Mutex
+	sync.RWMutex
 
 	Activities chan Activity `json:"-"`
 
@@ -44,6 +46,7 @@ type Queue struct {
 	iface  *network.Endpoint
 	handle *pcap.Handle
 	source *gopacket.PacketSource
+	pktCb  PacketCallback
 	active bool
 }
 
@@ -55,6 +58,7 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 
 		iface:  iface,
 		active: !iface.IsMonitor(),
+		pktCb:  nil,
 	}
 
 	if q.active == true {
@@ -67,6 +71,21 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 	}
 
 	return
+}
+
+func (q *Queue) OnPacket(cb PacketCallback) {
+	q.Lock()
+	defer q.Unlock()
+	q.pktCb = cb
+}
+
+func (q *Queue) onPacketCallback(pkt gopacket.Packet) {
+	q.RLock()
+	defer q.RUnlock()
+
+	if q.pktCb != nil {
+		q.pktCb(pkt)
+	}
 }
 
 func (q *Queue) trackProtocols(pkt gopacket.Packet) {
@@ -129,6 +148,8 @@ func (q *Queue) worker() {
 
 		atomic.AddUint64(&q.Stats.PktReceived, 1)
 		atomic.AddUint64(&q.Stats.Received, pktSize)
+
+		q.onPacketCallback(pkt)
 
 		// decode eth and ipv4 layers
 		leth := pkt.Layer(layers.LayerTypeEthernet)

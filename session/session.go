@@ -484,5 +484,5 @@ func (s *Session) Run(line string) error {
 		}
 	}
 
-	return fmt.Errorf("Unknown command %s%s%s, type %shelp%s for the help menu.", core.BOLD, line, core.RESET, core.BOLD, core.RESET)
+	return fmt.Errorf("Unknown or invalid syntax \"%s%s%s\", type %shelp%s for the help menu.", core.BOLD, line, core.RESET, core.BOLD, core.RESET)
 }
