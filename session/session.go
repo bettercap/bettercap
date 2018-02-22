@@ -234,6 +234,8 @@ func (s *Session) setupReadline() error {
 }
 
 func (s *Session) Close() {
+	fmt.Printf("\nStopping modules and cleaning session state ...\n")
+
 	if *s.Options.Debug {
 		s.Events.Add("session.closing", nil)
 	}
