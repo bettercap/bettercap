@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/network"
 	"github.com/evilsocket/bettercap-ng/packets"
 	"github.com/evilsocket/bettercap-ng/session"
 
@@ -64,41 +63,6 @@ func (p ArpSpoofer) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (p *ArpSpoofer) getMAC(ip net.IP, probe bool) (net.HardwareAddr, error) {
-	var mac string
-	var hw net.HardwareAddr
-	var err error
-
-	// do we have this ip mac address?
-	mac, err = network.ArpLookup(p.Session.Interface.Name(), ip.String(), false)
-	if err != nil && probe == true {
-		from := p.Session.Interface.IP
-		from_hw := p.Session.Interface.HW
-
-		if err, probe := packets.NewUDPProbe(from, from_hw, ip, 139); err != nil {
-			log.Error("Error while creating UDP probe packet for %s: %s", ip.String(), err)
-		} else {
-			p.Session.Queue.Send(probe)
-		}
-
-		time.Sleep(500 * time.Millisecond)
-
-		mac, err = network.ArpLookup(p.Session.Interface.Name(), ip.String(), false)
-	}
-
-	if mac == "" {
-		return nil, fmt.Errorf("Could not find hardware address for %s.", ip.String())
-	}
-
-	mac = network.NormalizeMac(mac)
-	hw, err = net.ParseMAC(mac)
-	if err != nil {
-		return nil, fmt.Errorf("Error while parsing hardware address '%s' for %s: %s", mac, ip.String(), err)
-	}
-
-	return hw, nil
-}
-
 func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running bool, probe bool) {
 	for _, ip := range p.addresses {
 		if check_running && p.Running() == false {
@@ -109,7 +73,7 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 		}
 
 		// do we have this ip mac address?
-		hw, err := p.getMAC(ip, probe)
+		hw, err := findMAC(p.Session, ip, probe)
 		if err != nil {
 			log.Debug("Error while looking up hardware address for %s: %s", ip.String(), err)
 			continue
