@@ -10,13 +10,10 @@ import (
 	"github.com/evilsocket/bettercap-ng/log"
 	"github.com/evilsocket/bettercap-ng/session"
 	"github.com/evilsocket/bettercap-ng/tls"
-
-	"github.com/gin-gonic/gin"
 )
 
 type RestAPI struct {
 	session.SessionModule
-	router   *gin.Engine
 	server   *http.Server
 	certFile string
 	keyFile  string
@@ -94,8 +91,6 @@ func (api *RestAPI) Author() string {
 
 func (api *RestAPI) Configure() error {
 	var err error
-	var username string
-	var password string
 	var ip string
 	var port int
 
@@ -103,30 +98,19 @@ func (api *RestAPI) Configure() error {
 		return err
 	} else if err, port = api.IntParam("api.rest.port"); err != nil {
 		return err
-	}
-	api.server.Addr = fmt.Sprintf("%s:%d", ip, port)
-
-	if err, api.certFile = api.StringParam("api.rest.certificate"); err != nil {
+	} else if err, api.certFile = api.StringParam("api.rest.certificate"); err != nil {
 		return err
 	} else if api.certFile, err = core.ExpandPath(api.certFile); err != nil {
 		return err
-	}
-
-	if err, api.keyFile = api.StringParam("api.rest.key"); err != nil {
+	} else if err, api.keyFile = api.StringParam("api.rest.key"); err != nil {
 		return err
 	} else if api.keyFile, err = core.ExpandPath(api.keyFile); err != nil {
 		return err
-	}
-
-	if err, username = api.StringParam("api.rest.username"); err != nil {
+	} else if err, ApiUsername = api.StringParam("api.rest.username"); err != nil {
 		return err
-	}
-
-	if err, password = api.StringParam("api.rest.password"); err != nil {
+	} else if err, ApiPassword = api.StringParam("api.rest.password"); err != nil {
 		return err
-	}
-
-	if core.Exists(api.certFile) == false || core.Exists(api.keyFile) == false {
+	} else if core.Exists(api.certFile) == false || core.Exists(api.keyFile) == false {
 		log.Info("Generating TLS key to %s", api.keyFile)
 		log.Info("Generating TLS certificate to %s", api.certFile)
 		if err := tls.Generate(api.certFile, api.keyFile); err != nil {
@@ -137,19 +121,14 @@ func (api *RestAPI) Configure() error {
 		log.Info("Loading TLS certificate from %s", api.certFile)
 	}
 
-	gin.SetMode(gin.ReleaseMode)
+	api.server.Addr = fmt.Sprintf("%s:%d", ip, port)
 
-	api.router = gin.New()
-	api.router.Use(SecurityMiddleware())
-	api.router.Use(gin.BasicAuth(gin.Accounts{username: password}))
+	router := http.NewServeMux()
 
-	group := api.router.Group("/api")
-	group.GET("/session", ShowRestSession)
-	group.POST("/session", RunRestCommand)
-	group.GET("/events", ShowRestEvents)
-	group.DELETE("/events", ClearRestEvents)
+	router.HandleFunc("/api/session", SessionRoute)
+	router.HandleFunc("/api/events", EventsRoute)
 
-	api.server.Handler = api.router
+	api.server.Handler = router
 
 	return nil
 }

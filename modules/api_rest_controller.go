@@ -1,41 +1,84 @@
 package modules
 
 import (
+	"crypto/subtle"
+	"encoding/json"
+	"net/http"
 	"strconv"
 
 	"github.com/evilsocket/bettercap-ng/session"
-
-	"github.com/gin-gonic/gin"
 )
 
-func ShowRestSession(c *gin.Context) {
-	c.JSON(200, session.I)
+var (
+	ApiUsername = ""
+	ApiPassword = ""
+)
+
+type CommandRequest struct {
+	Command string `json:"cmd"`
 }
 
-func RunRestCommand(c *gin.Context) {
+type APIResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"msg"`
+}
+
+func checkAuth(r *http.Request) bool {
+	user, pass, _ := r.BasicAuth()
+	// timing attack my ass
+	if subtle.ConstantTimeCompare([]byte(user), []byte(ApiUsername)) != 1 {
+		return false
+	} else if subtle.ConstantTimeCompare([]byte(pass), []byte(ApiPassword)) != 1 {
+		return false
+	}
+	return true
+}
+
+func setAuthFailed(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", `Basic realm="auth"`)
+	w.WriteHeader(401)
+	w.Write([]byte("Unauthorized"))
+}
+
+func setSecurityHeaders(w http.ResponseWriter) {
+	w.Header().Add("X-Frame-Options", "DENY")
+	w.Header().Add("X-Content-Type-Options", "nosniff")
+	w.Header().Add("X-XSS-Protection", "1; mode=block")
+	w.Header().Add("Referrer-Policy", "same-origin")
+}
+
+func toJSON(w http.ResponseWriter, o interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(o)
+}
+
+func showSession(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I)
+}
+
+func runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var cmd CommandRequest
 
-	if err = SafeBind(c, &cmd); err != nil {
-		BadRequest(c)
-	}
-
-	err = session.I.Run(cmd.Command)
-	if err != nil {
-		BadRequest(c, err.Error())
+	if r.Body == nil {
+		http.Error(w, "Bad Request", 400)
+	} else if err = json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Bad Request", 400)
+	} else if err = session.I.Run(cmd.Command); err != nil {
+		http.Error(w, err.Error(), 400)
 	} else {
-		c.JSON(200, APIResponse{Success: true})
+		toJSON(w, APIResponse{Success: true})
 	}
 }
 
-func ShowRestEvents(c *gin.Context) {
+func showEvents(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	events := session.I.Events.Sorted()
 	nmax := len(events)
 	n := nmax
 
-	q := c.Request.URL.Query()
+	q := r.URL.Query()
 	vals := q["n"]
 	if len(vals) > 0 {
 		n, err = strconv.Atoi(q["n"][0])
@@ -48,10 +91,37 @@ func ShowRestEvents(c *gin.Context) {
 		}
 	}
 
-	c.JSON(200, events[0:n])
+	toJSON(w, events[0:n])
 }
 
-func ClearRestEvents(c *gin.Context) {
+func clearEvents(w http.ResponseWriter, r *http.Request) {
 	session.I.Events.Clear()
-	c.JSON(200, gin.H{"success": true})
+}
+
+func SessionRoute(w http.ResponseWriter, r *http.Request) {
+	setSecurityHeaders(w)
+
+	if checkAuth(r) == false {
+		setAuthFailed(w)
+	} else if r.Method == "GET" {
+		showSession(w, r)
+	} else if r.Method == "POST" {
+		runSessionCommand(w, r)
+	} else {
+		http.Error(w, "Bad Request", 400)
+	}
+}
+
+func EventsRoute(w http.ResponseWriter, r *http.Request) {
+	setSecurityHeaders(w)
+
+	if checkAuth(r) == false {
+		setAuthFailed(w)
+	} else if r.Method == "GET" {
+		showEvents(w, r)
+	} else if r.Method == "DELETE" {
+		clearEvents(w, r)
+	} else {
+		http.Error(w, "Bad Request", 400)
+	}
 }
