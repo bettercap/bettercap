@@ -374,4 +374,4 @@ clear
 
 ## License
 
-`bettercap` and `bettercap` are made with ♥  by [Simone Margaritelli](https://www.evilsocket.net/) and they're released under the GPL 3 license.
+`bettercap` is made with ♥  by [the dev team](https://github.com/orgs/bettercap/people) and it's released under the GPL 3 license.

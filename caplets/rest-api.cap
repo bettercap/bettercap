@@ -1,8 +1,0 @@
-# change these!
-set api.rest.username bcap
-set api.rest.password bcap
-# set api.rest.port 8082
-
-net.probe on
-api.rest on
-

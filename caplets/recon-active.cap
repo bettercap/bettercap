@@ -1,4 +1,0 @@
-net.probe on
-sleep 5
-net.show
-quit
