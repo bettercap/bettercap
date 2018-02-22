@@ -41,7 +41,7 @@ func (s EventsStream) viewApEvent(e session.Event) {
 		fmt.Printf("[%s] [%s] %s\n",
 			e.Time.Format(eventTimeFormat),
 			core.Green(e.Tag),
-			ap)
+			ap.String())
 	}
 }
 
@@ -75,7 +75,7 @@ func (s EventsStream) viewEndpointEvent(e session.Event) {
 		fmt.Printf("[%s] [%s] %s\n",
 			e.Time.Format(eventTimeFormat),
 			core.Green(e.Tag),
-			t)
+			t.String())
 	}
 }
 

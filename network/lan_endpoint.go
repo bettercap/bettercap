@@ -28,6 +28,7 @@ type Endpoint struct {
 	ResolvedCallback OnHostResolvedCallback `json:"-"`
 	FirstSeen        time.Time              `json:"first_seen"`
 	LastSeen         time.Time              `json:"last_seen"`
+	Meta             *Meta                  `json:"meta"`
 }
 
 func ip2int(ip net.IP) uint32 {
@@ -56,6 +57,7 @@ func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 		ResolvedCallback: nil,
 		FirstSeen:        now,
 		LastSeen:         now,
+		Meta:             NewMeta(),
 	}
 
 	_, netw, _ := net.ParseCIDR(e.CIDR())
@@ -66,7 +68,6 @@ func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 
 func NewEndpoint(ip, mac string) *Endpoint {
 	e := NewEndpointNoResolve(ip, mac, "", 0)
-
 	// start resolver goroutine
 	go func() {
 		if names, err := net.LookupAddr(e.IpAddress); err == nil && len(names) > 0 {
