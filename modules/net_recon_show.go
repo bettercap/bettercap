@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -47,7 +48,7 @@ func rankByProtoHits(protos map[string]uint64) (ProtoPairList, uint64) {
 	return pl, max
 }
 
-func (d *Discovery) getRow(e *network.Endpoint) []string {
+func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) []string {
 	sinceStarted := time.Since(d.Session.StartedAt)
 	sinceFirstSeen := time.Since(e.FirstSeen)
 
@@ -92,7 +93,7 @@ func (d *Discovery) getRow(e *network.Endpoint) []string {
 		seen = core.Dim(seen)
 	}
 
-	return []string{
+	row := []string{
 		addr,
 		mac,
 		name,
@@ -101,13 +102,24 @@ func (d *Discovery) getRow(e *network.Endpoint) []string {
 		humanize.Bytes(traffic.Received),
 		seen,
 	}
+
+	if withMeta {
+		metas := []string{}
+		e.Meta.Each(func(name string, value interface{}) {
+			metas = append(metas, fmt.Sprintf("%s: %s", name, value.(string)))
+		})
+
+		row = append(row, strings.Join(metas, "\n"))
+	}
+
+	return row
 }
 
 func (d *Discovery) showTable(header []string, rows [][]string) {
 	fmt.Println()
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader(header)
-	table.SetColWidth(80)
+	table.SetColWidth(180)
 	table.AppendBulk(rows)
 	table.Render()
 }
@@ -132,15 +144,30 @@ func (d *Discovery) Show(by string) error {
 		targets = append([]*network.Endpoint{d.Session.Interface, d.Session.Gateway}, targets...)
 	}
 
-	rows := make([][]string, 0)
-	for i, t := range targets {
-		rows = append(rows, d.getRow(t))
-		if i == pad {
-			rows = append(rows, []string{"", "", "", "", "", "", ""})
+	hasMeta := false
+	for _, t := range targets {
+		if t.Meta.Empty() == false {
+			hasMeta = true
+			break
 		}
 	}
 
-	d.showTable([]string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Last Seen"}, rows)
+	padCols := []string{"", "", "", "", "", "", ""}
+	colNames := []string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Last Seen"}
+	if hasMeta {
+		padCols = append(padCols, "")
+		colNames = append(colNames, "Meta")
+	}
+
+	rows := make([][]string, 0)
+	for i, t := range targets {
+		rows = append(rows, d.getRow(t, hasMeta))
+		if i == pad {
+			rows = append(rows, padCols)
+		}
+	}
+
+	d.showTable(colNames, rows)
 
 	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
 		core.Red("↑"),
@@ -170,27 +197,6 @@ func (d *Discovery) Show(by string) error {
 
 		fmt.Println()
 	}
-
-	/*
-		Last events are more useful than this histogram and vertical scroll
-		isn't infinite :)
-
-			rows = make([][]string, 0)
-			protos, maxPackets := rankByProtoHits(d.Session.Queue.Protos)
-			maxBarWidth := 70
-
-			for _, p := range protos {
-				width := int(float32(maxBarWidth) * (float32(p.Hits) / float32(maxPackets)))
-				bar := ""
-				for i := 0; i < width; i++ {
-					bar += "▇"
-				}
-
-				rows = append(rows, []string{p.Protocol, fmt.Sprintf("%s %d", bar, p.Hits)})
-			}
-
-			d.showTable([]string{"Proto", "# Packets"}, rows)
-	*/
 
 	d.Session.Refresh()
 

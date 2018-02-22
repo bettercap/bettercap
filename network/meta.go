@@ -42,3 +42,18 @@ func (m *Meta) Get(name string) interface{} {
 	}
 	return ""
 }
+
+func (m *Meta) Each(cb func(name string, value interface{})) {
+	m.Lock()
+	defer m.Unlock()
+
+	for k, v := range m.m {
+		cb(k, v)
+	}
+}
+
+func (m *Meta) Empty() bool {
+	m.Lock()
+	defer m.Unlock()
+	return len(m.m) == 0
+}
