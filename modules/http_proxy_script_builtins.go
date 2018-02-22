@@ -8,21 +8,32 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
+var nullOtto = otto.Value{}
+
+func errOtto(format string, args ...interface{}) otto.Value {
+	log.Error(format, args...)
+	return nullOtto
+}
+
 // define functions available to proxy scripts
 func (s *ProxyScript) defineBuiltins() error {
 	// used to read a file ... doh
 	s.VM.Set("readFile", func(call otto.FunctionCall) otto.Value {
-		filename := call.Argument(0).String()
+		argv := call.ArgumentList
+		argc := len(argv)
+		if argc != 1 {
+			return errOtto("readFile: expected 1 argument, %d given instead.", argc)
+		}
+
+		filename := argv[0].String()
 		raw, err := ioutil.ReadFile(filename)
 		if err != nil {
-			log.Error("Could not read %s: %s", filename, err)
-			return otto.Value{}
+			return errOtto("Could not read %s: %s", filename, err)
 		}
 
 		v, err := s.VM.ToValue(string(raw))
 		if err != nil {
-			log.Error("Could not convert to string: %s", err)
-			return otto.Value{}
+			return errOtto("Could not convert to string: %s", err)
 		}
 		return v
 	})
@@ -46,8 +57,7 @@ func (s *ProxyScript) defineBuiltins() error {
 			if found, varValue := s.sess.Env.Get(varName); found == true {
 				v, err := s.VM.ToValue(varValue)
 				if err != nil {
-					log.Error("Could not convert to string: %s", varValue)
-					return otto.Value{}
+					return errOtto("Could not convert to string: %s", varValue)
 				}
 				return v
 			}
@@ -57,9 +67,11 @@ func (s *ProxyScript) defineBuiltins() error {
 			varName := call.Argument(0).String()
 			varValue := call.Argument(1).String()
 			s.sess.Env.Set(varName, varValue)
+		} else {
+			return errOtto("env: expected 1 or 2 arguments, %d given instead.", argc)
 		}
 
-		return otto.Value{}
+		return nullOtto
 	})
 
 	return nil
