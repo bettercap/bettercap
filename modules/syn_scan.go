@@ -164,11 +164,9 @@ func (s *SynScanner) onPacket(pkt gopacket.Packet) {
 
 	if s.inRange(ip.SrcIP) && tcp.DstPort == synSourcePort && tcp.SYN && tcp.ACK {
 		from := ip.SrcIP.String()
-
-		log.Info("Found open port %d for %s", tcp.SrcPort, core.Bold(from))
+		port := int(tcp.SrcPort)
 
 		var host *network.Endpoint
-
 		if ip.SrcIP.Equal(s.Session.Interface.IP) {
 			host = s.Session.Interface
 		} else if ip.SrcIP.Equal(s.Session.Gateway.IP) {
@@ -179,7 +177,7 @@ func (s *SynScanner) onPacket(pkt gopacket.Packet) {
 
 		if host != nil {
 			sports := strings.Split(host.Meta.Get("tcp-ports").(string), ",")
-			ports := []int{int(tcp.SrcPort)}
+			ports := []int{port}
 
 			for _, s := range sports {
 				n, err := strconv.Atoi(s)
@@ -195,6 +193,8 @@ func (s *SynScanner) onPacket(pkt gopacket.Packet) {
 			}
 
 			host.Meta.Set("tcp-ports", strings.Join(list, ","))
+
+			NewSynScanEvent(host, port).Push()
 		}
 	}
 }

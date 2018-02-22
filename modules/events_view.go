@@ -94,6 +94,15 @@ func (s EventsStream) viewSnifferEvent(e session.Event) {
 		se.Message)
 }
 
+func (s EventsStream) viewSynScanEvent(e session.Event) {
+	se := e.Data.(SynScanEvent)
+	fmt.Printf("[%s] [%s] Found open port %d for %s\n",
+		e.Time.Format(eventTimeFormat),
+		core.Green(e.Tag),
+		se.Port,
+		core.Bold(se.Host.IpAddress))
+}
+
 func (s *EventsStream) View(e session.Event, refresh bool) {
 	if s.filter == "" || strings.Contains(e.Tag, s.filter) {
 		if e.Tag == "sys.log" {
@@ -106,6 +115,8 @@ func (s *EventsStream) View(e session.Event, refresh bool) {
 			s.viewModuleEvent(e)
 		} else if strings.HasPrefix(e.Tag, "net.sniff.") {
 			s.viewSnifferEvent(e)
+		} else if strings.HasPrefix(e.Tag, "syn.scan") {
+			s.viewSynScanEvent(e)
 		} else {
 			fmt.Printf("[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), core.Green(e.Tag), e)
 		}
