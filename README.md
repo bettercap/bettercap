@@ -122,7 +122,7 @@ And finally, you can access and use any variable that has been declared in the i
 
 ## Caplets
 
-Caplets, or `.cap` files are a powerful way to script bettercap's interactive sessions, think about them as the `.rc` files of Metasploit. You will find updated caplets and modules [in this repository](/bettercap/caplets), you're strongly invited to check it out in order to fully understand the features of this tool.
+Caplets, or `.cap` files are a powerful way to script bettercap's interactive sessions, think about them as the `.rc` files of Metasploit. You will find updated caplets and modules [in this repository](https://github.com/bettercap/caplets), you're strongly invited to check it out in order to fully understand the features of this tool.
 
 ## License
 
