@@ -77,9 +77,48 @@ Cross compile bettercap-ng itself:
 
 If no `-caplet` option is specified, bettercap-ng will start in interactive mode, allowing you to start and stop modules manually, change options and apply new firewall rules on the fly.
 
-To get a grasp of what you can do, type `help` and the general help menu will be shown, you can also have module specific help by using `help module-name` (for instance try with `help net.recon`).
+To get a grasp of what you can do, type `help` and the general help menu will be shown, you can also have module specific help by using `help module-name` (for instance try with `help net.recon`), to see which modules are running and their configuration at any time, you can use the `active` command.
 
 To print all variables and their values instead, you can use `get *` or `get variable-name` to get a single variable (try with `get gateway.address`), to set a new value you can simply `set variable-name new-value` (a value of `""` will clear the variable contents).
+
+## Prompt
+
+The interactive session prompt can be modified by setting the `$` variable, for instance this:
+
+    set $ something
+
+Will set the prompt to the string `something`, which is not very useful, that is why you can also access variables and use colors/effects by using the proper syntax and operators as you can see from the prompt default configuration `{by}{fw}{cidr} {fb}> {env.iface.ipv4} {reset} {bold}» {reset}`.
+
+| Operator | Description |
+| ------------- | ------------- |
+| `{bold}` | Set text to bold. |
+| `{dim}` | Set dim effect on text. |
+| `{r}` | Set text foreground color to red. |
+| `{g}` | Set text foreground color to red. |
+| `{b}` | Set text foreground color to red. |
+| `{y}` | Set text foreground color to red. |
+| `{fb}` | Set text foreground color to black. |
+| `{fw}` | Set text foreground color to white. |
+| `{bdg}` | Set text background color to dark gray. |
+| `{br}` | Set text background color to red. |
+| `{bg}` | Set text background color to green. |
+| `{by}` | Set text background color to yellow. |
+| `{blb}` | Set text background color to light blue. |
+| `{reset}` | Reset text effects (added by default at the end of the prompt if not specified). |
+
+There are also other operators you can use in order to access specific information about the session.
+
+| Operator | Description |
+| ------------- | ------------- |
+| `{cidr}` | Selected interface subnet CIDR. |
+| `{net.sent}` | Number of bytes being sent by the tool on the network. |
+| `{net.sent.human}` | Number of bytes being sent by the tool on the network (human readable form). |
+| `{net.errors}` | Number of errors while sending packets. |
+| `{net.received}` | Number of bytes being sniffed from the tool on the network. |
+| `{net.received.human}` | Number of bytes being sniffed from the tool from the network (human readable form). |
+| `{net.packets}` | Number of packets being sniffed by the tool from the network. |
+
+And finally, you can access and use any variable that has been declared in the interactive session using the `{env.NAME-OF-THE-VAR}` operator, for instance, the default prompt is using `{env.iface.ipv4}' that is replaced by the `iface.ipv4` session variable contents ( you can check it using the `get iface.ipv4` command ).
 
 ## Caplets
 
