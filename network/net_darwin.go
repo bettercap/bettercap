@@ -33,13 +33,8 @@ func getInterfaceName(iface net.Interface) string {
 }
 
 func SetInterfaceChannel(iface string, channel int) error {
-	out, err := core.Exec(airPortPath, []string{iface, "--channel", fmt.Sprintf("%d", channel)})
-	if err != nil {
-		return err
-	} else if out != "" {
-		return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
-	}
-	return nil
+	_, err := core.Exec(airPortPath, []string{iface, "--channel", fmt.Sprintf("%d", channel)})
+	return err
 }
 
 //! TODO Get the list of the available frequencies supported by the network card
