@@ -53,6 +53,5 @@ func ShowRestEvents(c *gin.Context) {
 
 func ClearRestEvents(c *gin.Context) {
 	session.I.Events.Clear()
-	session.I.Events.Add("sys.log.cleared", nil)
 	c.JSON(200, gin.H{"success": true})
 }
