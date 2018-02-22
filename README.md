@@ -61,7 +61,7 @@ Download and cross compile libpcap-1.8.1 for ARM (adjust `PCAPV` to use a differ
 
     cd /tmp
     export PCAPV=1.8.1
-    wget http://www.tcpdump.org/release/libpcap-$PCAPV.tar.gz
+    wget https://www.tcpdump.org/release/libpcap-$PCAPV.tar.gz
     tar xvf libpcap-$PCAPV.tar.gz
     cd libpcap-$PCAPV
     export CC=arm-linux-gnueabi-gcc

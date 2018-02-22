@@ -44,7 +44,7 @@ func Generate(certPath string, keyPath string) error {
 			Country:            []string{"US"},
 			Locality:           []string{"Scottsdale"},
 			Organization:       []string{"GoDaddy.com, Inc."},
-			OrganizationalUnit: []string{"http://certs.godaddy.com/repository/"},
+			OrganizationalUnit: []string{"https://certs.godaddy.com/repository/"},
 			CommonName:         "Go Daddy Secure Certificate Authority - G2",
 		},
 		NotBefore:             notBefore,
