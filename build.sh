@@ -33,30 +33,83 @@ download_pcap() {
 
 xcompile_pcap() {
     ARCH=$1
+    HOST=$2
+    COMPILER=$3
 
     bin_dep 'make'
     bin_dep 'yacc'
     bin_dep 'flex'
-    bin_dep "$ARCH-linux-gnueabi-gcc"
+    bin_dep "$COMPILER"
 
-    echo "@ Cross compiling libpcap for $ARCH ..."
+    echo "@ Cross compiling libpcap for $ARCH with $COMPILER ..."
     cd /tmp/libpcap-1.8.1
-    export CC=$ARCH-linux-gnueabi-gcc
-    ./configure --host=$ARCH-linux-gnueabi --with-pcap=linux > /dev/null
+    export CC=$COMPILER
+    ./configure --host=$HOST --with-pcap=linux > /dev/null
     make CFLAGS='-w' -j4 > /dev/null
 }
 
 build_linux_arm7() {
-
     OUTPUT=$1
     OLD=$(pwd)
 
     download_pcap
-    xcompile_pcap 'arm'
+    xcompile_pcap 'arm' 'arm-linux-gnueabi' 'arm-linux-gnueabi-gcc'
 
     echo "@ Building $OUTPUT ..."
     cd "$OLD"
     env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
+    rm -rf /tmp/libpcap-1.8.1
+}
+
+build_linux_mips() {
+    OUTPUT=$1
+    OLD=$(pwd)
+
+    download_pcap
+    xcompile_pcap 'mips' 'mips-linux-gnu' 'mips-linux-gnu-gcc'
+
+    echo "@ Building $OUTPUT ..."
+    cd "$OLD"
+    env CC=mips-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
+    rm -rf /tmp/libpcap-1.8.1
+}
+
+build_linux_mipsle() {
+    OUTPUT=$1
+    OLD=$(pwd)
+
+    download_pcap
+    xcompile_pcap 'mipsel' 'mipsel-linux-gnu' 'mipsel-linux-gnu-gcc'
+
+    echo "@ Building $OUTPUT ..."
+    cd "$OLD"
+    env CC=mipsel-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mipsle CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
+    rm -rf /tmp/libpcap-1.8.1
+}
+
+build_linux_mips64() {
+    OUTPUT=$1
+    OLD=$(pwd)
+
+    download_pcap
+    xcompile_pcap 'mips64' 'mips64-linux-gnuabi64' 'mips64-linux-gnuabi64-gcc'
+
+    echo "@ Building $OUTPUT ..."
+    cd "$OLD"
+    env CC=mips64-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64 CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
+    rm -rf /tmp/libpcap-1.8.1
+}
+
+build_linux_mips64le() {
+    OUTPUT=$1
+    OLD=$(pwd)
+
+    download_pcap
+    xcompile_pcap 'mips64el' 'mips64el-linux-gnuabi64' 'mips64el-linux-gnuabi64-gcc'
+
+    echo "@ Building $OUTPUT ..."
+    cd "$OLD"
+    env CC=mips64el-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64le CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
     rm -rf /tmp/libpcap-1.8.1
 }
 
@@ -98,8 +151,13 @@ cd $BUILD_FOLDER
 
 build_linux_amd64 bettercap-ng_linux_amd64_$VERSION
 build_linux_arm7 bettercap-ng_linux_arm7_$VERSION
+build_linux_mips bettercap-ng_linux_mips_$VERSION
+build_linux_mipsle bettercap-ng_linux_mipsle_$VERSION
+build_linux_mips64 bettercap-ng_linux_mips64_$VERSION
+build_linux_mips64le bettercap-ng_linux_mips64le_$VERSION
 build_macos_amd64 bettercap-ng_macos_amd64_$VERSION
 build_windows_amd64 bettercap-ng_windows_amd64_$VERSION.exe
+sha256sum * > checksums.txt
 
 echo
 echo
