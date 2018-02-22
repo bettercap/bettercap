@@ -23,6 +23,8 @@ This command will download bettercap, install its dependencies, compile it and m
 Now you can use `sudo bettercap -h` to show the basic command line options and just `sudo bettercap` to start an 
 [interactive session](https://github.com/bettercap/bettercap/wiki/Interactive-Mode) on your default network interface, otherwise you can [load a caplet](https://github.com/bettercap/bettercap/wiki/Caplets) from [the dedicated repository](https://github.com/bettercap/caplets).
 
+The project is documented [in this wiki](https://github.com/bettercap/bettercap/wiki).
+
 ## License
 
 `bettercap` is made with ♥  by [the dev team](https://github.com/orgs/bettercap/people) and it's released under the GPL 3 license.
