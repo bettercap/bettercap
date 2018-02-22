@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -99,6 +100,8 @@ func (j *JSResponse) ReadBody() string {
 
 	j.Body = string(raw)
 	j.bodyRead = true
+	// reset the request body to the original unread state
+	j.resp.Body = ioutil.NopCloser(bytes.NewBuffer(raw))
 
 	return j.Body
 }
