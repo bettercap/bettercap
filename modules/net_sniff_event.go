@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/session"
 )
 
 type SniffData map[string]interface{}

@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/network"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/network"
 )
 
 type LinuxFirewall struct {

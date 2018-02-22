@@ -17,10 +17,10 @@ import (
 
 	"github.com/evilsocket/readline"
 
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/firewall"
-	"github.com/evilsocket/bettercap-ng/network"
-	"github.com/evilsocket/bettercap-ng/packets"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/firewall"
+	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/packets"
 )
 
 const HistoryFile = "~/bettercap.history"

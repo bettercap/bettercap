@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/session"
 )
 
 func getScript(src string) *ProxyScript {

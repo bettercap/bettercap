@@ -9,7 +9,7 @@ import (
 
 	"github.com/elazarl/goproxy"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 type JSResponse struct {

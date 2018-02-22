@@ -13,7 +13,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/bettercap/bettercap/log"
 )
 
 func hashSorted(lst []string) []byte {

@@ -15,11 +15,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/firewall"
-	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/session"
-	btls "github.com/evilsocket/bettercap-ng/tls"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/firewall"
+	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/session"
+	btls "github.com/bettercap/bettercap/tls"
 
 	"github.com/elazarl/goproxy"
 	"github.com/inconshreveable/go-vhost"

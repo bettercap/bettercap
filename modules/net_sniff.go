@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"

@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/session"
-	"github.com/evilsocket/bettercap-ng/tls"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/tls"
 )
 
 type RestAPI struct {

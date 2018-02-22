@@ -3,7 +3,7 @@ package modules
 import (
 	"io/ioutil"
 
-	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/bettercap/bettercap/log"
 
 	"github.com/robertkrimen/otto"
 )

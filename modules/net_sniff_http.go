@@ -3,7 +3,7 @@ package modules
 import (
 	"fmt"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 	"regexp"
 
 	"github.com/google/gopacket"

@@ -3,6 +3,6 @@
 *.prof*
 pcaps
 build
-bettercap-ng*.*
-bettercap-ng*
+bettercap*.*
+bettercap*
 bettercap.history

@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 type OnHostResolvedCallback func(e *Endpoint)

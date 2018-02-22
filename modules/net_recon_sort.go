@@ -1,9 +1,9 @@
 package modules
 
 import (
-	"github.com/evilsocket/bettercap-ng/network"
-	"github.com/evilsocket/bettercap-ng/packets"
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/session"
 )
 
 type ByAddressSorter []*network.Endpoint

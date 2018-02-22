@@ -5,7 +5,7 @@ import (
 	"net"
 	"regexp"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 const airPortPath = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"

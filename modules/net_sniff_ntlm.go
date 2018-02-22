@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/packets"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"

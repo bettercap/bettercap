@@ -3,7 +3,7 @@ package modules
 import (
 	"strings"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"

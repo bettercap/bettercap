@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 
 	"github.com/dustin/go-humanize"
 )

@@ -5,7 +5,7 @@ import (
 	"net"
 	"sync/atomic"
 
-	"github.com/evilsocket/bettercap-ng/log"
+	"github.com/bettercap/bettercap/log"
 )
 
 func (p *Prober) sendProbeUDP(from net.IP, from_hw net.HardwareAddr, ip net.IP) {

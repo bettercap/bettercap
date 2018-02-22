@@ -1,6 +1,6 @@
 # targeting the whole subnet by default, to make it selective:
 #
-#   sudo ./bettercap-ng -caplet caplets/http-req-dump.cap -eval "set arp.spoof.targets 192.168.1.64"
+#   sudo ./bettercap -caplet caplets/http-req-dump.cap -eval "set arp.spoof.targets 192.168.1.64"
 
 # to make it less verbose
 # events.stream off

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 type SetCallback func(newValue string)

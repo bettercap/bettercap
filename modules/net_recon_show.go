@@ -8,9 +8,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/network"
-	"github.com/evilsocket/bettercap-ng/packets"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/packets"
 
 	"github.com/dustin/go-humanize"
 	"github.com/olekukonko/tablewriter"

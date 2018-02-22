@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/session"
 )
 
 var (

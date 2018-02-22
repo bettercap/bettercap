@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 const (

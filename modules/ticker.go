@@ -3,8 +3,8 @@ package modules
 import (
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/session"
 )
 
 type Ticker struct {

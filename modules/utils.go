@@ -5,10 +5,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/network"
-	"github.com/evilsocket/bettercap-ng/packets"
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/session"
 )
 
 func findMAC(s *session.Session, ip net.IP, probe bool) (net.HardwareAddr, error) {

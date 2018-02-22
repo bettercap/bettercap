@@ -1,14 +1,14 @@
 <p align="center">
-  <img alt="BetterCap" src="https://raw.githubusercontent.com/evilsocket/bettercap-ng/master/media/logo.png" height="140" />
+  <img alt="BetterCap" src="https://raw.githubusercontent.com/bettercap/bettercap/master/media/logo.png" height="140" />
   <p align="center">
-    <a href="https://github.com/evilsocket/bettercap-ng/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/evilsocket/bettercap-ng.svg?style=flat-square"></a>
+    <a href="https://github.com/bettercap/bettercap/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/bettercap/bettercap.svg?style=flat-square"></a>
     <a href="/LICENSE"><img alt="Software License" src="https://img.shields.io/badge/license-GPL3-brightgreen.svg?style=flat-square"></a>
-    <a href="https://travis-ci.org/evilsocket/bettercap-ng"><img alt="Travis" src="https://img.shields.io/travis/evilsocket/bettercap-ng/master.svg?style=flat-square"></a>
-    <a href="https://goreportcard.com/report/github.com/evilsocket/bettercap-ng"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/evilsocket/bettercap-ng?style=flat-square&fuckgithubcache=1"></a>
+    <a href="https://travis-ci.org/bettercap/bettercap"><img alt="Travis" src="https://img.shields.io/travis/bettercap/bettercap/master.svg?style=flat-square"></a>
+    <a href="https://goreportcard.com/report/github.com/bettercap/bettercap"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/bettercap/bettercap?style=flat-square&fuckgithubcache=1"></a>
   </p>
 </p>
 
-**bettercap-ng** is a complete reimplementation of bettercap, the Swiss army knife for network attacks and monitoring. It is faster, stabler, smaller, easier to install and to use.
+**bettercap** is a complete reimplementation of bettercap, the Swiss army knife for network attacks and monitoring. It is faster, stabler, smaller, easier to install and to use.
 
 ## Using it with Docker
 
@@ -16,25 +16,25 @@ In this repository, BetterCAP is containerized using [Alpine Linux](https://alpi
 
 To pull latest BetterCAP version of the image:
 
-    $ docker pull evilsocket/bettercap-ng
+    $ docker pull bettercap/bettercap
 
 To run:
 
-    $ docker run -it --privileged --net=host evilsocket/bettercap-ng -h
+    $ docker run -it --privileged --net=host bettercap/bettercap -h
 
 ## Compilation
 
 Make sure you have a correctly configured **Go >= 1.8** environment, that `$GOPATH/bin` is in `$PATH` and the `libpcap-dev` package installed for your system, then:
 
-    $ go get github.com/evilsocket/bettercap-ng
+    $ go get github.com/bettercap/bettercap
 
-This command will download bettercap-ng, install its dependencies, compile it and move the `bettercap-ng` executable to `$GOPATH/bin`.
+This command will download bettercap, install its dependencies, compile it and move the `bettercap` executable to `$GOPATH/bin`.
 
-Now you can use `sudo bettercap-ng -h` to show the basic command line options and just `sudo bettercap-ng` to start an interactive session on your default network interface.
+Now you can use `sudo bettercap -h` to show the basic command line options and just `sudo bettercap` to start an interactive session on your default network interface.
 
 ## Compilation on Windows
 
-Despite Windows support [is not yet 100% complete](https://github.com/evilsocket/bettercap-ng/issues/45), it is possible to build bettercap-ng for Microsoft platforms and enjoy 99.99% of the experience. The steps to prepare the building environment are:
+Despite Windows support [is not yet 100% complete](https://github.com/bettercap/bettercap/issues/45), it is possible to build bettercap for Microsoft platforms and enjoy 99.99% of the experience. The steps to prepare the building environment are:
 
 - Install [go amd64](https://golang.org/dl/) (add go binaries to your `%PATH%`).
 - Install [TDM GCC for amd64](http://tdm-gcc.tdragon.net/download) (add TDM-GCC binaries to your `%PATH%`).
@@ -51,7 +51,7 @@ This will generate `.def` files, now we'll generate the static libraries files:
 - and `dlltool --as-flags=--64 -m i386:x86-64 -k --output-lib libpacket.a --input-def packet.def`.
 - Copy both `libwpcap.a` and `libpacket.a` to `c:\WpdPack\Lib\x64`.
 
-And eventually just `go get github.com/evilsocket/bettercap-ng` as you would do on other platforms.
+And eventually just `go get github.com/bettercap/bettercap` as you would do on other platforms.
 
 ## Cross Compilation
 
@@ -68,14 +68,14 @@ Download and cross compile libpcap-1.8.1 for ARM (adjust `PCAPV` to use a differ
     ./configure --host=arm-linux --with-pcap=linux
     make
 
-Cross compile bettercap-ng itself:
+Cross compile bettercap itself:
 
-    cd $GOPATH/src/github.com/evilsocket/bettercap-ng
+    cd $GOPATH/src/github.com/bettercap/bettercap
     env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm CGO_LDFLAGS="-L/tmp/libpcap-$PCAPV" make
 
 ## Interactive Mode
 
-If no `-caplet` option is specified, bettercap-ng will start in interactive mode, allowing you to start and stop modules manually, change options and apply new firewall rules on the fly.
+If no `-caplet` option is specified, bettercap will start in interactive mode, allowing you to start and stop modules manually, change options and apply new firewall rules on the fly.
 
 To get a grasp of what you can do, type `help` and the general help menu will be shown, you can also have module specific help by using `help module-name` (for instance try with `help net.recon`), to see which modules are running and their configuration at any time, you can use the `active` command.
 
@@ -131,7 +131,7 @@ Execute an ARP spoofing attack on the whole network (by default) or on a host (u
 ```sh
 # targeting the whole subnet by default, to make it selective:
 #
-#   sudo ./bettercap-ng -caplet caplets/http-req-dump.cap -eval "set arp.spoof.targets 192.168.1.64"
+#   sudo ./bettercap -caplet caplets/http-req-dump.cap -eval "set arp.spoof.targets 192.168.1.64"
 
 # to make it less verbose
 # events.stream off
@@ -284,7 +284,7 @@ Use a proxy script to inject a BEEF javascript hook:
 ```sh
 # targeting the whole subnet by default, to make it selective:
 #
-#   sudo ./bettercap-ng -caplet caplets/beef-active.cap -eval "set arp.spoof.targets 192.168.1.64"
+#   sudo ./bettercap -caplet caplets/beef-active.cap -eval "set arp.spoof.targets 192.168.1.64"
 
 # inject beef hook
 set http.proxy.script caplets/beef-inject.js
@@ -374,4 +374,4 @@ clear
 
 ## License
 
-`bettercap` and `bettercap-ng` are made with ♥  by [Simone Margaritelli](https://www.evilsocket.net/) and they're released under the GPL 3 license.
+`bettercap` and `bettercap` are made with ♥  by [Simone Margaritelli](https://www.evilsocket.net/) and they're released under the GPL 3 license.

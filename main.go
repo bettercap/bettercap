@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/log"
-	"github.com/evilsocket/bettercap-ng/modules"
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/modules"
+	"github.com/bettercap/bettercap/session"
 )
 
 var sess *session.Session

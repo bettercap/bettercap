@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 var fileName, _ = core.ExpandPath("~/bettercap.aliases")

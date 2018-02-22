@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 type Event struct {

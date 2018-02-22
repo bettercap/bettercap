@@ -1,7 +1,7 @@
 package modules
 
 import (
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/session"
 )
 
 type HttpProxy struct {

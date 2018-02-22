@@ -116,7 +116,7 @@ build_linux_mips64le() {
 build_macos_amd64() {
     vm_dep 'osxvm'
 
-    DIR=/Users/evilsocket/gocode/src/github.com/evilsocket/bettercap-ng
+    DIR=/Users/evilsocket/gocode/src/github.com/bettercap/bettercap
     OUTPUT=$1
 
     echo "@ Updating repo on MacOS VM ..."
@@ -132,7 +132,7 @@ build_macos_amd64() {
 build_windows_amd64() {
     vm_dep 'winvm'
 
-    DIR=c:/Users/evilsocket/gopath/src/github.com/evilsocket/bettercap-ng
+    DIR=c:/Users/evilsocket/gopath/src/github.com/bettercap/bettercap
     OUTPUT=$1
 
     echo "@ Updating repo on Windows VM ..."
@@ -149,14 +149,14 @@ rm -rf $BUILD_FOLDER
 mkdir $BUILD_FOLDER
 cd $BUILD_FOLDER
 
-build_linux_amd64 bettercap-ng_linux_amd64_$VERSION
-build_linux_arm7 bettercap-ng_linux_arm7_$VERSION
-build_linux_mips bettercap-ng_linux_mips_$VERSION
-build_linux_mipsle bettercap-ng_linux_mipsle_$VERSION
-build_linux_mips64 bettercap-ng_linux_mips64_$VERSION
-build_linux_mips64le bettercap-ng_linux_mips64le_$VERSION
-build_macos_amd64 bettercap-ng_macos_amd64_$VERSION
-build_windows_amd64 bettercap-ng_windows_amd64_$VERSION.exe
+build_linux_amd64 bettercap_linux_amd64_$VERSION
+build_linux_arm7 bettercap_linux_arm7_$VERSION
+build_linux_mips bettercap_linux_mips_$VERSION
+build_linux_mipsle bettercap_linux_mipsle_$VERSION
+build_linux_mips64 bettercap_linux_mips64_$VERSION
+build_linux_mips64le bettercap_linux_mips64le_$VERSION
+build_macos_amd64 bettercap_macos_amd64_$VERSION
+build_windows_amd64 bettercap_windows_amd64_$VERSION.exe
 sha256sum * > checksums.txt
 
 echo

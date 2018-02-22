@@ -1,7 +1,7 @@
 package modules
 
 import (
-	"github.com/evilsocket/bettercap-ng/network"
+	"github.com/bettercap/bettercap/network"
 )
 
 type ByRSSISorter []*network.Station

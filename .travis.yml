@@ -13,7 +13,7 @@ before_install:
 install:
   - make deps
 
-go_import_path: github.com/evilsocket/bettercap-ng
+go_import_path: github.com/bettercap/bettercap
 
 script:
   - make test

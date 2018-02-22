@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/evilsocket/bettercap-ng/network"
+	"github.com/bettercap/bettercap/network"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"

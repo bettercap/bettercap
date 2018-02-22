@@ -5,9 +5,9 @@ import (
 	// "sort"
 	"strings"
 
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/network"
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/session"
 )
 
 const eventTimeFormat = "2006-01-02 15:04:05"

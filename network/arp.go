@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/evilsocket/bettercap-ng/core"
+	"github.com/bettercap/bettercap/core"
 )
 
 type ArpTable map[string]string

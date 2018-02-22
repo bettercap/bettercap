@@ -3,8 +3,8 @@ package modules
 import (
 	"strconv"
 
-	"github.com/evilsocket/bettercap-ng/core"
-	"github.com/evilsocket/bettercap-ng/session"
+	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/session"
 )
 
 type EventsStream struct {

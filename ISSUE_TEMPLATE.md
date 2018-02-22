@@ -1,8 +1,8 @@
 ### Prerequisites
 
-* [ ] I read the [README](https://github.com/evilsocket/bettercap-ng/blob/master/README.md).
-* [ ] I am running the [latest source code version](https://github.com/evilsocket/bettercap-ng).
-* [ ] I already searched [other issues](https://github.com/evilsocket/bettercap-ng/issues?q=is%3Aopen+is%3Aissue+label%3Abug) to see if this problem was already reported.
+* [ ] I read the [README](https://github.com/bettercap/bettercap/blob/master/README.md).
+* [ ] I am running the [latest source code version](https://github.com/bettercap/bettercap).
+* [ ] I already searched [other issues](https://github.com/bettercap/bettercap/issues?q=is%3Aopen+is%3Aissue+label%3Abug) to see if this problem was already reported.
 
 ### Description
 
@@ -16,7 +16,7 @@ Please provide:
 * Command line arguments you are using.
 * Caplet code you are using (if any).
 * Interactive session commands you are using (if any).
-* **Full debug output** while reproducing the issue ( `bettercap-ng -debug ...` ).
+* **Full debug output** while reproducing the issue ( `bettercap -debug ...` ).
 
 ### Steps to Reproduce
 
