@@ -12,12 +12,6 @@ vm_dep() {
     ping -c 1 $HOST > /dev/null || { echo "@ Virtual machine host $HOST not visible !"; exit 1; }
 }
 
-build_linux_amd64() {
-    OUTPUT=$1
-    echo "@ Building $OUTPUT ..."
-    go build -o "$OUTPUT" ..
-}
-
 download_pcap() {
     bin_dep 'wget'
     bin_dep 'tar'
@@ -46,6 +40,12 @@ xcompile_pcap() {
     export CC=$COMPILER
     ./configure --host=$HOST --with-pcap=linux > /dev/null
     make CFLAGS='-w' -j4 > /dev/null
+}
+
+build_linux_amd64() {
+    OUTPUT=$1
+    echo "@ Building $OUTPUT ..."
+    go build -o "$OUTPUT" ..
 }
 
 build_linux_arm7() {
