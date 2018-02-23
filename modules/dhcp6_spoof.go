@@ -30,7 +30,6 @@ type DHCP6Spoofer struct {
 	DUIDRaw    []byte
 	Domains    []string
 	RawDomains []byte
-	Address    net.IP
 }
 
 func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
@@ -43,11 +42,6 @@ func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
 		"microsoft.com, goole.com, facebook.com, apple.com, twitter.com",
 		``,
 		"Comma separated values of domain names to spoof."))
-
-	spoof.AddParam(session.NewStringParameter("dhcp6.spoof.address",
-		session.ParamIfaceAddress,
-		session.IPv4Validator,
-		"IP address to map the domains to."))
 
 	spoof.AddHandler(session.NewModuleHandler("dhcp6.spoof on", "",
 		"Start the DHCPv6 spoofer in the background.",
@@ -78,7 +72,6 @@ func (s DHCP6Spoofer) Author() string {
 
 func (s *DHCP6Spoofer) Configure() error {
 	var err error
-	var addr string
 
 	if s.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
 		return err
@@ -94,12 +87,6 @@ func (s *DHCP6Spoofer) Configure() error {
 	}
 
 	s.RawDomains = packets.DHCP6EncodeList(s.Domains)
-
-	if err, addr = s.StringParam("dhcp6.spoof.address"); err != nil {
-		return err
-	}
-
-	s.Address = net.ParseIP(addr)
 
 	if s.DUID, err = dhcp6opts.NewDUIDLLT(1, time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC), s.Session.Interface.HW); err != nil {
 		return err
