@@ -10,7 +10,6 @@ git fetch --tags > /dev/null
 
 CURTAG=$(git describe --tags --abbrev=0)
 OUTPUT=$(git log $CURTAG..HEAD --oneline)
-# https://stackoverflow.com/questions/19771965/split-bash-string-by-newline-characters
 IFS=$'\n' LINES=($OUTPUT)
 
 for LINE in "${LINES[@]}"; do
