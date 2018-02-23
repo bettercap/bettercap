@@ -28,9 +28,9 @@ done
 echo
 echo "Changelog"
 echo "==="
-echo
 
 if [ -n "$NEW" ]; then
+    echo
     echo "**New Features**"
     echo
     for l in "${NEW[@]}"
@@ -40,6 +40,7 @@ if [ -n "$NEW" ]; then
 fi
 
 if [ -n "$FIXES" ]; then
+    echo
     echo "**Fixes**"
     echo
     for l in "${FIXES[@]}"
@@ -49,6 +50,7 @@ if [ -n "$FIXES" ]; then
 fi
 
 if [ -n "$MISC" ]; then
+    echo
     echo "**Misc**"
     echo
     for l in "${MISC[@]}"
