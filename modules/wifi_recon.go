@@ -76,7 +76,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 			return nil
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wifi.deauth AP-BSSID TARGET-BSSID", `wifi\.deauth ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))`,
+	w.AddHandler(session.NewModuleHandler("wifi.deauth BSSID", `wifi\.deauth ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))`,
 		"Start a 802.11 deauth attack, if an access point BSSID is provided, every client will be deauthenticated, otherwise only the selected client.",
 		func(args []string) error {
 			bssid, err := net.ParseMAC(args[0])
