@@ -3,7 +3,6 @@ package modules
 import (
 	"io/ioutil"
 	"net/http"
-	"sync"
 
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
@@ -11,59 +10,22 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-type ProxyScript struct {
-	sync.Mutex
-
-	Path   string
-	Source string
-	VM     *otto.Otto
-
-	sess             *session.Session
+type HttpProxyScript struct {
+	*ProxyScript
 	onRequestScript  *otto.Script
 	onResponseScript *otto.Script
-	cbCacheLock      *sync.Mutex
-	cbCache          map[string]bool
 }
 
-func LoadProxyScriptSource(path, source string, sess *session.Session) (err error, s *ProxyScript) {
-	s = &ProxyScript{
-		Path:   path,
-		Source: source,
-		VM:     otto.New(),
+func LoadHttpProxyScriptSource(path, source string, sess *session.Session) (err error, s *HttpProxyScript) {
+	err, ps := LoadProxyScriptSource(path, source, sess)
+	if err != nil {
+		return
+	}
 
-		sess:             sess,
+	s = &HttpProxyScript{
+		ProxyScript:      ps,
 		onRequestScript:  nil,
 		onResponseScript: nil,
-		cbCacheLock:      &sync.Mutex{},
-		cbCache:          make(map[string]bool),
-	}
-
-	// this will define callbacks and global objects
-	_, err = s.VM.Run(s.Source)
-	if err != nil {
-		return
-	}
-
-	// define session pointer
-	err = s.VM.Set("env", sess.Env.Data)
-	if err != nil {
-		log.Error("Error while defining environment: %s", err)
-		return
-	}
-
-	err = s.defineBuiltins()
-	if err != nil {
-		log.Error("Error while defining builtin functions: %s", err)
-		return
-	}
-
-	// run onLoad if defined
-	if s.hasCallback("onLoad") {
-		_, err = s.VM.Run("onLoad()")
-		if err != nil {
-			log.Error("Error while executing onLoad callback: %s", err)
-			return
-		}
 	}
 
 	// compile call to onRequest if defined
@@ -87,7 +49,7 @@ func LoadProxyScriptSource(path, source string, sess *session.Session) (err erro
 	return
 }
 
-func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScript) {
+func LoadHttpProxyScript(path string, sess *session.Session) (err error, s *HttpProxyScript) {
 	log.Info("Loading proxy script %s ...", path)
 
 	raw, err := ioutil.ReadFile(path)
@@ -95,30 +57,10 @@ func LoadProxyScript(path string, sess *session.Session) (err error, s *ProxyScr
 		return
 	}
 
-	return LoadProxyScriptSource(path, string(raw), sess)
+	return LoadHttpProxyScriptSource(path, string(raw), sess)
 }
 
-func (s *ProxyScript) hasCallback(name string) bool {
-	s.cbCacheLock.Lock()
-	defer s.cbCacheLock.Unlock()
-
-	// check the cache
-	has, found := s.cbCache[name]
-	if found == false {
-		// check the VM
-		cb, err := s.VM.Get(name)
-		if err == nil && cb.IsFunction() {
-			has = true
-		} else {
-			has = false
-		}
-		s.cbCache[name] = has
-	}
-
-	return has
-}
-
-func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSResponse) {
+func (s *HttpProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSResponse) {
 	// convert request and define empty response to be optionally filled
 	jsreq := NewJSRequest(req)
 	if err = s.VM.Set("req", &jsreq); err != nil {
@@ -134,7 +76,7 @@ func (s *ProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSR
 	return
 }
 
-func (s *ProxyScript) doResponseDefines(res *http.Response) (err error, jsres *JSResponse) {
+func (s *HttpProxyScript) doResponseDefines(res *http.Response) (err error, jsres *JSResponse) {
 	// convert both request and response
 	jsreq := NewJSRequest(res.Request)
 	if err = s.VM.Set("req", jsreq); err != nil {
@@ -151,7 +93,7 @@ func (s *ProxyScript) doResponseDefines(res *http.Response) (err error, jsres *J
 	return
 }
 
-func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
+func (s *HttpProxyScript) OnRequest(req *http.Request) *JSResponse {
 	if s.onRequestScript != nil {
 		s.Lock()
 		defer s.Unlock()
@@ -177,7 +119,7 @@ func (s *ProxyScript) OnRequest(req *http.Request) *JSResponse {
 	return nil
 }
 
-func (s *ProxyScript) OnResponse(res *http.Response) *JSResponse {
+func (s *HttpProxyScript) OnResponse(res *http.Response) *JSResponse {
 	if s.onResponseScript != nil {
 		s.Lock()
 		defer s.Unlock()

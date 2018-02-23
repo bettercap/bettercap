@@ -36,7 +36,7 @@ type HTTPProxy struct {
 	Server      *http.Server
 	Redirection *firewall.Redirection
 	Proxy       *goproxy.ProxyHttpServer
-	Script      *ProxyScript
+	Script      *HttpProxyScript
 	CertFile    string
 	KeyFile     string
 
@@ -147,7 +147,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	p.Address = address
 
 	if scriptPath != "" {
-		if err, p.Script = LoadProxyScript(scriptPath, p.sess); err != nil {
+		if err, p.Script = LoadHttpProxyScript(scriptPath, p.sess); err != nil {
 			return err
 		} else {
 			log.Debug("Proxy script %s loaded.", scriptPath)

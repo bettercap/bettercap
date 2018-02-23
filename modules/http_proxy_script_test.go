@@ -8,11 +8,11 @@ import (
 	"github.com/bettercap/bettercap/session"
 )
 
-func getScript(src string) *ProxyScript {
+func getScript(src string) *HttpProxyScript {
 	sess := session.Session{}
 	sess.Env = session.NewEnvironment(&sess)
 
-	err, script := LoadProxyScriptSource("", src, &sess)
+	err, script := LoadHttpProxyScriptSource("", src, &sess)
 	if err != nil {
 		log.Fatal("%s", err)
 	}
