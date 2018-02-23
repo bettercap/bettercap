@@ -32,6 +32,8 @@ func isResponse(s string) bool {
 
 func ntlmParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	data := tcp.Payload
+	ok := false
+
 	for _, line := range strings.Split(string(data), "\r\n") {
 		if isNtlm(line) {
 			tokens := strings.Split(line, " ")
@@ -39,8 +41,10 @@ func ntlmParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 				continue
 			}
 			if isChallenge(line) {
+				ok = true
 				ntlm.AddServerResponse(tcp.Ack, tokens[2])
 			} else if isResponse(line) {
+				ok = true
 				ntlm.AddClientResponse(tcp.Seq, tokens[2], func(data packets.NTLMChallengeResponseParsed) {
 					NewSnifferEvent(
 						pkt.Metadata().Timestamp,
@@ -60,5 +64,5 @@ func ntlmParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 			}
 		}
 	}
-	return true
+	return ok
 }
