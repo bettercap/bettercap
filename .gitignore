@@ -2,6 +2,7 @@
 *.tar.gz
 *.prof*
 pcaps
+caplets
 build
 bettercap*.*
 bettercap*
