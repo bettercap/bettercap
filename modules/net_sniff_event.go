@@ -14,11 +14,11 @@ type SnifferEvent struct {
 	Protocol    string
 	Source      string
 	Destination string
-	Data        SniffData
+	Data        interface{}
 	Message     string
 }
 
-func NewSnifferEvent(t time.Time, proto string, src string, dst string, data SniffData, format string, args ...interface{}) SnifferEvent {
+func NewSnifferEvent(t time.Time, proto string, src string, dst string, data interface{}, format string, args ...interface{}) SnifferEvent {
 	return SnifferEvent{
 		PacketTime:  t,
 		Protocol:    proto,

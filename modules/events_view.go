@@ -2,7 +2,8 @@ package modules
 
 import (
 	"fmt"
-	// "sort"
+	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"github.com/bettercap/bettercap/core"
@@ -88,10 +89,36 @@ func (s EventsStream) viewModuleEvent(e session.Event) {
 
 func (s EventsStream) viewSnifferEvent(e session.Event) {
 	se := e.Data.(SnifferEvent)
-	fmt.Printf("[%s] [%s] %s\n",
+	misc := ""
+
+	if e.Tag == "net.sniff.leak.http" {
+		req := se.Data.(*http.Request)
+		if req.Method != "GET" {
+			misc += "\n\n"
+			misc += fmt.Sprintf("  Method: %s\n", core.Yellow(req.Method))
+			misc += fmt.Sprintf("  URL: %s\n", core.Yellow(req.URL.String()))
+			misc += fmt.Sprintf("  Headers:\n")
+			for name, values := range req.Header {
+				misc += fmt.Sprintf("    %s => %s\n", core.Green(name), strings.Join(values, ", "))
+			}
+
+			if err := req.ParseForm(); err == nil {
+				misc += "  \n  Form:\n\n"
+				for key, values := range req.Form {
+					misc += fmt.Sprintf("    %s => %s\n", core.Green(key), core.Bold(strings.Join(values, ", ")))
+				}
+			} else if req.Body != nil {
+				b, _ := ioutil.ReadAll(req.Body)
+				misc += fmt.Sprintf("  \n  %s:\n\n    %s\n", core.Bold("Body"), string(b))
+			}
+		}
+	}
+
+	fmt.Printf("[%s] [%s] %s %s\n",
 		e.Time.Format(eventTimeFormat),
 		core.Green(e.Tag),
-		se.Message)
+		se.Message,
+		misc)
 }
 
 func (s EventsStream) viewSynScanEvent(e session.Event) {
