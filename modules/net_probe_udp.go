@@ -3,7 +3,6 @@ package modules
 import (
 	"fmt"
 	"net"
-	"sync/atomic"
 
 	"github.com/bettercap/bettercap/log"
 )
@@ -20,7 +19,9 @@ func (p *Prober) sendProbeUDP(from net.IP, from_hw net.HardwareAddr, ip net.IP) 
 		wrote, _ := con.Write([]byte{0x00})
 
 		if wrote > 0 {
-			atomic.AddUint64(&p.Session.Queue.Stats.Sent, uint64(wrote))
+			p.Session.Queue.Stats.Lock()
+			p.Session.Queue.Stats.Sent += uint64(wrote)
+			p.Session.Queue.Stats.Unlock()
 		}
 	}
 }

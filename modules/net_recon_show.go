@@ -5,7 +5,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/bettercap/bettercap/core"
@@ -169,13 +168,15 @@ func (d *Discovery) Show(by string) error {
 
 	d.showTable(colNames, rows)
 
+	d.Session.Queue.Stats.RLock()
 	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
 		core.Red("↑"),
-		humanize.Bytes(atomic.LoadUint64(&d.Session.Queue.Stats.Sent)),
+		humanize.Bytes(d.Session.Queue.Stats.Sent),
 		core.Green("↓"),
-		humanize.Bytes(atomic.LoadUint64(&d.Session.Queue.Stats.Received)),
-		atomic.LoadUint64(&d.Session.Queue.Stats.PktReceived),
-		atomic.LoadUint64(&d.Session.Queue.Stats.Errors))
+		humanize.Bytes(d.Session.Queue.Stats.Received),
+		d.Session.Queue.Stats.PktReceived,
+		d.Session.Queue.Stats.Errors)
+	d.Session.Queue.Stats.RUnlock()
 
 	s := EventsStream{}
 	events := d.Session.Events.Sorted()

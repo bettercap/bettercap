@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"sync"
-	"sync/atomic"
 
 	"github.com/bettercap/bettercap/network"
 
@@ -26,6 +25,8 @@ type Traffic struct {
 }
 
 type Stats struct {
+	sync.RWMutex
+
 	Sent        uint64
 	Received    uint64
 	PktReceived uint64
@@ -146,8 +147,12 @@ func (q *Queue) worker() {
 
 		pktSize := uint64(len(pkt.Data()))
 
-		atomic.AddUint64(&q.Stats.PktReceived, 1)
-		atomic.AddUint64(&q.Stats.Received, pktSize)
+		q.Stats.Lock()
+
+		q.Stats.PktReceived++
+		q.Stats.Received += pktSize
+
+		q.Stats.Unlock()
 
 		q.onPacketCallback(pkt)
 
@@ -179,10 +184,14 @@ func (q *Queue) Send(raw []byte) error {
 	}
 
 	if err := q.handle.WritePacketData(raw); err != nil {
-		atomic.AddUint64(&q.Stats.Errors, 1)
+		q.Stats.Lock()
+		q.Stats.Errors++
+		q.Stats.Unlock()
 		return err
 	} else {
-		atomic.AddUint64(&q.Stats.Sent, uint64(len(raw)))
+		q.Stats.Lock()
+		q.Stats.Sent += uint64(len(raw))
+		q.Stats.Unlock()
 	}
 
 	return nil
