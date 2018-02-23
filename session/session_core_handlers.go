@@ -21,12 +21,30 @@ func (s *Session) helpHandler(args []string, sess *Session) error {
 
 	if filter == "" {
 		fmt.Println()
-		fmt.Printf(core.Bold("MAIN COMMANDS\n\n"))
+
+		maxLen := 0
 		for _, h := range s.CoreHandlers {
-			fmt.Printf("  "+core.Yellow("%"+strconv.Itoa(s.HelpPadding)+"s")+" : %s\n", h.Name, h.Description)
+			len := len(h.Name)
+			if len > maxLen {
+				maxLen = len
+			}
+		}
+		pad := "%" + strconv.Itoa(maxLen) + "s"
+
+		for _, h := range s.CoreHandlers {
+			fmt.Printf("  "+core.Yellow(pad)+" : %s\n", h.Name, h.Description)
 		}
 
-		fmt.Printf(core.Bold("\nMODULES\n"))
+		fmt.Printf(core.Bold("\nModules\n\n"))
+
+		maxLen = 0
+		for _, m := range s.Modules {
+			len := len(m.Name())
+			if len > maxLen {
+				maxLen = len
+			}
+		}
+		pad = "%" + strconv.Itoa(maxLen) + "s"
 
 		for _, m := range s.Modules {
 			status := ""
@@ -35,7 +53,7 @@ func (s *Session) helpHandler(args []string, sess *Session) error {
 			} else {
 				status = core.Red("not running")
 			}
-			fmt.Printf("  "+core.Yellow("%"+strconv.Itoa(s.HelpPadding)+"s")+" > %s\n", m.Name(), status)
+			fmt.Printf("  "+core.Yellow(pad)+" > %s\n", m.Name(), status)
 		}
 
 		fmt.Println()
@@ -54,15 +72,33 @@ func (s *Session) helpHandler(args []string, sess *Session) error {
 			status = core.Red("not running")
 		}
 		fmt.Printf("%s (%s): %s\n\n", core.Yellow(m.Name()), status, core.Dim(m.Description()))
-		for _, h := range m.Handlers() {
-			fmt.Printf(h.Help(s.HelpPadding))
+
+		maxLen := 0
+		handlers := m.Handlers()
+		for _, h := range handlers {
+			len := len(h.Name)
+			if len > maxLen {
+				maxLen = len
+			}
+		}
+
+		for _, h := range handlers {
+			fmt.Printf(h.Help(maxLen))
 		}
 
 		params := m.Parameters()
 		if len(params) > 0 {
 			fmt.Printf("\n  Parameters\n\n")
+			maxLen := 0
+			for _, h := range params {
+				len := len(h.Name)
+				if len > maxLen {
+					maxLen = len
+				}
+			}
+
 			for _, p := range params {
-				fmt.Printf(p.Help(s.HelpPadding))
+				fmt.Printf(p.Help(maxLen))
 			}
 			fmt.Println()
 		}
@@ -83,8 +119,7 @@ func (s *Session) activeHandler(args []string, sess *Session) error {
 			fmt.Println()
 			for _, p := range params {
 				_, val := s.Env.Get(p.Name)
-				fmt.Printf("  "+core.YELLOW+"%"+strconv.Itoa(s.HelpPadding)+"s"+core.RESET+
-					" : %s\n", p.Name, val)
+				fmt.Printf("  %s : %s\n", core.Yellow(p.Name), val)
 			}
 		}
 
@@ -196,9 +231,6 @@ func (s *Session) aliasHandler(args []string, sess *Session) error {
 func (s *Session) addHandler(h CommandHandler, c *readline.PrefixCompleter) {
 	h.Completer = c
 	s.CoreHandlers = append(s.CoreHandlers, h)
-	if len(h.Name) > s.HelpPadding {
-		s.HelpPadding = len(h.Name)
-	}
 }
 
 func (s *Session) registerCoreHandlers() {

@@ -48,7 +48,6 @@ type Session struct {
 
 	CoreHandlers []CommandHandler `json:"-"`
 	Modules      []Module         `json:"-"`
-	HelpPadding  int              `json:"-"`
 
 	Events *EventPool `json:"-"`
 }
@@ -128,9 +127,7 @@ func New() (*Session, error) {
 
 		CoreHandlers: make([]CommandHandler, 0),
 		Modules:      make([]Module, 0),
-		HelpPadding:  0,
-
-		Events: nil,
+		Events:       nil,
 	}
 
 	if s.Options, err = core.ParseOptions(); err != nil {
@@ -269,19 +266,6 @@ func (s *Session) Close() {
 
 func (s *Session) Register(mod Module) error {
 	s.Modules = append(s.Modules, mod)
-
-	for _, h := range mod.Handlers() {
-		if len(h.Name) > s.HelpPadding {
-			s.HelpPadding = len(h.Name)
-		}
-	}
-
-	for _, p := range mod.Parameters() {
-		if len(p.Name) > s.HelpPadding {
-			s.HelpPadding = len(p.Name)
-		}
-	}
-
 	return nil
 }
 
