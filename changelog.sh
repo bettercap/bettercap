@@ -16,11 +16,14 @@ IFS=$'\n' LINES=($OUTPUT)
 for LINE in "${LINES[@]}"; do
     LINE=$(echo "$LINE" | sed -E "s/^[[:xdigit:]]+\s+//")
     if [[ $LINE = *"new:"* ]]; then
+        LINE=$(echo "$LINE" | sed -E "s/^new: //")
         NEW+=("$LINE")
     elif [[ $LINE = *"fix:"* ]]; then
+        LINE=$(echo "$LINE" | sed -E "s/^fix: //")
         FIXES+=("$LINE") 
     elif [[ $LINE != *"i did not bother commenting"* ]]; then 
         echo "MISC LINE =$LINE"
+        LINE=$(echo "$LINE" | sed -E "s/^[a-z]+: //")
         MISC+=("$LINE")
     fi
 done
