@@ -51,9 +51,7 @@ func ntlmParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 						"ntlm.response",
 						ip.SrcIP.String(),
 						ip.DstIP.String(),
-						SniffData{
-							"data": data,
-						},
+						nil,
 						"%s %s > %s | %s",
 						core.W(core.BG_DGRAY+core.FG_WHITE, "ntlm.response"),
 						vIP(ip.SrcIP),

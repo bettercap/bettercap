@@ -27,9 +27,7 @@ func krb5Parser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 			"krb5",
 			ip.SrcIP.String(),
 			ip.DstIP.String(),
-			SniffData{
-				"req": req,
-			},
+			nil,
 			"%s %s -> %s : %s",
 			core.W(core.BG_RED+core.FG_BLACK, "krb-as-req"),
 			vIP(ip.SrcIP),

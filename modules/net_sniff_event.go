@@ -14,8 +14,8 @@ type SnifferEvent struct {
 	Protocol    string
 	Source      string
 	Destination string
-	Data        interface{}
 	Message     string
+	Data        interface{}
 }
 
 func NewSnifferEvent(t time.Time, proto string, src string, dst string, data interface{}, format string, args ...interface{}) SnifferEvent {
@@ -24,8 +24,8 @@ func NewSnifferEvent(t time.Time, proto string, src string, dst string, data int
 		Protocol:    proto,
 		Source:      src,
 		Destination: dst,
-		Data:        data,
 		Message:     fmt.Sprintf(format, args...),
+		Data:        data,
 	}
 }
 

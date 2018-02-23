@@ -36,9 +36,7 @@ func sniParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 		"https",
 		ip.SrcIP.String(),
 		domain,
-		SniffData{
-			"Domain": domain,
-		},
+		nil,
 		"%s %s > %s",
 		core.W(core.BG_YELLOW+core.FG_WHITE, "sni"),
 		vIP(ip.SrcIP),

@@ -11,9 +11,7 @@ func dot11Parser(radiotap *layers.RadioTap, dot11 *layers.Dot11, pkt gopacket.Pa
 		"802.11",
 		"-",
 		"-",
-		SniffData{
-			"Size": len(pkt.Data()),
-		},
+		len(pkt.Data()),
 		"%s %s proto=%d a1=%s a2=%s a3=%s a4=%s seqn=%d frag=%d",
 		dot11.Type,
 		dot11.Flags,

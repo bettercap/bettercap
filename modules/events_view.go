@@ -112,6 +112,8 @@ func (s EventsStream) viewSnifferEvent(e session.Event) {
 				misc += fmt.Sprintf("  \n  %s:\n\n    %s\n", core.Bold("Body"), string(b))
 			}
 		}
+	} else if se.Data != nil {
+		misc = fmt.Sprintf("%s", se.Data)
 	}
 
 	fmt.Printf("[%s] [%s] %s %s\n",

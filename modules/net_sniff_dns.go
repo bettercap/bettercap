@@ -39,10 +39,7 @@ func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 			"dns",
 			ip.SrcIP.String(),
 			ip.DstIP.String(),
-			SniffData{
-				"Hostname":  hostname,
-				"Addresses": ips,
-			},
+			nil,
 			"%s %s > %s : %s is %s",
 			core.W(core.BG_DGRAY+core.FG_WHITE, "dns"),
 			vIP(ip.SrcIP),
