@@ -10,10 +10,6 @@
 
 **bettercap** is the Swiss army knife for network attacks and monitoring.
 
-<img src="https://raw.githubusercontent.com/Turbo87/Font-Awesome/platform-icons/svg/apple.png">
-<img src="https://raw.githubusercontent.com/Turbo87/Font-Awesome/platform-icons/svg/windows.png">
-<img src="https://raw.githubusercontent.com/Turbo87/Font-Awesome/platform-icons/svg/linux.png">
-
 ## How to Install
 
 A [precompiled version is available](https://github.com/bettercap/bettercap/releases) for each release, alternatively you can use the latest version of the source code from this repository in order to build your own binary.
