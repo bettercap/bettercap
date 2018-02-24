@@ -1,5 +1,10 @@
 package network
 
+import (
+	"fmt"
+	"strconv"
+)
+
 type Station struct {
 	*Endpoint
 	Frequency  int    `json:"frequency"`
@@ -7,6 +12,19 @@ type Station struct {
 	Sent       uint64 `json:"sent"`
 	Received   uint64 `json:"received"`
 	Encryption string `json:"encryption"`
+}
+
+func cleanESSID(essid string) string {
+	res := ""
+
+	for _, c := range essid {
+		if strconv.IsPrint(c) {
+			res += string(c)
+		} else {
+			res += fmt.Sprintf("{0x%02x}", c)
+		}
+	}
+	return res
 }
 
 func NewStation(essid, bssid string, frequency int, rssi int8) *Station {
