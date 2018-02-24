@@ -29,7 +29,7 @@ func cleanESSID(essid string) string {
 
 func NewStation(essid, bssid string, frequency int, rssi int8) *Station {
 	return &Station{
-		Endpoint:  NewEndpointNoResolve(MonitorModeAddress, bssid, essid, 0),
+		Endpoint:  NewEndpointNoResolve(MonitorModeAddress, bssid, cleanESSID(essid), 0),
 		Frequency: frequency,
 		RSSI:      rssi,
 	}
