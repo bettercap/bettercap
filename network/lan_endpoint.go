@@ -87,6 +87,15 @@ func NewEndpointWithAlias(ip, mac, alias string) *Endpoint {
 	return e
 }
 
+func (t *Endpoint) SetIP(ip string) {
+
+	addr := net.ParseIP(ip)
+
+	t.IP = addr
+	t.IpAddress = ip
+	t.IpAddressUint32 = ip2int(addr)
+}
+
 func (t *Endpoint) Name() string {
 	return t.Hostname
 }

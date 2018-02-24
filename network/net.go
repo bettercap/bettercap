@@ -1,6 +1,7 @@
 package network
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"regexp"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/bettercap/bettercap/core"
 )
+
+var ErrNoIfaces = errors.New("No active interfaces found.")
 
 const (
 	MonitorModeAddress = "0.0.0.0"
@@ -39,100 +42,104 @@ func NormalizeMac(mac string) string {
 	return strings.Join(parts, ":")
 }
 
+func buildEndpointFromInterface(iface net.Interface) (*Endpoint, error) {
+	addrs, err := iface.Addrs()
+	if err != nil {
+		return nil, err
+	}
+
+	e := NewEndpointNoResolve(MonitorModeAddress, iface.HardwareAddr.String(), "", 0)
+
+	e.Hostname = iface.Name
+	e.Index = iface.Index
+
+	for _, addr := range addrs {
+		ip := addr.String()
+
+		if IPv4Validator.MatchString(ip) {
+			if strings.IndexRune(ip, '/') == -1 {
+				// plain ip
+				e.SetIP(ip)
+			} else {
+				// ip/bits
+				parts := strings.Split(ip, "/")
+				ip_part := parts[0]
+				bits, _ := strconv.Atoi(parts[1])
+
+				e.SetIP(ip_part)
+				e.SubnetBits = uint32(bits)
+			}
+		} else {
+			parts := strings.SplitN(ip, "/", 2)
+			e.IPv6 = net.ParseIP(parts[0])
+			if e.IPv6 != nil {
+				e.Ip6Address = e.IPv6.String()
+			}
+		}
+	}
+
+	return e, nil
+}
+
+func matchByAddress(iface net.Interface, name string) bool {
+	ifMac := iface.HardwareAddr.String()
+	if NormalizeMac(ifMac) == NormalizeMac(name) {
+		return true
+	}
+
+	addrs, err := iface.Addrs()
+	if err == nil {
+		for _, addr := range addrs {
+			ip := addr.String()
+			if ip == name || strings.HasPrefix(ip, name) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func findInterfaceByName(name string, ifaces []net.Interface) (*Endpoint, error) {
+	for _, iface := range ifaces {
+		if iface.Name == name || matchByAddress(iface, name) {
+			return buildEndpointFromInterface(iface)
+		}
+	}
+
+	return nil, fmt.Errorf("No interface matching '%s' found.", name)
+}
+
 func FindInterface(name string) (*Endpoint, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return nil, err
 	}
+	name = core.Trim(name)
 
+	if name != "" {
+		return findInterfaceByName(name, ifaces)
+	}
+
+	// user did not provide an interface name,
+	// return the first one with a valid ipv4
+	// address
 	for _, iface := range ifaces {
-		ifName := getInterfaceName(iface)
-		mac := iface.HardwareAddr.String()
 		addrs, err := iface.Addrs()
 		if err != nil {
-			fmt.Printf("%s\n", err)
+			fmt.Printf("WTF of the day: %s", err)
 			continue
 		}
-		nAddrs := len(addrs)
 
-		// fmt.Printf("iface=%v\n", iface)
-
-		/*
-		 * If no interface has been specified, return the first active
-		 * one with at least an ip address, otherwise just the match
-		 * whatever it has, in order to also consider monitor interfaces
-		 * if passed explicitly.
-		 */
-		doCheck := false
-		if name != "" && name == mac {
-			doCheck = true
-		} else if name == "" && ifName != "lo" && ifName != "lo0" && nAddrs > 0 {
-			doCheck = true
-		} else if ifName == name {
-			doCheck = true
-		}
-
-		// Also search by ip if needed.
-		hasIPv4 := false
-		for _, a := range addrs {
-			if IPv4Validator.MatchString(a.String()) {
-				hasIPv4 = true
-			}
-
-			if name != "" && (a.String() == name || strings.HasPrefix(a.String(), name)) {
-				doCheck = true
-			}
-		}
-
-		if doCheck {
-			var e *Endpoint = nil
-			// interface is in monitor mode (or it's just down and the user is dumb, or
-			// it only has an IPv6 address).
-			if nAddrs == 0 || hasIPv4 == false {
-				e = NewEndpointNoResolve(MonitorModeAddress, mac, ifName, 0)
-			} else {
-				// For every address of the interface.
-				for _, addr := range addrs {
-					ip := addr.String()
-					// Make sure this is an IPv4 address.
-					if IPv4Validator.MatchString(ip) {
-						if strings.IndexRune(ip, '/') == -1 {
-							// plain ip
-							e = NewEndpointNoResolve(ip, mac, ifName, 0)
-						} else {
-							// ip/bits
-							parts := strings.Split(ip, "/")
-							ip_part := parts[0]
-							bits, err := strconv.Atoi(parts[1])
-							if err == nil {
-								e = NewEndpointNoResolve(ip_part, mac, ifName, uint32(bits))
-							}
-						}
-					} else if e != nil {
-						parts := strings.SplitN(ip, "/", 2)
-						e.IPv6 = net.ParseIP(parts[0])
-						if e.IPv6 != nil {
-							e.Ip6Address = e.IPv6.String()
-						}
-					}
-				}
-			}
-
-			if e != nil {
-				if len(e.HW) == 0 {
-					return nil, fmt.Errorf("Could not detect interface hardware address.")
-				}
-				e.Index = iface.Index
-				return e, nil
+		for _, address := range addrs {
+			ip := address.String()
+			if strings.Contains(ip, "127.0.0.1") == false && IPv4Validator.MatchString(ip) {
+				return buildEndpointFromInterface(iface)
 			}
 		}
 	}
 
-	if name == "" {
-		return nil, fmt.Errorf("Could not find default network interface.")
-	} else {
-		return nil, fmt.Errorf("Could not find interface '%s'.", name)
-	}
+	return nil, ErrNoIfaces
 }
 
 func FindGateway(iface *Endpoint) (*Endpoint, error) {
