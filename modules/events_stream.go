@@ -1,29 +1,26 @@
 package modules
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 )
 
 type EventsStream struct {
 	session.SessionModule
-	filter string
-	quit   chan bool
+	ignoreList *IgnoreList
+	quit       chan bool
 }
 
 func NewEventsStream(s *session.Session) *EventsStream {
 	stream := &EventsStream{
 		SessionModule: session.NewSessionModule("events.stream", s),
-		filter:        "",
 		quit:          make(chan bool),
+		ignoreList:    NewIgnoreList(),
 	}
-
-	stream.AddParam(session.NewStringParameter("events.stream.filter",
-		"",
-		"",
-		"If filled, filter events by this prefix type."))
 
 	stream.AddHandler(session.NewModuleHandler("events.stream on", "",
 		"Start events stream.",
@@ -46,6 +43,34 @@ func NewEventsStream(s *session.Session) *EventsStream {
 				limit, _ = strconv.Atoi(arg)
 			}
 			return stream.Show(limit)
+		}))
+
+	stream.AddHandler(session.NewModuleHandler("events.ignore FILTER", "events.ignore ([^\\s]+)",
+		"Events with an identifier matching this filter will not be shown (use multiple times to add more filters).",
+		func(args []string) error {
+			return stream.ignoreList.Add(args[0])
+		}))
+
+	stream.AddHandler(session.NewModuleHandler("events.include FILTER", "events.include ([^\\s]+)",
+		"Used to remove filters passed with the events.ignore command.",
+		func(args []string) error {
+			return stream.ignoreList.Remove(args[0])
+		}))
+
+	stream.AddHandler(session.NewModuleHandler("events.filters", "",
+		"Print the list of filters used to ignore events.",
+		func(args []string) error {
+			if stream.ignoreList.Empty() {
+				fmt.Printf("Ignore filters list is empty.\n")
+			} else {
+				stream.ignoreList.RLock()
+				defer stream.ignoreList.RUnlock()
+
+				for _, filter := range stream.ignoreList.Filters() {
+					fmt.Printf("  '%s'\n", string(filter))
+				}
+			}
+			return nil
 		}))
 
 	stream.AddHandler(session.NewModuleHandler("events.clear", "",
@@ -71,24 +96,20 @@ func (s EventsStream) Author() string {
 }
 
 func (s *EventsStream) Configure() error {
-	var err error
-	if err, s.filter = s.StringParam("events.stream.filter"); err != nil {
-		return err
-	}
 	return nil
 }
 
 func (s *EventsStream) Start() error {
-	if err := s.Configure(); err != nil {
-		return err
-	}
-
 	return s.SetRunning(true, func() {
 		for {
 			var e session.Event
 			select {
 			case e = <-s.Session.Events.NewEvents:
-				s.View(e, true)
+				if s.ignoreList.Ignored(e) == false {
+					s.View(e, true)
+				} else {
+					log.Debug("Skipping ignored event %v", e)
+				}
 				break
 
 			case <-s.quit:
