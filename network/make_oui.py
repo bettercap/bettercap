@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 import os
 
 base = os.path.dirname(os.path.realpath(__file__))
@@ -25,7 +25,7 @@ for line in lines:
 
 code = "map[string]string {\n"
 
-for prefix, vendor in m.items():
+for prefix, vendor in m.iteritems():
     code += "    \"%s\": \"%s\",\n" % ( prefix, vendor )
 
 code += "}\n"
