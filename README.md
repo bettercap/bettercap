@@ -23,14 +23,15 @@ This command will download bettercap, install its dependencies, compile it and m
 Now you can use `sudo bettercap -h` to show the basic command line options and just `sudo bettercap` to start an 
 [interactive session](https://github.com/bettercap/bettercap/wiki/Interactive-Mode) on your default network interface, otherwise you can [load a caplet](https://github.com/bettercap/bettercap/wiki/Caplets) from [the dedicated repository](https://github.com/bettercap/caplets).
 
+## Update
+
+In order to update to an unstable but bleeding edge release from this repository, run the command below:
+
+    $ go get -u github.com/bettercap/bettercap
+
 ## Documentation and Examples
 
 The project is documented [in this wiki](https://github.com/bettercap/bettercap/wiki).
-
-## Update
-In order to update run the command below:
-
-    $ go get -u github.com/bettercap/bettercap
 
 ## License
 
