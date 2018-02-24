@@ -33,6 +33,7 @@ type WiFiRecon struct {
 	frequencies []int
 	ap          *network.AccessPoint
 	stickChan   int
+	skipBroken  bool
 }
 
 func NewWiFiRecon(s *session.Session) *WiFiRecon {
@@ -42,6 +43,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 		stickChan:     0,
 		hopPeriod:     250 * time.Millisecond,
 		ap:            nil,
+		skipBroken:    true,
 	}
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon on", "",
@@ -101,6 +103,10 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	w.AddParam(session.NewIntParameter("wifi.hop.period",
 		"250",
 		"If channel hopping is enabled (empty wifi.recon.channel), this is the time in millseconds the algorithm will hop on every channel (it'll be doubled if both 2.4 and 5.0 bands are available)."))
+
+	w.AddParam(session.NewBoolParameter("wifi.skip-broken",
+		"true",
+		"If true, dot11 packets with an invalid checksum will be skipped."))
 
 	return w
 }
@@ -287,7 +293,9 @@ func (w *WiFiRecon) Configure() error {
 		return err
 	}
 
-	if err, hopPeriod = w.IntParam("wifi.hop.period"); err != nil {
+	if err, w.skipBroken = w.BoolParam("wifi.skip-broken"); err != nil {
+		return err
+	} else if err, hopPeriod = w.IntParam("wifi.hop.period"); err != nil {
 		return err
 	}
 
@@ -526,6 +534,12 @@ func (w *WiFiRecon) Start() error {
 
 			// perform initial dot11 parsing and layers validation
 			if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok == true {
+				// check FCS checksum
+				if w.skipBroken && dot11.ChecksumValid() == false {
+					log.Debug("Skipping dot11 packet with invalid checksum.")
+					continue
+				}
+
 				w.updateStats(dot11, packet)
 				w.discoverAccessPoints(radiotap, dot11, packet)
 				w.discoverClients(radiotap, dot11, packet)
