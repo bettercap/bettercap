@@ -20,7 +20,7 @@ for LINE in "${LINES[@]}"; do
     elif [[ $LINE = *"fix:"* ]]; then
         LINE=$(echo "$LINE" | sed -E "s/^fix: //")
         FIXES+=("$LINE") 
-    elif [[ $LINE != *"i did not bother commenting"* ]]; then 
+    elif [[ $LINE != *"i did not bother commenting"* ]] && [[ $LINE != *"Merge "* ]]; then 
         echo "MISC LINE =$LINE"
         LINE=$(echo "$LINE" | sed -E "s/^[a-z]+: //")
         MISC+=("$LINE")
