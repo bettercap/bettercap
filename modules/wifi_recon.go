@@ -402,10 +402,20 @@ func isZeroBSSID(bssid net.HardwareAddr) bool {
 	}
 	return true
 }
+
+func isBroadcastBSSID(bssid net.HardwareAddr) bool {
+	for _, b := range bssid {
+		if b != 0xff {
+			return false
+		}
+	}
+	return true
+}
+
 func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	// search for Dot11InformationElementIDSSID
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
-		if isZeroBSSID(dot11.Address3) == false {
+		if isZeroBSSID(dot11.Address3) == false && isBroadcastBSSID(dot11.Address3) == false {
 			bssid := dot11.Address3.String()
 			frequency := int(radiotap.ChannelFrequency)
 			w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal)
