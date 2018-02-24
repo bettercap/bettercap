@@ -29,6 +29,7 @@ type WiFiRecon struct {
 
 	handle      *pcap.Handle
 	channel     int
+	hopPeriod   time.Duration
 	frequencies []int
 	ap          *network.AccessPoint
 	stickChan   int
@@ -39,6 +40,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 		SessionModule: session.NewSessionModule("wifi.recon", s),
 		channel:       0,
 		stickChan:     0,
+		hopPeriod:     250 * time.Millisecond,
 		ap:            nil,
 	}
 
@@ -95,6 +97,10 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	w.AddParam(session.NewIntParameter("wifi.recon.channel",
 		"",
 		"WiFi channel or empty for channel hopping."))
+
+	w.AddParam(session.NewIntParameter("wifi.hop.period",
+		"250",
+		"If channel hopping is enabled (empty wifi.recon.channel), this is the time in millseconds the algorithm will hop on every channel (it'll be doubled if both 2.4 and 5.0 bands are available."))
 
 	return w
 }
@@ -263,6 +269,8 @@ func (w *WiFiRecon) Show(by string) error {
 }
 
 func (w *WiFiRecon) Configure() error {
+	var hopPeriod int
+
 	ihandle, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
 	if err != nil {
 		return err
@@ -277,7 +285,15 @@ func (w *WiFiRecon) Configure() error {
 		return err
 	} else if w.handle, err = ihandle.Activate(); err != nil {
 		return err
-	} else if err, w.channel = w.IntParam("wifi.recon.channel"); err == nil {
+	}
+
+	if err, hopPeriod = w.IntParam("wifi.hop.period"); err != nil {
+		return err
+	}
+
+	w.hopPeriod = time.Duration(hopPeriod) * time.Millisecond
+
+	if err, w.channel = w.IntParam("wifi.recon.channel"); err == nil {
 		if err = network.SetInterfaceChannel(w.Session.Interface.Name(), w.channel); err != nil {
 			return err
 		}
@@ -433,7 +449,7 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 func (w *WiFiRecon) channelHopper() {
 	log.Info("Channel hopper started.")
 	for w.Running() == true {
-		delay := 250 * time.Millisecond
+		delay := w.hopPeriod
 		// if we have both 2.4 and 5ghz capabilities, we have
 		// more channels, therefore we need to increase the time
 		// we hop on each one otherwise me lose information
