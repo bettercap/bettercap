@@ -24,6 +24,11 @@ import (
 
 var maxStationTTL = 5 * time.Minute
 
+type WiFiProbe struct {
+	From net.HardwareAddr
+	SSID string
+}
+
 type WiFiRecon struct {
 	session.SessionModule
 
@@ -106,7 +111,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 
 	w.AddParam(session.NewBoolParameter("wifi.skip-broken",
 		"true",
-		"If true, dot11 packets with an invalid checksum will be skipped."))
+		"If true, dot11 packets wit48 61 63 6h an invalid checksum will be skipped."))
 
 	return w
 }
@@ -441,6 +446,41 @@ func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layer
 	}
 }
 
+func (w *WiFiRecon) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+	if dot11.Type != layers.Dot11TypeMgmtProbeReq {
+		return
+	}
+
+	reqLayer := packet.Layer(layers.LayerTypeDot11MgmtProbeReq)
+	if reqLayer == nil {
+		return
+	}
+
+	req, ok := reqLayer.(*layers.Dot11MgmtProbeReq)
+	if ok == false {
+		return
+	}
+
+	tot := len(req.Contents)
+	if tot < 3 {
+		return
+	}
+
+	avail := uint32(tot - 2)
+	if avail < 2 {
+		return
+	}
+	size := uint32(req.Contents[1])
+	if size == 0 || size > avail {
+		return
+	}
+
+	w.Session.Events.Add("wifi.client.probe", WiFiProbe{
+		From: dot11.Address2,
+		SSID: string(req.Contents[2:size]),
+	})
+}
+
 func (w *WiFiRecon) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	w.Session.WiFi.EachAccessPoint(func(bssid string, ap *network.AccessPoint) {
 		// packet going to this specific BSSID?
@@ -519,6 +559,17 @@ func (w *WiFiRecon) stationPruner() {
 	}
 }
 
+func (w *WiFiRecon) trackPacket(pkt gopacket.Packet) {
+	pktSize := uint64(len(pkt.Data()))
+
+	w.Session.Queue.Stats.Lock()
+
+	w.Session.Queue.Stats.PktReceived++
+	w.Session.Queue.Stats.Received += pktSize
+
+	w.Session.Queue.Stats.Unlock()
+}
+
 func (w *WiFiRecon) Start() error {
 	if w.Running() == true {
 		return session.ErrAlreadyStarted
@@ -542,14 +593,7 @@ func (w *WiFiRecon) Start() error {
 				break
 			}
 
-			pktSize := uint64(len(packet.Data()))
-
-			w.Session.Queue.Stats.Lock()
-
-			w.Session.Queue.Stats.PktReceived++
-			w.Session.Queue.Stats.Received += pktSize
-
-			w.Session.Queue.Stats.Unlock()
+			w.trackPacket(packet)
 
 			// perform initial dot11 parsing and layers validation
 			if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok == true {
@@ -560,6 +604,7 @@ func (w *WiFiRecon) Start() error {
 				}
 
 				w.updateStats(dot11, packet)
+				w.discoverProbes(radiotap, dot11, packet)
 				w.discoverAccessPoints(radiotap, dot11, packet)
 				w.discoverClients(radiotap, dot11, packet)
 			}
