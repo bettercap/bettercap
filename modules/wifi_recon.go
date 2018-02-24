@@ -111,7 +111,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 
 	w.AddParam(session.NewBoolParameter("wifi.skip-broken",
 		"true",
-		"If true, dot11 packets wit48 61 63 6h an invalid checksum will be skipped."))
+		"If true, dot11 packets with an invalid checksum will be skipped."))
 
 	return w
 }
