@@ -100,7 +100,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 
 	w.AddParam(session.NewIntParameter("wifi.hop.period",
 		"250",
-		"If channel hopping is enabled (empty wifi.recon.channel), this is the time in millseconds the algorithm will hop on every channel (it'll be doubled if both 2.4 and 5.0 bands are available."))
+		"If channel hopping is enabled (empty wifi.recon.channel), this is the time in millseconds the algorithm will hop on every channel (it'll be doubled if both 2.4 and 5.0 bands are available)."))
 
 	return w
 }
