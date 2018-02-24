@@ -21,7 +21,7 @@ func cleanESSID(essid string) string {
 		if strconv.IsPrint(c) {
 			res += string(c)
 		} else {
-			res += fmt.Sprintf("{0x%02x}", c)
+			break
 		}
 	}
 	return res
