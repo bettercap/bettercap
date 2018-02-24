@@ -10,11 +10,14 @@ import (
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/tls"
 )
 
 type HttpServer struct {
 	session.SessionModule
-	server *http.Server
+	server   *http.Server
+	certFile string
+	keyFile  string
 }
 
 func NewHttpServer(s *session.Session) *HttpServer {
@@ -36,6 +39,16 @@ func NewHttpServer(s *session.Session) *HttpServer {
 	httpd.AddParam(session.NewIntParameter("http.server.port",
 		"80",
 		"Port to bind the http server to."))
+
+	httpd.AddParam(session.NewStringParameter("http.server.certificate",
+		"",
+		"",
+		"TLS certificate file, if not empty will configure this as a HTTPS server (will be auto generated if filled but not existing)."))
+
+	httpd.AddParam(session.NewStringParameter("http.server.key",
+		"",
+		"",
+		"TLS key file, if not empty will configure this as a HTTPS server (will be auto generated if filled but not existing)."))
 
 	httpd.AddHandler(session.NewModuleHandler("http.server on", "",
 		"Start httpd server.",
@@ -71,11 +84,17 @@ func wrapHandler(h http.Handler) http.Handler {
 	})
 }
 
+func (httpd *HttpServer) isTLS() bool {
+	return httpd.certFile != "" && httpd.keyFile != ""
+}
+
 func (httpd *HttpServer) Configure() error {
 	var err error
 	var path string
 	var address string
 	var port int
+	var certFile string
+	var keyFile string
 
 	if err, path = httpd.StringParam("http.server.path"); err != nil {
 		return err
@@ -93,6 +112,32 @@ func (httpd *HttpServer) Configure() error {
 
 	httpd.server.Addr = fmt.Sprintf("%s:%d", address, port)
 
+	if err, certFile = httpd.StringParam("http.server.certificate"); err != nil {
+		return err
+	} else if certFile, err = core.ExpandPath(certFile); err != nil {
+		return err
+	}
+
+	if err, keyFile = httpd.StringParam("http.server.key"); err != nil {
+		return err
+	} else if keyFile, err = core.ExpandPath(keyFile); err != nil {
+		return err
+	}
+
+	if core.Exists(certFile) == false || core.Exists(keyFile) == false {
+		log.Info("Generating server TLS key to %s", keyFile)
+		log.Info("Generating server TLS certificate to %s", certFile)
+		if err := tls.Generate(certFile, keyFile); err != nil {
+			return err
+		}
+	} else {
+		log.Info("Loading server TLS key from %s", keyFile)
+		log.Info("Loading server TLS certificate from %s", certFile)
+	}
+
+	httpd.certFile = certFile
+	httpd.keyFile = keyFile
+
 	return nil
 }
 
@@ -104,8 +149,15 @@ func (httpd *HttpServer) Start() error {
 	}
 
 	return httpd.SetRunning(true, func() {
-		log.Info("httpd server starting on http://%s", httpd.server.Addr)
-		err := httpd.server.ListenAndServe()
+		var err error
+
+		if httpd.isTLS() {
+			log.Info("HTTPS server starting on https://%s", httpd.server.Addr)
+			err = httpd.server.ListenAndServeTLS(httpd.certFile, httpd.keyFile)
+		} else {
+			log.Info("HTTP server starting on http://%s", httpd.server.Addr)
+			err = httpd.server.ListenAndServe()
+		}
 		if err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}
