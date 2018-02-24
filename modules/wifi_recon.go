@@ -378,12 +378,22 @@ func (w *WiFiRecon) startDeauth(to net.HardwareAddr) error {
 	return fmt.Errorf("%s is an unknown BSSID.", bssid)
 }
 
+func isZeroBSSID(bssid net.HardwareAddr) bool {
+	for _, b := range bssid {
+		if b != 0x00 {
+			return false
+		}
+	}
+	return true
+}
 func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	// search for Dot11InformationElementIDSSID
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
-		bssid := dot11.Address3.String()
-		frequency := int(radiotap.ChannelFrequency)
-		w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal)
+		if isZeroBSSID(dot11.Address3) == false {
+			bssid := dot11.Address3.String()
+			frequency := int(radiotap.ChannelFrequency)
+			w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal)
+		}
 	}
 }
 
