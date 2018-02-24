@@ -75,12 +75,13 @@ func (s EventsStream) viewEndpointEvent(e session.Event) {
 	}
 
 	if e.Tag == "endpoint.new" {
-		fmt.Printf("[%s] [%s] Endpoint %s detected as %s%s.\n",
+		fmt.Printf("[%s] [%s] Endpoint %s%s detected as %s%s.\n",
 			e.Time.Format(eventTimeFormat),
 			core.Green(e.Tag),
 			core.Bold(t.IpAddress),
+			core.Dim(name),
 			core.Green(t.HwAddress),
-			vend)
+			core.Dim(vend))
 	} else if e.Tag == "endpoint.lost" {
 		fmt.Printf("[%s] [%s] Endpoint %s%s lost.\n",
 			e.Time.Format(eventTimeFormat),
