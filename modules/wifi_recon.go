@@ -325,26 +325,36 @@ func (w *WiFiRecon) Configure() error {
 	return nil
 }
 
+func (w *WiFiRecon) injectPacket(data []byte) {
+	if err := w.handle.WritePacketData(data); err != nil {
+		log.Error("Could not send deauth packet: %s", err)
+
+		w.Session.Queue.Stats.Lock()
+		w.Session.Queue.Stats.Errors++
+		w.Session.Queue.Stats.Unlock()
+	} else {
+		w.Session.Queue.Stats.Lock()
+		w.Session.Queue.Stats.Sent += uint64(len(data))
+		w.Session.Queue.Stats.Unlock()
+	}
+	// let the network card breath a little
+	time.Sleep(10 * time.Millisecond)
+}
+
 func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
 	for seq := uint16(0); seq < 64; seq++ {
 		if err, pkt := packets.NewDot11Deauth(ap, client, ap, seq); err != nil {
 			log.Error("Could not create deauth packet: %s", err)
 			continue
-		} else if err := w.handle.WritePacketData(pkt); err != nil {
-			log.Error("Could not send deauth packet: %s", err)
-			continue
 		} else {
-			time.Sleep(10 * time.Millisecond)
+			w.injectPacket(pkt)
 		}
 
 		if err, pkt := packets.NewDot11Deauth(client, ap, ap, seq); err != nil {
 			log.Error("Could not create deauth packet: %s", err)
 			continue
-		} else if err := w.handle.WritePacketData(pkt); err != nil {
-			log.Error("Could not send deauth packet: %s", err)
-			continue
 		} else {
-			time.Sleep(10 * time.Millisecond)
+			w.injectPacket(pkt)
 		}
 	}
 }
@@ -531,6 +541,15 @@ func (w *WiFiRecon) Start() error {
 			if w.Running() == false {
 				break
 			}
+
+			pktSize := uint64(len(packet.Data()))
+
+			w.Session.Queue.Stats.Lock()
+
+			w.Session.Queue.Stats.PktReceived++
+			w.Session.Queue.Stats.Received += pktSize
+
+			w.Session.Queue.Stats.Unlock()
 
 			// perform initial dot11 parsing and layers validation
 			if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok == true {
