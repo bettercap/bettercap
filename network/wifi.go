@@ -2,6 +2,7 @@ package network
 
 import (
 	"encoding/json"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -86,6 +87,18 @@ func (w *WiFi) Remove(mac string) {
 	}
 }
 
+// when iface is in monitor mode, error
+// correction on macOS is crap and we
+// get non printable characters .... (ref #61)
+func isBogusMacESSID(essid string) bool {
+	for _, c := range essid {
+		if strconv.IsPrint(c) == false {
+			return true
+		}
+	}
+	return false
+}
+
 func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) *AccessPoint {
 	w.Lock()
 	defer w.Unlock()
@@ -94,6 +107,10 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) *AccessPoint
 	if ap, found := w.aps[mac]; found {
 		ap.LastSeen = time.Now()
 		ap.RSSI = rssi
+		// always get the cleanest one
+		if isBogusMacESSID(ssid) == false {
+			ap.Hostname = ssid
+		}
 		return ap
 	}
 
