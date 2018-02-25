@@ -48,7 +48,9 @@ func buildEndpointFromInterface(iface net.Interface) (*Endpoint, error) {
 		return nil, err
 	}
 
-	e := NewEndpointNoResolve(MonitorModeAddress, iface.HardwareAddr.String(), iface.Name, 0)
+	ifName := getInterfaceName(iface)
+
+	e := NewEndpointNoResolve(MonitorModeAddress, iface.HardwareAddr.String(), ifName, 0)
 
 	e.Index = iface.Index
 
@@ -92,7 +94,8 @@ func matchByAddress(iface net.Interface, name string) bool {
 
 func findInterfaceByName(name string, ifaces []net.Interface) (*Endpoint, error) {
 	for _, iface := range ifaces {
-		if iface.Name == name || matchByAddress(iface, name) {
+		ifName := getInterfaceName(iface)
+		if ifName == name || matchByAddress(iface, name) {
 			return buildEndpointFromInterface(iface)
 		}
 	}
