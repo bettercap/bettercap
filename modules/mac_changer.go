@@ -88,7 +88,7 @@ func (mc *MacChanger) setMac(mac net.HardwareAddr) error {
 
 	if strings.Contains(os, "bsd") || os == "darwin" {
 		args = []string{mc.iface, "ether", mac.String()}
-	} else if os == "linux" {
+	} else if os == "linux" || os == "android" {
 		args = []string{mc.iface, "hw", "ether", mac.String()}
 	} else {
 		return fmt.Errorf("OS %s is not supported by mac.changer module.", os)
