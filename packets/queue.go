@@ -163,12 +163,21 @@ func (q *Queue) worker() {
 			eth := leth.(*layers.Ethernet)
 			ip4 := lip4.(*layers.IPv4)
 
-			// coming from our network
-			if bytes.Compare(q.iface.IP, ip4.SrcIP) != 0 && q.iface.Net.Contains(ip4.SrcIP) {
+			// here we try to discover new hosts
+			// on this lan by inspecting packets
+			// we manage to sniff
+
+			// something coming from someone on the LAN
+			isFromMe := bytes.Compare(q.iface.IP, ip4.SrcIP) == 0
+			isFromLAN := q.iface.Net.Contains(ip4.SrcIP)
+			if isFromMe == false && isFromLAN {
 				q.trackActivity(eth, ip4, ip4.SrcIP, pktSize, true)
 			}
-			// coming to our network
-			if bytes.Compare(q.iface.IP, ip4.DstIP) != 0 && q.iface.Net.Contains(ip4.DstIP) {
+
+			// something going to someone on the LAN
+			isToMe := bytes.Compare(q.iface.IP, ip4.DstIP) == 0
+			isToLAN := q.iface.Net.Contains(ip4.DstIP)
+			if isToMe == false && isToLAN {
 				q.trackActivity(eth, ip4, ip4.DstIP, pktSize, false)
 			}
 		}
