@@ -97,17 +97,15 @@ func (t *Endpoint) SetNetwork(netw string) {
 	t.SetBits(uint32(bits))
 }
 
-func (t *Endpoint) SetIPv6Network(netw string) {
+func (t *Endpoint) SetIPv6(netw string) {
 	parts := strings.SplitN(netw, "/", 2)
 	address := parts[0]
-	bits, _ := strconv.Atoi(parts[1])
+	// bits, _ := strconv.Atoi(parts[1])
 
 	t.IPv6 = net.ParseIP(address)
 	if t.IPv6 != nil {
 		t.Ip6Address = t.IPv6.String()
 	}
-
-	t.SetBits(uint32(bits))
 }
 
 func (t *Endpoint) SetIP(ip string) {

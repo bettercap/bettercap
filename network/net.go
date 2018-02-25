@@ -63,8 +63,8 @@ func buildEndpointFromInterface(iface net.Interface) (*Endpoint, error) {
 				e.SetNetwork(address)
 			}
 		} else {
-			// ipv6/bits
-			e.SetIPv6Network(address)
+			// ipv6/xxx
+			e.SetIPv6(address)
 		}
 	}
 
