@@ -610,9 +610,9 @@ func (w *WiFiRecon) Start() error {
 					continue
 				}
 
-				w.updateStats(dot11, packet)
 				w.discoverProbes(radiotap, dot11, packet)
 				w.discoverAccessPoints(radiotap, dot11, packet)
+				w.updateStats(dot11, packet)
 				w.discoverClients(radiotap, dot11, packet)
 			}
 		}
