@@ -9,7 +9,7 @@ echo "@ Fetching remote tags ..."
 # git fetch --tags > /dev/null
 
 CURTAG=$(git describe --tags --abbrev=0)
-OUTPUT=$(git log v2.0.0RC1..HEAD --oneline)
+OUTPUT=$(git log $CURTAG..HEAD --oneline)
 IFS=$'\n' LINES=($OUTPUT)
 
 for LINE in "${LINES[@]}"; do
