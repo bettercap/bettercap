@@ -154,6 +154,9 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 	}
 
 	encryption := station.Encryption
+	if len(station.Cipher) > 0 {
+		encryption = fmt.Sprintf("%s [%s,%s]", station.Encryption, station.Cipher, station.Authentication)
+	}
 	if encryption == "OPEN" || encryption == "" {
 		encryption = core.Green("OPEN")
 	}
@@ -508,10 +511,12 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 		}
 	}
 
-	if ok, enc := packets.Dot11ParseEncryption(packet, dot11); ok == true {
+	if ok, enc, cipher, auth := packets.Dot11ParseEncryption(packet, dot11); ok == true {
 		bssid := dot11.Address3.String()
 		if station, found := w.Session.WiFi.Get(bssid); found == true {
 			station.Encryption = enc
+			station.Cipher = cipher
+			station.Authentication = auth
 		}
 	}
 }

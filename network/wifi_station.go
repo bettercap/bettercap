@@ -6,11 +6,13 @@ import (
 
 type Station struct {
 	*Endpoint
-	Frequency  int    `json:"frequency"`
-	RSSI       int8   `json:"rssi"`
-	Sent       uint64 `json:"sent"`
-	Received   uint64 `json:"received"`
-	Encryption string `json:"encryption"`
+	Frequency      int    `json:"frequency"`
+	RSSI           int8   `json:"rssi"`
+	Sent           uint64 `json:"sent"`
+	Received       uint64 `json:"received"`
+	Encryption     string `json:"encryption"`
+	Cipher         string `json:"cipher"`
+	Authentication string `json:"authentication"`
 }
 
 func cleanESSID(essid string) string {
