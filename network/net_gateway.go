@@ -3,7 +3,6 @@
 package network
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/bettercap/bettercap/core"
@@ -25,7 +24,7 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 					// we have the address, now we need its mac
 					mac, err := ArpLookup(iface.Name(), gateway, false)
 					if err != nil {
-						fmt.Printf("%s\n", err)
+						return nil, err
 					}
 					return NewEndpoint(gateway, mac), nil
 				}

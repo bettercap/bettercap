@@ -4,6 +4,7 @@ import (
 	"github.com/bettercap/bettercap/core"
 )
 
+// Hi, i'm Android and my mum said I'm special.
 func FindGateway(iface *Endpoint) (*Endpoint, error) {
 	output, err := core.Exec("getprop", []string{"net.dns1"})
 	if err != nil {

@@ -7,7 +7,7 @@ bin_dep() {
     which $BIN > /dev/null || { echo "@ Dependency $BIN not found !"; exit 1; }
 }
 
-vm_dep() {
+host_dep() {
     HOST=$1
     ping -c 1 $HOST > /dev/null || { echo "@ Virtual machine host $HOST not visible !"; exit 1; }
 }
@@ -114,7 +114,7 @@ build_linux_mips64le() {
 }
 
 build_macos_amd64() {
-    vm_dep 'osxvm'
+    host_dep 'osxvm'
 
     DIR=/Users/evilsocket/gocode/src/github.com/bettercap/bettercap
     OUTPUT=$1
@@ -130,7 +130,7 @@ build_macos_amd64() {
 }
 
 build_windows_amd64() {
-    vm_dep 'winvm'
+    host_dep 'winvm'
 
     DIR=c:/Users/evilsocket/gopath/src/github.com/bettercap/bettercap
     OUTPUT=$1
@@ -145,10 +145,27 @@ build_windows_amd64() {
     scp -C winvm:$DIR/$OUTPUT . > /dev/null
 }
 
+build_android_arm() {
+    host_dep 'shield'
+
+    DIR=/data/data/com.termux/files/home/go/src/github.com/bettercap/bettercap
+    OUTPUT=$1
+
+    echo "@ Updating repo on Android host ..."
+    ssh -p 8022 root@shield "cd $DIR && rm bettercap && git pull" > /dev/null
+
+    echo "@ Building $OUTPUT ..."
+    ssh -p 8022 root@shield "cd $DIR && go build  -o $OUTPUT ." > /dev/null
+
+    echo "@ Downloading $OUTPUT ..."
+    scp -C -P 8022 root@shield:$DIR/$OUTPUT . > /dev/null
+}
+
 rm -rf $BUILD_FOLDER
 mkdir $BUILD_FOLDER
 cd $BUILD_FOLDER
 
+build_android_arm bettercap_android_arm_$VERSION
 build_linux_amd64 bettercap_linux_amd64_$VERSION
 build_linux_arm7 bettercap_linux_arm7_$VERSION
 build_linux_mips bettercap_linux_mips_$VERSION
