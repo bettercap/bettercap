@@ -5,7 +5,7 @@ import (
 )
 
 func FindGateway(iface *Endpoint) (*Endpoint, error) {
-	output, err = core.Exec("getprop", []string{"net.dns1"})
+	output, err := core.Exec("getprop", []string{"net.dns1"})
 	if err != nil {
 		return nil, err
 	}
