@@ -1,7 +1,9 @@
 package session
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"sort"
 	"strconv"
 	"sync"
@@ -21,7 +23,7 @@ type Environment struct {
 	sess *Session
 }
 
-func NewEnvironment(s *Session) *Environment {
+func NewEnvironment(s *Session, envFile string) *Environment {
 	env := &Environment{
 		Padding: 0,
 		Data:    make(map[string]string),
@@ -29,7 +31,40 @@ func NewEnvironment(s *Session) *Environment {
 		cbs:     make(map[string]SetCallback),
 	}
 
+	if envFile != "" {
+		envFile, _ := core.ExpandPath(envFile)
+		if core.Exists(envFile) {
+			if err := env.Load(envFile); err != nil {
+				fmt.Printf("Error while loading %s: %s\n", envFile, err)
+			}
+		}
+	}
+
 	return env
+}
+
+func (env *Environment) Load(fileName string) error {
+	env.Lock()
+	defer env.Unlock()
+
+	raw, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(raw, &env.Data)
+}
+
+func (env *Environment) Save(fileName string) error {
+	env.Lock()
+	defer env.Unlock()
+
+	raw, err := json.Marshal(env.Data)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(fileName, raw, 0644)
 }
 
 func (env *Environment) Has(name string) bool {

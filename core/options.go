@@ -8,6 +8,7 @@ type Options struct {
 	Debug         *bool
 	Silent        *bool
 	NoHistory     *bool
+	EnvFile       *string
 	Commands      *string
 	CpuProfile    *string
 	MemProfile    *string
@@ -20,6 +21,7 @@ func ParseOptions() (Options, error) {
 		Debug:         flag.Bool("debug", false, "Print debug messages."),
 		Silent:        flag.Bool("silent", false, "Suppress all logs which are not errors."),
 		NoHistory:     flag.Bool("no-history", false, "Disable interactive session history file."),
+		EnvFile:       flag.String("env-file", "~/bettercap.env", "Load environment variables from this file if found, set to empty to disable environment persistance."),
 		Commands:      flag.String("eval", "", "Run one or more commands separated by ; in the interactive session, used to set variables via command line."),
 		CpuProfile:    flag.String("cpu-profile", "", "Write cpu profile `file`."),
 		MemProfile:    flag.String("mem-profile", "", "Write memory profile to `file`."),

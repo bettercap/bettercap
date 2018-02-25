@@ -142,7 +142,7 @@ func New() (*Session, error) {
 		}
 	}
 
-	s.Env = NewEnvironment(s)
+	s.Env = NewEnvironment(s, *s.Options.EnvFile)
 	s.Events = NewEventPool(*s.Options.Debug, *s.Options.Silent)
 
 	s.registerCoreHandlers()
@@ -246,6 +246,13 @@ func (s *Session) Close() {
 	s.Firewall.Restore()
 	s.Queue.Stop()
 
+	if *s.Options.EnvFile != "" {
+		envFile, _ := core.ExpandPath(*s.Options.EnvFile)
+		if err := s.Env.Save(envFile); err != nil {
+			fmt.Printf("Error while storing the environment to %s: %s", envFile, err)
+		}
+	}
+
 	if *s.Options.CpuProfile != "" {
 		pprof.StopCPUProfile()
 	}
@@ -304,7 +311,6 @@ func (s *Session) setupSignals() {
 }
 
 func (s *Session) setupEnv() {
-	s.Env.Set(PromptVariable, DefaultPrompt)
 	s.Env.Set("iface.index", fmt.Sprintf("%d", s.Interface.Index))
 	s.Env.Set("iface.name", s.Interface.Name())
 	s.Env.Set("iface.ipv4", s.Interface.IpAddress)
@@ -312,6 +318,10 @@ func (s *Session) setupEnv() {
 	s.Env.Set("iface.mac", s.Interface.HwAddress)
 	s.Env.Set("gateway.address", s.Gateway.IpAddress)
 	s.Env.Set("gateway.mac", s.Gateway.HwAddress)
+
+	if found, v := s.Env.Get(PromptVariable); found == false || v == "" {
+		s.Env.Set(PromptVariable, DefaultPrompt)
+	}
 
 	dbg := "false"
 	if *s.Options.Debug {
