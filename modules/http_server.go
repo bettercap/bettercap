@@ -124,15 +124,17 @@ func (httpd *HttpServer) Configure() error {
 		return err
 	}
 
-	if core.Exists(certFile) == false || core.Exists(keyFile) == false {
-		log.Info("Generating server TLS key to %s", keyFile)
-		log.Info("Generating server TLS certificate to %s", certFile)
-		if err := tls.Generate(certFile, keyFile); err != nil {
-			return err
+	if certFile != "" && keyFile != "" {
+		if core.Exists(certFile) == false || core.Exists(keyFile) == false {
+			log.Info("Generating server TLS key to %s", keyFile)
+			log.Info("Generating server TLS certificate to %s", certFile)
+			if err := tls.Generate(certFile, keyFile); err != nil {
+				return err
+			}
+		} else {
+			log.Info("Loading server TLS key from %s", keyFile)
+			log.Info("Loading server TLS certificate from %s", certFile)
 		}
-	} else {
-		log.Info("Loading server TLS key from %s", keyFile)
-		log.Info("Loading server TLS certificate from %s", certFile)
 	}
 
 	httpd.certFile = certFile
