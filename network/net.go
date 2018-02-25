@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -148,11 +149,13 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 		return nil, err
 	}
 
+	isAndroid := runtime.GOOS == "android"
+
 	for _, line := range strings.Split(output, "\n") {
 		m := IPv4RouteParser.FindStringSubmatch(line)
 		if len(m) == IPv4RouteTokens {
 			return IPv4RouteIsGateway(iface.Name(), m, func(gateway string) (*Endpoint, error) {
-				if gateway == iface.IpAddress {
+				if gateway == iface.IpAddress && isAndroid == false {
 					return iface, nil
 				} else {
 					// we have the address, now we need its mac
@@ -164,6 +167,21 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 				}
 			})
 		}
+	}
+
+	if isAndroid {
+		output, err = core.Exec("getprop", []string{"net.dns1"})
+		if err != nil {
+			return nil, err
+		}
+		gateway := core.Trim(output)
+		// we have the address, now we need its mac
+		mac, err := ArpLookup(iface.Name(), gateway, false)
+		if err != nil {
+			fmt.Printf("%s\n", err)
+		}
+		return NewEndpoint(gateway, mac), nil
+
 	}
 
 	return nil, fmt.Errorf("Could not detect the gateway.")
