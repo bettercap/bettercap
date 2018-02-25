@@ -370,6 +370,8 @@ func (w *WiFiRecon) onChannel(channel int, cb func()) {
 
 	if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
 		log.Warning("Error while hopping to channel %d: %s", channel, err)
+	} else {
+		log.Debug("Hopped on channel %d", channel)
 	}
 
 	cb()
@@ -477,7 +479,7 @@ func (w *WiFiRecon) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot1
 
 	w.Session.Events.Add("wifi.client.probe", WiFiProbe{
 		From: dot11.Address2,
-		SSID: string(req.Contents[2:size]),
+		SSID: string(req.Contents[2 : 2+size]),
 	})
 }
 
