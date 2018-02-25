@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/bettercap/bettercap/core"
@@ -49,33 +48,23 @@ func buildEndpointFromInterface(iface net.Interface) (*Endpoint, error) {
 		return nil, err
 	}
 
-	e := NewEndpointNoResolve(MonitorModeAddress, iface.HardwareAddr.String(), "", 0)
+	e := NewEndpointNoResolve(MonitorModeAddress, iface.HardwareAddr.String(), iface.Name, 0)
 
-	e.Hostname = iface.Name
 	e.Index = iface.Index
 
-	for _, addr := range addrs {
-		ip := addr.String()
-
-		if IPv4Validator.MatchString(ip) {
-			if strings.IndexRune(ip, '/') == -1 {
+	for _, a := range addrs {
+		address := a.String()
+		if IPv4Validator.MatchString(address) {
+			if strings.IndexRune(address, '/') == -1 {
 				// plain ip
-				e.SetIP(ip)
+				e.SetIP(address)
 			} else {
 				// ip/bits
-				parts := strings.Split(ip, "/")
-				ip_part := parts[0]
-				bits, _ := strconv.Atoi(parts[1])
-
-				e.SetIP(ip_part)
-				e.SubnetBits = uint32(bits)
+				e.SetNetwork(address)
 			}
 		} else {
-			parts := strings.SplitN(ip, "/", 2)
-			e.IPv6 = net.ParseIP(parts[0])
-			if e.IPv6 != nil {
-				e.Ip6Address = e.IPv6.String()
-			}
+			// ipv6/bits
+			e.SetIPv6Network(address)
 		}
 	}
 

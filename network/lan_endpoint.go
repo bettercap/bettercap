@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bettercap/bettercap/core"
@@ -31,23 +33,15 @@ type Endpoint struct {
 	Meta             *Meta                  `json:"meta"`
 }
 
-func ip2int(ip net.IP) uint32 {
-	if len(ip) == 16 {
-		return binary.BigEndian.Uint32(ip[12:16])
-	}
-	return binary.BigEndian.Uint32(ip)
-}
-
 func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
-	addr := net.ParseIP(ip)
 	mac = NormalizeMac(mac)
 	hw, _ := net.ParseMAC(mac)
 	now := time.Now()
 
 	e := &Endpoint{
-		IP:               addr,
+		IP:               nil,
 		IpAddress:        ip,
-		IpAddressUint32:  ip2int(addr),
+		IpAddressUint32:  0,
 		Net:              nil,
 		HW:               hw,
 		SubnetBits:       bits,
@@ -60,8 +54,8 @@ func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 		Meta:             NewMeta(),
 	}
 
-	_, netw, _ := net.ParseCIDR(e.CIDR())
-	e.Net = netw
+	e.SetIP(ip)
+	e.SetBits(bits)
 
 	return e
 }
@@ -87,13 +81,46 @@ func NewEndpointWithAlias(ip, mac, alias string) *Endpoint {
 	return e
 }
 
+func ip2int(ip net.IP) uint32 {
+	if len(ip) == 16 {
+		return binary.BigEndian.Uint32(ip[12:16])
+	}
+	return binary.BigEndian.Uint32(ip)
+}
+
+func (t *Endpoint) SetNetwork(netw string) {
+	parts := strings.Split(netw, "/")
+	address := parts[0]
+	bits, _ := strconv.Atoi(parts[1])
+
+	t.SetIP(address)
+	t.SetBits(uint32(bits))
+}
+
+func (t *Endpoint) SetIPv6Network(netw string) {
+	parts := strings.SplitN(netw, "/", 2)
+	address := parts[0]
+	bits, _ := strconv.Atoi(parts[1])
+
+	t.IPv6 = net.ParseIP(address)
+	if t.IPv6 != nil {
+		t.Ip6Address = t.IPv6.String()
+	}
+
+	t.SetBits(uint32(bits))
+}
+
 func (t *Endpoint) SetIP(ip string) {
-
 	addr := net.ParseIP(ip)
-
 	t.IP = addr
 	t.IpAddress = ip
 	t.IpAddressUint32 = ip2int(addr)
+}
+
+func (t *Endpoint) SetBits(bits uint32) {
+	t.SubnetBits = bits
+	_, netw, _ := net.ParseCIDR(t.CIDR())
+	t.Net = netw
 }
 
 func (t *Endpoint) Name() string {
