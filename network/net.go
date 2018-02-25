@@ -106,7 +106,6 @@ func FindInterface(name string) (*Endpoint, error) {
 		return nil, err
 	}
 	name = core.Trim(name)
-
 	if name != "" {
 		return findInterfaceByName(name, ifaces)
 	}
