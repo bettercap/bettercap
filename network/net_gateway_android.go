@@ -1,14 +1,6 @@
 package network
 
 import (
-	"errors"
-	"fmt"
-	"net"
-	"regexp"
-	"runtime"
-	"strconv"
-	"strings"
-
 	"github.com/bettercap/bettercap/core"
 )
 
