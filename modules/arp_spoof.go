@@ -3,19 +3,26 @@ package modules
 import (
 	"fmt"
 	"net"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/malfunkt/iprange"
 )
 
+// lulz this sounds like a hamburger
+var macParser = regexp.MustCompile(`([a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2})`)
+
 type ArpSpoofer struct {
 	session.SessionModule
 	done      chan bool
 	addresses []net.IP
+	macs      []net.HardwareAddr
 	ban       bool
 }
 
@@ -24,6 +31,7 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 		SessionModule: session.NewSessionModule("arp.spoof", s),
 		done:          make(chan bool),
 		addresses:     make([]net.IP, 0),
+		macs:          make([]net.HardwareAddr, 0),
 		ban:           false,
 	}
 
@@ -64,10 +72,10 @@ func (p ArpSpoofer) Author() string {
 }
 
 func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running bool, probe bool) {
+	targets := make(map[string]net.HardwareAddr, 0)
+
 	for _, ip := range p.addresses {
-		if check_running && p.Running() == false {
-			return
-		} else if p.Session.Skip(ip) == true {
+		if p.Session.Skip(ip) == true {
 			log.Debug("Skipping address %s from ARP spoofing.", ip)
 			continue
 		}
@@ -79,10 +87,33 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 			continue
 		}
 
-		if err, pkt := packets.NewARPReply(saddr, smac, ip, hw); err != nil {
-			log.Error("Error while creating ARP spoof packet for %s: %s", ip.String(), err)
+		targets[ip.String()] = hw
+	}
+
+	for _, hw := range p.macs {
+		ip, err := network.ArpInverseLookup(p.Session.Interface.Name(), hw.String(), false)
+		if err != nil {
+			log.Debug("Error while looking up ip address for %s: %s", hw.String(), err)
+			continue
+		}
+
+		if p.Session.Skip(net.ParseIP(ip)) == true {
+			log.Debug("Skipping address %s from ARP spoofing.", ip)
+			continue
+		}
+
+		targets[ip] = hw
+	}
+
+	for ip, mac := range targets {
+		if check_running && p.Running() == false {
+			return
+		}
+
+		if err, pkt := packets.NewARPReply(saddr, smac, net.ParseIP(ip), mac); err != nil {
+			log.Error("Error while creating ARP spoof packet for %s: %s", ip, err)
 		} else {
-			log.Debug("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip.String(), hw.String())
+			log.Debug("Sending %d bytes of ARP packet to %s:%s.", len(pkt), ip, mac.String())
 			p.Session.Queue.Send(pkt)
 		}
 	}
@@ -92,9 +123,39 @@ func (p *ArpSpoofer) unSpoof() error {
 	from := p.Session.Gateway.IP
 	from_hw := p.Session.Gateway.HW
 
-	log.Info("Restoring ARP cache of %d targets.", len(p.addresses))
+	log.Info("Restoring ARP cache of %d targets.", len(p.addresses)+len(p.macs))
 
 	p.sendArp(from, from_hw, false, false)
+
+	return nil
+}
+
+func (p *ArpSpoofer) parseTargets(targets string) (err error) {
+	// first isolate MACs and parse them
+	for _, mac := range macParser.FindAllString(targets, -1) {
+		mac = network.NormalizeMac(mac)
+		log.Debug("Parsing MAC %s", mac)
+		hw, err := net.ParseMAC(mac)
+		if err != nil {
+			return fmt.Errorf("Error while parsing MAC '%s': %s", mac, err)
+		}
+		p.macs = append(p.macs, hw)
+		targets = strings.Replace(targets, mac, "", -1)
+	}
+
+	targets = strings.TrimLeft(targets, ", ")
+	targets = strings.TrimRight(targets, ", ")
+
+	log.Debug("Parsing IP range %s", targets)
+	list, err := iprange.Parse(targets)
+	if err != nil {
+		return fmt.Errorf("Error while parsing arp.spoof.targets variable '%s': %s.", targets, err)
+	}
+
+	p.addresses = list.Expand()
+
+	log.Debug(" addresses=%v", p.addresses)
+	log.Debug(" macs=%v", p.macs)
 
 	return nil
 }
@@ -105,13 +166,9 @@ func (p *ArpSpoofer) Configure() error {
 
 	if err, targets = p.StringParam("arp.spoof.targets"); err != nil {
 		return err
+	} else if err = p.parseTargets(targets); err != nil {
+		return err
 	}
-
-	list, err := iprange.Parse(targets)
-	if err != nil {
-		return fmt.Errorf("Error while parsing arp.spoof.targets variable '%s': %s.", targets, err)
-	}
-	p.addresses = list.Expand()
 
 	if p.ban == true {
 		log.Warning("Running in BAN mode, forwarding not enabled!")
@@ -133,7 +190,7 @@ func (p *ArpSpoofer) Start() error {
 		from := p.Session.Gateway.IP
 		from_hw := p.Session.Interface.HW
 
-		log.Info("ARP spoofer started, probing %d targets.", len(p.addresses))
+		log.Info("ARP spoofer started, probing %d targets.", len(p.addresses)+len(p.macs))
 
 		for p.Running() {
 			p.sendArp(from, from_hw, true, false)

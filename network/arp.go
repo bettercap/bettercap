@@ -12,7 +12,7 @@ type ArpTable map[string]string
 
 var (
 	arpWasParsed = false
-	arpLock      = &sync.Mutex{}
+	arpLock      = &sync.RWMutex{}
 	arpTable     = make(ArpTable)
 )
 
@@ -64,6 +64,9 @@ func ArpLookup(iface string, address string, refresh bool) (string, error) {
 		}
 	}
 
+	arpLock.RLock()
+	defer arpLock.RUnlock()
+
 	// Lookup the hardware address of this ip.
 	if mac, found := arpTable[address]; found == true {
 		return mac, nil
@@ -72,8 +75,27 @@ func ArpLookup(iface string, address string, refresh bool) (string, error) {
 	return "", fmt.Errorf("Could not find mac for %s", address)
 }
 
+func ArpInverseLookup(iface string, mac string, refresh bool) (string, error) {
+	if ArpParsed() == false || refresh == true {
+		if _, err := ArpUpdate(iface); err != nil {
+			return "", err
+		}
+	}
+
+	arpLock.RLock()
+	defer arpLock.RUnlock()
+
+	for ip, hw := range arpTable {
+		if hw == mac {
+			return ip, nil
+		}
+	}
+
+	return "", fmt.Errorf("Could not find IP for %s", mac)
+}
+
 func ArpParsed() bool {
-	arpLock.Lock()
-	defer arpLock.Unlock()
+	arpLock.RLock()
+	defer arpLock.RUnlock()
 	return arpWasParsed
 }
