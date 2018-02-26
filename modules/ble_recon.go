@@ -71,12 +71,17 @@ func (d BLERecon) Author() string {
 }
 
 func (d *BLERecon) Configure() (err error) {
-	// hey Paypal GATT library, could you please just STFU?!
-	golog.SetOutput(ioutil.Discard)
+	if d.gattDevice == nil {
+		// hey Paypal GATT library, could you please just STFU?!
+		golog.SetOutput(ioutil.Discard)
+		if d.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
+			return err
+		}
 
-	if d.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
-		return err
+		d.gattDevice.Handle(gatt.PeripheralDiscovered(d.onPeriphDiscovered))
+		d.gattDevice.Init(d.onStateChanged)
 	}
+
 	return nil
 }
 
@@ -118,9 +123,6 @@ func (d *BLERecon) Start() error {
 
 	return d.SetRunning(true, func() {
 		log.Debug("Initializing BLE device ...")
-
-		d.gattDevice.Handle(gatt.PeripheralDiscovered(d.onPeriphDiscovered))
-		d.gattDevice.Init(d.onStateChanged)
 
 		go d.pruner()
 
