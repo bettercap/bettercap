@@ -139,6 +139,50 @@ func (s EventsStream) viewSnifferEvent(e session.Event) {
 		misc)
 }
 
+func (s EventsStream) viewBLEEvent(e session.Event) {
+	if e.Tag == "ble.device.new" {
+		dev := e.Data.(*network.BLEDevice)
+		name := dev.Device.Name()
+		if name != "" {
+			name = " " + core.Bold(name)
+		}
+		vend := dev.Vendor
+		if vend != "" {
+			vend = fmt.Sprintf(" (%s)", core.Yellow(vend))
+		}
+
+		fmt.Printf("[%s] [%s] New BLE device%s detected as %s%s %s.\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			name,
+			dev.Device.ID(),
+			vend,
+			core.Dim(fmt.Sprintf("%d dBm", dev.RSSI)))
+	} else if e.Tag == "ble.device.lost" {
+		dev := e.Data.(*network.BLEDevice)
+		name := dev.Device.Name()
+		if name != "" {
+			name = " " + core.Bold(name)
+		}
+		vend := dev.Vendor
+		if vend != "" {
+			vend = fmt.Sprintf(" (%s)", core.Yellow(vend))
+		}
+
+		fmt.Printf("[%s] [%s] BLE device%s %s%s lost.\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			name,
+			dev.Device.ID(),
+			vend)
+	} else {
+		fmt.Printf("[%s] [%s] %v\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			e.Data)
+	}
+}
+
 func (s EventsStream) viewSynScanEvent(e session.Event) {
 	se := e.Data.(SynScanEvent)
 	fmt.Printf("[%s] [%s] Found open port %d for %s\n",
@@ -155,11 +199,13 @@ func (s *EventsStream) View(e session.Event, refresh bool) {
 		s.viewEndpointEvent(e)
 	} else if strings.HasPrefix(e.Tag, "wifi.") {
 		s.viewWiFiEvent(e)
+	} else if strings.HasPrefix(e.Tag, "ble.") {
+		s.viewBLEEvent(e)
 	} else if strings.HasPrefix(e.Tag, "mod.") {
 		s.viewModuleEvent(e)
 	} else if strings.HasPrefix(e.Tag, "net.sniff.") {
 		s.viewSnifferEvent(e)
-	} else if strings.HasPrefix(e.Tag, "syn.scan") {
+	} else if strings.HasPrefix(e.Tag, "syn.scan.") {
 		s.viewSynScanEvent(e)
 	} else {
 		fmt.Printf("[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), core.Green(e.Tag), e)

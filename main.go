@@ -51,6 +51,7 @@ func main() {
 	sess.Register(modules.NewRestAPI(sess))
 	sess.Register(modules.NewWOL(sess))
 	sess.Register(modules.NewWiFiRecon(sess))
+	sess.Register(modules.NewBLERecon(sess))
 	sess.Register(modules.NewSynScanner(sess))
 
 	if err = sess.Start(); err != nil {

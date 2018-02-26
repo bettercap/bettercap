@@ -39,7 +39,7 @@ func NormalizeMac(mac string) string {
 			parts[i] = "0" + p
 		}
 	}
-	return strings.Join(parts, ":")
+	return strings.ToLower(strings.Join(parts, ":"))
 }
 
 func buildEndpointFromInterface(iface net.Interface) (*Endpoint, error) {

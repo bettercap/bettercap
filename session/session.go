@@ -40,6 +40,7 @@ type Session struct {
 	Env       *Environment             `json:"env"`
 	Lan       *network.LAN             `json:"lan"`
 	WiFi      *network.WiFi            `json:"wifi"`
+	BLE       *network.BLE             `json:"ble"`
 	Queue     *packets.Queue           `json:"packets"`
 	Input     *readline.Instance       `json:"-"`
 	StartedAt time.Time                `json:"started_at"`
@@ -373,6 +374,12 @@ func (s *Session) Start() error {
 	}
 
 	s.Firewall = firewall.Make(s.Interface)
+
+	s.BLE = network.NewBLE(func(dev *network.BLEDevice) {
+		s.Events.Add("ble.device.new", dev)
+	}, func(dev *network.BLEDevice) {
+		s.Events.Add("ble.device.lost", dev)
+	})
 
 	s.WiFi = network.NewWiFi(s.Interface, func(ap *network.AccessPoint) {
 		s.Events.Add("wifi.ap.new", ap)
