@@ -145,12 +145,16 @@ func (p *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.Wa
 		}
 		b := buff[:n]
 
-		ret := p.script.OnData(from, to, b)
-		if ret != nil {
-			nret := len(ret)
-			log.Info("Overriding %d bytes of data from %s to %s with %d bytes of new data.", n, from.String(), to.String(), nret)
-			b = make([]byte, nret)
-			copy(b, ret)
+		if p.script != nil {
+			ret := p.script.OnData(from, to, b)
+
+			if ret != nil {
+				nret := len(ret)
+				log.Info("Overriding %d bytes of data from %s to %s with %d bytes of new data.",
+					n, from.String(), to.String(), nret)
+				b = make([]byte, nret)
+				copy(b, ret)
+			}
 		}
 
 		n, err = dst.Write(b)
