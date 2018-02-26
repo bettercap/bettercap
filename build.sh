@@ -165,7 +165,7 @@ rm -rf $BUILD_FOLDER
 mkdir $BUILD_FOLDER
 cd $BUILD_FOLDER
 
-build_android_arm bettercap_android_arm_$VERSION
+# build_android_arm bettercap_android_arm_$VERSION
 build_linux_amd64 bettercap_linux_amd64_$VERSION
 build_linux_arm7 bettercap_linux_arm7_$VERSION
 build_linux_mips bettercap_linux_mips_$VERSION
