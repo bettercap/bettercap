@@ -77,13 +77,6 @@ func (httpd *HttpServer) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func wrapHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Info("(%s) %s %s %s%s", core.Green("httpd"), core.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
-		h.ServeHTTP(w, r)
-	})
-}
-
 func (httpd *HttpServer) isTLS() bool {
 	return httpd.certFile != "" && httpd.keyFile != ""
 }
@@ -100,7 +93,15 @@ func (httpd *HttpServer) Configure() error {
 		return err
 	}
 
-	http.Handle("/", wrapHandler(http.FileServer(http.Dir(path))))
+	router := http.NewServeMux()
+	fileServer := http.FileServer(http.Dir(path))
+
+	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Info("(%s) %s %s %s%s", core.Green("httpd"), core.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		fileServer.ServeHTTP(w, r)
+	}))
+
+	httpd.server.Handler = router
 
 	if err, address = httpd.StringParam("http.server.address"); err != nil {
 		return err
