@@ -12,7 +12,6 @@ import (
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/dustin/go-humanize"
-	"github.com/olekukonko/tablewriter"
 )
 
 var (
@@ -114,15 +113,6 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) []string {
 	return row
 }
 
-func (d *Discovery) showTable(header []string, rows [][]string) {
-	fmt.Println()
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(header)
-	table.SetColWidth(180)
-	table.AppendBulk(rows)
-	table.Render()
-}
-
 func (d *Discovery) Show(by string) error {
 	targets := d.Session.Lan.List()
 	if by == "seen" {
@@ -166,7 +156,7 @@ func (d *Discovery) Show(by string) error {
 		}
 	}
 
-	d.showTable(colNames, rows)
+	core.AsTable(os.Stdout, colNames, rows)
 
 	d.Session.Queue.Stats.RLock()
 	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",

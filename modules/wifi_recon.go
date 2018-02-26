@@ -19,7 +19,6 @@ import (
 	"github.com/google/gopacket/pcap"
 
 	"github.com/dustin/go-humanize"
-	"github.com/olekukonko/tablewriter"
 )
 
 var maxStationTTL = 5 * time.Minute
@@ -218,15 +217,6 @@ func mhz2chan(freq int) int {
 	return 0
 }
 
-func (w *WiFiRecon) showTable(header []string, rows [][]string) {
-	fmt.Println()
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(header)
-	table.SetColWidth(80)
-	table.AppendBulk(rows)
-	table.Render()
-}
-
 func (w *WiFiRecon) isApSelected() bool {
 	return w.ap != nil
 }
@@ -274,7 +264,7 @@ func (w *WiFiRecon) Show(by string) error {
 	}
 
 	if nrows > 0 {
-		w.showTable(columns, rows)
+		core.AsTable(os.Stdout, columns, rows)
 	}
 
 	w.Session.Refresh()

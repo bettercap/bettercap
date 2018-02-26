@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bettercap/gatt"
+	"github.com/currantlabs/gatt"
 )
 
 type BLEDevNewCallback func(dev *BLEDevice)

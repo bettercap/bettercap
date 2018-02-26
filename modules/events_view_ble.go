@@ -46,10 +46,9 @@ func (s EventsStream) viewBLEEvent(e session.Event) {
 			name,
 			dev.Device.ID(),
 			vend)
-	} else {
-		fmt.Printf("[%s] [%s] %v\n",
+	} /* else {
+		fmt.Printf("[%s] [%s]\n",
 			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
-			e.Data)
-	}
+			core.Green(e.Tag))
+	} */
 }

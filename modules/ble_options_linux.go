@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"github.com/bettercap/gatt"
-	"github.com/bettercap/gatt/linux/cmd"
+	"github.com/currantlabs/gatt"
+	"github.com/currantlabs/gatt/linux/cmd"
 )
 
 var defaultBLEClientOptions = []gatt.Option{

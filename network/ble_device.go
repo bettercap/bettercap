@@ -5,7 +5,7 @@ package network
 import (
 	"time"
 
-	"github.com/bettercap/gatt"
+	"github.com/currantlabs/gatt"
 )
 
 type BLEDevice struct {
