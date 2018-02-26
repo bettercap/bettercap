@@ -25,8 +25,11 @@ import (
 var maxStationTTL = 5 * time.Minute
 
 type WiFiProbe struct {
-	From net.HardwareAddr
-	SSID string
+	FromAddr   net.HardwareAddr
+	FromVendor string
+	FromAlias  string
+	SSID       string
+	RSSI       int8
 }
 
 type WiFiRecon struct {
@@ -481,8 +484,11 @@ func (w *WiFiRecon) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot1
 	}
 
 	w.Session.Events.Add("wifi.client.probe", WiFiProbe{
-		From: dot11.Address2,
-		SSID: string(req.Contents[2 : 2+size]),
+		FromAddr:   dot11.Address2,
+		FromVendor: network.OuiLookup(dot11.Address2.String()),
+		FromAlias:  w.Session.Lan.GetAlias(dot11.Address2.String()),
+		SSID:       string(req.Contents[2 : 2+size]),
+		RSSI:       radiotap.DBMAntennaSignal,
 	})
 }
 
