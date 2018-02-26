@@ -204,3 +204,7 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 
 	return nil
 }
+
+func (lan *LAN) GetAlias(mac string) string {
+	return lan.aliases.Get(mac)
+}
