@@ -35,7 +35,7 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 		ban:           false,
 	}
 
-	p.AddParam(session.NewStringParameter("arp.spoof.targets", session.ParamSubnet, "", "IP addresses to spoof."))
+	p.AddParam(session.NewStringParameter("arp.spoof.targets", session.ParamSubnet, "", "IP or MAC addresses to spoof, also supports nmap style IP ranges."))
 
 	p.AddHandler(session.NewModuleHandler("arp.spoof on", "",
 		"Start ARP spoofer.",
