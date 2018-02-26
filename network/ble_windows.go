@@ -29,10 +29,5 @@ func (b *BLE) MarshalJSON() ([]byte, error) {
 	doc := bleJSON{
 		Devices: make([]*BLEDevice, 0),
 	}
-
-	for _, dev := range b.Devices() {
-		doc.Devices = append(doc.Devices, dev)
-	}
-
 	return json.Marshal(doc)
 }
