@@ -71,14 +71,14 @@ func main() {
 	 */
 	for _, cmd := range session.ParseCommands(*sess.Options.Commands) {
 		if err = sess.Run(cmd); err != nil {
-			log.Fatal("%s", err)
+			log.Error("Error while running '%s': %s", core.Bold(cmd), core.Red(err.Error()))
 		}
 	}
 
 	// Then run the caplet if specified.
 	if *sess.Options.Caplet != "" {
 		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
-			log.Fatal("%s", err)
+			log.Error("Error while runnig caplet %s: %s", core.Bold(*sess.Options.Caplet), core.Red(err.Error()))
 		}
 	}
 
