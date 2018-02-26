@@ -147,28 +147,6 @@ func (d *BLERecon) getRow(dev *network.BLEDevice) []string {
 		address = core.Dim(address)
 	}
 
-	flags := make([]string, 0)
-	raw := uint8(0)
-	if len(dev.Advertisement.Flags) > 0 {
-		raw = uint8(dev.Advertisement.Flags[0])
-	}
-
-	bits := map[uint]string{
-		0: "LE Limited Discoverable",
-		1: "LE General Discoverable",
-		2: "BR/EDR",
-		3: "LE + BR/EDR Controller Mode",
-		4: "LE + BR/EDR Host Mode",
-	}
-
-	for bit, desc := range bits {
-		if raw&(1<<bit) != 0 {
-			flags = append(flags, desc)
-		}
-	}
-
-	sort.Strings(flags)
-
 	isConnectable := core.Red("✕")
 	if dev.Advertisement.Connectable == true {
 		isConnectable = core.Green("✓")
@@ -179,7 +157,7 @@ func (d *BLERecon) getRow(dev *network.BLEDevice) []string {
 		address,
 		dev.Device.Name(),
 		vendor,
-		strings.Join(flags, ", "),
+		strings.Join(dev.Advertisement.Flags, ", "),
 		isConnectable,
 		lastSeen,
 	}
