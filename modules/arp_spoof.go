@@ -50,7 +50,13 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 			return p.Start()
 		}))
 
-	p.AddHandler(session.NewModuleHandler("arp.spoof/ban off", "arp\\.(spoof|ban) off",
+	p.AddHandler(session.NewModuleHandler("arp.spoof off", "",
+		"Stop ARP spoofer.",
+		func(args []string) error {
+			return p.Stop()
+		}))
+
+	p.AddHandler(session.NewModuleHandler("arp.ban off", "",
 		"Stop ARP spoofer.",
 		func(args []string) error {
 			return p.Stop()
