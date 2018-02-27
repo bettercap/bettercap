@@ -14,7 +14,7 @@ import (
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 
-	"github.com/currantlabs/gatt"
+	"github.com/bettercap/gatt"
 )
 
 var (

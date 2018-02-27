@@ -13,7 +13,7 @@ import (
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
-	"github.com/currantlabs/gatt"
+	"github.com/bettercap/gatt"
 )
 
 const (

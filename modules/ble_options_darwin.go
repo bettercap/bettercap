@@ -1,6 +1,6 @@
 package modules
 
-import "github.com/currantlabs/gatt"
+import "github.com/bettercap/gatt"
 
 var defaultBLEClientOptions = []gatt.Option{
 	gatt.MacDeviceRole(gatt.CentralManager),
