@@ -176,7 +176,7 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 		return []string{
 			fmt.Sprintf("%d dBm", station.RSSI),
 			bssid,
-			station.Vendor,
+			/* station.Vendor, */
 			strconv.Itoa(mhz2chan(station.Frequency)),
 			sent,
 			recvd,
@@ -197,7 +197,7 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 			fmt.Sprintf("%d dBm", station.RSSI),
 			bssid,
 			ssid,
-			station.Vendor,
+			/* station.Vendor, */
 			encryption,
 			strconv.Itoa(mhz2chan(station.Frequency)),
 			clients,
@@ -254,10 +254,10 @@ func (w *WiFiRecon) Show(by string) error {
 	}
 	nrows := len(rows)
 
-	columns := []string{"RSSI", "BSSID", "SSID", "Vendor", "Encryption", "Channel", "Clients", "Sent", "Recvd", "Last Seen"}
+	columns := []string{"RSSI", "BSSID", "SSID" /* "Vendor", */, "Encryption", "Channel", "Clients", "Sent", "Recvd", "Last Seen"}
 	if apSelected {
 		// these are clients
-		columns = []string{"RSSI", "MAC", "Vendor", "Channel", "Sent", "Received", "Last Seen"}
+		columns = []string{"RSSI", "MAC" /* "Vendor", */, "Channel", "Sent", "Received", "Last Seen"}
 
 		if nrows == 0 {
 			fmt.Printf("\nNo authenticated clients detected for %s.\n", w.ap.HwAddress)
