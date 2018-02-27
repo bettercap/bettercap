@@ -71,8 +71,10 @@ func (d *BLERecon) Show() error {
 	return nil
 }
 
-func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool) {
+func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool, isWritable bool, withResponse bool) {
 	isReadable = false
+	isWritable = false
+	withResponse = false
 	props = make([]string, 0)
 	mask := ch.Properties()
 
@@ -85,6 +87,8 @@ func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool) 
 	}
 	if (mask&gatt.CharWriteNR) != 0 || (mask&gatt.CharWrite) != 0 {
 		props = append(props, core.Bold("write"))
+		isWritable = true
+		withResponse = (mask & gatt.CharWriteNR) == 0
 	}
 	if (mask & gatt.CharNotify) != 0 {
 		props = append(props, "notify")
@@ -94,6 +98,8 @@ func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool) 
 	}
 	if (mask & gatt.CharSignedWrite) != 0 {
 		props = append(props, core.Yellow("*write"))
+		isWritable = true
+		withResponse = true
 	}
 	if (mask & gatt.CharExtended) != 0 {
 		props = append(props, "x")
@@ -120,6 +126,9 @@ func parseRawData(raw []byte) string {
 func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 	columns := []string{"Handles", "Service > Characteristics", "Properties", "Data"}
 	rows := make([][]string, 0)
+
+	wantsToWrite := d.writeUUID != nil
+	foundToWrite := false
 
 	for _, svc := range services {
 		d.Session.Events.Add("ble.device.service.discovered", svc)
@@ -156,7 +165,21 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 				name = fmt.Sprintf("    %s (%s)", core.Green(name), core.Dim(ch.UUID().String()))
 			}
 
-			props, isReadable := parseProperties(ch)
+			props, isReadable, isWritable, withResponse := parseProperties(ch)
+
+			if wantsToWrite && d.writeUUID.Equal(ch.UUID()) == true {
+				foundToWrite = true
+				if isWritable {
+					log.Info("Writing %d bytes to characteristics %s ...", len(d.writeData), d.writeUUID)
+				} else {
+					log.Warning("Attempt to write %d bytes to non writable characteristics %s ...", len(d.writeData), d.writeUUID)
+				}
+
+				err := p.WriteCharacteristic(ch, d.writeData, !withResponse)
+				if err != nil {
+					log.Error("Error while writing: %s", err)
+				}
+			}
 
 			data := ""
 			if isReadable {
@@ -179,6 +202,10 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 		}
 	}
 
-	core.AsTable(os.Stdout, columns, rows)
-	d.Session.Refresh()
+	if wantsToWrite && foundToWrite == false {
+		log.Error("Writable characteristics %s not found.", d.writeUUID)
+	} else {
+		core.AsTable(os.Stdout, columns, rows)
+		d.Session.Refresh()
+	}
 }

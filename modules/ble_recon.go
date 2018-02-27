@@ -3,6 +3,7 @@
 package modules
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	golog "log"
@@ -15,10 +16,16 @@ import (
 	"github.com/currantlabs/gatt"
 )
 
+const (
+	macRegexp = "([a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2})"
+)
+
 type BLERecon struct {
 	session.SessionModule
 	gattDevice  gatt.Device
 	currDevice  *network.BLEDevice
+	writeUUID   *gatt.UUID
+	writeData   []byte
 	connected   bool
 	connTimeout time.Duration
 	quit        chan bool
@@ -54,14 +61,33 @@ func NewBLERecon(s *session.Session) *BLERecon {
 			return d.Show()
 		}))
 
-	d.AddHandler(session.NewModuleHandler("ble.enum MAC", "ble.enum ([a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2})",
+	d.AddHandler(session.NewModuleHandler("ble.enum MAC", "ble.enum "+macRegexp,
 		"Enumerate services and characteristics for the given BLE device.",
 		func(args []string) error {
 			if d.isEnumerating() == true {
 				return fmt.Errorf("An enumeration for %s is already running, please wait.", d.currDevice.Device.ID())
 			}
 
+			d.writeData = nil
+			d.writeUUID = nil
+
 			return d.enumAllTheThings(network.NormalizeMac(args[0]))
+		}))
+
+	d.AddHandler(session.NewModuleHandler("ble.write MAC UUID HEX_DATA", "ble.write "+macRegexp+" ([a-fA-F0-9]+) ([a-fA-F0-9]+)",
+		"Write the HEX_DATA buffer to the BLE device with the specified MAC address, to the characteristics with the given UUID.",
+		func(args []string) error {
+			mac := network.NormalizeMac(args[0])
+			uuid, err := gatt.ParseUUID(args[1])
+			if err != nil {
+				return fmt.Errorf("Error parsing %s: %s", args[1], err)
+			}
+			data, err := hex.DecodeString(args[2])
+			if err != nil {
+				return fmt.Errorf("Error parsing %s: %s", args[2], err)
+			}
+
+			return d.writeBuffer(mac, uuid, data)
 		}))
 
 	return d
@@ -137,6 +163,12 @@ func (d *BLERecon) Start() error {
 
 		d.done <- true
 	})
+}
+
+func (d *BLERecon) writeBuffer(mac string, uuid gatt.UUID, data []byte) error {
+	d.writeUUID = &uuid
+	d.writeData = data
+	return d.enumAllTheThings(mac)
 }
 
 func (d *BLERecon) enumAllTheThings(mac string) error {
