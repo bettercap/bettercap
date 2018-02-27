@@ -19,7 +19,7 @@ func NewTicker(s *session.Session) *Ticker {
 	}
 
 	t.AddParam(session.NewStringParameter("ticker.commands",
-		"clear; net.show",
+		"clear; net.show; events.show 20",
 		"",
 		"List of commands separated by a ;"))
 

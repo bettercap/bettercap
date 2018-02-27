@@ -168,27 +168,6 @@ func (d *Discovery) Show(by string) error {
 		d.Session.Queue.Stats.Errors)
 	d.Session.Queue.Stats.RUnlock()
 
-	s := EventsStream{}
-	events := d.Session.Events.Sorted()
-	size := len(events)
-
-	if size > 0 {
-		max := 20
-		if size > max {
-			from := size - max
-			size = max
-			events = events[from:]
-		}
-
-		fmt.Printf("Last %d events:\n\n", size)
-
-		for _, e := range events {
-			s.View(e, false)
-		}
-
-		fmt.Println()
-	}
-
 	d.Session.Refresh()
 
 	return nil

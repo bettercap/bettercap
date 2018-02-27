@@ -156,6 +156,8 @@ func (s *EventsStream) Show(limit int) error {
 		from = num - limit
 	}
 
+	fmt.Println()
+
 	for _, e := range events[from:num] {
 		s.View(e, false)
 	}
