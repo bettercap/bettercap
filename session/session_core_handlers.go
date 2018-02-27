@@ -10,7 +10,7 @@ import (
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/network"
 
-	"github.com/evilsocket/readline"
+	"github.com/bettercap/readline"
 )
 
 func (s *Session) helpHandler(args []string, sess *Session) error {

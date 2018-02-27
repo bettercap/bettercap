@@ -15,7 +15,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/evilsocket/readline"
+	"github.com/bettercap/readline"
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/firewall"
