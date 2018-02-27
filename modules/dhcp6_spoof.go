@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/bettercap/bettercap/core"
@@ -30,12 +31,14 @@ type DHCP6Spoofer struct {
 	DUIDRaw    []byte
 	Domains    []string
 	RawDomains []byte
+	waitGroup  *sync.WaitGroup
 }
 
 func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
 	spoof := &DHCP6Spoofer{
 		SessionModule: session.NewSessionModule("dhcp6.spoof", s),
 		Handle:        nil,
+		waitGroup:     &sync.WaitGroup{},
 	}
 
 	spoof.AddParam(session.NewStringParameter("dhcp6.spoof.domains",
@@ -359,6 +362,9 @@ func (s *DHCP6Spoofer) Start() error {
 	return s.SetRunning(true, func() {
 		defer s.Handle.Close()
 
+		s.waitGroup.Add(1)
+		defer s.waitGroup.Done()
+
 		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
 		for packet := range src.Packets() {
 			if s.Running() == false {
@@ -373,5 +379,6 @@ func (s *DHCP6Spoofer) Start() error {
 func (s *DHCP6Spoofer) Stop() error {
 	return s.SetRunning(false, func() {
 		s.Handle.Close()
+		s.waitGroup.Wait()
 	})
 }

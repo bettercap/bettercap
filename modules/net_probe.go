@@ -14,12 +14,14 @@ import (
 
 type Prober struct {
 	session.SessionModule
-	throttle int
+	throttle  int
+	waitGroup *sync.WaitGroup
 }
 
 func NewProber(s *session.Session) *Prober {
 	p := &Prober{
 		SessionModule: session.NewSessionModule("net.probe", s),
+		waitGroup:     &sync.WaitGroup{},
 	}
 
 	p.AddParam(session.NewIntParameter("net.probe.throttle",
@@ -81,6 +83,9 @@ func (p *Prober) Start() error {
 	}
 
 	return p.SetRunning(true, func() {
+		p.waitGroup.Add(1)
+		defer p.waitGroup.Done()
+
 		if p.Session.Interface.IpAddress == network.MonitorModeAddress {
 			log.Info("Interface is in monitor mode, skipping net.probe")
 			return
@@ -98,7 +103,9 @@ func (p *Prober) Start() error {
 
 		for p.Running() {
 			for _, ip := range addresses {
-				if p.Session.Skip(ip) == true {
+				if p.Running() == false {
+					return
+				} else if p.Session.Skip(ip) == true {
 					log.Debug("Skipping address %s from UDP probing.", ip)
 					continue
 				}
@@ -114,5 +121,7 @@ func (p *Prober) Start() error {
 }
 
 func (p *Prober) Stop() error {
-	return p.SetRunning(false, nil)
+	return p.SetRunning(false, func() {
+		p.waitGroup.Wait()
+	})
 }

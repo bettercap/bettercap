@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
@@ -18,10 +19,11 @@ import (
 
 type DNSSpoofer struct {
 	session.SessionModule
-	Handle  *pcap.Handle
-	Domains []string
-	Address net.IP
-	All     bool
+	Handle    *pcap.Handle
+	Domains   []string
+	Address   net.IP
+	All       bool
+	waitGroup *sync.WaitGroup
 }
 
 func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
@@ -29,6 +31,7 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		SessionModule: session.NewSessionModule("dns.spoof", s),
 		Handle:        nil,
 		All:           false,
+		waitGroup:     &sync.WaitGroup{},
 	}
 
 	spoof.AddParam(session.NewStringParameter("dns.spoof.domains",
@@ -267,6 +270,9 @@ func (s *DNSSpoofer) Start() error {
 	}
 
 	return s.SetRunning(true, func() {
+		s.waitGroup.Add(1)
+		defer s.waitGroup.Done()
+
 		defer s.Handle.Close()
 
 		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
@@ -283,5 +289,6 @@ func (s *DNSSpoofer) Start() error {
 func (s *DNSSpoofer) Stop() error {
 	return s.SetRunning(false, func() {
 		s.Handle.Close()
+		s.waitGroup.Wait()
 	})
 }

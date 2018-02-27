@@ -5,6 +5,7 @@ import (
 	"net"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/bettercap/bettercap/log"
@@ -20,19 +21,19 @@ var macParser = regexp.MustCompile(`([a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-
 
 type ArpSpoofer struct {
 	session.SessionModule
-	done      chan bool
 	addresses []net.IP
 	macs      []net.HardwareAddr
 	ban       bool
+	waitGroup *sync.WaitGroup
 }
 
 func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 	p := &ArpSpoofer{
 		SessionModule: session.NewSessionModule("arp.spoof", s),
-		done:          make(chan bool),
 		addresses:     make([]net.IP, 0),
 		macs:          make([]net.HardwareAddr, 0),
 		ban:           false,
+		waitGroup:     &sync.WaitGroup{},
 	}
 
 	p.AddParam(session.NewStringParameter("arp.spoof.targets", session.ParamSubnet, "", "IP or MAC addresses to spoof, also supports nmap style IP ranges."))
@@ -78,6 +79,9 @@ func (p ArpSpoofer) Author() string {
 }
 
 func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running bool, probe bool) {
+	p.waitGroup.Add(1)
+	defer p.waitGroup.Done()
+
 	targets := make(map[string]net.HardwareAddr, 0)
 
 	for _, ip := range p.addresses {
@@ -198,20 +202,21 @@ func (p *ArpSpoofer) Start() error {
 
 		log.Info("ARP spoofer started, probing %d targets.", len(p.addresses)+len(p.macs))
 
+		p.waitGroup.Add(1)
+		defer p.waitGroup.Done()
+
 		for p.Running() {
 			p.sendArp(from, from_hw, true, false)
 			time.Sleep(1 * time.Second)
 		}
-
-		p.done <- true
 	})
 }
 
 func (p *ArpSpoofer) Stop() error {
 	return p.SetRunning(false, func() {
 		log.Info("Waiting for ARP spoofer to stop ...")
-		<-p.done
 		p.unSpoof()
 		p.ban = false
+		p.waitGroup.Wait()
 	})
 }

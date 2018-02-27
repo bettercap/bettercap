@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/bettercap/bettercap/core"
@@ -41,6 +42,7 @@ type WiFiRecon struct {
 	ap          *network.AccessPoint
 	stickChan   int
 	skipBroken  bool
+	waitGroup   *sync.WaitGroup
 }
 
 func NewWiFiRecon(s *session.Session) *WiFiRecon {
@@ -51,6 +53,7 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 		hopPeriod:     250 * time.Millisecond,
 		ap:            nil,
 		skipBroken:    true,
+		waitGroup:     &sync.WaitGroup{},
 	}
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon on", "",
@@ -343,7 +346,7 @@ func (w *WiFiRecon) injectPacket(data []byte) {
 }
 
 func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
-	for seq := uint16(0); seq < 64; seq++ {
+	for seq := uint16(0); seq < 64 && w.Running(); seq++ {
 		if err, pkt := packets.NewDot11Deauth(ap, client, ap, seq); err != nil {
 			log.Error("Could not create deauth packet: %s", err)
 			continue
@@ -385,6 +388,9 @@ func (w *WiFiRecon) startDeauth(to net.HardwareAddr) error {
 		defer w.handle.Close()
 	}
 
+	w.waitGroup.Add(1)
+	defer w.waitGroup.Done()
+
 	bssid := to.String()
 
 	// are we deauthing every client of a given access point?
@@ -393,6 +399,9 @@ func (w *WiFiRecon) startDeauth(to net.HardwareAddr) error {
 		log.Info("Deauthing %d clients from AP %s ...", len(clients), ap.ESSID())
 		w.onChannel(mhz2chan(ap.Frequency), func() {
 			for _, c := range clients {
+				if w.Running() == false {
+					break
+				}
 				w.sendDeauthPacket(ap.HW, c.HW)
 			}
 		})
@@ -403,7 +412,9 @@ func (w *WiFiRecon) startDeauth(to net.HardwareAddr) error {
 	// search for a client
 	aps := w.Session.WiFi.List()
 	for _, ap := range aps {
-		if c, found := ap.Get(bssid); found == true {
+		if w.Running() == false {
+			break
+		} else if c, found := ap.Get(bssid); found == true {
 			log.Info("Deauthing client %s from AP %s ...", c.HwAddress, ap.ESSID())
 			w.onChannel(mhz2chan(ap.Frequency), func() {
 				w.sendDeauthPacket(ap.HW, c.HW)
@@ -518,6 +529,9 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 }
 
 func (w *WiFiRecon) channelHopper() {
+	w.waitGroup.Add(1)
+	defer w.waitGroup.Done()
+
 	log.Info("Channel hopper started.")
 	for w.Running() == true {
 		delay := w.hopPeriod
@@ -549,6 +563,9 @@ func (w *WiFiRecon) channelHopper() {
 }
 
 func (w *WiFiRecon) stationPruner() {
+	w.waitGroup.Add(1)
+	defer w.waitGroup.Done()
+
 	log.Debug("WiFi stations pruner started.")
 	for w.Running() == true {
 		for _, s := range w.Session.WiFi.List() {
@@ -589,6 +606,9 @@ func (w *WiFiRecon) Start() error {
 		// start the pruner
 		go w.stationPruner()
 
+		w.waitGroup.Add(1)
+		defer w.waitGroup.Done()
+
 		defer w.handle.Close()
 		src := gopacket.NewPacketSource(w.handle, w.handle.LinkType())
 		for packet := range src.Packets() {
@@ -618,5 +638,7 @@ func (w *WiFiRecon) Start() error {
 }
 
 func (w *WiFiRecon) Stop() error {
-	return w.SetRunning(false, nil)
+	return w.SetRunning(false, func() {
+		w.waitGroup.Wait()
+	})
 }

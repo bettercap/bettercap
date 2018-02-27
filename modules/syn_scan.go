@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/bettercap/bettercap/core"
@@ -25,6 +26,7 @@ type SynScanner struct {
 	addresses []net.IP
 	startPort int
 	endPort   int
+	waitGroup *sync.WaitGroup
 }
 
 func NewSynScanner(s *session.Session) *SynScanner {
@@ -33,6 +35,7 @@ func NewSynScanner(s *session.Session) *SynScanner {
 		addresses:     make([]net.IP, 0),
 		startPort:     0,
 		endPort:       0,
+		waitGroup:     &sync.WaitGroup{},
 	}
 
 	ss.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE START-PORT END-PORT", "syn.scan ([^\\s]+) (\\d+)([\\s\\d]*)",
@@ -97,10 +100,6 @@ func (s *SynScanner) Start() error {
 	return nil
 }
 
-func (s *SynScanner) Stop() error {
-	return nil
-}
-
 func (s *SynScanner) inRange(ip net.IP) bool {
 	for _, a := range s.addresses {
 		if a.Equal(ip) {
@@ -154,6 +153,9 @@ func (s *SynScanner) synScan() error {
 	s.SetRunning(true, func() {
 		defer s.SetRunning(false, nil)
 
+		s.waitGroup.Add(1)
+		defer s.waitGroup.Done()
+
 		naddrs := len(s.addresses)
 		plural := "es"
 		if naddrs == 1 {
@@ -172,6 +174,9 @@ func (s *SynScanner) synScan() error {
 
 		// start sending SYN packets and wait
 		for _, address := range s.addresses {
+			if s.Running() == false {
+				break
+			}
 			mac, err := findMAC(s.Session, address, true)
 			if err != nil {
 				log.Debug("Could not get MAC for %s: %s", address.String(), err)
@@ -179,6 +184,10 @@ func (s *SynScanner) synScan() error {
 			}
 
 			for dstPort := s.startPort; dstPort < s.endPort+1; dstPort++ {
+				if s.Running() == false {
+					break
+				}
+
 				err, raw := packets.NewTCPSyn(s.Session.Interface.IP, s.Session.Interface.HW, address, mac, synSourcePort, dstPort)
 				if err != nil {
 					log.Error("Error creating SYN packet: %s", err)
@@ -198,4 +207,10 @@ func (s *SynScanner) synScan() error {
 	})
 
 	return nil
+}
+
+func (s *SynScanner) Stop() error {
+	return s.SetRunning(false, func() {
+		s.waitGroup.Wait()
+	})
 }
