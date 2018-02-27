@@ -1,8 +1,21 @@
+// +build windows darwin
+
 package network
 
 import (
 	"encoding/json"
+	"time"
 )
+
+type BLEDevice struct {
+	LastSeen time.Time
+}
+
+func NewBLEDevice() *BLEDevice {
+	return &BLEDevice{
+		LastSeen: time.Now(),
+	}
+}
 
 type BLEDevNewCallback func(dev *BLEDevice)
 type BLEDevLostCallback func(dev *BLEDevice)

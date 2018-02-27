@@ -1,3 +1,5 @@
+// +build windows darwin
+
 package modules
 
 import (
@@ -10,6 +12,17 @@ type BLERecon struct {
 	session.SessionModule
 }
 
+/*
+// darwin
+
+var defaultBLEClientOptions = []gatt.Option{
+	gatt.MacDeviceRole(gatt.CentralManager),
+}
+
+var defaultBLEServerOptions = []gatt.Option{
+	gatt.MacDeviceRole(gatt.PeripheralManager),
+}
+*/
 func NewBLERecon(s *session.Session) *BLERecon {
 	d := &BLERecon{
 		SessionModule: session.NewSessionModule("ble.recon", s),
@@ -43,13 +56,13 @@ func (d BLERecon) Author() string {
 }
 
 func (d *BLERecon) Configure() (err error) {
-	return fmt.Errorf("ble.recon is not supported on Windows")
+	return fmt.Errorf("ble.recon is not supported on Windows and macOS")
 }
 
 func (d *BLERecon) Start() error {
-	return fmt.Errorf("ble.recon is not supported on Windows")
+	return fmt.Errorf("ble.recon is not supported on Windows and macOS")
 }
 
 func (d *BLERecon) Stop() error {
-	return fmt.Errorf("ble.recon is not supported on Windows")
+	return fmt.Errorf("ble.recon is not supported on Windows and macOS")
 }
