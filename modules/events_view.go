@@ -29,14 +29,19 @@ func (s EventsStream) viewWiFiEvent(e session.Event) {
 		if ap.Vendor != "" {
 			vend = fmt.Sprintf(" (%s)", ap.Vendor)
 		}
+		rssi := ""
+		if ap.RSSI != 0 {
+			rssi = fmt.Sprintf(" (%d dBm)", ap.RSSI)
+		}
 
 		if e.Tag == "wifi.ap.new" {
-			fmt.Printf("[%s] [%s] WiFi access point %s detected as %s%s.\n",
+			fmt.Printf("[%s] [%s] WiFi access point %s%s detected as %s%s.\n",
 				e.Time.Format(eventTimeFormat),
 				core.Green(e.Tag),
 				core.Bold(ap.ESSID()),
+				core.Dim(core.Yellow(rssi)),
 				core.Green(ap.BSSID()),
-				vend)
+				core.Dim(vend))
 		} else if e.Tag == "wifi.ap.lost" {
 			fmt.Printf("[%s] [%s] WiFi access point %s (%s) lost.\n",
 				e.Time.Format(eventTimeFormat),
@@ -51,11 +56,24 @@ func (s EventsStream) viewWiFiEvent(e session.Event) {
 		}
 	} else if e.Tag == "wifi.client.probe" {
 		probe := e.Data.(WiFiProbe)
-		fmt.Printf("[%s] [%s] Station %s is probing for SSID %s\n",
+		desc := ""
+		if probe.FromAlias != "" {
+			desc = fmt.Sprintf(" (%s)", probe.FromAlias)
+		} else if probe.FromVendor != "" {
+			desc = fmt.Sprintf(" (%s)", probe.FromVendor)
+		}
+		rssi := ""
+		if probe.RSSI != 0 {
+			rssi = fmt.Sprintf(" (%d dBm)", probe.RSSI)
+		}
+
+		fmt.Printf("[%s] [%s] Station %s%s is probing for SSID %s%s\n",
 			e.Time.Format(eventTimeFormat),
 			core.Green(e.Tag),
-			probe.From.String(),
-			core.Bold(probe.SSID))
+			probe.FromAddr.String(),
+			core.Dim(desc),
+			core.Bold(probe.SSID),
+			core.Yellow(rssi))
 	}
 }
 
@@ -87,7 +105,7 @@ func (s EventsStream) viewEndpointEvent(e session.Event) {
 			e.Time.Format(eventTimeFormat),
 			core.Green(e.Tag),
 			core.Red(t.IpAddress),
-			name)
+			core.Dim(vend))
 	} else {
 		fmt.Printf("[%s] [%s] %s\n",
 			e.Time.Format(eventTimeFormat),

@@ -85,10 +85,11 @@ func (s *Session) helpHandler(args []string, sess *Session) error {
 		for _, h := range handlers {
 			fmt.Printf(h.Help(maxLen))
 		}
+		fmt.Println()
 
 		params := m.Parameters()
 		if len(params) > 0 {
-			fmt.Printf("\n  Parameters\n\n")
+			fmt.Printf("  Parameters\n\n")
 			maxLen := 0
 			for _, h := range params {
 				len := len(h.Name)
