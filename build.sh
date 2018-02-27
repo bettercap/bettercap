@@ -152,13 +152,13 @@ build_android_arm() {
     OUTPUT=$1
 
     echo "@ Updating repo on Android host ..."
-    ssh -p 8022 root@shield "cd $DIR && rm bettercap && git pull" > /dev/null
+    ssh -p 8022 root@shield "cd "$DIR" && rm -rf bettercap* && git pull && go get ./..."
 
     echo "@ Building $OUTPUT ..."
-    ssh -p 8022 root@shield "cd $DIR && go build  -o $OUTPUT ." > /dev/null
+    ssh -p 8022 root@shield "cd $DIR && go build  -o $OUTPUT ."
 
     echo "@ Downloading $OUTPUT ..."
-    scp -C -P 8022 root@shield:$DIR/$OUTPUT . > /dev/null
+    scp -C -P 8022 root@shield:$DIR/$OUTPUT . 
 }
 
 rm -rf $BUILD_FOLDER
