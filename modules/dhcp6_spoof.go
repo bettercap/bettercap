@@ -26,12 +26,13 @@ import (
 
 type DHCP6Spoofer struct {
 	session.SessionModule
-	Handle     *pcap.Handle
-	DUID       *dhcp6opts.DUIDLLT
-	DUIDRaw    []byte
-	Domains    []string
-	RawDomains []byte
-	waitGroup  *sync.WaitGroup
+	Handle        *pcap.Handle
+	DUID          *dhcp6opts.DUIDLLT
+	DUIDRaw       []byte
+	Domains       []string
+	RawDomains    []byte
+	waitGroup     *sync.WaitGroup
+	pktSourceChan chan gopacket.Packet
 }
 
 func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
@@ -360,13 +361,12 @@ func (s *DHCP6Spoofer) Start() error {
 	}
 
 	return s.SetRunning(true, func() {
-		defer s.Handle.Close()
-
 		s.waitGroup.Add(1)
 		defer s.waitGroup.Done()
 
 		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
-		for packet := range src.Packets() {
+		s.pktSourceChan = src.Packets()
+		for packet := range s.pktSourceChan {
 			if s.Running() == false {
 				break
 			}
@@ -378,6 +378,7 @@ func (s *DHCP6Spoofer) Start() error {
 
 func (s *DHCP6Spoofer) Stop() error {
 	return s.SetRunning(false, func() {
+		s.pktSourceChan <- nil
 		s.Handle.Close()
 		s.waitGroup.Wait()
 	})

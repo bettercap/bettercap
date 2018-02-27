@@ -19,11 +19,12 @@ import (
 
 type DNSSpoofer struct {
 	session.SessionModule
-	Handle    *pcap.Handle
-	Domains   []string
-	Address   net.IP
-	All       bool
-	waitGroup *sync.WaitGroup
+	Handle        *pcap.Handle
+	Domains       []string
+	Address       net.IP
+	All           bool
+	waitGroup     *sync.WaitGroup
+	pktSourceChan chan gopacket.Packet
 }
 
 func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
@@ -273,10 +274,9 @@ func (s *DNSSpoofer) Start() error {
 		s.waitGroup.Add(1)
 		defer s.waitGroup.Done()
 
-		defer s.Handle.Close()
-
 		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
-		for packet := range src.Packets() {
+		s.pktSourceChan = src.Packets()
+		for packet := range s.pktSourceChan {
 			if s.Running() == false {
 				break
 			}
@@ -288,6 +288,7 @@ func (s *DNSSpoofer) Start() error {
 
 func (s *DNSSpoofer) Stop() error {
 	return s.SetRunning(false, func() {
+		s.pktSourceChan <- nil
 		s.Handle.Close()
 		s.waitGroup.Wait()
 	})

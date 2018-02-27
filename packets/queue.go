@@ -44,11 +44,13 @@ type Queue struct {
 	Protos  map[string]uint64
 	Traffic map[string]*Traffic
 
-	iface  *network.Endpoint
-	handle *pcap.Handle
-	source *gopacket.PacketSource
-	pktCb  PacketCallback
-	active bool
+	iface      *network.Endpoint
+	handle     *pcap.Handle
+	source     *gopacket.PacketSource
+	srcChannel chan gopacket.Packet
+	writes     *sync.WaitGroup
+	pktCb      PacketCallback
+	active     bool
 }
 
 func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
@@ -57,6 +59,7 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 		Traffic:    make(map[string]*Traffic),
 		Activities: make(chan Activity),
 
+		writes: &sync.WaitGroup{},
 		iface:  iface,
 		active: !iface.IsMonitor(),
 		pktCb:  nil,
@@ -68,6 +71,7 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 		}
 
 		q.source = gopacket.NewPacketSource(q.handle, q.handle.LinkType())
+		q.srcChannel = q.source.Packets()
 		go q.worker()
 	}
 
@@ -138,7 +142,7 @@ func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address ne
 }
 
 func (q *Queue) worker() {
-	for pkt := range q.source.Packets() {
+	for pkt := range q.srcChannel {
 		if q.active == false {
 			return
 		}
@@ -192,6 +196,9 @@ func (q *Queue) Send(raw []byte) error {
 		return fmt.Errorf("Packet queue is not active.")
 	}
 
+	q.writes.Add(1)
+	defer q.writes.Done()
+
 	if err := q.handle.WritePacketData(raw); err != nil {
 		q.Stats.Lock()
 		q.Stats.Errors++
@@ -211,7 +218,11 @@ func (q *Queue) Stop() {
 	defer q.Unlock()
 
 	if q.active == true {
-		q.handle.Close()
+		// wait for write operations to be completed
+		q.writes.Wait()
+		// signal the main loop to exit and close the handle
 		q.active = false
+		q.srcChannel <- nil
+		q.handle.Close()
 	}
 }

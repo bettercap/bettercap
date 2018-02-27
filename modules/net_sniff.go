@@ -14,8 +14,9 @@ import (
 
 type Sniffer struct {
 	session.SessionModule
-	Stats *SnifferStats
-	Ctx   *SnifferContext
+	Stats         *SnifferStats
+	Ctx           *SnifferContext
+	pktSourceChan chan gopacket.Packet
 }
 
 func NewSniffer(s *session.Session) *Sniffer {
@@ -148,7 +149,8 @@ func (s *Sniffer) Start() error {
 		s.Stats = NewSnifferStats()
 
 		src := gopacket.NewPacketSource(s.Ctx.Handle, s.Ctx.Handle.LinkType())
-		for packet := range src.Packets() {
+		s.pktSourceChan = src.Packets()
+		for packet := range s.pktSourceChan {
 			if s.Running() == false {
 				break
 			}
@@ -183,6 +185,7 @@ func (s *Sniffer) Start() error {
 
 func (s *Sniffer) Stop() error {
 	return s.SetRunning(false, func() {
+		s.pktSourceChan <- nil
 		s.Ctx.Close()
 	})
 }
