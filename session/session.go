@@ -187,7 +187,11 @@ func (s *Session) setupReadline() error {
 				tree[name] = []string{}
 			}
 
-			tree[name] = append(tree[name], parts[1:]...)
+			var appendedOption = strings.Join(parts[1:], " ")
+
+			if len(appendedOption) > 0 {
+				tree[name] = append(tree[name], appendedOption)
+			}
 		}
 	}
 
