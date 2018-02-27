@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
@@ -12,6 +13,8 @@ import (
 type EventsStream struct {
 	session.SessionModule
 	ignoreList *IgnoreList
+	waitFor    string
+	waitChan   chan *session.Event
 	quit       chan bool
 }
 
@@ -19,6 +22,8 @@ func NewEventsStream(s *session.Session) *EventsStream {
 	stream := &EventsStream{
 		SessionModule: session.NewSessionModule("events.stream", s),
 		quit:          make(chan bool),
+		waitChan:      make(chan *session.Event),
+		waitFor:       "",
 		ignoreList:    NewIgnoreList(),
 	}
 
@@ -43,6 +48,24 @@ func NewEventsStream(s *session.Session) *EventsStream {
 				limit, _ = strconv.Atoi(arg)
 			}
 			return stream.Show(limit)
+		}))
+
+	stream.AddHandler(session.NewModuleHandler("events.waitfor TAG TIMEOUT?", `events.waitfor ([^\s]+)([\s\d]*)`,
+		"Show events stream.",
+		func(args []string) error {
+			tag := args[0]
+			timeout := 0
+			if len(args) == 2 {
+				t := core.Trim(args[1])
+				if t != "" {
+					n, err := strconv.Atoi(t)
+					if err != nil {
+						return err
+					}
+					timeout = n
+				}
+			}
+			return stream.startWaitingFor(tag, timeout)
 		}))
 
 	stream.AddHandler(session.NewModuleHandler("events.ignore FILTER", "events.ignore ([^\\s]+)",
@@ -105,6 +128,11 @@ func (s *EventsStream) Start() error {
 			var e session.Event
 			select {
 			case e = <-s.Session.Events.NewEvents:
+				if e.Tag == s.waitFor {
+					s.waitFor = ""
+					s.waitChan <- &e
+				}
+
 				if s.ignoreList.Ignored(e) == false {
 					s.View(e, true)
 				} else {
@@ -133,6 +161,30 @@ func (s *EventsStream) Show(limit int) error {
 	}
 
 	s.Session.Refresh()
+
+	return nil
+}
+
+func (s *EventsStream) startWaitingFor(tag string, timeout int) error {
+	if timeout == 0 {
+		log.Info("Waiting for event %s ...", core.Green(tag))
+	} else {
+		log.Info("Waiting for event %s for %d seconds ...", core.Green(tag), timeout)
+		go func() {
+			time.Sleep(time.Duration(timeout) * time.Second)
+			s.waitFor = ""
+			s.waitChan <- nil
+		}()
+	}
+
+	s.waitFor = tag
+	event := <-s.waitChan
+
+	if event == nil {
+		return fmt.Errorf("'events.waitFor %s %d' timed out.", tag, timeout)
+	} else {
+		log.Debug("Got event: %v", event)
+	}
 
 	return nil
 }
