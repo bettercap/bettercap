@@ -6,23 +6,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	golog "log"
-	"os"
-	"sort"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/currantlabs/gatt"
-)
-
-var (
-	bleAliveInterval   = time.Duration(5) * time.Second
-	blePresentInterval = time.Duration(30) * time.Second
 )
 
 type BLERecon struct {
@@ -32,6 +22,7 @@ type BLERecon struct {
 	connected   bool
 	connTimeout time.Duration
 	quit        chan bool
+	done        chan bool
 }
 
 func NewBLERecon(s *session.Session) *BLERecon {
@@ -39,6 +30,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 		SessionModule: session.NewSessionModule("ble.recon", s),
 		gattDevice:    nil,
 		quit:          make(chan bool),
+		done:          make(chan bool),
 		connTimeout:   time.Duration(10) * time.Second,
 		currDevice:    nil,
 		connected:     false,
@@ -69,7 +61,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 				return fmt.Errorf("An enumeration for %s is already running, please wait.", d.currDevice.Device.ID())
 			}
 
-			return d.enumAll(network.NormalizeMac(args[0]))
+			return d.enumAllTheThings(network.NormalizeMac(args[0]))
 		}))
 
 	return d
@@ -93,6 +85,8 @@ func (d *BLERecon) isEnumerating() bool {
 
 func (d *BLERecon) Configure() (err error) {
 	if d.gattDevice == nil {
+		log.Info("Initializing BLE device ...")
+
 		// hey Paypal GATT library, could you please just STFU?!
 		golog.SetOutput(ioutil.Discard)
 		if d.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
@@ -104,25 +98,11 @@ func (d *BLERecon) Configure() (err error) {
 			gatt.PeripheralConnected(d.onPeriphConnected),
 			gatt.PeripheralDisconnected(d.onPeriphDisconnected),
 		)
+
 		d.gattDevice.Init(d.onStateChanged)
 	}
 
 	return nil
-}
-
-func (d *BLERecon) onStateChanged(dev gatt.Device, s gatt.State) {
-	switch s {
-	case gatt.StatePoweredOn:
-		log.Info("Starting BLE discovery ...")
-		dev.Scan([]gatt.UUID{}, true)
-		return
-	default:
-		log.Warning("Unexpected BLE state: %v", s)
-	}
-}
-
-func (d *BLERecon) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
-	d.Session.BLE.AddIfNew(p.ID(), p, a, rssi)
 }
 
 func (d *BLERecon) pruner() {
@@ -147,8 +127,6 @@ func (d *BLERecon) Start() error {
 	}
 
 	return d.SetRunning(true, func() {
-		log.Debug("Initializing BLE device ...")
-
 		go d.pruner()
 
 		<-d.quit
@@ -156,61 +134,68 @@ func (d *BLERecon) Start() error {
 		log.Info("Stopping BLE scan ...")
 
 		d.gattDevice.StopScanning()
+
+		d.done <- true
 	})
 }
 
-func (d *BLERecon) getRow(dev *network.BLEDevice) []string {
-	address := network.NormalizeMac(dev.Device.ID())
-	vendor := dev.Vendor
-	sinceSeen := time.Since(dev.LastSeen)
-	lastSeen := dev.LastSeen.Format("15:04:05")
-
-	if sinceSeen <= bleAliveInterval {
-		lastSeen = core.Bold(lastSeen)
-	} else if sinceSeen > blePresentInterval {
-		lastSeen = core.Dim(lastSeen)
-		address = core.Dim(address)
+func (d *BLERecon) enumAllTheThings(mac string) error {
+	dev, found := d.Session.BLE.Get(mac)
+	if found == false || dev == nil {
+		return fmt.Errorf("BLE device with address %s not found.", mac)
+	} else if d.Running() {
+		d.gattDevice.StopScanning()
 	}
 
-	isConnectable := core.Red("no")
-	if dev.Advertisement.Connectable == true {
-		isConnectable = core.Green("yes")
+	d.setCurrentDevice(dev)
+	if err := d.Configure(); err != nil {
+		return err
 	}
 
-	return []string{
-		fmt.Sprintf("%d dBm", dev.RSSI),
-		address,
-		dev.Device.Name(),
-		vendor,
-		isConnectable,
-		lastSeen,
-	}
+	log.Info("Connecting to %s ...", mac)
+
+	go func() {
+		time.Sleep(d.connTimeout)
+		if d.isEnumerating() && d.connected == false {
+			d.Session.Events.Add("ble.connection.timeout", d.currDevice)
+			d.onPeriphDisconnected(nil, nil)
+		}
+	}()
+
+	d.gattDevice.Connect(dev.Device)
+
+	return nil
 }
 
-func (d *BLERecon) Show() error {
-	devices := d.Session.BLE.Devices()
-
-	sort.Sort(ByBLERSSISorter(devices))
-
-	rows := make([][]string, 0)
-	for _, dev := range devices {
-		rows = append(rows, d.getRow(dev))
-	}
-	nrows := len(rows)
-
-	columns := []string{"RSSI", "Address", "Name", "Vendor", "Connectable", "Last Seen"}
-
-	if nrows > 0 {
-		core.AsTable(os.Stdout, columns, rows)
-	}
-
-	d.Session.Refresh()
-	return nil
+func (d *BLERecon) Stop() error {
+	return d.SetRunning(false, func() {
+		d.quit <- true
+		<-d.done
+	})
 }
 
 func (d *BLERecon) setCurrentDevice(dev *network.BLEDevice) {
 	d.connected = false
 	d.currDevice = dev
+}
+
+func (d *BLERecon) onStateChanged(dev gatt.Device, s gatt.State) {
+	switch s {
+	case gatt.StatePoweredOn:
+		if d.currDevice == nil {
+			log.Info("Starting BLE discovery ...")
+			dev.Scan([]gatt.UUID{}, true)
+		}
+	case gatt.StatePoweredOff:
+		d.gattDevice = nil
+
+	default:
+		log.Warning("Unexpected BLE state: %v", s)
+	}
+}
+
+func (d *BLERecon) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+	d.Session.BLE.AddIfNew(p.ID(), p, a, rssi)
 }
 
 func (d *BLERecon) onPeriphDisconnected(p gatt.Peripheral, err error) {
@@ -223,27 +208,26 @@ func (d *BLERecon) onPeriphDisconnected(p gatt.Peripheral, err error) {
 }
 
 func (d *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
-	defer func() {
-		log.Info("Disconnecting from %s ...", p.ID())
-		p.Device().CancelConnection(p)
-	}()
-
 	// timed out
 	if d.currDevice == nil {
-		log.Debug("Connected to %s but after the timeout :(", p.ID())
+		log.Warning("Connected to %s but after the timeout :(", p.ID())
 		return
 	}
 
 	d.connected = true
 
+	defer func(per gatt.Peripheral) {
+		log.Info("Disconnecting from %s ...", per.ID())
+		per.Device().CancelConnection(per)
+	}(p)
+
 	d.Session.Events.Add("ble.device.connected", d.currDevice)
 
-	/*
-		if err := p.SetMTU(500); err != nil {
-			log.Warning("Failed to set MTU: %s", err)
-		} */
+	if err := p.SetMTU(500); err != nil {
+		log.Warning("Failed to set MTU: %s", err)
+	}
 
-	log.Info("Enumerating all the things for %s!", p.ID())
+	log.Info("Connected, enumerating all the things for %s!", p.ID())
 	services, err := p.DiscoverServices(nil)
 	if err != nil {
 		log.Error("Error discovering services: %s", err)
@@ -251,154 +235,4 @@ func (d *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
 	}
 
 	d.showServices(p, services)
-}
-
-func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool) {
-	isReadable = false
-	props = make([]string, 0)
-	mask := ch.Properties()
-
-	if (mask & gatt.CharBroadcast) != 0 {
-		props = append(props, "bcast")
-	}
-	if (mask & gatt.CharRead) != 0 {
-		isReadable = true
-		props = append(props, "read")
-	}
-	if (mask&gatt.CharWriteNR) != 0 || (mask&gatt.CharWrite) != 0 {
-		props = append(props, core.Bold("write"))
-	}
-	if (mask & gatt.CharNotify) != 0 {
-		props = append(props, "notify")
-	}
-	if (mask & gatt.CharIndicate) != 0 {
-		props = append(props, "indicate")
-	}
-	if (mask & gatt.CharSignedWrite) != 0 {
-		props = append(props, core.Yellow("*write"))
-	}
-	if (mask & gatt.CharExtended) != 0 {
-		props = append(props, "x")
-	}
-
-	return
-}
-
-func parseRawData(raw []byte) string {
-	s := ""
-	for _, b := range raw {
-		if b != 00 && strconv.IsPrint(rune(b)) == false {
-			return fmt.Sprintf("%x", raw)
-		} else if b == 0 {
-			break
-		} else {
-			s += fmt.Sprintf("%c", b)
-		}
-	}
-
-	return core.Yellow(s)
-}
-
-func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
-	columns := []string{"Handles", "Service > Characteristics", "Properties", "Data"}
-	rows := make([][]string, 0)
-
-	for _, svc := range services {
-		d.Session.Events.Add("ble.device.service.discovered", svc)
-
-		name := svc.Name()
-		if name == "" {
-			name = svc.UUID().String()
-		} else {
-			name = fmt.Sprintf("%s (%s)", core.Green(name), core.Dim(svc.UUID().String()))
-		}
-
-		row := []string{
-			fmt.Sprintf("%04x -> %04x", svc.Handle(), svc.EndHandle()),
-			name,
-			"",
-			"",
-		}
-
-		rows = append(rows, row)
-
-		chars, err := p.DiscoverCharacteristics(nil, svc)
-		if err != nil {
-			log.Error("Error while enumerating chars for service %s: %s", svc.UUID(), err)
-			continue
-		}
-
-		for _, ch := range chars {
-			d.Session.Events.Add("ble.device.characteristic.discovered", ch)
-
-			name = ch.Name()
-			if name == "" {
-				name = "    " + ch.UUID().String()
-			} else {
-				name = fmt.Sprintf("    %s (%s)", core.Green(name), core.Dim(ch.UUID().String()))
-			}
-
-			props, isReadable := parseProperties(ch)
-
-			data := ""
-			if isReadable {
-				raw, err := p.ReadCharacteristic(ch)
-				if err != nil {
-					data = core.Red(err.Error())
-				} else {
-					data = parseRawData(raw)
-				}
-			}
-
-			row := []string{
-				fmt.Sprintf("%04x", ch.Handle()),
-				name,
-				strings.Join(props, ", "),
-				data,
-			}
-
-			rows = append(rows, row)
-		}
-	}
-
-	core.AsTable(os.Stdout, columns, rows)
-	d.Session.Refresh()
-}
-
-func (d *BLERecon) enumAll(mac string) error {
-	dev, found := d.Session.BLE.Get(mac)
-	if found == false {
-		return fmt.Errorf("BLE device with address %s not found.", mac)
-	}
-
-	services := dev.Device.Services()
-	if len(services) > 0 {
-		d.showServices(dev.Device, services)
-	} else {
-		d.setCurrentDevice(dev)
-
-		log.Info("Connecting to %s ...", mac)
-
-		if d.Running() {
-			d.gattDevice.StopScanning()
-		}
-
-		go func() {
-			time.Sleep(d.connTimeout)
-			if d.currDevice != nil && d.connected == false {
-				d.Session.Events.Add("ble.connection.timeout", d.currDevice)
-				d.onPeriphDisconnected(nil, nil)
-			}
-		}()
-
-		d.gattDevice.Connect(dev.Device)
-	}
-
-	return nil
-}
-
-func (d *BLERecon) Stop() error {
-	return d.SetRunning(false, func() {
-		d.quit <- true
-	})
 }

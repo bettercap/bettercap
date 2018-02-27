@@ -6,12 +6,12 @@ import (
 )
 
 var defaultBLEClientOptions = []gatt.Option{
-	gatt.LnxMaxConnections(1),
+	gatt.LnxMaxConnections(255),
 	gatt.LnxDeviceID(-1, true),
 }
 
 var defaultBLEServerOptions = []gatt.Option{
-	gatt.LnxMaxConnections(1),
+	gatt.LnxMaxConnections(255),
 	gatt.LnxDeviceID(-1, true),
 	gatt.LnxSetAdvertisingParameters(&cmd.LESetAdvertisingParameters{
 		AdvertisingIntervalMin: 0x00f4,
