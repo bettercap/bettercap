@@ -35,14 +35,16 @@ type WiFiProbe struct {
 type WiFiRecon struct {
 	session.SessionModule
 
-	handle      *pcap.Handle
-	channel     int
-	hopPeriod   time.Duration
-	frequencies []int
-	ap          *network.AccessPoint
-	stickChan   int
-	skipBroken  bool
-	waitGroup   *sync.WaitGroup
+	handle        *pcap.Handle
+	channel       int
+	hopPeriod     time.Duration
+	frequencies   []int
+	ap            *network.AccessPoint
+	stickChan     int
+	skipBroken    bool
+	pktSourceChan chan gopacket.Packet
+	writes        *sync.WaitGroup
+	reads         *sync.WaitGroup
 }
 
 func NewWiFiRecon(s *session.Session) *WiFiRecon {
@@ -53,7 +55,8 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 		hopPeriod:     250 * time.Millisecond,
 		ap:            nil,
 		skipBroken:    true,
-		waitGroup:     &sync.WaitGroup{},
+		writes:        &sync.WaitGroup{},
+		reads:         &sync.WaitGroup{},
 	}
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon on", "",
@@ -388,8 +391,8 @@ func (w *WiFiRecon) startDeauth(to net.HardwareAddr) error {
 		defer w.handle.Close()
 	}
 
-	w.waitGroup.Add(1)
-	defer w.waitGroup.Done()
+	w.writes.Add(1)
+	defer w.writes.Done()
 
 	bssid := to.String()
 
@@ -529,8 +532,8 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 }
 
 func (w *WiFiRecon) channelHopper() {
-	w.waitGroup.Add(1)
-	defer w.waitGroup.Done()
+	w.reads.Add(1)
+	defer w.reads.Done()
 
 	log.Info("Channel hopper started.")
 	for w.Running() == true {
@@ -563,8 +566,8 @@ func (w *WiFiRecon) channelHopper() {
 }
 
 func (w *WiFiRecon) stationPruner() {
-	w.waitGroup.Add(1)
-	defer w.waitGroup.Done()
+	w.reads.Add(1)
+	defer w.reads.Done()
 
 	log.Debug("WiFi stations pruner started.")
 	for w.Running() == true {
@@ -575,7 +578,7 @@ func (w *WiFiRecon) stationPruner() {
 				w.Session.WiFi.Remove(s.BSSID())
 			}
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -606,14 +609,18 @@ func (w *WiFiRecon) Start() error {
 		// start the pruner
 		go w.stationPruner()
 
-		w.waitGroup.Add(1)
-		defer w.waitGroup.Done()
+		w.reads.Add(1)
+		defer w.reads.Done()
 
-		defer w.handle.Close()
 		src := gopacket.NewPacketSource(w.handle, w.handle.LinkType())
-		for packet := range src.Packets() {
+		w.pktSourceChan = src.Packets()
+		for packet := range w.pktSourceChan {
 			if w.Running() == false {
 				break
+			}
+
+			if packet == nil {
+				continue
 			}
 
 			w.trackPacket(packet)
@@ -639,6 +646,14 @@ func (w *WiFiRecon) Start() error {
 
 func (w *WiFiRecon) Stop() error {
 	return w.SetRunning(false, func() {
-		w.waitGroup.Wait()
+		// wait any pending write operation
+		w.writes.Wait()
+		// signal the main for loop we want to exit
+		w.pktSourceChan <- nil
+		// close the pcap handle to make the main for exit
+		w.handle.Close()
+		// close the pcap handle to make the main for exit
+		// wait for the loop to exit.
+		w.reads.Wait()
 	})
 }
