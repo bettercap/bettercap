@@ -125,11 +125,11 @@ func (lan *LAN) Remove(ip, mac string) {
 
 func (lan *LAN) shouldIgnore(ip, mac string) bool {
 	// skip our own address
-	if ip == lan.iface.IpAddress {
+	if ip == lan.iface.IpAddress || mac == lan.iface.HwAddress {
 		return true
 	}
 	// skip the gateway
-	if ip == lan.gateway.IpAddress {
+	if ip == lan.gateway.IpAddress || mac == lan.gateway.HwAddress {
 		return true
 	}
 	// skip broadcast addresses
