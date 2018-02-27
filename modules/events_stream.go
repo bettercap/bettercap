@@ -51,7 +51,7 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		}))
 
 	stream.AddHandler(session.NewModuleHandler("events.waitfor TAG TIMEOUT?", `events.waitfor ([^\s]+)([\s\d]*)`,
-		"Show events stream.",
+		"Wait for an event with the given tag either forever or for a timeout in seconds.",
 		func(args []string) error {
 			tag := args[0]
 			timeout := 0
