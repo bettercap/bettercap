@@ -9,6 +9,13 @@ WORKDIR $SRC_DIR
 
 RUN apk add --update ca-certificates
 RUN apk add --no-cache --update bash iptables build-base libpcap-dev
+
+# As Alpine Linux uses a different folder, we need this
+# ugly hack in order to compile gopacket statically
+# https://github.com/bettercap/bettercap/issues/106
+RUN mkdir -p /usr/lib/x86_64-linux-gnu/
+RUN cp /usr/lib/libpcap.a /usr/lib/x86_64-linux-gnu/libpcap.a
+
 RUN make deps
 RUN make
 
