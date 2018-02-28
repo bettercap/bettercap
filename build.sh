@@ -149,27 +149,26 @@ build_android_arm() {
 create_archive() {
     bin_dep 'zip'
 
-    INPUT=$1
-    OUTPUT=$2
+    OUTPUT=$1
 
     echo "@ Creating archive $OUTPUT ..."
-    zip -j "$OUTPUT" "$INPUT" ../README.md ../LICENSE.md > /dev/null
-    rm -rf "$INPUT"
+    zip -j "$OUTPUT" bettercap ../README.md ../LICENSE.md > /dev/null
+    rm -rf bettercap bettercap.exe
 }
 
 rm -rf $BUILD_FOLDER
 mkdir $BUILD_FOLDER
 cd $BUILD_FOLDER
 
-build_android_arm && create_archive bettercap bettercap_android_arm_$VERSION.zip
-build_linux_amd64 && create_archive bettercap bettercap_linux_amd64_$VERSION.zip
-build_linux_arm7 && create_archive bettercap bettercap_linux_arm7_$VERSION.zip
-build_linux_mips && create_archive bettercap bettercap_linux_mips_$VERSION.zip
-build_linux_mipsle && create_archive bettercap bettercap_linux_mipsle_$VERSION.zip
-build_linux_mips64 && create_archive bettercap bettercap_linux_mips64_$VERSION.zip
-build_linux_mips64le && create_archive bettercap bettercap_linux_mips64le_$VERSION.zip
-build_macos_amd64 && create_archive bettercap bettercap_macos_amd64_$VERSION.zip
-build_windows_amd64 && create_archive bettercap.exe bettercap_windows_amd64_$VERSION.zip
+build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
+build_linux_amd64 && create_archive bettercap_linux_amd64_$VERSION.zip
+build_linux_arm7 && create_archive bettercap_linux_arm7_$VERSION.zip
+build_linux_mips && create_archive bettercap_linux_mips_$VERSION.zip
+build_linux_mipsle && create_archive bettercap_linux_mipsle_$VERSION.zip
+build_linux_mips64 && create_archive bettercap_linux_mips64_$VERSION.zip
+build_linux_mips64le && create_archive bettercap_linux_mips64le_$VERSION.zip
+build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
+build_windows_amd64 && create_archive bettercap_windows_amd64_$VERSION.zip
 sha256sum * > checksums.txt
 
 echo
