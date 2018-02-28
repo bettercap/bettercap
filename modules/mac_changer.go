@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"runtime"
@@ -64,6 +65,10 @@ func (mc *MacChanger) Author() string {
 func (mc *MacChanger) Configure() (err error) {
 	var changeTo string
 
+	if mc.originalMac != nil {
+		return errors.New("mac.changer has already been configured, you will need to turn it off to re-configure")
+	}
+
 	if err, mc.iface = mc.StringParam("mac.changer.iface"); err != nil {
 		return err
 	}
@@ -118,6 +123,9 @@ func (mc *MacChanger) Stop() error {
 	if err := mc.setMac(mc.originalMac); err != nil {
 		return err
 	}
+
+	// the the module can now be reconfigured
+	mc.originalMac = nil
 
 	return mc.SetRunning(false, func() {
 		log.Info("Interface mac address restored to %s", core.Bold(mc.originalMac.String()))
