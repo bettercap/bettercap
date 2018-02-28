@@ -36,7 +36,7 @@ func (f WindowsFirewall) IsForwardingEnabled() bool {
 }
 
 func (f WindowsFirewall) isSuccess(output string) bool {
-	if trimmed := core.Trim(output); trimmed == "" || strings.Contains(trimmed, "OK") == true {
+	if trimmed := core.Trim(strings.ToLower(output)); trimmed == "" || strings.Contains(trimmed, "ok") == true {
 		return true
 	} else {
 		return false
