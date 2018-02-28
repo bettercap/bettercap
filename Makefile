@@ -13,7 +13,7 @@ build: resources
 resources: oui
 
 oui:
-	@./network/make_oui.py
+	@python ./network/make_oui.py
 
 vet:
 	@go vet ./...
