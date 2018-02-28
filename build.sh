@@ -123,7 +123,7 @@ build_macos_amd64() {
     ssh osxvm "cd $DIR && rm -rf '$OUTPUT' && git checkout . && git pull" > /dev/null
 
     echo "@ Building $OUTPUT ..."
-    ssh osxvm "export GOPATH=/Users/evilsocket/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go build -o $OUTPUT ." > /dev/null
+    ssh osxvm "export GOPATH=/Users/evilsocket/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build -o $OUTPUT ." > /dev/null
 
     echo "@ Downloading $OUTPUT ..."
     scp -C osxvm:$DIR/$OUTPUT . > /dev/null
