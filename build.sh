@@ -1,6 +1,7 @@
 #!/bin/bash
 BUILD_FOLDER=build
 VERSION=$(cat core/banner.go | grep Version | cut -d '"' -f 2)
+CROSS_LIB=/tmp/libpcap-1.8.1/libpcap.a
 
 bin_dep() {
     BIN=$1
@@ -43,137 +44,132 @@ xcompile_pcap() {
 }
 
 build_linux_amd64() {
-    OUTPUT=$1
-    echo "@ Building $OUTPUT ..."
-    go build -o "$OUTPUT" ..
+    echo "@ Building linux/amd64 ..."
+    go build -o bettercap ..
 }
 
 build_linux_arm7() {
-    OUTPUT=$1
     OLD=$(pwd)
 
     download_pcap
     xcompile_pcap 'arm' 'arm-linux-gnueabi' 'arm-linux-gnueabi-gcc'
 
-    echo "@ Building $OUTPUT ..."
+    echo "@ Building linux/arm7 ..."
     cd "$OLD"
-    env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
-    rm -rf /tmp/libpcap-1.8.1
+    env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
 build_linux_mips() {
-    OUTPUT=$1
     OLD=$(pwd)
 
     download_pcap
     xcompile_pcap 'mips' 'mips-linux-gnu' 'mips-linux-gnu-gcc'
 
-    echo "@ Building $OUTPUT ..."
+    echo "@ Building linux/mips ..."
     cd "$OLD"
-    env CC=mips-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
-    rm -rf /tmp/libpcap-1.8.1
+    env CC=mips-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
 build_linux_mipsle() {
-    OUTPUT=$1
     OLD=$(pwd)
 
     download_pcap
     xcompile_pcap 'mipsel' 'mipsel-linux-gnu' 'mipsel-linux-gnu-gcc'
 
-    echo "@ Building $OUTPUT ..."
+    echo "@ Building linux/mipsle ..."
     cd "$OLD"
-    env CC=mipsel-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mipsle CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
-    rm -rf /tmp/libpcap-1.8.1
+    env CC=mipsel-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mipsle CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
 build_linux_mips64() {
-    OUTPUT=$1
     OLD=$(pwd)
 
     download_pcap
     xcompile_pcap 'mips64' 'mips64-linux-gnuabi64' 'mips64-linux-gnuabi64-gcc'
 
-    echo "@ Building $OUTPUT ..."
+    echo "@ Building linux/mips64 ..."
     cd "$OLD"
-    env CC=mips64-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64 CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
-    rm -rf /tmp/libpcap-1.8.1
+    env CC=mips64-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64 CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
 build_linux_mips64le() {
-    OUTPUT=$1
     OLD=$(pwd)
 
     download_pcap
     xcompile_pcap 'mips64el' 'mips64el-linux-gnuabi64' 'mips64el-linux-gnuabi64-gcc'
 
-    echo "@ Building $OUTPUT ..."
+    echo "@ Building linux/mips64le ..."
     cd "$OLD"
-    env CC=mips64el-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64le CGO_LDFLAGS="-L/tmp/libpcap-1.8.1" go build -o "$OUTPUT" ..
-    rm -rf /tmp/libpcap-1.8.1
+    env CC=mips64el-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64le CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
 build_macos_amd64() {
     host_dep 'osxvm'
 
     DIR=/Users/evilsocket/gocode/src/github.com/bettercap/bettercap
-    OUTPUT=$1
 
     echo "@ Updating repo on MacOS VM ..."
-    ssh osxvm "cd $DIR && rm -rf '$OUTPUT' && git checkout . && git pull" > /dev/null
+    ssh osxvm "cd $DIR && rm -rf '$OUTPUT' && git pull" > /dev/null
 
-    echo "@ Building $OUTPUT ..."
-    ssh osxvm "export GOPATH=/Users/evilsocket/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build -o $OUTPUT ." > /dev/null
+    echo "@ Building darwin/amd64 ..."
+    ssh osxvm "export GOPATH=/Users/evilsocket/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build -o bettercap ." > /dev/null
 
-    echo "@ Downloading $OUTPUT ..."
-    scp -C osxvm:$DIR/$OUTPUT . > /dev/null
+    scp -C osxvm:$DIR/bettercap . > /dev/null
 }
 
 build_windows_amd64() {
     host_dep 'winvm'
 
     DIR=c:/Users/evilsocket/gopath/src/github.com/bettercap/bettercap
-    OUTPUT=$1
 
     echo "@ Updating repo on Windows VM ..."
-    ssh winvm "cd $DIR && del *.exe && git pull" > /dev/null
+    ssh winvm "cd $DIR && git pull && go get ./..." > /dev/null
 
-    echo "@ Building $OUTPUT ..."
-    ssh winvm "cd $DIR && go build -o $OUTPUT ." > /dev/null
+    echo "@ Building windows/amd64 ..."
+    ssh winvm "cd $DIR && go build -o bettercap.exe ." > /dev/null
 
-    echo "@ Downloading $OUTPUT ..."
-    scp -C winvm:$DIR/$OUTPUT . > /dev/null
+    scp -C winvm:$DIR/bettercap.exe . > /dev/null
 }
 
 build_android_arm() {
     host_dep 'shield'
 
     DIR=/data/data/com.termux/files/home/go/src/github.com/bettercap/bettercap
-    OUTPUT=$1
 
     echo "@ Updating repo on Android host ..."
     ssh -p 8022 root@shield "cd "$DIR" && rm -rf bettercap* && git pull && go get ./..."
 
-    echo "@ Building $OUTPUT ..."
-    ssh -p 8022 root@shield "cd $DIR && go build  -o $OUTPUT ."
+    echo "@ Building android/arm ..."
+    ssh -p 8022 root@shield "cd $DIR && go build -o bettercap ."
 
-    echo "@ Downloading $OUTPUT ..."
-    scp -C -P 8022 root@shield:$DIR/$OUTPUT . 
+    echo "@ Downloading bettercap ..."
+    scp -C -P 8022 root@shield:$DIR/bettercap . 
+}
+
+create_archive() {
+    bin_dep 'zip'
+
+    INPUT=$1
+    OUTPUT=$2
+
+    echo "@ Creating archive $OUTPUT ..."
+    zip -j "$OUTPUT" "$INPUT" ../README.md ../LICENSE.md > /dev/null
+    rm -rf "$INPUT"
 }
 
 rm -rf $BUILD_FOLDER
 mkdir $BUILD_FOLDER
 cd $BUILD_FOLDER
 
-build_android_arm bettercap_android_arm_$VERSION
-build_linux_amd64 bettercap_linux_amd64_$VERSION
-build_linux_arm7 bettercap_linux_arm7_$VERSION
-build_linux_mips bettercap_linux_mips_$VERSION
-build_linux_mipsle bettercap_linux_mipsle_$VERSION
-build_linux_mips64 bettercap_linux_mips64_$VERSION
-build_linux_mips64le bettercap_linux_mips64le_$VERSION
-build_macos_amd64 bettercap_macos_amd64_$VERSION
-build_windows_amd64 bettercap_windows_amd64_$VERSION.exe
+build_android_arm && create_archive bettercap bettercap_android_arm_$VERSION.zip
+build_linux_amd64 && create_archive bettercap bettercap_linux_amd64_$VERSION.zip
+build_linux_arm7 && create_archive bettercap bettercap_linux_arm7_$VERSION.zip
+build_linux_mips && create_archive bettercap bettercap_linux_mips_$VERSION.zip
+build_linux_mipsle && create_archive bettercap bettercap_linux_mipsle_$VERSION.zip
+build_linux_mips64 && create_archive bettercap bettercap_linux_mips64_$VERSION.zip
+build_linux_mips64le && create_archive bettercap bettercap_linux_mips64le_$VERSION.zip
+build_macos_amd64 && create_archive bettercap bettercap_macos_amd64_$VERSION.zip
+build_windows_amd64 && create_archive bettercap.exe bettercap_windows_amd64_$VERSION.zip
 sha256sum * > checksums.txt
 
 echo
