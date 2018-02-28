@@ -157,12 +157,14 @@ func (p *ArpSpoofer) parseTargets(targets string) (err error) {
 	targets = strings.TrimRight(targets, ", ")
 
 	log.Debug("Parsing IP range %s", targets)
-	list, err := iprange.Parse(targets)
-	if err != nil {
-		return fmt.Errorf("Error while parsing arp.spoof.targets variable '%s': %s.", targets, err)
-	}
+	if len(p.macs) == 0 || targets != "" {
+		list, err := iprange.Parse(targets)
+		if err != nil {
+			return fmt.Errorf("Error while parsing arp.spoof.targets variable '%s': %s.", targets, err)
+		}
 
-	p.addresses = list.Expand()
+		p.addresses = list.Expand()
+	}
 
 	log.Debug(" addresses=%v", p.addresses)
 	log.Debug(" macs=%v", p.macs)
