@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/google/gopacket/pcap"
+	"github.com/bettercap/gopacket/pcap"
 )
 
 // only matches gateway lines

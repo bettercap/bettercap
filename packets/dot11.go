@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/bettercap/gopacket"
+	"github.com/bettercap/gopacket/layers"
 )
 
 type Dot11CipherType uint8

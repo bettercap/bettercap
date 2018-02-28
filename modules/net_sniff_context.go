@@ -8,8 +8,8 @@ import (
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
-	"github.com/google/gopacket/pcap"
-	"github.com/google/gopacket/pcapgo"
+	"github.com/bettercap/gopacket/pcap"
+	"github.com/bettercap/gopacket/pcapgo"
 )
 
 type SnifferContext struct {

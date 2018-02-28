@@ -10,7 +10,7 @@ import (
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
-	"github.com/google/gopacket/layers"
+	"github.com/bettercap/gopacket/layers"
 )
 
 var (
