@@ -9,7 +9,7 @@ import (
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
-	bnet "github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 )
 
@@ -65,19 +65,13 @@ func (mc *MacChanger) Author() string {
 func (mc *MacChanger) Configure() (err error) {
 	var changeTo string
 
-	if mc.originalMac != nil {
-		return errors.New("mac.changer has already been configured, you will need to turn it off to re-configure")
-	}
-
 	if err, mc.iface = mc.StringParam("mac.changer.iface"); err != nil {
 		return err
-	}
-
-	if err, changeTo = mc.StringParam("mac.changer.address"); err != nil {
+	} else if err, changeTo = mc.StringParam("mac.changer.address"); err != nil {
 		return err
 	}
 
-	changeTo = bnet.NormalizeMac(changeTo)
+	changeTo = network.NormalizeMac(changeTo)
 	if mc.fakeMac, err = net.ParseMAC(changeTo); err != nil {
 		return err
 	}
@@ -108,7 +102,9 @@ func (mc *MacChanger) setMac(mac net.HardwareAddr) error {
 }
 
 func (mc *MacChanger) Start() error {
-	if err := mc.Configure(); err != nil {
+	if mc.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err := mc.Configure(); err != nil {
 		return err
 	} else if err := mc.setMac(mc.fakeMac); err != nil {
 		return err
@@ -120,14 +116,11 @@ func (mc *MacChanger) Start() error {
 }
 
 func (mc *MacChanger) Stop() error {
-	if err := mc.setMac(mc.originalMac); err != nil {
-		return err
-	}
-
-	// the the module can now be reconfigured
-	mc.originalMac = nil
-
 	return mc.SetRunning(false, func() {
-		log.Info("Interface mac address restored to %s", core.Bold(mc.originalMac.String()))
+		if err := mc.setMac(mc.originalMac); err == nil {
+			log.Info("Interface mac address restored to %s", core.Bold(mc.originalMac.String()))
+		} else {
+			log.Error("Error while restoring mac address: %s", err)
+		}
 	})
 }
