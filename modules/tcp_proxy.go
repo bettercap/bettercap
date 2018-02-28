@@ -49,13 +49,13 @@ func NewTcpProxy(s *session.Session) *TcpProxy {
 		"Path of a TCP proxy JS script."))
 
 	p.AddHandler(session.NewModuleHandler("tcp.proxy on", "",
-		"Start HTTP proxy.",
+		"Start TCP proxy.",
 		func(args []string) error {
 			return p.Start()
 		}))
 
 	p.AddHandler(session.NewModuleHandler("tcp.proxy off", "",
-		"Stop HTTP proxy.",
+		"Stop TCP proxy.",
 		func(args []string) error {
 			return p.Stop()
 		}))
