@@ -10,23 +10,33 @@ import (
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 	"github.com/bettercap/bettercap/tls"
+
+	"github.com/gorilla/websocket"
 )
 
 type RestAPI struct {
 	session.SessionModule
-	server       *http.Server
-	username     string
-	password     string
-	certFile     string
-	keyFile      string
-	useWebsocket bool
+	server        *http.Server
+	username      string
+	password      string
+	certFile      string
+	keyFile       string
+	useWebsocket  bool
+	upgrader      websocket.Upgrader
+	eventListener <-chan session.Event
+	quit          chan bool
 }
 
 func NewRestAPI(s *session.Session) *RestAPI {
 	api := &RestAPI{
 		SessionModule: session.NewSessionModule("api.rest", s),
 		server:        &http.Server{},
+		quit:          make(chan bool),
 		useWebsocket:  false,
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+		},
 	}
 
 	api.AddParam(session.NewStringParameter("api.rest.address",
@@ -163,6 +173,10 @@ func (api *RestAPI) Start() error {
 
 func (api *RestAPI) Stop() error {
 	return api.SetRunning(false, func() {
+		go func() {
+			api.quit <- true
+		}()
+
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 		api.server.Shutdown(ctx)
