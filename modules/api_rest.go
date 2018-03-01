@@ -14,15 +14,19 @@ import (
 
 type RestAPI struct {
 	session.SessionModule
-	server   *http.Server
-	certFile string
-	keyFile  string
+	server       *http.Server
+	username     string
+	password     string
+	certFile     string
+	keyFile      string
+	useWebsocket bool
 }
 
 func NewRestAPI(s *session.Session) *RestAPI {
 	api := &RestAPI{
 		SessionModule: session.NewSessionModule("api.rest", s),
 		server:        &http.Server{},
+		useWebsocket:  false,
 	}
 
 	api.AddParam(session.NewStringParameter("api.rest.address",
@@ -53,6 +57,10 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"~/.bcap-api.rest.key.pem",
 		"",
 		"API TLS key"))
+
+	api.AddParam(session.NewBoolParameter("api.rest.websocket",
+		"false",
+		"If true the /api/events route will be available as a websocket endpoint instead of HTTPS."))
 
 	api.AddHandler(session.NewModuleHandler("api.rest on", "",
 		"Start REST API server.",
@@ -106,9 +114,11 @@ func (api *RestAPI) Configure() error {
 		return err
 	} else if api.keyFile, err = core.ExpandPath(api.keyFile); err != nil {
 		return err
-	} else if err, ApiUsername = api.StringParam("api.rest.username"); err != nil {
+	} else if err, api.username = api.StringParam("api.rest.username"); err != nil {
 		return err
-	} else if err, ApiPassword = api.StringParam("api.rest.password"); err != nil {
+	} else if err, api.password = api.StringParam("api.rest.password"); err != nil {
+		return err
+	} else if err, api.useWebsocket = api.BoolParam("api.rest.websocket"); err != nil {
 		return err
 	} else if core.Exists(api.certFile) == false || core.Exists(api.keyFile) == false {
 		log.Info("Generating TLS key to %s", api.keyFile)
@@ -125,8 +135,8 @@ func (api *RestAPI) Configure() error {
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("/api/session", SessionRoute)
-	router.HandleFunc("/api/events", EventsRoute)
+	router.HandleFunc("/api/session", api.sessionRoute)
+	router.HandleFunc("/api/events", api.eventsRoute)
 
 	api.server.Handler = router
 

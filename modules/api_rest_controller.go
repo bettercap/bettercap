@@ -9,11 +9,6 @@ import (
 	"github.com/bettercap/bettercap/session"
 )
 
-var (
-	ApiUsername = ""
-	ApiPassword = ""
-)
-
 type CommandRequest struct {
 	Command string `json:"cmd"`
 }
@@ -21,17 +16,6 @@ type CommandRequest struct {
 type APIResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"msg"`
-}
-
-func checkAuth(r *http.Request) bool {
-	user, pass, _ := r.BasicAuth()
-	// timing attack my ass
-	if subtle.ConstantTimeCompare([]byte(user), []byte(ApiUsername)) != 1 {
-		return false
-	} else if subtle.ConstantTimeCompare([]byte(pass), []byte(ApiPassword)) != 1 {
-		return false
-	}
-	return true
 }
 
 func setAuthFailed(w http.ResponseWriter) {
@@ -52,11 +36,22 @@ func toJSON(w http.ResponseWriter, o interface{}) {
 	json.NewEncoder(w).Encode(o)
 }
 
-func showSession(w http.ResponseWriter, r *http.Request) {
+func (api *RestAPI) checkAuth(r *http.Request) bool {
+	user, pass, _ := r.BasicAuth()
+	// timing attack my ass
+	if subtle.ConstantTimeCompare([]byte(user), []byte(api.username)) != 1 {
+		return false
+	} else if subtle.ConstantTimeCompare([]byte(pass), []byte(api.password)) != 1 {
+		return false
+	}
+	return true
+}
+
+func (api *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
 	toJSON(w, session.I)
 }
 
-func runSessionCommand(w http.ResponseWriter, r *http.Request) {
+func (api *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var cmd CommandRequest
 
@@ -71,7 +66,7 @@ func runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func showEvents(w http.ResponseWriter, r *http.Request) {
+func (api *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	events := session.I.Events.Sorted()
@@ -94,33 +89,33 @@ func showEvents(w http.ResponseWriter, r *http.Request) {
 	toJSON(w, events[0:n])
 }
 
-func clearEvents(w http.ResponseWriter, r *http.Request) {
+func (api *RestAPI) clearEvents(w http.ResponseWriter, r *http.Request) {
 	session.I.Events.Clear()
 }
 
-func SessionRoute(w http.ResponseWriter, r *http.Request) {
+func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 	setSecurityHeaders(w)
 
-	if checkAuth(r) == false {
+	if api.checkAuth(r) == false {
 		setAuthFailed(w)
 	} else if r.Method == "GET" {
-		showSession(w, r)
+		api.showSession(w, r)
 	} else if r.Method == "POST" {
-		runSessionCommand(w, r)
+		api.runSessionCommand(w, r)
 	} else {
 		http.Error(w, "Bad Request", 400)
 	}
 }
 
-func EventsRoute(w http.ResponseWriter, r *http.Request) {
+func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 	setSecurityHeaders(w)
 
-	if checkAuth(r) == false {
+	if api.checkAuth(r) == false {
 		setAuthFailed(w)
 	} else if r.Method == "GET" {
-		showEvents(w, r)
+		api.showEvents(w, r)
 	} else if r.Method == "DELETE" {
-		clearEvents(w, r)
+		api.clearEvents(w, r)
 	} else {
 		http.Error(w, "Bad Request", 400)
 	}
