@@ -1,9 +1,7 @@
 #!/bin/bash
 BUILD_FOLDER=build
 VERSION=$(cat core/banner.go | grep Version | cut -d '"' -f 2)
-
-GO_BUILD_FLAGS=--ldflags '-linkmode external -extldflags "-static -s -w"' -v
-CROSS_LIB=/tmp/libpcap-1.8.1/libpcap.a
+CROSS_LIB=-L/tmp/libpcap-1.8.1/
 
 bin_dep() {
     BIN=$1
@@ -13,6 +11,16 @@ bin_dep() {
 host_dep() {
     HOST=$1
     ping -c 1 $HOST > /dev/null || { echo "@ Virtual machine host $HOST not visible !"; exit 1; }
+}
+
+create_archive() {
+    bin_dep 'zip'
+
+    OUTPUT=$1
+
+    echo "@ Creating archive $OUTPUT ..."
+    zip -j "$OUTPUT" bettercap ../README.md ../LICENSE.md > /dev/null
+    rm -rf bettercap bettercap.exe
 }
 
 download_pcap() {
@@ -45,12 +53,12 @@ xcompile_pcap() {
     make CFLAGS='-w' -j4 > /dev/null
 }
 
-build_linux_amd64() {
+build_linux_amd64_static() {
     echo "@ Building linux/amd64 ..."
-    go build $GO_BUILD_FLAGS -o bettercap ..
+    go build --ldflags '-linkmode external -extldflags "-static -s -w"' -v -o bettercap ..
 }
 
-build_linux_arm7() {
+build_linux_arm7_static() {
     OLD=$(pwd)
 
     download_pcap
@@ -58,10 +66,10 @@ build_linux_arm7() {
 
     echo "@ Building linux/arm7 ..."
     cd "$OLD"
-    env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
+    env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
-build_linux_mips() {
+build_linux_mips_static() {
     OLD=$(pwd)
 
     download_pcap
@@ -69,10 +77,10 @@ build_linux_mips() {
 
     echo "@ Building linux/mips ..."
     cd "$OLD"
-    env CC=mips-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
+    env CC=mips-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
-build_linux_mipsle() {
+build_linux_mipsle_static() {
     OLD=$(pwd)
 
     download_pcap
@@ -80,10 +88,10 @@ build_linux_mipsle() {
 
     echo "@ Building linux/mipsle ..."
     cd "$OLD"
-    env CC=mipsel-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mipsle CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
+    env CC=mipsel-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mipsle CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
-build_linux_mips64() {
+build_linux_mips64_static() {
     OLD=$(pwd)
 
     download_pcap
@@ -91,10 +99,10 @@ build_linux_mips64() {
 
     echo "@ Building linux/mips64 ..."
     cd "$OLD"
-    env CC=mips64-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64 CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
+    env CC=mips64-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64 CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
-build_linux_mips64le() {
+build_linux_mips64le_static() {
     OLD=$(pwd)
 
     download_pcap
@@ -102,7 +110,7 @@ build_linux_mips64le() {
 
     echo "@ Building linux/mips64le ..."
     cd "$OLD"
-    env CC=mips64el-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64le CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
+    env CC=mips64el-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64le CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
 build_macos_amd64() {
@@ -114,7 +122,7 @@ build_macos_amd64() {
     ssh osxvm "cd $DIR && rm -rf '$OUTPUT' && git pull" > /dev/null
 
     echo "@ Building darwin/amd64 ..."
-    ssh osxvm "export GOPATH=/Users/evilsocket/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build $GO_BUILD_FLAGS -o bettercap ." > /dev/null
+    ssh osxvm "export GOPATH=/Users/evilsocket/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build -o bettercap ." > /dev/null
 
     scp -C osxvm:$DIR/bettercap . > /dev/null
 }
@@ -128,7 +136,7 @@ build_windows_amd64() {
     ssh winvm "cd $DIR && git pull && go get ./..." > /dev/null
 
     echo "@ Building windows/amd64 ..."
-    ssh winvm "cd $DIR && go build $GO_BUILD_FLAGS -o bettercap.exe ." > /dev/null
+    ssh winvm "cd $DIR && go build -o bettercap.exe ." > /dev/null
 
     scp -C winvm:$DIR/bettercap.exe . > /dev/null
 }
@@ -142,34 +150,27 @@ build_android_arm() {
     ssh -p 8022 root@shield "cd "$DIR" && rm -rf bettercap* && git pull && go get ./..."
 
     echo "@ Building android/arm ..."
-    ssh -p 8022 root@shield "cd $DIR && go build $GO_BUILD_FLAGS -o bettercap ."
+    ssh -p 8022 root@shield "cd $DIR && go build -o bettercap ."
 
     echo "@ Downloading bettercap ..."
     scp -C -P 8022 root@shield:$DIR/bettercap . 
-}
-
-create_archive() {
-    bin_dep 'zip'
-
-    OUTPUT=$1
-
-    echo "@ Creating archive $OUTPUT ..."
-    zip -j "$OUTPUT" bettercap ../README.md ../LICENSE.md > /dev/null
-    rm -rf bettercap bettercap.exe
 }
 
 rm -rf $BUILD_FOLDER
 mkdir $BUILD_FOLDER
 cd $BUILD_FOLDER
 
-build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
-build_linux_amd64 && create_archive bettercap_linux_amd64_$VERSION.zip
-build_linux_arm7 && create_archive bettercap_linux_arm7_$VERSION.zip
-build_linux_mips && create_archive bettercap_linux_mips_$VERSION.zip
-build_linux_mipsle && create_archive bettercap_linux_mipsle_$VERSION.zip
-build_linux_mips64 && create_archive bettercap_linux_mips64_$VERSION.zip
-build_linux_mips64le && create_archive bettercap_linux_mips64le_$VERSION.zip
+
+build_linux_amd64_static && create_archive bettercap_linux_amd64_$VERSION.zip
+build_linux_arm7_static && create_archive bettercap_linux_arm7_$VERSION.zip
+build_linux_mips_static && create_archive bettercap_linux_mips_$VERSION.zip
+build_linux_mipsle_static && create_archive bettercap_linux_mipsle_$VERSION.zip
+build_linux_mips64_static && create_archive bettercap_linux_mips64_$VERSION.zip
+build_linux_mips64le_static && create_archive bettercap_linux_mips64le_$VERSION.zip
+
+# these are still not static :(
 build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
+build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
 build_windows_amd64 && create_archive bettercap_windows_amd64_$VERSION.zip
 sha256sum * > checksums.txt
 
@@ -178,6 +179,5 @@ echo
 du -sh *
 
 cd --
-
 
 
