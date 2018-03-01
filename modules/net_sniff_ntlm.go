@@ -7,8 +7,8 @@ import (
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/packets"
 
-	"github.com/bettercap/gopacket"
-	"github.com/bettercap/gopacket/layers"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 var (

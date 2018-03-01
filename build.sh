@@ -1,6 +1,8 @@
 #!/bin/bash
 BUILD_FOLDER=build
 VERSION=$(cat core/banner.go | grep Version | cut -d '"' -f 2)
+
+GO_BUILD_FLAGS=--ldflags '-linkmode external -extldflags "-static -s -w"' -v
 CROSS_LIB=/tmp/libpcap-1.8.1/libpcap.a
 
 bin_dep() {
@@ -45,7 +47,7 @@ xcompile_pcap() {
 
 build_linux_amd64() {
     echo "@ Building linux/amd64 ..."
-    go build -o bettercap ..
+    go build $GO_BUILD_FLAGS -o bettercap ..
 }
 
 build_linux_arm7() {
@@ -56,7 +58,7 @@ build_linux_arm7() {
 
     echo "@ Building linux/arm7 ..."
     cd "$OLD"
-    env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
+    env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
 }
 
 build_linux_mips() {
@@ -67,7 +69,7 @@ build_linux_mips() {
 
     echo "@ Building linux/mips ..."
     cd "$OLD"
-    env CC=mips-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
+    env CC=mips-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
 }
 
 build_linux_mipsle() {
@@ -78,7 +80,7 @@ build_linux_mipsle() {
 
     echo "@ Building linux/mipsle ..."
     cd "$OLD"
-    env CC=mipsel-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mipsle CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
+    env CC=mipsel-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mipsle CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
 }
 
 build_linux_mips64() {
@@ -89,7 +91,7 @@ build_linux_mips64() {
 
     echo "@ Building linux/mips64 ..."
     cd "$OLD"
-    env CC=mips64-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64 CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
+    env CC=mips64-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64 CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
 }
 
 build_linux_mips64le() {
@@ -100,7 +102,7 @@ build_linux_mips64le() {
 
     echo "@ Building linux/mips64le ..."
     cd "$OLD"
-    env CC=mips64el-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64le CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
+    env CC=mips64el-linux-gnuabi64-gcc CGO_ENABLED=1 GOOS=linux GOARCH=mips64le CGO_LDFLAGS="$CROSS_LIB" go build $GO_BUILD_FLAGS -o bettercap ..
 }
 
 build_macos_amd64() {
@@ -112,7 +114,7 @@ build_macos_amd64() {
     ssh osxvm "cd $DIR && rm -rf '$OUTPUT' && git pull" > /dev/null
 
     echo "@ Building darwin/amd64 ..."
-    ssh osxvm "export GOPATH=/Users/evilsocket/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build -o bettercap ." > /dev/null
+    ssh osxvm "export GOPATH=/Users/evilsocket/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build $GO_BUILD_FLAGS -o bettercap ." > /dev/null
 
     scp -C osxvm:$DIR/bettercap . > /dev/null
 }
@@ -126,7 +128,7 @@ build_windows_amd64() {
     ssh winvm "cd $DIR && git pull && go get ./..." > /dev/null
 
     echo "@ Building windows/amd64 ..."
-    ssh winvm "cd $DIR && go build -o bettercap.exe ." > /dev/null
+    ssh winvm "cd $DIR && go build $GO_BUILD_FLAGS -o bettercap.exe ." > /dev/null
 
     scp -C winvm:$DIR/bettercap.exe . > /dev/null
 }
@@ -140,7 +142,7 @@ build_android_arm() {
     ssh -p 8022 root@shield "cd "$DIR" && rm -rf bettercap* && git pull && go get ./..."
 
     echo "@ Building android/arm ..."
-    ssh -p 8022 root@shield "cd $DIR && go build -o bettercap ."
+    ssh -p 8022 root@shield "cd $DIR && go build $GO_BUILD_FLAGS -o bettercap ."
 
     echo "@ Downloading bettercap ..."
     scp -C -P 8022 root@shield:$DIR/bettercap . 

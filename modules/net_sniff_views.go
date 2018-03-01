@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/bettercap/gopacket/layers"
+	"github.com/google/gopacket/layers"
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/session"

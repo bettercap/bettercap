@@ -3,7 +3,7 @@ package packets
 import (
 	"net"
 
-	"github.com/bettercap/gopacket/layers"
+	"github.com/google/gopacket/layers"
 )
 
 func NewARPTo(from net.IP, from_hw net.HardwareAddr, to net.IP, to_hw net.HardwareAddr, req uint16) (layers.Ethernet, layers.ARP) {

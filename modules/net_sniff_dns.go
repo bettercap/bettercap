@@ -5,8 +5,8 @@ import (
 
 	"github.com/bettercap/bettercap/core"
 
-	"github.com/bettercap/gopacket"
-	"github.com/bettercap/gopacket/layers"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {

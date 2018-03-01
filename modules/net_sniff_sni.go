@@ -6,8 +6,8 @@ import (
 	"github.com/bettercap/bettercap/core"
 	"regexp"
 
-	"github.com/bettercap/gopacket"
-	"github.com/bettercap/gopacket/layers"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 // poor man's TLS Client Hello with SNI extension parser :P

@@ -1,7 +1,7 @@
 package packets
 
 import (
-	"github.com/bettercap/gopacket"
+	"github.com/google/gopacket"
 )
 
 var SerializationOptions = gopacket.SerializeOptions{

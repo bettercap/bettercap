@@ -1,7 +1,7 @@
 package packets
 
 import (
-	"github.com/bettercap/gopacket/layers"
+	"github.com/google/gopacket/layers"
 	"net"
 )
 

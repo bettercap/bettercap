@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"github.com/bettercap/gopacket"
-	"github.com/bettercap/gopacket/layers"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 func dot11Parser(radiotap *layers.RadioTap, dot11 *layers.Dot11, pkt gopacket.Packet, verbose bool) {

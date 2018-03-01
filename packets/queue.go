@@ -8,9 +8,9 @@ import (
 
 	"github.com/bettercap/bettercap/network"
 
-	"github.com/bettercap/gopacket"
-	"github.com/bettercap/gopacket/layers"
-	"github.com/bettercap/gopacket/pcap"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcap"
 )
 
 type Activity struct {
