@@ -7,7 +7,7 @@ ENV SRC_DIR=/gocode/src/github.com/bettercap/bettercap
 # ugly hack in order to compile gopacket statically
 # https://github.com/bettercap/bettercap/issues/106
 RUN apk add --update ca-certificates && \
-apk add --no-cache --update bash iptables build-base libpcap-dev git python && \
+apk add --no-cache --update bash iptables wireless-tools build-base libpcap-dev git python && \
 mkdir -p /usr/lib/x86_64-linux-gnu/ && \
 cp /usr/lib/libpcap.a /usr/lib/x86_64-linux-gnu/libpcap.a
 
