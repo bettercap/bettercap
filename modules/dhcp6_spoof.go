@@ -43,7 +43,7 @@ func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
 	}
 
 	spoof.AddParam(session.NewStringParameter("dhcp6.spoof.domains",
-		"microsoft.com, goole.com, facebook.com, apple.com, twitter.com",
+		"microsoft.com, google.com, facebook.com, apple.com, twitter.com",
 		``,
 		"Comma separated values of domain names to spoof."))
 
