@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os
+import six
 
 base = os.path.dirname(os.path.realpath(__file__))
 
@@ -25,7 +26,7 @@ for line in lines:
 
 code = "map[string]string {\n"
 
-for prefix, vendor in m.iteritems():
+for prefix, vendor in six.iteritems(m):
     code += "    \"%s\": \"%s\",\n" % ( prefix, vendor )
 
 code += "}\n"
