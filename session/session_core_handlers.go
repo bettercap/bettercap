@@ -274,7 +274,7 @@ func (s *Session) registerCoreHandlers() {
 
 	s.addHandler(NewCommandHandler("get NAME",
 		"^get\\s+(.+)",
-		"Get the value of variable NAME, use * as a wildcard.",
+		"Get the value of variable NAME, use * alone for all, or NAME* as a wildcard.",
 		s.getHandler),
 		readline.PcItem("get", readline.PcItemDynamic(func(prefix string) []string {
 			prefix = core.Trim(prefix[3:])
