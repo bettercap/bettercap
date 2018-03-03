@@ -153,23 +153,27 @@ func (s *Session) sleepHandler(args []string, sess *Session) error {
 
 func (s *Session) getHandler(args []string, sess *Session) error {
 	key := args[0]
-	if key == "*" {
+	if strings.Contains(key, "*")  {
 		prev_ns := ""
 
 		fmt.Println()
+		last := len(key) - 1 
+		prefix := key[:last]
 		for _, k := range s.Env.Sorted() {
-			ns := ""
-			toks := strings.Split(k, ".")
-			if len(toks) > 0 {
-				ns = toks[0]
-			}
+			if strings.HasPrefix(k, prefix) {
+				ns := ""
+				toks := strings.Split(k, ".")
+				if len(toks) > 0 {
+					ns = toks[0]
+				}
 
-			if ns != prev_ns {
-				fmt.Println()
-				prev_ns = ns
-			}
+				if ns != prev_ns {
+					fmt.Println()
+					prev_ns = ns
+				}
 
-			fmt.Printf("  %"+strconv.Itoa(s.Env.Padding)+"s: '%s'\n", k, s.Env.Data[k])
+				fmt.Printf("  %"+strconv.Itoa(s.Env.Padding)+"s: '%s'\n", k, s.Env.Data[k])
+			}
 		}
 		fmt.Println()
 	} else if found, value := s.Env.Get(key); found == true {
@@ -270,7 +274,7 @@ func (s *Session) registerCoreHandlers() {
 
 	s.addHandler(NewCommandHandler("get NAME",
 		"^get\\s+(.+)",
-		"Get the value of variable NAME, use * for all.",
+		"Get the value of variable NAME, use * alone for all, or NAME* as a wildcard.",
 		s.getHandler),
 		readline.PcItem("get", readline.PcItemDynamic(func(prefix string) []string {
 			prefix = core.Trim(prefix[3:])
