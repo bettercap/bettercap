@@ -77,9 +77,12 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	p.Proxy.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 		log.Debug("(%s) < %s %s %s%s", core.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
 		if p.Script != nil {
-			jsres := p.Script.OnRequest(req)
-			if jsres != nil {
-				p.logAction(req, jsres)
+			jsreq, jsres := p.Script.OnRequest(req)
+			if jsreq != nil {
+				p.logRequestAction(req, jsreq)
+				return jsreq.ToRequest(), nil
+			} else if jsres != nil {
+				p.logResponseAction(req, jsres)
 				return req, jsres.ToResponse(req)
 			}
 		}
@@ -91,9 +94,9 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 			req := res.Request
 			log.Debug("(%s) > %s %s %s%s", core.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
 			if p.Script != nil {
-				jsres := p.Script.OnResponse(res)
+				_, jsres := p.Script.OnResponse(res)
 				if jsres != nil {
-					p.logAction(res.Request, jsres)
+					p.logResponseAction(res.Request, jsres)
 					return jsres.ToResponse(res.Request)
 				}
 			}
@@ -104,7 +107,23 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	return p
 }
 
-func (p *HTTPProxy) logAction(req *http.Request, jsres *JSResponse) {
+func (p *HTTPProxy) logRequestAction(req *http.Request, jsreq *JSRequest) {
+	p.sess.Events.Add(p.Name+".spoofed-request", struct {
+		To     string
+		Method string
+		Host   string
+		Path   string
+		Size   int
+	}{
+		strings.Split(req.RemoteAddr, ":")[0],
+		jsreq.Method,
+		jsreq.Hostname,
+		jsreq.Path,
+		len(jsreq.Body),
+	})
+}
+
+func (p *HTTPProxy) logResponseAction(req *http.Request, jsres *JSResponse) {
 	p.sess.Events.Add(p.Name+".spoofed-response", struct {
 		To     string
 		Method string

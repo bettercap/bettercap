@@ -60,9 +60,8 @@ func LoadHttpProxyScript(path string, sess *session.Session) (err error, s *Http
 	return LoadHttpProxyScriptSource(path, string(raw), sess)
 }
 
-func (s *HttpProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSResponse) {
-	// convert request and define empty response to be optionally filled
-	jsreq := NewJSRequest(req)
+func (s *HttpProxyScript) doRequestDefines(req *http.Request) (err error, jsreq *JSRequest, jsres *JSResponse) {
+	jsreq = NewJSRequest(req)
 	if err = s.VM.Set("req", jsreq); err != nil {
 		log.Error("Error while defining request: %s", err)
 		return
@@ -76,9 +75,8 @@ func (s *HttpProxyScript) doRequestDefines(req *http.Request) (err error, jsres 
 	return
 }
 
-func (s *HttpProxyScript) doResponseDefines(res *http.Response) (err error, jsres *JSResponse) {
-	// convert both request and response
-	jsreq := NewJSRequest(res.Request)
+func (s *HttpProxyScript) doResponseDefines(res *http.Response) (err error, jsreq *JSRequest, jsres *JSResponse) {
+	jsreq = NewJSRequest(res.Request)
 	if err = s.VM.Set("req", jsreq); err != nil {
 		log.Error("Error while defining request: %s", err)
 		return
@@ -93,54 +91,57 @@ func (s *HttpProxyScript) doResponseDefines(res *http.Response) (err error, jsre
 	return
 }
 
-func (s *HttpProxyScript) OnRequest(req *http.Request) *JSResponse {
+func (s *HttpProxyScript) OnRequest(original *http.Request) (jsreq *JSRequest, jsres *JSResponse) {
+	var err error
+
 	if s.onRequestScript != nil {
 		s.Lock()
 		defer s.Unlock()
 
-		err, jsres := s.doRequestDefines(req)
-		if err != nil {
+		if err, jsreq, jsres = s.doRequestDefines(original); err != nil {
 			log.Error("Error while running bootstrap definitions: %s", err)
-			return nil
+			return nil, nil
 		}
 
-		_, err = s.VM.Run(s.onRequestScript)
-		if err != nil {
+		if _, err = s.VM.Run(s.onRequestScript); err != nil {
 			log.Error("Error while executing onRequest callback: %s", err)
-			return nil
+			return nil, nil
 		}
 
-		if jsres.WasModified() {
+		if jsreq.WasModified() {
+			jsreq.UpdateHash()
+			return jsreq, nil
+		} else if jsres.WasModified() {
 			jsres.UpdateHash()
-			return jsres
+			return nil, jsres
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (s *HttpProxyScript) OnResponse(res *http.Response) *JSResponse {
+func (s *HttpProxyScript) OnResponse(res *http.Response) (jsreq *JSRequest, jsres *JSResponse) {
+	var err error
+
 	if s.onResponseScript != nil {
 		s.Lock()
 		defer s.Unlock()
 
-		err, jsres := s.doResponseDefines(res)
-		if err != nil {
+		if err, jsreq, jsres = s.doResponseDefines(res); err != nil {
 			log.Error("Error while running bootstrap definitions: %s", err)
-			return nil
+			return nil, nil
 		}
 
-		_, err = s.VM.Run(s.onResponseScript)
-		if err != nil {
+		if _, err = s.VM.Run(s.onResponseScript); err != nil {
 			log.Error("Error while executing onRequest callback: %s", err)
-			return nil
+			return nil, nil
 		}
 
 		if jsres.WasModified() {
 			jsres.UpdateHash()
-			return jsres
+			return nil, jsres
 		}
 	}
 
-	return nil
+	return nil, nil
 }
