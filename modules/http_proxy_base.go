@@ -63,6 +63,9 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 		Server: nil,
 	}
 
+	p.Proxy.Verbose = false
+	p.Proxy.Logger.SetOutput(ioutil.Discard)
+
 	p.Proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if p.doProxy(req) == true {
 			if p.isTLS == false {
