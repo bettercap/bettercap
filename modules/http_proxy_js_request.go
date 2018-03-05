@@ -27,7 +27,7 @@ type JSRequest struct {
 	req         *http.Request
 }
 
-func NewJSRequest(req *http.Request) JSRequest {
+func NewJSRequest(req *http.Request) *JSRequest {
 	headers := make([]JSHeader, 0)
 	cType := ""
 
@@ -41,7 +41,7 @@ func NewJSRequest(req *http.Request) JSRequest {
 		}
 	}
 
-	return JSRequest{
+	return &JSRequest{
 		Client:      strings.Split(req.RemoteAddr, ":")[0],
 		Method:      req.Method,
 		Version:     fmt.Sprintf("%d.%d", req.ProtoMajor, req.ProtoMinor),

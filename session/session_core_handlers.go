@@ -153,11 +153,11 @@ func (s *Session) sleepHandler(args []string, sess *Session) error {
 
 func (s *Session) getHandler(args []string, sess *Session) error {
 	key := args[0]
-	if strings.Contains(key, "*")  {
+	if strings.Contains(key, "*") {
 		prev_ns := ""
 
 		fmt.Println()
-		last := len(key) - 1 
+		last := len(key) - 1
 		prefix := key[:last]
 		for _, k := range s.Env.Sorted() {
 			if strings.HasPrefix(k, prefix) {

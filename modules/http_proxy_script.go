@@ -63,7 +63,7 @@ func LoadHttpProxyScript(path string, sess *session.Session) (err error, s *Http
 func (s *HttpProxyScript) doRequestDefines(req *http.Request) (err error, jsres *JSResponse) {
 	// convert request and define empty response to be optionally filled
 	jsreq := NewJSRequest(req)
-	if err = s.VM.Set("req", &jsreq); err != nil {
+	if err = s.VM.Set("req", jsreq); err != nil {
 		log.Error("Error while defining request: %s", err)
 		return
 	}
