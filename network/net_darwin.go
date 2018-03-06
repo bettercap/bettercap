@@ -33,7 +33,7 @@ func getInterfaceName(iface net.Interface) string {
 }
 
 func SetInterfaceChannel(iface string, channel int) error {
-	_, err := core.Exec(airPortPath, []string{iface, "--channel", fmt.Sprintf("%d", channel)})
+	_, err := core.Exec(airPortPath, []string{iface, fmt.Sprintf("-c%d", channel)})
 	return err
 }
 
