@@ -23,10 +23,11 @@ func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 			ip.SrcIP.String(),
 			req.Host,
 			req,
-			"%s %s %s %s %s",
+			"%s %s %s %s%s %s",
 			core.W(core.BG_RED+core.FG_BLACK, "http"),
 			vIP(ip.SrcIP),
 			core.W(core.BG_LBLUE+core.FG_BLACK, req.Method),
+			core.Yellow(req.Host),
 			vURL(req.URL.String()),
 			core.Dim(req.UserAgent()),
 		).Push()
