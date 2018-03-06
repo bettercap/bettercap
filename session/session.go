@@ -21,6 +21,8 @@ import (
 	"github.com/bettercap/bettercap/firewall"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
+
+	"github.com/adrianmo/go-nmea"
 )
 
 const HistoryFile = "~/bettercap.history"
@@ -45,6 +47,7 @@ type Session struct {
 	Input     *readline.Instance       `json:"-"`
 	StartedAt time.Time                `json:"started_at"`
 	Active    bool                     `json:"active"`
+	GPS       nmea.GNGGA               `json:"gps"`
 	Prompt    Prompt                   `json:"-"`
 
 	CoreHandlers []CommandHandler `json:"-"`

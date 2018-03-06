@@ -53,6 +53,7 @@ func main() {
 	sess.Register(modules.NewWiFiRecon(sess))
 	sess.Register(modules.NewBLERecon(sess))
 	sess.Register(modules.NewSynScanner(sess))
+	sess.Register(modules.NewGPS(sess))
 
 	if err = sess.Start(); err != nil {
 		log.Fatal("%s", err)
