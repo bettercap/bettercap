@@ -33,6 +33,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		server:        &http.Server{},
 		quit:          make(chan bool),
 		useWebsocket:  false,
+		eventListener: s.Events.Listen(),
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,

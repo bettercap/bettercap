@@ -57,7 +57,7 @@ func NewEventPool(debug bool, silent bool) *EventPool {
 func (p *EventPool) Listen() <-chan Event {
 	p.Lock()
 	defer p.Unlock()
-	l := make(chan Event)
+	l := make(chan Event, 1)
 	p.listeners = append(p.listeners, l)
 	return l
 }
@@ -77,12 +77,16 @@ func (p *EventPool) SetDebug(d bool) {
 func (p *EventPool) Add(tag string, data interface{}) {
 	p.Lock()
 	defer p.Unlock()
+
 	e := NewEvent(tag, data)
 	p.events = append([]Event{e}, p.events...)
 
 	// broadcast the event to every listener
 	for _, l := range p.listeners {
-		l <- e
+		select {
+		case l <- e:
+		default:
+		}
 	}
 }
 

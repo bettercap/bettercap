@@ -4,6 +4,7 @@
 package network
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/bettercap/gatt"
@@ -11,10 +12,18 @@ import (
 
 type BLEDevice struct {
 	LastSeen      time.Time
-	Device        gatt.Peripheral
 	Vendor        string
-	Advertisement *gatt.Advertisement
 	RSSI          int
+	Device        gatt.Peripheral
+	Advertisement *gatt.Advertisement
+}
+
+type bleDeviceJSON struct {
+	LastSeen time.Time `json:"last_seen"`
+	Name     string    `json:"name"`
+	MAC      string    `json:"mac"`
+	Vendor   string    `json:"vendor"`
+	RSSI     int       `json:"rssi"`
 }
 
 func NewBLEDevice(p gatt.Peripheral, a *gatt.Advertisement, rssi int) *BLEDevice {
@@ -25,4 +34,16 @@ func NewBLEDevice(p gatt.Peripheral, a *gatt.Advertisement, rssi int) *BLEDevice
 		Advertisement: a,
 		RSSI:          rssi,
 	}
+}
+
+func (d *BLEDevice) MarshalJSON() ([]byte, error) {
+	doc := bleDeviceJSON{
+		LastSeen: d.LastSeen,
+		Name:     d.Device.Name(),
+		MAC:      d.Device.ID(),
+		Vendor:   d.Vendor,
+		RSSI:     d.RSSI,
+	}
+
+	return json.Marshal(doc)
 }
