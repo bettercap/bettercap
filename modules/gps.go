@@ -135,7 +135,7 @@ func (gps *GPS) Start() error {
 					if s.Type == "GNGGA" {
 						gps.Session.GPS = info.(nmea.GNGGA)
 					} else {
-						log.Debug("Skipping message %v", s)
+						log.Debug("Skipping message %s: %v", s.Type, s)
 					}
 				} else {
 					log.Debug("Error parsing line '%s': %s", line, err)
