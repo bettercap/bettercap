@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"time"
@@ -107,11 +106,10 @@ func same(a, b net.HardwareAddr) bool {
 }
 
 func (s Sniffer) isLocalPacket(packet gopacket.Packet) bool {
-	eth := packet.Layer(layers.LayerTypeEthernet)
-	if eth != nil {
-		eth, _ := eth.(*layers.Ethernet)
-		ifHw := s.Session.Interface.HW
-		if bytes.Compare(eth.SrcMAC, ifHw) == 0 || bytes.Compare(eth.DstMAC, ifHw) == 0 {
+	ipl := packet.Layer(layers.LayerTypeIPv4)
+	if ipl != nil {
+		ip, _ := ipl.(*layers.IPv4)
+		if ip.SrcIP.Equal(s.Session.Interface.IP) || ip.DstIP.Equal(s.Session.Interface.IP) {
 			return true
 		}
 	}
