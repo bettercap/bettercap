@@ -12,10 +12,11 @@ import (
 
 type EventsStream struct {
 	session.SessionModule
-	ignoreList *IgnoreList
-	waitFor    string
-	waitChan   chan *session.Event
-	quit       chan bool
+	ignoreList    *IgnoreList
+	waitFor       string
+	waitChan      chan *session.Event
+	eventListener <-chan session.Event
+	quit          chan bool
 }
 
 func NewEventsStream(s *session.Session) *EventsStream {
@@ -124,10 +125,12 @@ func (s *EventsStream) Configure() error {
 
 func (s *EventsStream) Start() error {
 	return s.SetRunning(true, func() {
+
+		s.eventListener = s.Session.Events.Listen()
 		for {
 			var e session.Event
 			select {
-			case e = <-s.Session.Events.NewEvents:
+			case e = <-s.eventListener:
 				if e.Tag == s.waitFor {
 					s.waitFor = ""
 					s.waitChan <- &e
