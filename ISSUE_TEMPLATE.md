@@ -13,6 +13,7 @@
 
 Please provide:
 
+* Bettercap version you are using.
 * OS version and architecture you are using.
 * Go version if building from sources.
 * Command line arguments you are using.
