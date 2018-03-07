@@ -180,7 +180,8 @@ func (api *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		events := session.I.Events.Sorted()
-		nmax := len(events)
+		nevents := len(events)
+		nmax := nevents
 		n := nmax
 
 		q := r.URL.Query()
@@ -196,7 +197,7 @@ func (api *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		toJSON(w, events[0:n])
+		toJSON(w, events[nevents-n:])
 	}
 }
 
