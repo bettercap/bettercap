@@ -89,6 +89,10 @@ func (httpd *HttpServer) Configure() error {
 	var certFile string
 	var keyFile string
 
+	if httpd.Running() == true {
+		return session.ErrAlreadyStarted
+	}
+
 	if err, path = httpd.StringParam("http.server.path"); err != nil {
 		return err
 	}
@@ -145,9 +149,7 @@ func (httpd *HttpServer) Configure() error {
 }
 
 func (httpd *HttpServer) Start() error {
-	if httpd.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := httpd.Configure(); err != nil {
+	if err := httpd.Configure(); err != nil {
 		return err
 	}
 

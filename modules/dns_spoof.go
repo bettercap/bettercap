@@ -80,6 +80,10 @@ func (s *DNSSpoofer) Configure() error {
 	var err error
 	var addr string
 
+	if s.Running() {
+		return session.ErrAlreadyStarted
+	}
+
 	if s.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
 		return err
 	}
@@ -264,9 +268,7 @@ func (s *DNSSpoofer) onPacket(pkt gopacket.Packet) {
 }
 
 func (s *DNSSpoofer) Start() error {
-	if s.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := s.Configure(); err != nil {
+	if err := s.Configure(); err != nil {
 		return err
 	}
 

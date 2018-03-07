@@ -67,19 +67,15 @@ func (p *HttpProxy) Configure() error {
 	var httpPort int
 	var scriptPath string
 
-	if err, address = p.StringParam("http.proxy.address"); err != nil {
+	if p.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err, address = p.StringParam("http.proxy.address"); err != nil {
 		return err
-	}
-
-	if err, proxyPort = p.IntParam("http.proxy.port"); err != nil {
+	} else if err, proxyPort = p.IntParam("http.proxy.port"); err != nil {
 		return err
-	}
-
-	if err, httpPort = p.IntParam("http.port"); err != nil {
+	} else if err, httpPort = p.IntParam("http.port"); err != nil {
 		return err
-	}
-
-	if err, scriptPath = p.StringParam("http.proxy.script"); err != nil {
+	} else if err, scriptPath = p.StringParam("http.proxy.script"); err != nil {
 		return err
 	}
 
@@ -87,9 +83,7 @@ func (p *HttpProxy) Configure() error {
 }
 
 func (p *HttpProxy) Start() error {
-	if p.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := p.Configure(); err != nil {
+	if err := p.Configure(); err != nil {
 		return err
 	}
 

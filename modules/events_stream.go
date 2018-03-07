@@ -125,7 +125,6 @@ func (s *EventsStream) Configure() error {
 
 func (s *EventsStream) Start() error {
 	return s.SetRunning(true, func() {
-
 		s.eventListener = s.Session.Events.Listen()
 		for {
 			var e session.Event

@@ -594,9 +594,7 @@ func (w *WiFiRecon) trackPacket(pkt gopacket.Packet) {
 }
 
 func (w *WiFiRecon) Start() error {
-	if w.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := w.Configure(); err != nil {
+	if err := w.Configure(); err != nil {
 		return err
 	}
 

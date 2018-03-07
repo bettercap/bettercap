@@ -113,7 +113,9 @@ func (api *RestAPI) Configure() error {
 	var ip string
 	var port int
 
-	if err, ip = api.StringParam("api.rest.address"); err != nil {
+	if api.Running() {
+		return session.ErrAlreadyStarted
+	} else if err, ip = api.StringParam("api.rest.address"); err != nil {
 		return err
 	} else if err, port = api.IntParam("api.rest.port"); err != nil {
 		return err
@@ -155,9 +157,7 @@ func (api *RestAPI) Configure() error {
 }
 
 func (api *RestAPI) Start() error {
-	if api.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := api.Configure(); err != nil {
+	if err := api.Configure(); err != nil {
 		return err
 	}
 

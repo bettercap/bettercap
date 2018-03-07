@@ -111,7 +111,9 @@ func (d *BLERecon) isEnumerating() bool {
 }
 
 func (d *BLERecon) Configure() (err error) {
-	if d.gattDevice == nil {
+	if d.Running() {
+		return session.ErrAlreadyStarted
+	} else if d.gattDevice == nil {
 		log.Info("Initializing BLE device ...")
 
 		// hey Paypal GATT library, could you please just STFU?!
@@ -147,9 +149,7 @@ func (d *BLERecon) pruner() {
 }
 
 func (d *BLERecon) Start() error {
-	if d.Running() {
-		return session.ErrAlreadyStarted
-	} else if err := d.Configure(); err != nil {
+	if err := d.Configure(); err != nil {
 		return err
 	}
 

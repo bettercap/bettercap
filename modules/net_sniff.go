@@ -125,7 +125,9 @@ func (s *Sniffer) onPacketMatched(pkt gopacket.Packet) {
 func (s *Sniffer) Configure() error {
 	var err error
 
-	if err, s.Ctx = s.GetContext(); err != nil {
+	if s.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err, s.Ctx = s.GetContext(); err != nil {
 		if s.Ctx != nil {
 			s.Ctx.Close()
 			s.Ctx = nil
@@ -137,9 +139,7 @@ func (s *Sniffer) Configure() error {
 }
 
 func (s *Sniffer) Start() error {
-	if s.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := s.Configure(); err != nil {
+	if err := s.Configure(); err != nil {
 		return err
 	}
 

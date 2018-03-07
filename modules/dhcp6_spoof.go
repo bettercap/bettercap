@@ -77,6 +77,10 @@ func (s DHCP6Spoofer) Author() string {
 func (s *DHCP6Spoofer) Configure() error {
 	var err error
 
+	if s.Running() {
+		return session.ErrAlreadyStarted
+	}
+
 	if s.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
 		return err
 	}
@@ -354,9 +358,7 @@ func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 }
 
 func (s *DHCP6Spoofer) Start() error {
-	if s.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := s.Configure(); err != nil {
+	if err := s.Configure(); err != nil {
 		return err
 	}
 

@@ -82,6 +82,10 @@ func (p *HttpsProxy) Configure() error {
 	var certFile string
 	var keyFile string
 
+	if p.Running() == true {
+		return session.ErrAlreadyStarted
+	}
+
 	if err, address = p.StringParam("https.proxy.address"); err != nil {
 		return err
 	}
@@ -125,9 +129,7 @@ func (p *HttpsProxy) Configure() error {
 }
 
 func (p *HttpsProxy) Start() error {
-	if p.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := p.Configure(); err != nil {
+	if err := p.Configure(); err != nil {
 		return err
 	}
 

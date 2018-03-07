@@ -83,7 +83,9 @@ func (p *TcpProxy) Configure() error {
 	var proxyAddress string
 	var scriptPath string
 
-	if err, address = p.StringParam("tcp.address"); err != nil {
+	if p.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err, address = p.StringParam("tcp.address"); err != nil {
 		return err
 	} else if err, proxyAddress = p.StringParam("tcp.proxy.address"); err != nil {
 		return err
@@ -190,9 +192,7 @@ func (p *TcpProxy) handleConnection(c *net.TCPConn) {
 }
 
 func (p *TcpProxy) Start() error {
-	if p.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := p.Configure(); err != nil {
+	if err := p.Configure(); err != nil {
 		return err
 	}
 

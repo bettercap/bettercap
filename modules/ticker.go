@@ -59,7 +59,9 @@ func (t *Ticker) Configure() error {
 	var commands string
 	var period int
 
-	if err, commands = t.StringParam("ticker.commands"); err != nil {
+	if t.Running() == true {
+		return session.ErrAlreadyStarted
+	} else if err, commands = t.StringParam("ticker.commands"); err != nil {
 		return err
 	} else if err, period = t.IntParam("ticker.period"); err != nil {
 		return err
@@ -72,9 +74,7 @@ func (t *Ticker) Configure() error {
 }
 
 func (t *Ticker) Start() error {
-	if t.Running() == true {
-		return session.ErrAlreadyStarted
-	} else if err := t.Configure(); err != nil {
+	if err := t.Configure(); err != nil {
 		return err
 	}
 
