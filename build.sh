@@ -69,6 +69,17 @@ build_linux_arm7_static() {
     env CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
 }
 
+build_linux_arm7hf_static() {
+    OLD=$(pwd)
+
+    download_pcap
+    xcompile_pcap 'arm' 'arm-linux-gnueabihf' 'arm-linux-gnueabihf-gcc'
+
+    echo "@ Building linux/arm7hf ..."
+    cd "$OLD"
+    env CC=arm-linux-gnueabihf-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 CGO_LDFLAGS="$CROSS_LIB" go build -o bettercap ..
+}
+
 build_linux_mips_static() {
     OLD=$(pwd)
 
@@ -163,6 +174,7 @@ cd $BUILD_FOLDER
 
 build_linux_amd64_static && create_archive bettercap_linux_amd64_$VERSION.zip
 build_linux_arm7_static && create_archive bettercap_linux_arm7_$VERSION.zip
+build_linux_arm7hf_static && create_archive bettercap_linux_arm7hf_$VERSION.zip
 build_linux_mips_static && create_archive bettercap_linux_mips_$VERSION.zip
 build_linux_mipsle_static && create_archive bettercap_linux_mipsle_$VERSION.zip
 build_linux_mips64_static && create_archive bettercap_linux_mips64_$VERSION.zip
