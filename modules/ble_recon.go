@@ -181,7 +181,7 @@ func (d *BLERecon) enumAllTheThings(mac string) error {
 	}
 
 	d.setCurrentDevice(dev)
-	if err := d.Configure(); err != nil {
+	if err := d.Configure(); err != nil && err != session.ErrAlreadyStarted {
 		return err
 	}
 
