@@ -53,9 +53,9 @@ xcompile_pcap() {
     make CFLAGS='-w' -j4 > /dev/null
 }
 
-build_linux_amd64_static() {
+build_linux_amd64() {
     echo "@ Building linux/amd64 ..."
-    go build --ldflags '-linkmode external -extldflags "-static -s -w"' -v -o bettercap ..
+    go build -o bettercap ..
 }
 
 build_linux_arm7_static() {
@@ -172,19 +172,19 @@ mkdir $BUILD_FOLDER
 cd $BUILD_FOLDER
 
 
-build_linux_amd64_static && create_archive bettercap_linux_amd64_$VERSION.zip
-build_linux_arm7_static && create_archive bettercap_linux_arm7_$VERSION.zip
-build_linux_arm7hf_static && create_archive bettercap_linux_arm7hf_$VERSION.zip
-build_linux_mips_static && create_archive bettercap_linux_mips_$VERSION.zip
-build_linux_mipsle_static && create_archive bettercap_linux_mipsle_$VERSION.zip
-build_linux_mips64_static && create_archive bettercap_linux_mips64_$VERSION.zip
-build_linux_mips64le_static && create_archive bettercap_linux_mips64le_$VERSION.zip
-
-# these are still not static :(
-build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
-build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
-build_windows_amd64 && create_archive bettercap_windows_amd64_$VERSION.zip
-sha256sum * > checksums.txt
+build_linux_amd64 # && create_archive bettercap_linux_amd64_$VERSION.zip
+# build_linux_arm7_static && create_archive bettercap_linux_arm7_$VERSION.zip
+# build_linux_arm7hf_static && create_archive bettercap_linux_arm7hf_$VERSION.zip
+# build_linux_mips_static && create_archive bettercap_linux_mips_$VERSION.zip
+# build_linux_mipsle_static && create_archive bettercap_linux_mipsle_$VERSION.zip
+# build_linux_mips64_static && create_archive bettercap_linux_mips64_$VERSION.zip
+# build_linux_mips64le_static && create_archive bettercap_linux_mips64le_$VERSION.zip
+# 
+# # these are still not static :(
+# build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
+# build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
+# build_windows_amd64 && create_archive bettercap_windows_amd64_$VERSION.zip
+# sha256sum * > checksums.txt
 
 echo
 echo
