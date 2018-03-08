@@ -18,6 +18,18 @@ func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*
 		return req, nil
 	}
 
+	// sslstrip preprocessing, takes care of:
+	//
+	// - patching / removing security related headers
+	// - making unknown session cookies expire
+	// - handling stripped domains
+	redir := p.stripper.Preprocess(req, ctx)
+	if redir != nil {
+		// we need to redirect the user in order to make
+		// some session cookie expire
+		return req, redir
+	}
+
 	// run the module OnRequest callback if defined
 	jsreq, jsres := p.Script.OnRequest(req)
 	if jsreq != nil {
