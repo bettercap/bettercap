@@ -60,7 +60,7 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 		Name:     "http.proxy",
 		Proxy:    goproxy.NewProxyHttpServer(),
 		sess:     s,
-		stripper: NewSSLStripper(false),
+		stripper: NewSSLStripper(s, false),
 		isTLS:    false,
 		Server:   nil,
 	}
@@ -109,7 +109,7 @@ func (p *HTTPProxy) doProxy(req *http.Request) bool {
 func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scriptPath string, stripSSL bool) error {
 	var err error
 
-	p.stripper.Enabled = stripSSL
+	p.stripper.Enable(stripSSL)
 	p.Address = address
 
 	if scriptPath != "" {
@@ -296,7 +296,7 @@ func (p *HTTPProxy) Start() {
 		var err error
 
 		strip := core.Yellow("enabled")
-		if p.stripper.Enabled == false {
+		if p.stripper.Enabled() == false {
 			strip = core.Dim("disabled")
 		}
 

