@@ -54,6 +54,8 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 	req := res.Request
 	log.Debug("(%s) > %s %s %s%s", core.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
 
+	p.stripper.Process(res, ctx)
+
 	// do we have a proxy script?
 	if p.Script == nil {
 		return res
