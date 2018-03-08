@@ -13,11 +13,6 @@ import (
 func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	log.Debug("(%s) < %s %s %s%s", core.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
 
-	// do we have a proxy script?
-	if p.Script == nil {
-		return req, nil
-	}
-
 	// sslstrip preprocessing, takes care of:
 	//
 	// - patching / removing security related headers
@@ -28,6 +23,11 @@ func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*
 		// we need to redirect the user in order to make
 		// some session cookie expire
 		return req, redir
+	}
+
+	// do we have a proxy script?
+	if p.Script == nil {
+		return req, nil
 	}
 
 	// run the module OnRequest callback if defined
