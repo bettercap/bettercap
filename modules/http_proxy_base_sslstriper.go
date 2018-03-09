@@ -267,6 +267,7 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 
 	// well ...
 	if req.URL.Scheme == "https" {
+		// TODO: check for max redirects?
 		req.URL.Scheme = "http"
 	}
 
