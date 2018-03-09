@@ -39,8 +39,8 @@ func (t *CookieTracker) keyOf(req *http.Request) string {
 }
 
 func (t *CookieTracker) IsClean(req *http.Request) bool {
-	t.RLock()
-	defer t.RUnlock()
+	// t.RLock()
+	// defer t.RUnlock()
 
 	// we only clean GET requests
 	if req.Method != "GET" {
@@ -65,7 +65,8 @@ func (t *CookieTracker) IsClean(req *http.Request) bool {
 func (t *CookieTracker) Track(req *http.Request) {
 	t.Lock()
 	defer t.Unlock()
-	t.set[t.keyOf(req)] = true
+	reqKey := t.keyOf(req)
+	t.set[reqKey] = true
 }
 
 func (t *CookieTracker) Expire(req *http.Request) *http.Response {
@@ -77,7 +78,7 @@ func (t *CookieTracker) Expire(req *http.Request) *http.Response {
 		redir.Header.Add("Set-Cookie", fmt.Sprintf("%s=EXPIRED; path=/; domain=%s; Expires=Mon, 01-Jan-1990 00:00:00 GMT", c.Name, c.Domain))
 	}
 
-	redir.Header.Add("Location", req.URL.String())
+	redir.Header.Add("Location", fmt.Sprintf("http://%s/", req.Host))
 	redir.Header.Add("Connection", "close")
 
 	return redir

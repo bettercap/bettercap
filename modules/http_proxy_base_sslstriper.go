@@ -280,9 +280,9 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 		req.Header.Set("Host", original.Hostname)
 	}
 
-	// check if we need to redirect the user in order
-	// to make unknown session cookies expire
 	if s.cookies.IsClean(req) == false {
+		// check if we need to redirect the user in order
+		// to make unknown session cookies expire
 		log.Info("[%s] Sending expired cookies for %s to %s", core.Green("sslstrip"), core.Yellow(req.Host), req.RemoteAddr)
 		s.cookies.Track(req)
 		redir = s.cookies.Expire(req)
