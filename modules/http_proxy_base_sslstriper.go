@@ -265,6 +265,11 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 	// preprocess request headers
 	s.stripRequestHeaders(req)
 
+	// well ...
+	if req.URL.Scheme == "https" {
+		req.URL.Scheme = "http"
+	}
+
 	// handle stripped domains
 	original := s.hosts.Unstrip(req.Host)
 	if original != nil {
