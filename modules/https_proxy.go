@@ -32,7 +32,7 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"Port to bind the HTTPS proxy to."))
 
 	p.AddParam(session.NewBoolParameter("https.proxy.sslstrip",
-		"true",
+		"false",
 		"Enable or disable SSL stripping."))
 
 	p.AddParam(session.NewStringParameter("https.proxy.certificate",

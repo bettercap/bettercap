@@ -34,7 +34,7 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		"Path of a proxy JS script."))
 
 	p.AddParam(session.NewBoolParameter("http.proxy.sslstrip",
-		"true",
+		"false",
 		"Enable or disable SSL stripping."))
 
 	p.AddHandler(session.NewModuleHandler("http.proxy on", "",
