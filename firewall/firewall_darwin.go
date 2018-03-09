@@ -39,7 +39,7 @@ func Make(iface *network.Endpoint) FirewallManager {
 }
 
 func (f PfFirewall) sysCtlRead(param string) (string, error) {
-	if out, err := core.Exec("sysctl", []string{param}); err != nil {
+	if out, err := core.ExecSilent("sysctl", []string{param}); err != nil {
 		return "", err
 	} else if m := sysCtlParser.FindStringSubmatch(out); len(m) == 3 && m[1] == param {
 		return m[2], nil
@@ -50,7 +50,7 @@ func (f PfFirewall) sysCtlRead(param string) (string, error) {
 
 func (f PfFirewall) sysCtlWrite(param string, value string) (string, error) {
 	args := []string{"-w", fmt.Sprintf("%s=%s", param, value)}
-	out, err := core.Exec("sysctl", args)
+	out, err := core.ExecSilent("sysctl", args)
 	if err != nil {
 		return "", err
 	}
@@ -113,9 +113,9 @@ func (f PfFirewall) generateRule(r *Redirection) string {
 func (f *PfFirewall) enable(enabled bool) {
 	f.enabled = enabled
 	if enabled {
-		core.Exec("pfctl", []string{"-e"})
+		core.ExecSilent("pfctl", []string{"-e"})
 	} else {
-		core.Exec("pfctl", []string{"-d"})
+		core.ExecSilent("pfctl", []string{"-d"})
 	}
 }
 
@@ -133,14 +133,13 @@ func (f PfFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 			return err
 		}
 
-		// load the rule
-		if _, err := core.Exec("pfctl", []string{"-f", f.filename}); err != nil {
-			return err
-		}
-
 		// enable pf
 		f.enable(true)
 
+		// load the rule
+		if _, err := core.ExecSilent("pfctl", []string{"-f", f.filename}); err != nil {
+			return err
+		}
 	} else {
 		fd, err := os.Open(f.filename)
 		if err == nil {
