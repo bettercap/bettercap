@@ -13,11 +13,6 @@ import (
 func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	log.Debug("(%s) < %s %s %s%s", core.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
 
-	// sslstrip preprocessing, takes care of:
-	//
-	// - patching / removing security related headers
-	// - making unknown session cookies expire
-	// - handling stripped domains
 	redir := p.stripper.Preprocess(req, ctx)
 	if redir != nil {
 		// we need to redirect the user in order to make

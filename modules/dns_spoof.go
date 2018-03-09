@@ -134,6 +134,7 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 		return
 	}
 
+	var eType layers.EthernetType
 	var ipv6 bool
 
 	if nlayer.LayerType() == layers.LayerTypeIPv4 {
@@ -141,18 +142,20 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 		src = pip.DstIP
 		dst = pip.SrcIP
 		ipv6 = false
+		eType = layers.EthernetTypeIPv4
 
 	} else {
 		pip := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
 		src = pip.DstIP
 		dst = pip.SrcIP
 		ipv6 = true
+		eType = layers.EthernetTypeIPv6
 	}
 
 	eth := layers.Ethernet{
 		SrcMAC:       peth.DstMAC,
 		DstMAC:       target,
-		EthernetType: layers.EthernetTypeIPv6,
+		EthernetType: eType,
 	}
 
 	answers := make([]layers.DNSResourceRecord, 0)
