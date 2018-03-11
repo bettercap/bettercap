@@ -131,6 +131,7 @@ func Dot11InformationElementVendorInfoDecode(buf []byte) (v VendorInfo, err erro
 			}
 		}
 	} else {
+		v.Unicast.Count = 0
 		return
 	}
 
@@ -152,6 +153,8 @@ func Dot11InformationElementVendorInfoDecode(buf []byte) (v VendorInfo, err erro
 				return v, err
 			}
 		}
+	} else {
+		v.AuthKey.Count = 0
 	}
 
 	return
@@ -180,6 +183,7 @@ func Dot11InformationElementRSNInfoDecode(buf []byte) (rsn RSNInfo, err error) {
 			}
 		}
 	} else {
+		rsn.Pairwise.Count = 0
 		return
 	}
 
@@ -201,6 +205,8 @@ func Dot11InformationElementRSNInfoDecode(buf []byte) (rsn RSNInfo, err error) {
 				return rsn, err
 			}
 		}
+	} else {
+		rsn.AuthKey.Count = 0
 	}
 
 	return
