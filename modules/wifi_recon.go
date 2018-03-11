@@ -163,10 +163,12 @@ func (w *WiFiRecon) getRow(station *network.Station) []string {
 
 	encryption := station.Encryption
 	if len(station.Cipher) > 0 {
-		encryption = fmt.Sprintf("%s [%s,%s]", station.Encryption, station.Cipher, station.Authentication)
+		encryption = fmt.Sprintf("%s (%s, %s)", station.Encryption, station.Cipher, station.Authentication)
 	}
 	if encryption == "OPEN" || encryption == "" {
 		encryption = core.Green("OPEN")
+		ssid = core.Green(ssid)
+		bssid = core.Green(bssid)
 	}
 	sent := ""
 	if station.Sent > 0 {
