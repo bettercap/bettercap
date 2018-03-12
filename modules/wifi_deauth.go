@@ -11,7 +11,7 @@ import (
 
 func (w *WiFiModule) injectPacket(data []byte) {
 	if err := w.handle.WritePacketData(data); err != nil {
-		log.Error("Could not send deauth packet: %s", err)
+		log.Error("Could not inject WiFi packet: %s", err)
 
 		w.Session.Queue.Stats.Lock()
 		w.Session.Queue.Stats.Errors++

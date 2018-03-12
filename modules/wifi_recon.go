@@ -98,6 +98,12 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			return w.startDeauth(bssid)
 		}))
 
+	w.AddHandler(session.NewModuleHandler("wifi.beacon.flood", "",
+		"todo",
+		func(args []string) error {
+			return w.startBeaconFlood()
+		}))
+
 	w.AddHandler(session.NewModuleHandler("wifi.show", "",
 		"Show current wireless stations list (default sorting by essid).",
 		func(args []string) error {
