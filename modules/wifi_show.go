@@ -66,7 +66,7 @@ func (w *WiFiModule) getRow(station *network.Station) []string {
 			fmt.Sprintf("%d dBm", station.RSSI),
 			bssid,
 			/* station.Vendor, */
-			strconv.Itoa(mhz2chan(station.Frequency)),
+			strconv.Itoa(network.Dot11Freq2Chan(station.Frequency)),
 			sent,
 			recvd,
 			seen,
@@ -88,7 +88,7 @@ func (w *WiFiModule) getRow(station *network.Station) []string {
 			ssid,
 			/* station.Vendor, */
 			encryption,
-			strconv.Itoa(mhz2chan(station.Frequency)),
+			strconv.Itoa(network.Dot11Freq2Chan(station.Frequency)),
 			clients,
 			sent,
 			recvd,

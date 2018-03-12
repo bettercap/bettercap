@@ -76,7 +76,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				return err
 			} else if ap, found := w.Session.WiFi.Get(bssid.String()); found == true {
 				w.ap = ap
-				w.stickChan = mhz2chan(ap.Frequency)
+				w.stickChan = network.Dot11Freq2Chan(ap.Frequency)
 				return nil
 			}
 			return fmt.Errorf("Could not find station with BSSID %s", args[0])
@@ -202,29 +202,12 @@ func (w *WiFiModule) Configure() error {
 	return nil
 }
 
-func isZeroBSSID(bssid net.HardwareAddr) bool {
-	for _, b := range bssid {
-		if b != 0x00 {
-			return false
-		}
-	}
-	return true
-}
-
-func isBroadcastBSSID(bssid net.HardwareAddr) bool {
-	for _, b := range bssid {
-		if b != 0xff {
-			return false
-		}
-	}
-	return true
-}
-
 func (w *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	// search for Dot11InformationElementIDSSID
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
-		if isZeroBSSID(dot11.Address3) == false && isBroadcastBSSID(dot11.Address3) == false {
-			bssid := dot11.Address3.String()
+		from := dot11.Address3
+		if network.IsZeroMac(from) == false && network.IsBroadcastMac(from) == false {
+			bssid := from.String()
 			frequency := int(radiotap.ChannelFrequency)
 			w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal)
 		}

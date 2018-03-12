@@ -7,18 +7,6 @@ import (
 	"github.com/bettercap/bettercap/network"
 )
 
-func mhz2chan(freq int) int {
-	// ambo!
-	if freq <= 2472 {
-		return ((freq - 2412) / 5) + 1
-	} else if freq == 2484 {
-		return 14
-	} else if freq >= 5035 && freq <= 5865 {
-		return ((freq - 5035) / 5) + 7
-	}
-	return 0
-}
-
 func (w *WiFiModule) onChannel(channel int, cb func()) {
 	prev := w.stickChan
 	w.stickChan = channel
@@ -49,7 +37,7 @@ func (w *WiFiModule) channelHopper() {
 		}
 
 		for _, frequency := range w.frequencies {
-			channel := mhz2chan(frequency)
+			channel := network.Dot11Freq2Chan(frequency)
 			// stick to the access point channel as long as it's selected
 			// or as long as we're deauthing on it
 			if w.stickChan != 0 {

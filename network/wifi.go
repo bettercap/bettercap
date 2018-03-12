@@ -7,6 +7,17 @@ import (
 	"time"
 )
 
+func Dot11Freq2Chan(freq int) int {
+	if freq <= 2472 {
+		return ((freq - 2412) / 5) + 1
+	} else if freq == 2484 {
+		return 14
+	} else if freq >= 5035 && freq <= 5865 {
+		return ((freq - 5035) / 5) + 7
+	}
+	return 0
+}
+
 type APNewCallback func(ap *AccessPoint)
 type APLostCallback func(ap *AccessPoint)
 

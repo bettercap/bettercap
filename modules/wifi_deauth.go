@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 )
 
@@ -62,7 +63,7 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	if ap, found := w.Session.WiFi.Get(bssid); found == true {
 		clients := ap.Clients()
 		log.Info("Deauthing %d clients from AP %s ...", len(clients), ap.ESSID())
-		w.onChannel(mhz2chan(ap.Frequency), func() {
+		w.onChannel(network.Dot11Freq2Chan(ap.Frequency), func() {
 			for _, c := range clients {
 				if w.Running() == false {
 					break
@@ -81,7 +82,7 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 			break
 		} else if c, found := ap.Get(bssid); found == true {
 			log.Info("Deauthing client %s from AP %s ...", c.HwAddress, ap.ESSID())
-			w.onChannel(mhz2chan(ap.Frequency), func() {
+			w.onChannel(network.Dot11Freq2Chan(ap.Frequency), func() {
 				w.sendDeauthPacket(ap.HW, c.HW)
 			})
 			return nil
