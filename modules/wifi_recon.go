@@ -113,7 +113,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
-		"WiFi channels (comma separated) or empty for channel hopping.",
+		"WiFi channels (comma separated) or 'clear' for channel hopping.",
 		func(args []string) error {
 			newfrequencies := w.frequencies[:0]
 
