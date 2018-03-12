@@ -3,6 +3,8 @@ package modules
 import (
 	"fmt"
 	"net"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -87,6 +89,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		func(args []string) error {
 			w.ap = nil
 			w.stickChan = 0
+			var err error
+			if w.frequencies, err = network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
+				return err
+			}
 			return nil
 		}))
 
@@ -106,9 +112,34 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			return w.Show("rssi")
 		}))
 
-	w.AddParam(session.NewIntParameter("wifi.recon.channel",
-		"",
-		"WiFi channel or empty for channel hopping."))
+	w.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]*([0-9]+(?:[, ]+[0-9]+)*)?`,
+		"WiFi channels (comma separated) or empty for channel hopping.",
+		func(args []string) error {
+			newfrequencies := w.frequencies[:0]
+
+			if len(args) > 0 && args[0] != "" {
+				channels := strings.Split(args[0], ",")
+				for _, c := range channels {
+					trimmed := strings.Trim(c, " ")
+					channel, err := strconv.Atoi(trimmed)
+					if err != nil {
+						return err
+					}
+					newfrequencies = append(newfrequencies, chan2mhz(channel))
+				}
+			} else {
+				// No channels setted, retrieve frequencies supported by the card
+				if frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
+					return err
+				} else {
+					newfrequencies = frequencies
+				}
+			}
+
+			w.frequencies = newfrequencies
+
+			return nil
+		}))
 
 	w.AddParam(session.NewStringParameter("wifi.source.file",
 		"",
@@ -117,7 +148,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 	w.AddParam(session.NewIntParameter("wifi.hop.period",
 		"250",
-		"If channel hopping is enabled (empty wifi.recon.channel), this is the time in millseconds the algorithm will hop on every channel (it'll be doubled if both 2.4 and 5.0 bands are available)."))
+		"If channel hopping is enabled (empty wifi.recon.channel), this is the time in milliseconds the algorithm will hop on every channel (it'll be doubled if both 2.4 and 5.0 bands are available)."))
 
 	w.AddParam(session.NewBoolParameter("wifi.skip-broken",
 		"true",
@@ -147,6 +178,18 @@ func mhz2chan(freq int) int {
 	} else if freq >= 5035 && freq <= 5865 {
 		return ((freq - 5035) / 5) + 7
 	}
+	return 0
+}
+
+func chan2mhz(channel int) int {
+	if channel <= 13 {
+		return ((channel - 1) * 5) + 2412
+	} else if channel == 14 {
+		return 2484
+	} else if channel <= 173 {
+		return ((channel - 7) * 5) + 5035
+	}
+
 	return 0
 }
 
@@ -189,25 +232,18 @@ func (w *WiFiModule) Configure() error {
 	w.hopPeriod = time.Duration(hopPeriod) * time.Millisecond
 
 	if w.source == "" {
-		if err, w.channel = w.IntParam("wifi.recon.channel"); err == nil {
-			if err = network.SetInterfaceChannel(w.Session.Interface.Name(), w.channel); err != nil {
+		// No channels setted, retrieve frequencies supported by the card
+		if len(w.frequencies) == 0 {
+			if w.frequencies, err = network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
 				return err
 			}
-			log.Info("WiFi recon active on channel %d.", w.channel)
-		} else {
-			w.channel = 0
+
 			// we need to start somewhere, this is just to check if
 			// this OS supports switching channel programmatically.
 			if err = network.SetInterfaceChannel(w.Session.Interface.Name(), 1); err != nil {
 				return err
 			}
 			log.Info("WiFi recon active with channel hopping.")
-		}
-
-		if frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
-			return err
-		} else {
-			w.frequencies = frequencies
 		}
 	}
 
@@ -251,8 +287,15 @@ func (w *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *laye
 	// search for Dot11InformationElementIDSSID
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
 		if isZeroBSSID(dot11.Address3) == false && isBroadcastBSSID(dot11.Address3) == false {
+			var frequency int
 			bssid := dot11.Address3.String()
-			frequency := int(radiotap.ChannelFrequency)
+
+			if found, channel := packets.Dot11ParseDSSet(packet); found {
+				frequency = chan2mhz(channel)
+			} else {
+				frequency = int(radiotap.ChannelFrequency)
+			}
+
 			w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal)
 		}
 	}
@@ -342,10 +385,11 @@ func (w *WiFiModule) channelHopper() {
 		// more channels, therefore we need to increase the time
 		// we hop on each one otherwise me lose information
 		if len(w.frequencies) > 14 {
-			delay = 500 * time.Millisecond
+			delay = delay * 2 * time.Millisecond
 		}
 
-		for _, frequency := range w.frequencies {
+		frequencies := w.frequencies
+		for _, frequency := range frequencies {
 			channel := mhz2chan(frequency)
 			// stick to the access point channel as long as it's selected
 			// or as long as we're deauthing on it
