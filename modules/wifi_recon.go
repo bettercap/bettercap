@@ -385,7 +385,7 @@ func (w *WiFiModule) channelHopper() {
 		// more channels, therefore we need to increase the time
 		// we hop on each one otherwise me lose information
 		if len(w.frequencies) > 14 {
-			delay = delay * 2 * time.Millisecond
+			delay = delay * 2
 		}
 
 		frequencies := w.frequencies
