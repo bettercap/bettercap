@@ -211,11 +211,3 @@ func Dot11InformationElementRSNInfoDecode(buf []byte) (rsn RSNInfo, err error) {
 
 	return
 }
-
-func Dot11InformationElementIDDSSetDecode(buf []byte) (channel int, err error) {
-	if err = canParse("DSSet.channel", buf, 1); err == nil {
-		channel = int(buf[0])
-	}
-
-	return
-}
