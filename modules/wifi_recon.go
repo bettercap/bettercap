@@ -3,9 +3,6 @@ package modules
 import (
 	"fmt"
 	"net"
-	"os"
-	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -18,8 +15,6 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
-
-	"github.com/dustin/go-humanize"
 )
 
 var maxStationTTL = 5 * time.Minute
@@ -32,7 +27,7 @@ type WiFiProbe struct {
 	RSSI       int8
 }
 
-type WiFiRecon struct {
+type WiFiModule struct {
 	session.SessionModule
 
 	handle        *pcap.Handle
@@ -47,8 +42,8 @@ type WiFiRecon struct {
 	reads         *sync.WaitGroup
 }
 
-func NewWiFiRecon(s *session.Session) *WiFiRecon {
-	w := &WiFiRecon{
+func NewWiFiModule(s *session.Session) *WiFiModule {
+	w := &WiFiModule{
 		SessionModule: session.NewSessionModule("wifi.recon", s),
 		channel:       0,
 		stickChan:     0,
@@ -124,96 +119,16 @@ func NewWiFiRecon(s *session.Session) *WiFiRecon {
 	return w
 }
 
-func (w WiFiRecon) Name() string {
+func (w WiFiModule) Name() string {
 	return "wifi.recon"
 }
 
-func (w WiFiRecon) Description() string {
+func (w WiFiModule) Description() string {
 	return "A module to monitor and perform wireless attacks on 802.11."
 }
 
-func (w WiFiRecon) Author() string {
+func (w WiFiModule) Author() string {
 	return "Gianluca Braga <matrix86@protonmail.com> && Simone Margaritelli <evilsocket@protonmail.com>>"
-}
-
-func (w *WiFiRecon) getRow(station *network.Station) []string {
-	sinceStarted := time.Since(w.Session.StartedAt)
-	sinceFirstSeen := time.Since(station.FirstSeen)
-
-	bssid := station.HwAddress
-	if sinceStarted > (justJoinedTimeInterval*2) && sinceFirstSeen <= justJoinedTimeInterval {
-		// if endpoint was first seen in the last 10 seconds
-		bssid = core.Bold(bssid)
-	}
-
-	seen := station.LastSeen.Format("15:04:05")
-	sinceLastSeen := time.Since(station.LastSeen)
-	if sinceStarted > aliveTimeInterval && sinceLastSeen <= aliveTimeInterval {
-		// if endpoint seen in the last 10 seconds
-		seen = core.Bold(seen)
-	} else if sinceLastSeen > presentTimeInterval {
-		// if endpoint not  seen in the last 60 seconds
-		seen = core.Dim(seen)
-	}
-
-	ssid := station.ESSID()
-	if ssid == "<hidden>" {
-		ssid = core.Dim(ssid)
-	}
-
-	encryption := station.Encryption
-	if len(station.Cipher) > 0 {
-		encryption = fmt.Sprintf("%s (%s, %s)", station.Encryption, station.Cipher, station.Authentication)
-	}
-	if encryption == "OPEN" || encryption == "" {
-		encryption = core.Green("OPEN")
-		ssid = core.Green(ssid)
-		bssid = core.Green(bssid)
-	}
-	sent := ""
-	if station.Sent > 0 {
-		sent = humanize.Bytes(station.Sent)
-	}
-
-	recvd := ""
-	if station.Received > 0 {
-		recvd = humanize.Bytes(station.Received)
-	}
-
-	if w.isApSelected() {
-		return []string{
-			fmt.Sprintf("%d dBm", station.RSSI),
-			bssid,
-			/* station.Vendor, */
-			strconv.Itoa(mhz2chan(station.Frequency)),
-			sent,
-			recvd,
-			seen,
-		}
-	} else {
-		// this is ugly, but necessary in order to have this
-		// method handle both access point and clients
-		// transparently
-		clients := ""
-		if ap, found := w.Session.WiFi.Get(station.HwAddress); found == true {
-			if ap.NumClients() > 0 {
-				clients = strconv.Itoa(ap.NumClients())
-			}
-		}
-
-		return []string{
-			fmt.Sprintf("%d dBm", station.RSSI),
-			bssid,
-			ssid,
-			/* station.Vendor, */
-			encryption,
-			strconv.Itoa(mhz2chan(station.Frequency)),
-			clients,
-			sent,
-			recvd,
-			seen,
-		}
-	}
 }
 
 func mhz2chan(freq int) int {
@@ -228,62 +143,7 @@ func mhz2chan(freq int) int {
 	return 0
 }
 
-func (w *WiFiRecon) isApSelected() bool {
-	return w.ap != nil
-}
-
-func (w *WiFiRecon) Show(by string) error {
-	var stations []*network.Station
-
-	apSelected := w.isApSelected()
-	if apSelected {
-		if ap, found := w.Session.WiFi.Get(w.ap.HwAddress); found == true {
-			stations = ap.Clients()
-		} else {
-			return fmt.Errorf("Could not find station %s", w.ap.HwAddress)
-		}
-	} else {
-		stations = w.Session.WiFi.Stations()
-	}
-
-	if by == "seen" {
-		sort.Sort(ByWiFiSeenSorter(stations))
-	} else if by == "essid" {
-		sort.Sort(ByEssidSorter(stations))
-	} else if by == "channel" {
-		sort.Sort(ByChannelSorter(stations))
-	} else {
-		sort.Sort(ByRSSISorter(stations))
-	}
-
-	rows := make([][]string, 0)
-	for _, s := range stations {
-		rows = append(rows, w.getRow(s))
-	}
-	nrows := len(rows)
-
-	columns := []string{"RSSI", "BSSID", "SSID" /* "Vendor", */, "Encryption", "Channel", "Clients", "Sent", "Recvd", "Last Seen"}
-	if apSelected {
-		// these are clients
-		columns = []string{"RSSI", "MAC" /* "Vendor", */, "Channel", "Sent", "Received", "Last Seen"}
-
-		if nrows == 0 {
-			fmt.Printf("\nNo authenticated clients detected for %s.\n", w.ap.HwAddress)
-		} else {
-			fmt.Printf("\n%s clients:\n", w.ap.HwAddress)
-		}
-	}
-
-	if nrows > 0 {
-		core.AsTable(os.Stdout, columns, rows)
-	}
-
-	w.Session.Refresh()
-
-	return nil
-}
-
-func (w *WiFiRecon) Configure() error {
+func (w *WiFiModule) Configure() error {
 	var hopPeriod int
 
 	ihandle, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
@@ -334,41 +194,7 @@ func (w *WiFiRecon) Configure() error {
 	return nil
 }
 
-func (w *WiFiRecon) injectPacket(data []byte) {
-	if err := w.handle.WritePacketData(data); err != nil {
-		log.Error("Could not send deauth packet: %s", err)
-
-		w.Session.Queue.Stats.Lock()
-		w.Session.Queue.Stats.Errors++
-		w.Session.Queue.Stats.Unlock()
-	} else {
-		w.Session.Queue.Stats.Lock()
-		w.Session.Queue.Stats.Sent += uint64(len(data))
-		w.Session.Queue.Stats.Unlock()
-	}
-	// let the network card breath a little
-	time.Sleep(10 * time.Millisecond)
-}
-
-func (w *WiFiRecon) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
-	for seq := uint16(0); seq < 64 && w.Running(); seq++ {
-		if err, pkt := packets.NewDot11Deauth(ap, client, ap, seq); err != nil {
-			log.Error("Could not create deauth packet: %s", err)
-			continue
-		} else {
-			w.injectPacket(pkt)
-		}
-
-		if err, pkt := packets.NewDot11Deauth(client, ap, ap, seq); err != nil {
-			log.Error("Could not create deauth packet: %s", err)
-			continue
-		} else {
-			w.injectPacket(pkt)
-		}
-	}
-}
-
-func (w *WiFiRecon) onChannel(channel int, cb func()) {
+func (w *WiFiModule) onChannel(channel int, cb func()) {
 	prev := w.stickChan
 	w.stickChan = channel
 
@@ -381,54 +207,6 @@ func (w *WiFiRecon) onChannel(channel int, cb func()) {
 	cb()
 
 	w.stickChan = prev
-}
-
-func (w *WiFiRecon) startDeauth(to net.HardwareAddr) error {
-	// if not already running, temporarily enable the pcap handle
-	// for packet injection
-	if w.Running() == false {
-		if err := w.Configure(); err != nil {
-			return err
-		}
-		defer w.handle.Close()
-	}
-
-	w.writes.Add(1)
-	defer w.writes.Done()
-
-	bssid := to.String()
-
-	// are we deauthing every client of a given access point?
-	if ap, found := w.Session.WiFi.Get(bssid); found == true {
-		clients := ap.Clients()
-		log.Info("Deauthing %d clients from AP %s ...", len(clients), ap.ESSID())
-		w.onChannel(mhz2chan(ap.Frequency), func() {
-			for _, c := range clients {
-				if w.Running() == false {
-					break
-				}
-				w.sendDeauthPacket(ap.HW, c.HW)
-			}
-		})
-
-		return nil
-	}
-
-	// search for a client
-	aps := w.Session.WiFi.List()
-	for _, ap := range aps {
-		if w.Running() == false {
-			break
-		} else if c, found := ap.Get(bssid); found == true {
-			log.Info("Deauthing client %s from AP %s ...", c.HwAddress, ap.ESSID())
-			w.onChannel(mhz2chan(ap.Frequency), func() {
-				w.sendDeauthPacket(ap.HW, c.HW)
-			})
-			return nil
-		}
-	}
-
-	return fmt.Errorf("%s is an unknown BSSID.", bssid)
 }
 
 func isZeroBSSID(bssid net.HardwareAddr) bool {
@@ -449,7 +227,7 @@ func isBroadcastBSSID(bssid net.HardwareAddr) bool {
 	return true
 }
 
-func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+func (w *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	// search for Dot11InformationElementIDSSID
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
 		if isZeroBSSID(dot11.Address3) == false && isBroadcastBSSID(dot11.Address3) == false {
@@ -460,7 +238,7 @@ func (w *WiFiRecon) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layer
 	}
 }
 
-func (w *WiFiRecon) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+func (w *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	if dot11.Type != layers.Dot11TypeMgmtProbeReq {
 		return
 	}
@@ -498,7 +276,7 @@ func (w *WiFiRecon) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot1
 	})
 }
 
-func (w *WiFiRecon) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+func (w *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	w.Session.WiFi.EachAccessPoint(func(bssid string, ap *network.AccessPoint) {
 		// packet going to this specific BSSID?
 		if packets.Dot11IsDataFor(dot11, ap.HW) == true {
@@ -507,7 +285,7 @@ func (w *WiFiRecon) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot
 	})
 }
 
-func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
+func (w *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	// collect stats from data frames
 	if dot11.Type.MainType() == layers.Dot11TypeData {
 		bytes := uint64(len(packet.Data()))
@@ -533,7 +311,7 @@ func (w *WiFiRecon) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	}
 }
 
-func (w *WiFiRecon) channelHopper() {
+func (w *WiFiModule) channelHopper() {
 	w.reads.Add(1)
 	defer w.reads.Done()
 
@@ -567,7 +345,7 @@ func (w *WiFiRecon) channelHopper() {
 	}
 }
 
-func (w *WiFiRecon) stationPruner() {
+func (w *WiFiModule) stationPruner() {
 	w.reads.Add(1)
 	defer w.reads.Done()
 
@@ -584,7 +362,7 @@ func (w *WiFiRecon) stationPruner() {
 	}
 }
 
-func (w *WiFiRecon) trackPacket(pkt gopacket.Packet) {
+func (w *WiFiModule) trackPacket(pkt gopacket.Packet) {
 	pktSize := uint64(len(pkt.Data()))
 
 	w.Session.Queue.Stats.Lock()
@@ -595,7 +373,7 @@ func (w *WiFiRecon) trackPacket(pkt gopacket.Packet) {
 	w.Session.Queue.Stats.Unlock()
 }
 
-func (w *WiFiRecon) Start() error {
+func (w *WiFiModule) Start() error {
 	if err := w.Configure(); err != nil {
 		return err
 	}
@@ -644,7 +422,7 @@ func (w *WiFiRecon) Start() error {
 	return nil
 }
 
-func (w *WiFiRecon) Stop() error {
+func (w *WiFiModule) Stop() error {
 	return w.SetRunning(false, func() {
 		// wait any pending write operation
 		w.writes.Wait()

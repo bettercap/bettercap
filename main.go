@@ -50,7 +50,7 @@ func main() {
 	sess.Register(modules.NewTcpProxy(sess))
 	sess.Register(modules.NewRestAPI(sess))
 	sess.Register(modules.NewWOL(sess))
-	sess.Register(modules.NewWiFiRecon(sess))
+	sess.Register(modules.NewWiFiModule(sess))
 	sess.Register(modules.NewBLERecon(sess))
 	sess.Register(modules.NewSynScanner(sess))
 	sess.Register(modules.NewGPS(sess))
