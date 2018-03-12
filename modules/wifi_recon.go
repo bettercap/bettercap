@@ -30,16 +30,18 @@ type WiFiProbe struct {
 type WiFiModule struct {
 	session.SessionModule
 
-	handle        *pcap.Handle
-	channel       int
-	hopPeriod     time.Duration
-	frequencies   []int
-	ap            *network.AccessPoint
-	stickChan     int
-	skipBroken    bool
-	pktSourceChan chan gopacket.Packet
-	writes        *sync.WaitGroup
-	reads         *sync.WaitGroup
+	handle              *pcap.Handle
+	source              string
+	channel             int
+	hopPeriod           time.Duration
+	frequencies         []int
+	ap                  *network.AccessPoint
+	stickChan           int
+	skipBroken          bool
+	pktSourceChan       chan gopacket.Packet
+	pktSourceChanClosed bool
+	writes              *sync.WaitGroup
+	reads               *sync.WaitGroup
 }
 
 func NewWiFiModule(s *session.Session) *WiFiModule {
@@ -108,6 +110,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"",
 		"WiFi channel or empty for channel hopping."))
 
+	w.AddParam(session.NewStringParameter("wifi.source.file",
+		"",
+		"",
+		"If set, the wifi module will read from this pcap file instead of the hardware interface."))
+
 	w.AddParam(session.NewIntParameter("wifi.hop.period",
 		"250",
 		"If channel hopping is enabled (empty wifi.recon.channel), this is the time in millseconds the algorithm will hop on every channel (it'll be doubled if both 2.4 and 5.0 bands are available)."))
@@ -145,21 +152,32 @@ func mhz2chan(freq int) int {
 
 func (w *WiFiModule) Configure() error {
 	var hopPeriod int
+	var err error
 
-	ihandle, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
-	if err != nil {
+	if err, w.source = w.StringParam("wifi.source.file"); err != nil {
 		return err
 	}
-	defer ihandle.CleanUp()
 
-	if err = ihandle.SetRFMon(true); err != nil {
-		return fmt.Errorf("Error while setting interface %s in monitor mode: %s", core.Bold(w.Session.Interface.Name()), err)
-	} else if err = ihandle.SetSnapLen(65536); err != nil {
-		return err
-	} else if err = ihandle.SetTimeout(pcap.BlockForever); err != nil {
-		return err
-	} else if w.handle, err = ihandle.Activate(); err != nil {
-		return err
+	if w.source != "" {
+		if w.handle, err = pcap.OpenOffline(w.source); err != nil {
+			return err
+		}
+	} else {
+		ihandle, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
+		if err != nil {
+			return err
+		}
+		defer ihandle.CleanUp()
+
+		if err = ihandle.SetRFMon(true); err != nil {
+			return fmt.Errorf("Error while setting interface %s in monitor mode: %s", core.Bold(w.Session.Interface.Name()), err)
+		} else if err = ihandle.SetSnapLen(65536); err != nil {
+			return err
+		} else if err = ihandle.SetTimeout(pcap.BlockForever); err != nil {
+			return err
+		} else if w.handle, err = ihandle.Activate(); err != nil {
+			return err
+		}
 	}
 
 	if err, w.skipBroken = w.BoolParam("wifi.skip-broken"); err != nil {
@@ -170,25 +188,27 @@ func (w *WiFiModule) Configure() error {
 
 	w.hopPeriod = time.Duration(hopPeriod) * time.Millisecond
 
-	if err, w.channel = w.IntParam("wifi.recon.channel"); err == nil {
-		if err = network.SetInterfaceChannel(w.Session.Interface.Name(), w.channel); err != nil {
-			return err
+	if w.source == "" {
+		if err, w.channel = w.IntParam("wifi.recon.channel"); err == nil {
+			if err = network.SetInterfaceChannel(w.Session.Interface.Name(), w.channel); err != nil {
+				return err
+			}
+			log.Info("WiFi recon active on channel %d.", w.channel)
+		} else {
+			w.channel = 0
+			// we need to start somewhere, this is just to check if
+			// this OS supports switching channel programmatically.
+			if err = network.SetInterfaceChannel(w.Session.Interface.Name(), 1); err != nil {
+				return err
+			}
+			log.Info("WiFi recon active with channel hopping.")
 		}
-		log.Info("WiFi recon active on channel %d.", w.channel)
-	} else {
-		w.channel = 0
-		// we need to start somewhere, this is just to check if
-		// this OS supports switching channel programmatically.
-		if err = network.SetInterfaceChannel(w.Session.Interface.Name(), 1); err != nil {
-			return err
-		}
-		log.Info("WiFi recon active with channel hopping.")
-	}
 
-	if frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
-		return err
-	} else {
-		w.frequencies = frequencies
+		if frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
+			return err
+		} else {
+			w.frequencies = frequencies
+		}
 	}
 
 	return nil
@@ -380,7 +400,7 @@ func (w *WiFiModule) Start() error {
 
 	w.SetRunning(true, func() {
 		// start channel hopper if needed
-		if w.channel == 0 {
+		if w.channel == 0 && w.source == "" {
 			go w.channelHopper()
 		}
 
@@ -417,6 +437,7 @@ func (w *WiFiModule) Start() error {
 				w.updateStats(dot11, packet)
 			}
 		}
+		w.pktSourceChanClosed = true
 	})
 
 	return nil
@@ -427,7 +448,9 @@ func (w *WiFiModule) Stop() error {
 		// wait any pending write operation
 		w.writes.Wait()
 		// signal the main for loop we want to exit
-		w.pktSourceChan <- nil
+		if w.pktSourceChanClosed == false {
+			w.pktSourceChan <- nil
+		}
 		// close the pcap handle to make the main for exit
 		w.handle.Close()
 		// close the pcap handle to make the main for exit
