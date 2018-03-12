@@ -66,6 +66,23 @@ func Dot11ParseIDSSID(packet gopacket.Packet) (bool, string) {
 	return false, ""
 }
 
+func Dot11ParseDSSet(packet gopacket.Packet) (bool, int) {
+	channel := 0
+	found := false
+	for _, layer := range packet.Layers() {
+		info, ok := layer.(*layers.Dot11InformationElement)
+		if ok == true {
+			if info.ID == layers.Dot11InformationElementIDDSSet {
+				channel, _ = Dot11InformationElementIDDSSetDecode(info.Info)
+				found = true
+				break
+			}
+		}
+	}
+
+	return found, channel
+}
+
 func Dot11ParseEncryption(packet gopacket.Packet, dot11 *layers.Dot11) (bool, string, string, string) {
 	var i uint16
 	enc := ""
