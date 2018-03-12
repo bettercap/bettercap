@@ -126,3 +126,20 @@ func Dot11IsDataFor(dot11 *layers.Dot11, station net.HardwareAddr) bool {
 	// packet going to this specific BSSID?
 	return bytes.Compare(dot11.Address1, station) == 0
 }
+
+func Dot11ParseDSSet(packet gopacket.Packet) (bool, int) {
+	channel := 0
+	found := false
+	for _, layer := range packet.Layers() {
+		info, ok := layer.(*layers.Dot11InformationElement)
+		if ok == true {
+			if info.ID == layers.Dot11InformationElementIDDSSet {
+				channel, _ = Dot11InformationElementIDDSSetDecode(info.Info)
+				found = true
+				break
+			}
+		}
+	}
+
+	return found, channel
+}

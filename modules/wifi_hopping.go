@@ -33,10 +33,11 @@ func (w *WiFiModule) channelHopper() {
 		// more channels, therefore we need to increase the time
 		// we hop on each one otherwise me lose information
 		if len(w.frequencies) > 14 {
-			delay = 500 * time.Millisecond
+			delay = delay * 2
 		}
 
-		for _, frequency := range w.frequencies {
+		frequencies := w.frequencies
+		for _, frequency := range frequencies {
 			channel := network.Dot11Freq2Chan(frequency)
 			// stick to the access point channel as long as it's selected
 			// or as long as we're deauthing on it

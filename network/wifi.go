@@ -18,6 +18,18 @@ func Dot11Freq2Chan(freq int) int {
 	return 0
 }
 
+func Dot11Chan2Freq(channel int) int {
+	if channel <= 13 {
+		return ((channel - 1) * 5) + 2412
+	} else if channel == 14 {
+		return 2484
+	} else if channel <= 173 {
+		return ((channel - 7) * 5) + 5035
+	}
+
+	return 0
+}
+
 type APNewCallback func(ap *AccessPoint)
 type APLostCallback func(ap *AccessPoint)
 
