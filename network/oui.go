@@ -10315,6 +10315,7 @@ var oui = map[string]string {
     "5cf286": "Ieee Registration Authority",
     "001098": "Starnet Technologies",
     "001099": "InnoMedia",
+    "e2b9e5": "Technicolor",
     "24ee3a": "Chengdu Yingji Electronic Hi-tech Co",
     "00093f": "Double-Win Enterpirse CO.",
     "0026c6": "Intel Corporate",
