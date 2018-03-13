@@ -7,6 +7,7 @@ type Options struct {
 	Caplet        *string
 	Debug         *bool
 	Silent        *bool
+	NoColors      *bool
 	NoHistory     *bool
 	EnvFile       *string
 	Commands      *string
@@ -20,6 +21,7 @@ func ParseOptions() (Options, error) {
 		Caplet:        flag.String("caplet", "", "Read commands from this file and execute them in the interactive session."),
 		Debug:         flag.Bool("debug", false, "Print debug messages."),
 		Silent:        flag.Bool("silent", false, "Suppress all logs which are not errors."),
+		NoColors:      flag.Bool("no-colors", false, "Disable output color effect,s."),
 		NoHistory:     flag.Bool("no-history", false, "Disable interactive session history file."),
 		EnvFile:       flag.String("env-file", "", "Load environment variables from this file if found, set to empty to disable environment persistance."),
 		Commands:      flag.String("eval", "", "Run one or more commands separated by ; in the interactive session, used to set variables via command line."),

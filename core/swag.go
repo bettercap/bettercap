@@ -26,14 +26,17 @@ var (
 
 	RESET = "\033[0m"
 
-	NoColors = false
+	HasColors = true
 )
 
-func init() {
-	NoColors = os.Getenv("TERM") == "dumb" ||
+func isDumbTerminal() bool {
+	return os.Getenv("TERM") == "dumb" ||
 		os.Getenv("TERM") == "" ||
 		(!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()))
-	if NoColors {
+}
+
+func InitSwag(disableColors bool) {
+	if disableColors || isDumbTerminal() {
 		BOLD = ""
 		DIM = ""
 		RED = ""
@@ -48,6 +51,7 @@ func init() {
 		BG_YELLOW = ""
 		BG_LBLUE = ""
 		RESET = ""
+		HasColors = false
 	}
 }
 

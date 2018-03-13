@@ -27,8 +27,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if core.NoColors == true {
-		fmt.Printf("\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")
+	if core.HasColors == false {
+		if *sess.Options.NoColors == true {
+			fmt.Printf("\n\nWARNING: Terminal colors have been disabled, view will be very limited.\n\n")
+		} else {
+			fmt.Printf("\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")
+		}
 	}
 
 	appName := fmt.Sprintf("%s v%s", core.Name, core.Version)
@@ -59,12 +63,6 @@ func main() {
 		log.Fatal("%s", err)
 	}
 
-	for _, modName := range autoEnableList {
-		if err = sess.Run(modName + " on"); err != nil {
-			log.Fatal("Error while starting module %s: %", modName, err)
-		}
-	}
-
 	/*
 	 * Commands sent with -eval are used to set specific
 	 * caplet parameters (i.e. arp.spoof.targets) via command
@@ -74,6 +72,13 @@ func main() {
 	for _, cmd := range session.ParseCommands(*sess.Options.Commands) {
 		if err = sess.Run(cmd); err != nil {
 			log.Error("Error while running '%s': %s", core.Bold(cmd), core.Red(err.Error()))
+		}
+	}
+
+	// Start modules that are enabled by default.
+	for _, modName := range autoEnableList {
+		if err = sess.Run(modName + " on"); err != nil {
+			log.Fatal("Error while starting module %s: %", modName, err)
 		}
 	}
 
