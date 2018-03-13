@@ -138,6 +138,8 @@ func New() (*Session, error) {
 		return nil, err
 	}
 
+	core.InitSwag(*s.Options.NoColors)
+
 	if *s.Options.CpuProfile != "" {
 		if f, err := os.Create(*s.Options.CpuProfile); err != nil {
 			return nil, err

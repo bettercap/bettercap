@@ -7,6 +7,29 @@ import (
 	"time"
 )
 
+func Dot11Freq2Chan(freq int) int {
+	if freq <= 2472 {
+		return ((freq - 2412) / 5) + 1
+	} else if freq == 2484 {
+		return 14
+	} else if freq >= 5035 && freq <= 5865 {
+		return ((freq - 5035) / 5) + 7
+	}
+	return 0
+}
+
+func Dot11Chan2Freq(channel int) int {
+	if channel <= 13 {
+		return ((channel - 1) * 5) + 2412
+	} else if channel == 14 {
+		return 2484
+	} else if channel <= 173 {
+		return ((channel - 7) * 5) + 5035
+	}
+
+	return 0
+}
+
 type APNewCallback func(ap *AccessPoint)
 type APLostCallback func(ap *AccessPoint)
 
@@ -131,6 +154,20 @@ func (w *WiFi) Get(mac string) (*AccessPoint, bool) {
 	mac = NormalizeMac(mac)
 	ap, found := w.aps[mac]
 	return ap, found
+}
+
+func (w *WiFi) GetClient(mac string) (*Station, bool) {
+	w.Lock()
+	defer w.Unlock()
+
+	mac = NormalizeMac(mac)
+	for _, ap := range w.aps {
+		if client, found := ap.Get(mac); found == true {
+			return client, true
+		}
+	}
+
+	return nil, false
 }
 
 func (w *WiFi) Clear() error {

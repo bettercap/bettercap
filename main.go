@@ -14,8 +14,6 @@ import (
 var sess *session.Session
 var err error
 
-// Some modules are enabled by default in order
-// to make the interactive session useful.
 var autoEnableList = []string{
 	"events.stream",
 	"net.recon",
@@ -26,9 +24,14 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	defer sess.Close()
 
-	if core.NoColors == true {
-		fmt.Printf("\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")
+	if core.HasColors == false {
+		if *sess.Options.NoColors == true {
+			fmt.Printf("\n\nWARNING: Terminal colors have been disabled, view will be very limited.\n\n")
+		} else {
+			fmt.Printf("\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")
+		}
 	}
 
 	appName := fmt.Sprintf("%s v%s", core.Name, core.Version)
@@ -59,12 +62,6 @@ func main() {
 		log.Fatal("%s", err)
 	}
 
-	for _, modName := range autoEnableList {
-		if err = sess.Run(modName + " on"); err != nil {
-			log.Fatal("Error while starting module %s: %", modName, err)
-		}
-	}
-
 	/*
 	 * Commands sent with -eval are used to set specific
 	 * caplet parameters (i.e. arp.spoof.targets) via command
@@ -74,6 +71,14 @@ func main() {
 	for _, cmd := range session.ParseCommands(*sess.Options.Commands) {
 		if err = sess.Run(cmd); err != nil {
 			log.Error("Error while running '%s': %s", core.Bold(cmd), core.Red(err.Error()))
+		}
+	}
+
+	// Some modules are enabled by default in order
+	// to make the interactive session useful.
+	for _, modName := range core.CommaSplit(*sess.Options.AutoStart) {
+		if err = sess.Run(modName + " on"); err != nil {
+			log.Fatal("Error while starting module %s: %s", modName, err)
 		}
 	}
 
@@ -100,9 +105,4 @@ func main() {
 			}
 		}
 	}
-
-	sess.Close()
-
-	// Windows requires this otherwise the app never exits ...
-	os.Exit(0)
 }

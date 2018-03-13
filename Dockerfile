@@ -3,13 +3,8 @@ FROM golang:1.10-alpine AS build-env
 ENV GOPATH=/gocode
 ENV SRC_DIR=/gocode/src/github.com/bettercap/bettercap
 
-# As Alpine Linux uses a different folder, we need this
-# ugly hack in order to compile gopacket statically
-# https://github.com/bettercap/bettercap/issues/106
-RUN apk add --update ca-certificates && \
-apk add --no-cache --update bash iptables wireless-tools build-base libpcap-dev git python py-six && \
-mkdir -p /usr/lib/x86_64-linux-gnu/ && \
-cp /usr/lib/libpcap.a /usr/lib/x86_64-linux-gnu/libpcap.a
+RUN apk add --update ca-certificates 
+RUN apk add --no-cache --update bash iptables wireless-tools build-base libpcap-dev git python py-six
 
 WORKDIR $SRC_DIR
 ADD . $SRC_DIR

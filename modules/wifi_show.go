@@ -17,7 +17,8 @@ func (w *WiFiModule) isApSelected() bool {
 	return w.ap != nil
 }
 
-func (w *WiFiModule) getRow(station *network.Station) []string {
+func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
+	include := false
 	sinceStarted := time.Since(w.Session.StartedAt)
 	sinceFirstSeen := time.Since(station.FirstSeen)
 
@@ -61,16 +62,27 @@ func (w *WiFiModule) getRow(station *network.Station) []string {
 		recvd = humanize.Bytes(station.Received)
 	}
 
+	if w.source == "" {
+		for _, frequencies := range w.frequencies {
+			if frequencies == station.Frequency {
+				include = true
+				break
+			}
+		}
+	} else {
+		include = true
+	}
+
 	if w.isApSelected() {
 		return []string{
 			fmt.Sprintf("%d dBm", station.RSSI),
 			bssid,
 			/* station.Vendor, */
-			strconv.Itoa(mhz2chan(station.Frequency)),
+			strconv.Itoa(network.Dot11Freq2Chan(station.Frequency)),
 			sent,
 			recvd,
 			seen,
-		}
+		}, include
 	} else {
 		// this is ugly, but necessary in order to have this
 		// method handle both access point and clients
@@ -88,12 +100,12 @@ func (w *WiFiModule) getRow(station *network.Station) []string {
 			ssid,
 			/* station.Vendor, */
 			encryption,
-			strconv.Itoa(mhz2chan(station.Frequency)),
+			strconv.Itoa(network.Dot11Freq2Chan(station.Frequency)),
 			clients,
 			sent,
 			recvd,
 			seen,
-		}
+		}, include
 	}
 }
 
@@ -123,7 +135,9 @@ func (w *WiFiModule) Show(by string) error {
 
 	rows := make([][]string, 0)
 	for _, s := range stations {
-		rows = append(rows, w.getRow(s))
+		if row, include := w.getRow(s); include == true {
+			rows = append(rows, row)
+		}
 	}
 	nrows := len(rows)
 

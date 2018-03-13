@@ -26,6 +26,24 @@ var (
 	IPv4Validator = regexp.MustCompile("^[0-9\\.]+/?\\d*$")
 )
 
+func IsZeroMac(mac net.HardwareAddr) bool {
+	for _, b := range mac {
+		if b != 0x00 {
+			return false
+		}
+	}
+	return true
+}
+
+func IsBroadcastMac(mac net.HardwareAddr) bool {
+	for _, b := range mac {
+		if b != 0xff {
+			return false
+		}
+	}
+	return true
+}
+
 func NormalizeMac(mac string) string {
 	var parts []string
 	if strings.ContainsRune(mac, '-') {

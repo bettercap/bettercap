@@ -6,21 +6,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
-	"github.com/gorilla/websocket"
-)
-
-const (
-	// Time allowed to write an event to the client.
-	writeWait = 10 * time.Second
-	// Time allowed to read the next pong message from the client.
-	pongWait = 60 * time.Second
-	// Send pings to client with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
+	"github.com/gorilla/mux"
 )
 
 type CommandRequest struct {
@@ -67,6 +57,71 @@ func (api *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
 	toJSON(w, session.I)
 }
 
+func (api *RestAPI) showBle(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	mac := strings.ToLower(params["mac"])
+
+	if mac == "" {
+		toJSON(w, session.I.BLE)
+	} else if dev, found := session.I.BLE.Get(mac); found == true {
+		toJSON(w, dev)
+	} else {
+		http.Error(w, "Not Found", 404)
+	}
+}
+
+func (api *RestAPI) showEnv(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Env)
+}
+
+func (api *RestAPI) showGateway(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Gateway)
+}
+
+func (api *RestAPI) showInterface(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Interface)
+}
+
+func (api *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	mac := strings.ToLower(params["mac"])
+
+	if mac == "" {
+		toJSON(w, session.I.Lan)
+	} else if host, found := session.I.Lan.Get(mac); found == true {
+		toJSON(w, host)
+	} else {
+		http.Error(w, "Not Found", 404)
+	}
+}
+
+func (api *RestAPI) showOptions(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Options)
+}
+
+func (api *RestAPI) showPackets(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Queue)
+}
+
+func (api *RestAPI) showStartedAt(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.StartedAt)
+}
+
+func (api *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	mac := strings.ToLower(params["mac"])
+
+	if mac == "" {
+		toJSON(w, session.I.WiFi)
+	} else if station, found := session.I.WiFi.Get(mac); found == true {
+		toJSON(w, station)
+	} else if client, found := session.I.WiFi.GetClient(mac); found == true {
+		toJSON(w, client)
+	} else {
+		http.Error(w, "Not Found", 404)
+	}
+}
+
 func (api *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var cmd CommandRequest
@@ -82,103 +137,12 @@ func (api *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (api *RestAPI) streamEvent(ws *websocket.Conn, event session.Event) error {
-	msg, err := json.Marshal(event)
-	if err != nil {
-		log.Error("Error while creating websocket message: %s", err)
-		return err
-	}
-
-	ws.SetWriteDeadline(time.Now().Add(writeWait))
-	if err := ws.WriteMessage(websocket.TextMessage, msg); err != nil {
-		if !strings.Contains(err.Error(), "closed connection") {
-			log.Error("Error while writing websocket message: %s", err)
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (api *RestAPI) sendPing(ws *websocket.Conn) error {
-	ws.SetWriteDeadline(time.Now().Add(writeWait))
-	if err := ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-		log.Error("Error while writing websocket ping message: %s", err)
-		return err
-	}
-	return nil
-}
-
-func (api *RestAPI) streamWriter(ws *websocket.Conn, w http.ResponseWriter, r *http.Request) {
-	defer ws.Close()
-
-	// first we stream what we already have
-	events := session.I.Events.Sorted()
-	n := len(events)
-	if n > 0 {
-		log.Debug("Sending %d events.", n)
-		for _, event := range events {
-			if err := api.streamEvent(ws, event); err != nil {
-				return
-			}
-		}
-	}
-
-	session.I.Events.Clear()
-
-	log.Debug("Listening for events and streaming to ws endpoint ...")
-
-	pingTicker := time.NewTicker(pingPeriod)
-
-	for {
-		select {
-		case <-pingTicker.C:
-			if err := api.sendPing(ws); err != nil {
-				return
-			}
-		case event := <-api.eventListener:
-			if err := api.streamEvent(ws, event); err != nil {
-				return
-			}
-		case <-api.quit:
-			log.Info("Stopping websocket events streamer ...")
-			return
-		}
-	}
-}
-
-func (api *RestAPI) streamReader(ws *websocket.Conn) {
-	defer ws.Close()
-	ws.SetReadLimit(512)
-	ws.SetReadDeadline(time.Now().Add(pongWait))
-	ws.SetPongHandler(func(string) error { ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-	for {
-		_, _, err := ws.ReadMessage()
-		if err != nil {
-			log.Debug("Closing websocket reader.")
-			break
-		}
-	}
-}
-
 func (api *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if api.useWebsocket {
-		ws, err := api.upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			if _, ok := err.(websocket.HandshakeError); !ok {
-				log.Error("Error while updating api.rest connection to websocket: %s", err)
-			}
-			return
-		}
-
-		log.Debug("Websocket streaming started for %s", r.RemoteAddr)
-
-		go api.streamWriter(ws, w, r)
-		api.streamReader(ws)
+		api.startStreamingEvents(w, r)
 	} else {
-
 		events := session.I.Events.Sorted()
 		nevents := len(events)
 		nmax := nevents
@@ -210,12 +174,49 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 
 	if api.checkAuth(r) == false {
 		setAuthFailed(w, r)
-	} else if r.Method == "GET" {
-		api.showSession(w, r)
+		return
 	} else if r.Method == "POST" {
 		api.runSessionCommand(w, r)
-	} else {
+		return
+	} else if r.Method != "GET" {
 		http.Error(w, "Bad Request", 400)
+		return
+	}
+
+	path := r.URL.String()
+	switch {
+	case path == "/api/session":
+		api.showSession(w, r)
+
+	case path == "/api/session/env":
+		api.showEnv(w, r)
+
+	case path == "/api/session/gateway":
+		api.showGateway(w, r)
+
+	case path == "/api/session/interface":
+		api.showInterface(w, r)
+
+	case strings.HasPrefix(path, "/api/session/lan"):
+		api.showLan(w, r)
+
+	case path == "/api/session/options":
+		api.showOptions(w, r)
+
+	case path == "/api/session/packets":
+		api.showPackets(w, r)
+
+	case path == "/api/session/started-at":
+		api.showStartedAt(w, r)
+
+	case strings.HasPrefix(path, "/api/session/ble"):
+		api.showBle(w, r)
+
+	case strings.HasPrefix(path, "/api/session/wifi"):
+		api.showWiFi(w, r)
+
+	default:
+		http.Error(w, "Not Found", 404)
 	}
 }
 
@@ -224,7 +225,10 @@ func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 
 	if api.checkAuth(r) == false {
 		setAuthFailed(w, r)
-	} else if r.Method == "GET" {
+		return
+	}
+
+	if r.Method == "GET" {
 		api.showEvents(w, r)
 	} else if r.Method == "DELETE" {
 		api.clearEvents(w, r)

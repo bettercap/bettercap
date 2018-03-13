@@ -1,11 +1,9 @@
-### Prerequisites
+# Prerequisites
 
-* [ ] I read the [README](https://github.com/bettercap/bettercap/blob/master/README.md).
-* [ ] I am running the [latest stable version](https://github.com/bettercap/bettercap/releases).
-* [ ] I already searched [other issues](https://github.com/bettercap/bettercap/issues?q=is%3Aopen+is%3Aissue+label%3Abug) to see if this problem was already reported.
-* [ ] I understand I don't necessarily have to paste this `Prerequisites` section in the issue.
+Please, before creating this issue make sure that you read the [README](https://github.com/bettercap/bettercap/blob/master/README.md), that you are running the [latest stable version](https://github.com/bettercap/bettercap/releases) and that you already searched [other issues](https://github.com/bettercap/bettercap/issues?q=is%3Aopen+is%3Aissue+label%3Abug) to see if your problem or request was already reported.
 
-### Description
+! PLEASE REMOVE THIS PART AND LEAVE ONLY THE FOLLOWING SECTIONS IN YOUR REPORT !
+---
 
 *Description of the bug or feature request*
 
@@ -17,8 +15,7 @@ Please provide:
 * OS version and architecture you are using.
 * Go version if building from sources.
 * Command line arguments you are using.
-* Caplet code you are using (if any).
-* Interactive session commands you are using (if any).
+* Caplet code you are using or the interactive session commands.
 * **Full debug output** while reproducing the issue ( `bettercap -debug ...` ).
 
 ### Steps to Reproduce
