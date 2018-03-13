@@ -1,6 +1,8 @@
 package modules
 
 import (
+	"crypto/rand"
+	"fmt"
 	"net"
 	"time"
 
@@ -8,69 +10,94 @@ import (
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 
+	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 )
 
-type Dot11EncryptionType int
-
-const (
-	Dot11Open Dot11EncryptionType = iota
-	Dot11Wep
-	Dot11WpaTKIP
-	Dot11WpaAES
+var (
+	openFlags = 1057
+	wpaFlags  = 1041
+	//1-54 Mbit
+	supportedRates = []byte{0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c, 0x03, 0x01}
+	wpaRSN         = []byte{
+		0x01, 0x00, // RSN Version 1
+		0x00, 0x0f, 0xac, 0x02, // Group Cipher Suite : 00-0f-ac TKIP
+		0x02, 0x00, // 2 Pairwise Cipher Suites (next two lines)
+		0x00, 0x0f, 0xac, 0x04, // AES Cipher / CCMP
+		0x00, 0x0f, 0xac, 0x02, // TKIP Cipher
+		0x01, 0x00, // 1 Authentication Key Managment Suite (line below)
+		0x00, 0x0f, 0xac, 0x02, // Pre-Shared Key
+		0x00, 0x00,
+	}
 )
 
 type Dot11BeaconConfig struct {
 	SSID       string
 	BSSID      net.HardwareAddr
 	Channel    int
-	Encryption Dot11EncryptionType
+	Encryption bool
 }
 
 func NewDot11Beacon(conf Dot11BeaconConfig) (error, []byte) {
-	// TODO: still very incomplete
-	return packets.Serialize(
+	flags := openFlags
+	if conf.Encryption == true {
+		flags = wpaFlags
+	}
+
+	stack := []gopacket.SerializableLayer{
 		&layers.RadioTap{},
 		&layers.Dot11{
-			Address1:       network.BroadcastHw,
-			Address2:       conf.BSSID,
-			Address3:       conf.BSSID,
-			Type:           layers.Dot11TypeMgmtBeacon,
-			SequenceNumber: 0, // not sure this needs to be a specific value
+			Address1: network.BroadcastHw,
+			Address2: conf.BSSID,
+			Address3: conf.BSSID,
+			Type:     layers.Dot11TypeMgmtBeacon,
 		},
 		&layers.Dot11MgmtBeacon{
-			Timestamp: uint64(time.Now().Second()), // not sure
-			Interval:  1041,                        // ?
-			Flags:     100,                         // ?
+			Flags:    uint16(flags),
+			Interval: 100,
 		},
 		&layers.Dot11InformationElement{
 			ID:     layers.Dot11InformationElementIDSSID,
 			Length: uint8(len(conf.SSID) & 0xff),
 			Info:   []byte(conf.SSID),
 		},
-		// TODO: Rates n stuff ...
 		&layers.Dot11InformationElement{
-			BaseLayer: layers.BaseLayer{
-				Contents: []byte{0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c},
-			},
+			ID:     layers.Dot11InformationElementIDRates,
+			Length: uint8(len(supportedRates) & 0xff),
+			Info:   supportedRates,
 		},
 		&layers.Dot11InformationElement{
-			BaseLayer: layers.BaseLayer{
-				Contents: []byte{0x03, 0x01, 0x0b},
-			},
+			ID:     layers.Dot11InformationElementIDDSSet,
+			Length: 1,
+			Info:   []byte{byte(conf.Channel & 0xff)},
 		},
-	)
+	}
+
+	if conf.Encryption == true {
+		stack = append(stack, &layers.Dot11InformationElement{
+			ID:     layers.Dot11InformationElementIDRSNInfo,
+			Length: uint8(len(wpaRSN) & 0xff),
+			Info:   wpaRSN,
+		})
+	}
+
+	return packets.Serialize(stack...)
 }
 
 func (w *WiFiModule) sendBeaconPacket(counter int) {
 	w.writes.Add(1)
 	defer w.writes.Done()
 
+	hw := make([]byte, 6)
+	rand.Read(hw)
+
+	n := counter % len(w.frequencies)
+
 	conf := Dot11BeaconConfig{
-		SSID:       "Prova",
+		SSID:       fmt.Sprintf("Prova_%d", n),
 		BSSID:      w.Session.Interface.HW,
-		Channel:    1,
-		Encryption: Dot11Open,
+		Channel:    network.Dot11Freq2Chan(w.frequencies[n]),
+		Encryption: true,
 	}
 
 	if err, pkt := NewDot11Beacon(conf); err != nil {
@@ -79,7 +106,7 @@ func (w *WiFiModule) sendBeaconPacket(counter int) {
 		w.injectPacket(pkt)
 	}
 
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 }
 
 func (w *WiFiModule) startBeaconFlood() error {

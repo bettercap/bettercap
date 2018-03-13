@@ -358,11 +358,6 @@ func (w *WiFiModule) Start() error {
 	}
 
 	w.SetRunning(true, func() {
-		// start channel hopper if needed
-		if w.channel == 0 && w.source == "" {
-			go w.channelHopper()
-		}
-
 		// start the pruner
 		go w.stationPruner()
 
