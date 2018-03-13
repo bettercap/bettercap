@@ -254,7 +254,6 @@ func (s *Session) Close() {
 	}
 
 	s.Firewall.Restore()
-	s.Queue.Stop()
 
 	if *s.Options.EnvFile != "" {
 		envFile, _ := core.ExpandPath(*s.Options.EnvFile)
