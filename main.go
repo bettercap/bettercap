@@ -14,8 +14,6 @@ import (
 var sess *session.Session
 var err error
 
-// Some modules are enabled by default in order
-// to make the interactive session useful.
 var autoEnableList = []string{
 	"events.stream",
 	"net.recon",
@@ -75,10 +73,11 @@ func main() {
 		}
 	}
 
-	// Start modules that are enabled by default.
-	for _, modName := range autoEnableList {
+	// Some modules are enabled by default in order
+	// to make the interactive session useful.
+	for _, modName := range core.CommaSplit(*sess.Options.AutoStart) {
 		if err = sess.Run(modName + " on"); err != nil {
-			log.Fatal("Error while starting module %s: %", modName, err)
+			log.Fatal("Error while starting module %s: %s", modName, err)
 		}
 	}
 

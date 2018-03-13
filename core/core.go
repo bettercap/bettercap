@@ -41,6 +41,17 @@ func UniqueInts(a []int, sorted bool) []int {
 	return uniq
 }
 
+func CommaSplit(csv string) []string {
+	filtered := make([]string, 0)
+	for _, part := range strings.Split(csv, ",") {
+		part = Trim(part)
+		if part != "" {
+			filtered = append(filtered, part)
+		}
+	}
+	return filtered
+}
+
 func ExecSilent(executable string, args []string) (string, error) {
 	path, err := exec.LookPath(executable)
 	if err != nil {
