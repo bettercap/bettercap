@@ -11,6 +11,7 @@ import (
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
@@ -65,6 +66,73 @@ func (api *RestAPI) checkAuth(r *http.Request) bool {
 
 func (api *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
 	toJSON(w, session.I)
+}
+
+func (api *RestAPI) showBle(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.BLE)
+}
+
+func (api *RestAPI) showBleEndpoint(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	mac := strings.ToLower(params["mac"])
+	if dev, found := session.I.BLE.Get(mac); found == true {
+		toJSON(w, dev)
+	}
+}
+
+func (api *RestAPI) showEnv(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Env)
+}
+
+func (api *RestAPI) showGateway(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Gateway)
+}
+
+func (api *RestAPI) showInterface(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Interface)
+}
+
+func (api *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Lan)
+}
+
+func (api *RestAPI) showLanEndpoint(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	mac := strings.ToLower(params["mac"])
+	if host, found := session.I.Lan.Get(mac); found == true {
+		toJSON(w, host)
+	}
+}
+
+func (api *RestAPI) showOptions(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Options)
+}
+
+func (api *RestAPI) showPackets(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Queue)
+}
+
+func (api *RestAPI) showStartedAt(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.StartedAt)
+}
+
+func (api *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.WiFi)
+}
+
+func (api *RestAPI) showWiFiEndpoint(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	mac := strings.ToLower(params["mac"])
+	if station, found := session.I.WiFi.Get(mac); found == true {
+		toJSON(w, station)
+	// cycle through station clients if not a station.
+	} else {
+		for _, ap := range session.I.WiFi.List() {
+			if client, found := ap.Get(mac); found == true {
+				toJSON(w, client)
+			}
+		}
+	}
 }
 
 func (api *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +279,40 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 	if api.checkAuth(r) == false {
 		setAuthFailed(w, r)
 	} else if r.Method == "GET" {
-		api.showSession(w, r)
+		params := mux.Vars(r)
+		if r.URL.String() == "/api/session" {
+			api.showSession(w, r)
+		} else if strings.HasPrefix(r.URL.String(), "/api/session/ble") {
+			if params["mac"] != "" {
+				api.showBleEndpoint(w, r)
+			} else {
+				api.showBle(w, r)
+			}
+		} else if r.URL.String() == "/api/session/env" {
+			api.showEnv(w, r)
+		} else if r.URL.String() == "/api/session/gateway" {
+			api.showGateway(w, r)
+		} else if r.URL.String() == "/api/session/interface" {
+			api.showInterface(w, r)
+		} else if strings.HasPrefix(r.URL.String(), "/api/session/lan") {
+			if params["mac"] != "" {
+				api.showLanEndpoint(w, r)
+			} else {
+				api.showLan(w, r)
+			}
+		} else if r.URL.String() == "/api/session/options" {
+			api.showOptions(w, r)
+		} else if r.URL.String() == "/api/session/packets" {
+			api.showPackets(w, r)
+		} else if r.URL.String() == "/api/session/started-at" {
+			api.showStartedAt(w, r)
+		} else if strings.HasPrefix(r.URL.String(), "/api/session/wifi") {
+			if params["mac"] != "" {
+				api.showWiFiEndpoint(w, r)
+			} else {
+				api.showWiFi(w, r)
+			}
+		}
 	} else if r.Method == "POST" {
 		api.runSessionCommand(w, r)
 	} else {
