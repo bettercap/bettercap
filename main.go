@@ -24,6 +24,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	defer sess.Close()
 
 	if core.HasColors == false {
 		if *sess.Options.NoColors == true {
@@ -104,9 +105,4 @@ func main() {
 			}
 		}
 	}
-
-	sess.Close()
-
-	// Windows requires this otherwise the app never exits ...
-	os.Exit(0)
 }
