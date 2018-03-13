@@ -38,6 +38,10 @@ func NewBLE(newcb BLEDevNewCallback, lostcb BLEDevLostCallback) *BLE {
 	}
 }
 
+func (b *BLE) Get(id string) (dev *BLEDevice, found bool) {
+	return
+}
+
 func (b *BLE) MarshalJSON() ([]byte, error) {
 	doc := bleJSON{
 		Devices: make([]*BLEDevice, 0),
