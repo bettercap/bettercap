@@ -69,14 +69,15 @@ func (api *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *RestAPI) showBle(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.BLE)
-}
-
-func (api *RestAPI) showBleEndpoint(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	mac := strings.ToLower(params["mac"])
-	if dev, found := session.I.BLE.Get(mac); found == true {
+
+	if mac == "" {
+		toJSON(w, session.I.BLE)
+	} else if dev, found := session.I.BLE.Get(mac); found == true {
 		toJSON(w, dev)
+	} else {
+		http.Error(w, "Not Found", 404)
 	}
 }
 
@@ -93,14 +94,15 @@ func (api *RestAPI) showInterface(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.Lan)
-}
-
-func (api *RestAPI) showLanEndpoint(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	mac := strings.ToLower(params["mac"])
-	if host, found := session.I.Lan.Get(mac); found == true {
+
+	if mac == "" {
+		toJSON(w, session.I.Lan)
+	} else if host, found := session.I.Lan.Get(mac); found == true {
 		toJSON(w, host)
+	} else {
+		http.Error(w, "Not Found", 404)
 	}
 }
 
@@ -117,21 +119,17 @@ func (api *RestAPI) showStartedAt(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.WiFi)
-}
-
-func (api *RestAPI) showWiFiEndpoint(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	mac := strings.ToLower(params["mac"])
-	if station, found := session.I.WiFi.Get(mac); found == true {
+
+	if mac == "" {
+		toJSON(w, session.I.WiFi)
+	} else if station, found := session.I.WiFi.Get(mac); found == true {
 		toJSON(w, station)
-	// cycle through station clients if not a station.
+	} else if client, found := session.I.WiFi.GetClient(mac); found == true {
+		toJSON(w, client)
 	} else {
-		for _, ap := range session.I.WiFi.List() {
-			if client, found := ap.Get(mac); found == true {
-				toJSON(w, client)
-			}
-		}
+		http.Error(w, "Not Found", 404)
 	}
 }
 
@@ -278,45 +276,49 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 
 	if api.checkAuth(r) == false {
 		setAuthFailed(w, r)
-	} else if r.Method == "GET" {
-		params := mux.Vars(r)
-		if r.URL.String() == "/api/session" {
-			api.showSession(w, r)
-		} else if strings.HasPrefix(r.URL.String(), "/api/session/ble") {
-			if params["mac"] != "" {
-				api.showBleEndpoint(w, r)
-			} else {
-				api.showBle(w, r)
-			}
-		} else if r.URL.String() == "/api/session/env" {
-			api.showEnv(w, r)
-		} else if r.URL.String() == "/api/session/gateway" {
-			api.showGateway(w, r)
-		} else if r.URL.String() == "/api/session/interface" {
-			api.showInterface(w, r)
-		} else if strings.HasPrefix(r.URL.String(), "/api/session/lan") {
-			if params["mac"] != "" {
-				api.showLanEndpoint(w, r)
-			} else {
-				api.showLan(w, r)
-			}
-		} else if r.URL.String() == "/api/session/options" {
-			api.showOptions(w, r)
-		} else if r.URL.String() == "/api/session/packets" {
-			api.showPackets(w, r)
-		} else if r.URL.String() == "/api/session/started-at" {
-			api.showStartedAt(w, r)
-		} else if strings.HasPrefix(r.URL.String(), "/api/session/wifi") {
-			if params["mac"] != "" {
-				api.showWiFiEndpoint(w, r)
-			} else {
-				api.showWiFi(w, r)
-			}
-		}
+		return
 	} else if r.Method == "POST" {
 		api.runSessionCommand(w, r)
-	} else {
+		return
+	} else if r.Method != "GET" {
 		http.Error(w, "Bad Request", 400)
+		return
+	}
+
+	path := r.URL.String()
+	switch {
+	case path == "/api/session":
+		api.showSession(w, r)
+
+	case path == "/api/session/env":
+		api.showEnv(w, r)
+
+	case path == "/api/session/gateway":
+		api.showGateway(w, r)
+
+	case path == "/api/session/interface":
+		api.showInterface(w, r)
+
+	case strings.HasPrefix(path, "/api/session/lan"):
+		api.showLan(w, r)
+
+	case path == "/api/session/options":
+		api.showOptions(w, r)
+
+	case path == "/api/session/packets":
+		api.showPackets(w, r)
+
+	case path == "/api/session/started-at":
+		api.showStartedAt(w, r)
+
+	case strings.HasPrefix(path, "/api/session/ble"):
+		api.showBle(w, r)
+
+	case strings.HasPrefix(path, "/api/session/wifi"):
+		api.showWiFi(w, r)
+
+	default:
+		http.Error(w, "Not Found", 404)
 	}
 }
 
@@ -325,7 +327,10 @@ func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 
 	if api.checkAuth(r) == false {
 		setAuthFailed(w, r)
-	} else if r.Method == "GET" {
+		return
+	}
+
+	if r.Method == "GET" {
 		api.showEvents(w, r)
 	} else if r.Method == "DELETE" {
 		api.clearEvents(w, r)

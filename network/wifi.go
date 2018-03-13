@@ -156,6 +156,20 @@ func (w *WiFi) Get(mac string) (*AccessPoint, bool) {
 	return ap, found
 }
 
+func (w *WiFi) GetClient(mac string) (*Station, bool) {
+	w.Lock()
+	defer w.Unlock()
+
+	mac = NormalizeMac(mac)
+	for _, ap := range w.aps {
+		if client, found := ap.Get(mac); found == true {
+			return client, true
+		}
+	}
+
+	return nil, false
+}
+
 func (w *WiFi) Clear() error {
 	w.aps = make(map[string]*AccessPoint)
 	return nil
