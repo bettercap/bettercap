@@ -11,6 +11,7 @@ import (
 	"github.com/bettercap/bettercap/session"
 	"github.com/bettercap/bettercap/tls"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
@@ -146,10 +147,22 @@ func (api *RestAPI) Configure() error {
 
 	api.server.Addr = fmt.Sprintf("%s:%d", ip, port)
 
-	router := http.NewServeMux()
+	router := mux.NewRouter()
 
-	router.HandleFunc("/api/session", api.sessionRoute)
 	router.HandleFunc("/api/events", api.eventsRoute)
+	router.HandleFunc("/api/session", api.sessionRoute)
+	router.HandleFunc("/api/session/ble", api.sessionRoute)
+	router.HandleFunc("/api/session/ble/{mac}", api.sessionRoute)
+	router.HandleFunc("/api/session/env", api.sessionRoute)
+	router.HandleFunc("/api/session/gateway", api.sessionRoute)
+	router.HandleFunc("/api/session/interface", api.sessionRoute)
+	router.HandleFunc("/api/session/lan", api.sessionRoute)
+	router.HandleFunc("/api/session/lan/{mac}", api.sessionRoute)
+	router.HandleFunc("/api/session/options", api.sessionRoute)
+	router.HandleFunc("/api/session/packets", api.sessionRoute)
+	router.HandleFunc("/api/session/started-at", api.sessionRoute)
+	router.HandleFunc("/api/session/wifi", api.sessionRoute)
+	router.HandleFunc("/api/session/wifi/{mac}", api.sessionRoute)
 
 	api.server.Handler = router
 
