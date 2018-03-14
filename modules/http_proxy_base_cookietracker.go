@@ -39,9 +39,6 @@ func (t *CookieTracker) keyOf(req *http.Request) string {
 }
 
 func (t *CookieTracker) IsClean(req *http.Request) bool {
-	// t.RLock()
-	// defer t.RUnlock()
-
 	// we only clean GET requests
 	if req.Method != "GET" {
 		return true
@@ -52,6 +49,9 @@ func (t *CookieTracker) IsClean(req *http.Request) bool {
 	if cookie == "" {
 		return true
 	}
+
+	t.RLock()
+	defer t.RUnlock()
 
 	// was it already processed?
 	if _, found := t.set[t.keyOf(req)]; found == true {
@@ -65,8 +65,7 @@ func (t *CookieTracker) IsClean(req *http.Request) bool {
 func (t *CookieTracker) Track(req *http.Request) {
 	t.Lock()
 	defer t.Unlock()
-	reqKey := t.keyOf(req)
-	t.set[reqKey] = true
+	t.set[t.keyOf(req)] = true
 }
 
 func (t *CookieTracker) Expire(req *http.Request) *http.Response {
