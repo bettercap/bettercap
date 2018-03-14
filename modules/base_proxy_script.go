@@ -1,9 +1,9 @@
 package modules
 
 import (
+	"encoding/base64"
 	"io/ioutil"
 	"sync"
-	"encoding/base64"
 
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
