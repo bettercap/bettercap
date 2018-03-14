@@ -192,7 +192,7 @@ func (s *EventsStream) View(e session.Event, refresh bool) {
 		s.viewModuleEvent(e)
 	} else if strings.HasPrefix(e.Tag, "net.sniff.") {
 		s.viewSnifferEvent(e)
-	} else if strings.HasPrefix(e.Tag, "syn.scan.") {
+	} else if strings.HasPrefix(e.Tag, "syn.scan") {
 		s.viewSynScanEvent(e)
 	} else if e.Tag == "update.available" {
 		s.viewUpdateEvent(e)
