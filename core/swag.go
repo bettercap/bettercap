@@ -51,6 +51,16 @@ func InitSwag(disableColors bool) {
 		BG_YELLOW = ""
 		BG_LBLUE = ""
 		RESET = ""
+
+		LogColors = map[int]string{
+			DEBUG:     DIM + FG_BLACK + BG_DGRAY,
+			INFO:      FG_WHITE + BG_GREEN,
+			IMPORTANT: FG_WHITE + BG_LBLUE,
+			WARNING:   FG_WHITE + BG_YELLOW,
+			ERROR:     FG_WHITE + BG_RED,
+			FATAL:     FG_WHITE + BG_RED + BOLD,
+		}
+
 		HasColors = false
 	}
 }

@@ -25,7 +25,6 @@ func (s *EventsStream) viewLogEvent(e session.Event) {
 }
 
 func (s *EventsStream) viewWiFiEvent(e session.Event) {
-
 	if strings.HasPrefix(e.Tag, "wifi.ap.") {
 		ap := e.Data.(*network.AccessPoint)
 		vend := ""
