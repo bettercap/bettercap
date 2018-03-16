@@ -73,6 +73,17 @@ func (j *JSResponse) WasModified() bool {
 	return false
 }
 
+func (j *JSResponse) Header(name, deflt string) string {
+	name = strings.ToLower(name)
+	for _, header := range strings.Split(j.Headers, "\n") {
+		parts := strings.SplitN(core.Trim(header), ":", 2)
+		if len(parts) == 2 && strings.ToLower(parts[0]) == name {
+			return parts[1]
+		}
+	}
+	return deflt
+}
+
 func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
 	resp = goproxy.NewResponse(req, j.ContentType, j.Status, j.Body)
 	if j.Headers != "" {

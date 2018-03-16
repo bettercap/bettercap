@@ -88,6 +88,16 @@ func (j *JSRequest) WasModified() bool {
 	return false
 }
 
+func (j *JSRequest) Header(name, deflt string) string {
+	name = strings.ToLower(name)
+	for _, h := range j.Headers {
+		if name == strings.ToLower(h.Name) {
+			return h.Value
+		}
+	}
+	return deflt
+}
+
 func (j *JSRequest) ReadBody() string {
 	raw, err := ioutil.ReadAll(j.req.Body)
 	if err != nil {
