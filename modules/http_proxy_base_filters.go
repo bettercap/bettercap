@@ -83,6 +83,9 @@ func (p *HTTPProxy) logRequestAction(req *http.Request, jsreq *JSRequest) {
 }
 
 func (p *HTTPProxy) logResponseAction(req *http.Request, jsres *JSResponse) {
+	if len(jsres.Body) == 0 {
+		jsres.ReadBody()
+	}
 	p.sess.Events.Add(p.Name+".spoofed-response", struct {
 		To     string
 		Method string
