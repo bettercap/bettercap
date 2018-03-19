@@ -10,6 +10,8 @@ import (
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/google/go-github/github"
 )
 
 const eventTimeFormat = "15:04:05"
@@ -23,7 +25,6 @@ func (s *EventsStream) viewLogEvent(e session.Event) {
 }
 
 func (s *EventsStream) viewWiFiEvent(e session.Event) {
-
 	if strings.HasPrefix(e.Tag, "wifi.ap.") {
 		ap := e.Data.(*network.AccessPoint)
 		vend := ""
@@ -167,6 +168,16 @@ func (s *EventsStream) viewSynScanEvent(e session.Event) {
 		core.Bold(se.Address))
 }
 
+func (s *EventsStream) viewUpdateEvent(e session.Event) {
+	update := e.Data.(*github.RepositoryRelease)
+
+	fmt.Fprintf(s.output, "[%s] [%s] An update to version %s is available at %s\n",
+		e.Time.Format(eventTimeFormat),
+		core.Bold(core.Yellow(e.Tag)),
+		core.Bold(*update.TagName),
+		*update.HTMLURL)
+}
+
 func (s *EventsStream) View(e session.Event, refresh bool) {
 	if e.Tag == "sys.log" {
 		s.viewLogEvent(e)
@@ -180,8 +191,10 @@ func (s *EventsStream) View(e session.Event, refresh bool) {
 		s.viewModuleEvent(e)
 	} else if strings.HasPrefix(e.Tag, "net.sniff.") {
 		s.viewSnifferEvent(e)
-	} else if strings.HasPrefix(e.Tag, "syn.scan.") {
+	} else if e.Tag == "syn.scan" {
 		s.viewSynScanEvent(e)
+	} else if e.Tag == "update.available" {
+		s.viewUpdateEvent(e)
 	} else {
 		fmt.Fprintf(s.output, "[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), core.Green(e.Tag), e)
 	}

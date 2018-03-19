@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"encoding/base64"
 	"io/ioutil"
 	"sync"
 
@@ -107,6 +108,69 @@ func (s *ProxyScript) defineBuiltins() error {
 			log.Info("%s", v.String())
 		}
 		return otto.Value{}
+	})
+
+	// log debug
+	s.VM.Set("log_debug", func(call otto.FunctionCall) otto.Value {
+		for _, v := range call.ArgumentList {
+			log.Debug("%s", v.String())
+		}
+		return otto.Value{}
+	})
+
+	// log info
+	s.VM.Set("log_info", func(call otto.FunctionCall) otto.Value {
+		for _, v := range call.ArgumentList {
+			log.Info("%s", v.String())
+		}
+		return otto.Value{}
+	})
+
+	// log warning
+	s.VM.Set("log_warn", func(call otto.FunctionCall) otto.Value {
+		for _, v := range call.ArgumentList {
+			log.Warning("%s", v.String())
+		}
+		return otto.Value{}
+	})
+
+	// log error
+	s.VM.Set("log_error", func(call otto.FunctionCall) otto.Value {
+		for _, v := range call.ArgumentList {
+			log.Error("%s", v.String())
+		}
+		return otto.Value{}
+	})
+
+	// log fatal
+	s.VM.Set("log_fatal", func(call otto.FunctionCall) otto.Value {
+		for _, v := range call.ArgumentList {
+			log.Fatal("%s", v.String())
+		}
+		return otto.Value{}
+	})
+
+	// javascript btoa function
+	s.VM.Set("btoa", func(call otto.FunctionCall) otto.Value {
+		varValue := base64.StdEncoding.EncodeToString([]byte(call.Argument(0).String()))
+		v, err := s.VM.ToValue(varValue)
+		if err != nil {
+			return errOtto("Could not convert to string: %s", varValue)
+		}
+		return v
+	})
+
+	// javascript atob function
+	s.VM.Set("atob", func(call otto.FunctionCall) otto.Value {
+		varValue, err := base64.StdEncoding.DecodeString(call.Argument(0).String())
+		if err != nil {
+			return errOtto("Could not decode string: %s", call.Argument(0).String())
+		}
+		v, err := s.VM.ToValue(string(varValue))
+		if err != nil {
+			return errOtto("Could not convert to string: %s", varValue)
+		}
+		return v
 	})
 
 	// read or write environment variable

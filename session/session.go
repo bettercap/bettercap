@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"runtime/pprof"
 	"sort"
@@ -32,6 +33,8 @@ var (
 
 	ErrAlreadyStarted = errors.New("Module is already running.")
 	ErrAlreadyStopped = errors.New("Module is not running.")
+
+	reCmdSpaceCleaner = regexp.MustCompile(`^([^\s]+)\s+(.+)$`)
 )
 
 type Session struct {
@@ -254,7 +257,6 @@ func (s *Session) Close() {
 	}
 
 	s.Firewall.Restore()
-	s.Queue.Stop()
 
 	if *s.Options.EnvFile != "" {
 		envFile, _ := core.ExpandPath(*s.Options.EnvFile)
@@ -480,6 +482,11 @@ func (s *Session) RunCaplet(filename string) error {
 
 func (s *Session) Run(line string) error {
 	line = core.TrimRight(line)
+	// remove extra spaces after the first command
+	// so that 'arp.spoof      on' is normalized
+	// to 'arp.spoof on' (fixes #178)
+	line = reCmdSpaceCleaner.ReplaceAllString(line, "$1 $2")
+
 	for _, h := range s.CoreHandlers {
 		if parsed, args := h.Parse(line); parsed == true {
 			return h.Exec(args, s)
