@@ -35,26 +35,14 @@ func (f WindowsFirewall) IsForwardingEnabled() bool {
 	}
 }
 
-func (f WindowsFirewall) isSuccess(output string) bool {
-	if trimmed := core.Trim(strings.ToUpper(output)); trimmed == "" || strings.Contains(trimmed, "OK") == true {
-		return true
-	} else {
-		return false
-	}
-}
-
 func (f WindowsFirewall) EnableForwarding(enabled bool) error {
 	v := "enabled"
 	if enabled == false {
 		v = "disabled"
 	}
-	out, err := core.Exec("netsh", []string{"interface", "ipv4", "set", "interface", fmt.Sprintf("%d", f.iface.Index), fmt.Sprintf("forwarding=\"%s\"", v)})
-	if err != nil {
-		return err
-	}
 
-	if f.isSuccess(out) == false {
-		return fmt.Errorf("Unexpected netsh output: %s", out)
+	if _, err := core.Exec("netsh", []string{"interface", "ipv4", "set", "interface", fmt.Sprintf("%d", f.iface.Index), fmt.Sprintf("forwarding=\"%s\"", v)}); err != nil {
+		return err
 	}
 
 	return nil
@@ -90,13 +78,8 @@ func (f *WindowsFirewall) AllowPort(port int, address string, proto string, allo
 		cmd = []string{"advfirewall", "firewall", "delete", "rule", nameField, protoField, portField}
 	}
 
-	out, err := core.Exec("netsh", cmd)
-	if err != nil {
+	if _, err := core.Exec("netsh", cmd); err != nil {
 		return err
-	}
-
-	if f.isSuccess(out) == false {
-		return fmt.Errorf("Unexpected netsh output: %s", out)
 	}
 
 	return nil
@@ -116,14 +99,10 @@ func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error 
 		rule = append([]string{"interface", "portproxy", "delete", "v4tov4"}, rule...)
 	}
 
-	out, err := core.Exec("netsh", rule)
-	if err != nil {
+	if _, err := core.Exec("netsh", rule); err != nil {
 		return err
 	}
 
-	if f.isSuccess(out) == false {
-		return fmt.Errorf("Unexpected netsh output: %s", out)
-	}
 	return nil
 }
 
