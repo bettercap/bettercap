@@ -14,6 +14,7 @@ type HttpProxyScript struct {
 	*ProxyScript
 	onRequestScript  *otto.Script
 	onResponseScript *otto.Script
+	onCommandScript  *otto.Script
 }
 
 func LoadHttpProxyScriptSource(path, source string, sess *session.Session) (err error, s *HttpProxyScript) {
@@ -26,9 +27,9 @@ func LoadHttpProxyScriptSource(path, source string, sess *session.Session) (err 
 		ProxyScript:      ps,
 		onRequestScript:  nil,
 		onResponseScript: nil,
+		onCommandScript:  nil,
 	}
 
-	// compile call to onRequest if defined
 	if s.hasCallback("onRequest") {
 		s.onRequestScript, err = s.VM.Compile("", "onRequest(req, res)")
 		if err != nil {
@@ -37,11 +38,18 @@ func LoadHttpProxyScriptSource(path, source string, sess *session.Session) (err 
 		}
 	}
 
-	// compile call to onResponse if defined
 	if s.hasCallback("onResponse") {
 		s.onResponseScript, err = s.VM.Compile("", "onResponse(req, res)")
 		if err != nil {
 			log.Error("Error while compiling onResponse callback: %s", err)
+			return
+		}
+	}
+
+	if s.hasCallback("onCommand") {
+		s.onCommandScript, err = s.VM.Compile("", "onCommand(cmd)")
+		if err != nil {
+			log.Error("Error while compiling onCommand callback: %s", err)
 			return
 		}
 	}
@@ -88,6 +96,13 @@ func (s *HttpProxyScript) doResponseDefines(res *http.Response) (err error, jsre
 		return
 	}
 
+	return
+}
+
+func (s *HttpProxyScript) doCommandDefines(cmd string) (err error) {
+	if err = s.VM.Set("cmd", cmd); err != nil {
+		log.Error("Error while defining cmd: %s", err)
+	}
 	return
 }
 
@@ -144,4 +159,25 @@ func (s *HttpProxyScript) OnResponse(res *http.Response) (jsreq *JSRequest, jsre
 	}
 
 	return nil, nil
+}
+
+func (s *HttpProxyScript) OnCommand(cmd string) bool {
+	if s.onCommandScript != nil {
+		s.Lock()
+		defer s.Unlock()
+
+		if err := s.doCommandDefines(cmd); err != nil {
+			log.Error("Error while running bootstrap onCommand definitions: %s", err)
+			return false
+		}
+
+		if ret, err := s.VM.Run(s.onCommandScript); err != nil {
+			log.Error("Error while executing onCommand callback: %s", err)
+			return false
+		} else if v, err := ret.ToBoolean(); err == nil {
+			return v
+		}
+	}
+
+	return false
 }

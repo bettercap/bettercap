@@ -144,6 +144,13 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 
 	log.Debug("Applied redirection %s", p.Redirection.String())
 
+	p.sess.UnkCmdCallback = func(cmd string) bool {
+		if p.Script != nil {
+			return p.Script.OnCommand(cmd)
+		}
+		return false
+	}
+
 	return nil
 }
 
@@ -322,6 +329,8 @@ func (p *HTTPProxy) Stop() error {
 		}
 		p.Redirection = nil
 	}
+
+	p.sess.UnkCmdCallback = nil
 
 	if p.isTLS == true {
 		p.isRunning = false

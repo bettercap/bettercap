@@ -37,6 +37,8 @@ var (
 	reCmdSpaceCleaner = regexp.MustCompile(`^([^\s]+)\s+(.+)$`)
 )
 
+type UnknownCommandCallback func(cmd string) bool
+
 type Session struct {
 	Options   core.Options             `json:"options"`
 	Interface *network.Endpoint        `json:"interface"`
@@ -57,6 +59,8 @@ type Session struct {
 	Modules      []Module         `json:"-"`
 
 	Events *EventPool `json:"-"`
+
+	UnkCmdCallback UnknownCommandCallback `json:"-"`
 }
 
 func ParseCommands(line string) []string {
@@ -132,9 +136,10 @@ func New() (*Session, error) {
 		Active: false,
 		Queue:  nil,
 
-		CoreHandlers: make([]CommandHandler, 0),
-		Modules:      make([]Module, 0),
-		Events:       nil,
+		CoreHandlers:   make([]CommandHandler, 0),
+		Modules:        make([]Module, 0),
+		Events:         nil,
+		UnkCmdCallback: nil,
 	}
 
 	if s.Options, err = core.ParseOptions(); err != nil {
@@ -499,6 +504,10 @@ func (s *Session) Run(line string) error {
 				return h.Exec(args)
 			}
 		}
+	}
+
+	if s.UnkCmdCallback != nil && s.UnkCmdCallback(line) == true {
+		return nil
 	}
 
 	return fmt.Errorf("Unknown or invalid syntax \"%s%s%s\", type %shelp%s for the help menu.", core.BOLD, line, core.RESET, core.BOLD, core.RESET)
