@@ -102,6 +102,24 @@ func (s *ProxyScript) defineBuiltins() error {
 		return v
 	})
 
+	s.VM.Set("writeFile", func(call otto.FunctionCall) otto.Value {
+		argv := call.ArgumentList
+		argc := len(argv)
+		if argc != 2 {
+			return errOtto("writeFile: expected 2 arguments, %d given instead.", argc)
+		}
+
+		filename := argv[0].String()
+		data := argv[1].String()
+
+		err := ioutil.WriteFile(filename, []byte(data), 0644)
+		if err != nil {
+			return errOtto("Could not write %d bytes to %s: %s", len(data), filename, err)
+		}
+
+		return otto.NullValue()
+	})
+
 	// log something
 	s.VM.Set("log", func(call otto.FunctionCall) otto.Value {
 		for _, v := range call.ArgumentList {
