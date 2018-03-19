@@ -4,11 +4,82 @@ import (
 	"bytes"
 	"net"
 
+	"github.com/bettercap/bettercap/network"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 )
 
-var wpaSignatureBytes = []byte{0, 0x50, 0xf2, 1}
+var (
+	openFlags = 1057
+	wpaFlags  = 1041
+	//1-54 Mbit
+	supportedRates = []byte{0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c, 0x03, 0x01}
+	wpaRSN         = []byte{
+		0x01, 0x00, // RSN Version 1
+		0x00, 0x0f, 0xac, 0x02, // Group Cipher Suite : 00-0f-ac TKIP
+		0x02, 0x00, // 2 Pairwise Cipher Suites (next two lines)
+		0x00, 0x0f, 0xac, 0x04, // AES Cipher / CCMP
+		0x00, 0x0f, 0xac, 0x02, // TKIP Cipher
+		0x01, 0x00, // 1 Authentication Key Managment Suite (line below)
+		0x00, 0x0f, 0xac, 0x02, // Pre-Shared Key
+		0x00, 0x00,
+	}
+	wpaSignatureBytes = []byte{0, 0x50, 0xf2, 1}
+)
+
+type Dot11ApConfig struct {
+	SSID       string
+	BSSID      net.HardwareAddr
+	Channel    int
+	Encryption bool
+}
+
+func Dot11Info(id layers.Dot11InformationElementID, info []byte) *layers.Dot11InformationElement {
+	return &layers.Dot11InformationElement{
+		ID:     id,
+		Length: uint8(len(info) & 0xff),
+		Info:   info,
+	}
+}
+
+func NewDot11Beacon(conf Dot11ApConfig, seq uint16) (error, []byte) {
+	flags := openFlags
+	if conf.Encryption == true {
+		flags = wpaFlags
+	}
+
+	stack := []gopacket.SerializableLayer{
+		&layers.RadioTap{
+			DBMAntennaSignal: int8(-10),
+			ChannelFrequency: layers.RadioTapChannelFrequency(network.Dot11Chan2Freq(conf.Channel)),
+		},
+		&layers.Dot11{
+			Address1:       network.BroadcastHw,
+			Address2:       conf.BSSID,
+			Address3:       conf.BSSID,
+			Type:           layers.Dot11TypeMgmtBeacon,
+			SequenceNumber: seq,
+		},
+		&layers.Dot11MgmtBeacon{
+			Flags:    uint16(flags),
+			Interval: 100,
+		},
+		Dot11Info(layers.Dot11InformationElementIDSSID, []byte(conf.SSID)),
+		Dot11Info(layers.Dot11InformationElementIDRates, supportedRates),
+		Dot11Info(layers.Dot11InformationElementIDDSSet, []byte{byte(conf.Channel & 0xff)}),
+	}
+
+	if conf.Encryption == true {
+		stack = append(stack, &layers.Dot11InformationElement{
+			ID:     layers.Dot11InformationElementIDRSNInfo,
+			Length: uint8(len(wpaRSN) & 0xff),
+			Info:   wpaRSN,
+		})
+	}
+
+	return Serialize(stack...)
+}
 
 func NewDot11Deauth(a1 net.HardwareAddr, a2 net.HardwareAddr, a3 net.HardwareAddr, seq uint16) (error, []byte) {
 	return Serialize(

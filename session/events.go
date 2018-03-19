@@ -85,8 +85,6 @@ func (p *EventPool) Add(tag string, data interface{}) {
 	for _, l := range p.listeners {
 		select {
 		case l <- e:
-		default:
-			fmt.Fprintf(os.Stderr, "Message not sent!\n")
 		}
 	}
 }

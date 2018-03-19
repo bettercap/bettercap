@@ -27,6 +27,7 @@ func (w *WiFiModule) channelHopper() {
 	defer w.reads.Done()
 
 	log.Info("Channel hopper started.")
+
 	for w.Running() == true {
 		delay := w.hopPeriod
 		// if we have both 2.4 and 5ghz capabilities, we have
@@ -44,6 +45,8 @@ func (w *WiFiModule) channelHopper() {
 			if w.stickChan != 0 {
 				channel = w.stickChan
 			}
+
+			log.Debug("Hopping on channel %d", channel)
 
 			if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
 				log.Warning("Error while hopping to channel %d: %s", channel, err)
