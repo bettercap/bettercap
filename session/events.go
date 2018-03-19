@@ -57,7 +57,7 @@ func NewEventPool(debug bool, silent bool) *EventPool {
 func (p *EventPool) Listen() <-chan Event {
 	p.Lock()
 	defer p.Unlock()
-	l := make(chan Event, 1)
+	l := make(chan Event, 255)
 	p.listeners = append(p.listeners, l)
 	return l
 }
@@ -86,6 +86,7 @@ func (p *EventPool) Add(tag string, data interface{}) {
 		select {
 		case l <- e:
 		default:
+			fmt.Fprintf(os.Stderr, "Message not sent!\n")
 		}
 	}
 }
