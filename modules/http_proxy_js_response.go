@@ -97,6 +97,15 @@ func (j *JSResponse) SetHeader(name, value string) {
 	j.Headers = append(j.Headers, JSHeader{name, value})
 }
 
+func (j *JSResponse) RemoveHeader(name string) {
+	name = strings.ToLower(name)
+	for i, h := range j.Headers {
+		if name == strings.ToLower(h.Name) {
+			j.Headers = append(j.Headers[:i], j.Headers[i+1:]...)
+		}
+	}
+}
+
 func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
 	resp = goproxy.NewResponse(req, j.ContentType, j.Status, j.Body)
 	if len(j.Headers) > 0 {
