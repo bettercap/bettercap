@@ -101,7 +101,7 @@ func (j *JSRequest) GetHeader(name, deflt string) string {
 func (j *JSRequest) SetHeader(name, value string) {
 	name = strings.ToLower(name)
 	for i, h := range j.Headers {
-    if name == strings.ToLower(h.Name) {
+		if name == strings.ToLower(h.Name) {
 			j.Headers[i].Value = value
 			return
 		}
