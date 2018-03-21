@@ -88,16 +88,13 @@ func (j *JSResponse) GetHeader(name, deflt string) string {
 
 func (j *JSResponse) SetHeader(name, value string) {
 	name = strings.ToLower(name)
-	found := false
-	for _, h := range j.Headers {
+	for i, h := range j.Headers {
 		if name == strings.ToLower(h.Name) {
-			found = true
-			h.Value = value
+			j.Headers[i].Value = value
+			return
 		}
 	}
-	if found == false {
-		j.Headers = append(j.Headers, JSHeader{name, value})
-	}
+	j.Headers = append(j.Headers, JSHeader{name, value})
 }
 
 func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
