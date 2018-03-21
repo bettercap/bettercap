@@ -109,6 +109,15 @@ func (j *JSRequest) SetHeader(name, value string) {
 	j.Headers = append(j.Headers, JSHeader{name, value})
 }
 
+func (j *JSRequest) RemoveHeader(name string) {
+	name = strings.ToLower(name)
+	for i, h := range j.Headers {
+		if name == strings.ToLower(h.Name) {
+			j.Headers = append(j.Headers[:i], j.Headers[i+1:]...)
+		}
+	}
+}
+
 func (j *JSRequest) ReadBody() string {
 	raw, err := ioutil.ReadAll(j.req.Body)
 	if err != nil {
