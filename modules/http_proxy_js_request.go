@@ -100,16 +100,13 @@ func (j *JSRequest) GetHeader(name, deflt string) string {
 
 func (j *JSRequest) SetHeader(name, value string) {
 	name = strings.ToLower(name)
-	found := false
-	for _, h := range j.Headers {
-		if name == strings.ToLower(h.Name) {
-			found = true
-			h.Value = value
+	for i, h := range j.Headers {
+    if name == strings.ToLower(h.Name) {
+			j.Headers[i].Value = value
+			return
 		}
 	}
-	if found == false {
-		j.Headers = append(j.Headers, JSHeader{name, value})
-	}
+	j.Headers = append(j.Headers, JSHeader{name, value})
 }
 
 func (j *JSRequest) ReadBody() string {
