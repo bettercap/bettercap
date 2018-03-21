@@ -34,11 +34,11 @@ func NewJSRequest(req *http.Request) *JSRequest {
 	headers := make([]JSHeader, 0)
 	cType := ""
 
-	for key, values := range req.Header {
+	for name, values := range req.Header {
 		for _, value := range values {
-			headers = append(headers, JSHeader{key, value})
+			headers = append(headers, JSHeader{name, value})
 
-			if key == "Content-Type" {
+			if name == "Content-Type" {
 				cType = value
 			}
 		}
@@ -88,7 +88,7 @@ func (j *JSRequest) WasModified() bool {
 	return false
 }
 
-func (j *JSRequest) Header(name, deflt string) string {
+func (j *JSRequest) GetHeader(name, deflt string) string {
 	name = strings.ToLower(name)
 	for _, h := range j.Headers {
 		if name == strings.ToLower(h.Name) {
@@ -96,6 +96,20 @@ func (j *JSRequest) Header(name, deflt string) string {
 		}
 	}
 	return deflt
+}
+
+func (j *JSRequest) SetHeader(name, value string) {
+	name = strings.ToLower(name)
+	found := false
+	for _, h := range j.Headers {
+		if name == strings.ToLower(h.Name) {
+			found = true
+			h.Value = value
+		}
+	}
+	if found == false {
+		j.Headers = append(j.Headers, JSHeader{name, value})
+	}
 }
 
 func (j *JSRequest) ReadBody() string {
