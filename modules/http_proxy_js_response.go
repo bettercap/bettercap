@@ -8,14 +8,12 @@ import (
 	"strings"
 
 	"github.com/elazarl/goproxy"
-
-	"github.com/bettercap/bettercap/core"
 )
 
 type JSResponse struct {
 	Status      int
 	ContentType string
-	Headers     string
+	Headers     []JSHeader
 	Body        string
 
 	refHash  string
@@ -25,17 +23,18 @@ type JSResponse struct {
 
 func NewJSResponse(res *http.Response) *JSResponse {
 	cType := ""
-	headers := ""
+	headers := make([]JSHeader, 0)
 	code := 200
 
 	if res != nil {
 		code = res.StatusCode
 		for name, values := range res.Header {
 			for _, value := range values {
+				headers = append(headers, JSHeader{name, value})
+
 				if name == "Content-Type" {
 					cType = value
 				}
-				headers += name + ": " + value + "\r\n"
 			}
 		}
 	}
@@ -53,7 +52,11 @@ func NewJSResponse(res *http.Response) *JSResponse {
 }
 
 func (j *JSResponse) NewHash() string {
-	return fmt.Sprintf("%d.%s.%s", j.Status, j.ContentType, j.Headers)
+	hash := fmt.Sprintf("%d.%s", j.Status, j.ContentType)
+	for _, h := range j.Headers {
+		hash += fmt.Sprintf(".%s-%s", h.Name, h.Value)
+	}
+	return hash
 }
 
 func (j *JSResponse) UpdateHash() {
@@ -73,29 +76,35 @@ func (j *JSResponse) WasModified() bool {
 	return false
 }
 
-func (j *JSResponse) Header(name, deflt string) string {
+func (j *JSResponse) GetHeader(name, deflt string) string {
 	name = strings.ToLower(name)
-	for _, header := range strings.Split(j.Headers, "\n") {
-		parts := strings.SplitN(core.Trim(header), ":", 2)
-		if len(parts) == 2 && strings.ToLower(parts[0]) == name {
-			return parts[1]
+	for _, h := range j.Headers {
+		if name == strings.ToLower(h.Name) {
+			return h.Value
 		}
 	}
 	return deflt
 }
 
+func (j *JSResponse) SetHeader(name, value string) {
+	name = strings.ToLower(name)
+	found := false
+	for _, h := range j.Headers {
+		if name == strings.ToLower(h.Name) {
+			found = true
+			h.Value = value
+		}
+	}
+	if found == false {
+		j.Headers = append(j.Headers, JSHeader{name, value})
+	}
+}
+
 func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
 	resp = goproxy.NewResponse(req, j.ContentType, j.Status, j.Body)
-	if j.Headers != "" {
-		for _, header := range strings.Split(j.Headers, "\n") {
-			header = core.Trim(header)
-			if header == "" {
-				continue
-			}
-			parts := strings.SplitN(header, ":", 2)
-			if len(parts) == 2 {
-				resp.Header.Add(parts[0], parts[1])
-			}
+	if len(j.Headers) > 0 {
+		for _, h := range j.Headers {
+			resp.Header.Add(h.Name, h.Value)
 		}
 	}
 	return
