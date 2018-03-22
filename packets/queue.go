@@ -33,6 +33,25 @@ type Stats struct {
 	Errors      uint64
 }
 
+func (s Stats) incrementErrors() {
+	s.Lock()
+	s.Errors++
+	s.Unlock()
+}
+
+func (s Stats) UpdateSent(raw uint64) {
+	s.Lock()
+	s.Sent += raw
+	s.Unlock()
+}
+
+func (s Stats) updateReceived(pktSize uint64) {
+	s.Lock()
+	s.PktReceived++
+	s.Received += pktSize
+	s.Unlock()
+}
+
 type PacketCallback func(pkt gopacket.Packet)
 
 type Queue struct {
@@ -148,16 +167,8 @@ func (q *Queue) worker() {
 		}
 
 		q.trackProtocols(pkt)
-
 		pktSize := uint64(len(pkt.Data()))
-
-		q.Stats.Lock()
-
-		q.Stats.PktReceived++
-		q.Stats.Received += pktSize
-
-		q.Stats.Unlock()
-
+		q.Stats.updateReceived(pktSize)
 		q.onPacketCallback(pkt)
 
 		// decode eth and ipv4 layers
@@ -200,14 +211,10 @@ func (q *Queue) Send(raw []byte) error {
 	defer q.writes.Done()
 
 	if err := q.handle.WritePacketData(raw); err != nil {
-		q.Stats.Lock()
-		q.Stats.Errors++
-		q.Stats.Unlock()
+		q.Stats.incrementErrors()
 		return err
 	} else {
-		q.Stats.Lock()
-		q.Stats.Sent += uint64(len(raw))
-		q.Stats.Unlock()
+		q.Stats.UpdateSent(uint64(len(raw)))
 	}
 
 	return nil
