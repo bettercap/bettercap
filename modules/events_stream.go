@@ -180,13 +180,16 @@ func (s *EventsStream) Show(limit int) error {
 		from = num - limit
 	}
 
-	fmt.Println()
+	selected := events[from:num]
+	if len(selected) > 0 {
+		fmt.Println()
 
-	for _, e := range events[from:num] {
-		s.View(e, false)
+		for _, e := range selected {
+			s.View(e, false)
+		}
+
+		s.Session.Refresh()
 	}
-
-	s.Session.Refresh()
 
 	return nil
 }
