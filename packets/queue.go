@@ -168,7 +168,7 @@ func (q *Queue) worker() {
 
 		q.trackProtocols(pkt)
 		pktSize := uint64(len(pkt.Data()))
-		q.Stats.UpdateReceived(pktSize)
+		q.Stats.updateReceived(pktSize)
 		q.onPacketCallback(pkt)
 
 		// decode eth and ipv4 layers
