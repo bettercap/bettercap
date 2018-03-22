@@ -130,7 +130,7 @@ func (gps *GPS) Start() error {
 		for gps.Running() {
 			if line, err := gps.readLine(); err == nil {
 				if info, err := nmea.Parse(line); err == nil {
-					s := info.GetSentence()
+					s := info.Sentence()
 					// http://aprs.gids.nl/nmea/#gga
 					if s.Type == "GNGGA" {
 						gps.Session.GPS = info.(nmea.GNGGA)
