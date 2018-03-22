@@ -57,7 +57,7 @@ func NewEventPool(debug bool, silent bool) *EventPool {
 func (p *EventPool) Listen() <-chan Event {
 	p.Lock()
 	defer p.Unlock()
-	l := make(chan Event, 255)
+	l := make(chan Event)
 	p.listeners = append(p.listeners, l)
 	return l
 }
@@ -85,6 +85,13 @@ func (p *EventPool) Add(tag string, data interface{}) {
 	for _, l := range p.listeners {
 		select {
 		case l <- e:
+			// NOTE: Without this 'default', errors in sending the event
+			// to the listener would not empty the channel, therefore
+			// all operations would be stuck at some point (after the first
+			// event if not buffered or after the first N events if buffered)
+			//
+			// See https://github.com/bettercap/bettercap/issues/198
+		default:
 		}
 	}
 }
