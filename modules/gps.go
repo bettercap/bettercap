@@ -106,7 +106,7 @@ func (gps *GPS) readLine() (line string, err error) {
 }
 
 func (gps *GPS) Show() error {
-	fmt.Printf("latitude:%f longitude:%f quality:%s satellites:%s altitude:%s\n",
+	fmt.Printf("latitude:%f longitude:%f quality:%s satellites:%d altitude:%f\n",
 		gps.Session.GPS.Latitude,
 		gps.Session.GPS.Longitude,
 		gps.Session.GPS.FixQuality,
