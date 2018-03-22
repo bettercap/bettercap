@@ -141,6 +141,28 @@ func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address ne
 	}
 }
 
+func (q *Queue) TrackPacket(size uint64) {
+	q.Stats.Lock()
+	defer q.Stats.Unlock()
+
+	q.Stats.PktReceived++
+	q.Stats.Received += size
+}
+
+func (q *Queue) TrackSent(size uint64) {
+	q.Stats.Lock()
+	defer q.Stats.Unlock()
+
+	q.Stats.Sent += size
+}
+
+func (q *Queue) TrackError() {
+	q.Stats.Lock()
+	defer q.Stats.Unlock()
+
+	q.Stats.Errors++
+}
+
 func (q *Queue) worker() {
 	for pkt := range q.srcChannel {
 		if q.active == false {
@@ -151,13 +173,7 @@ func (q *Queue) worker() {
 
 		pktSize := uint64(len(pkt.Data()))
 
-		q.Stats.Lock()
-
-		q.Stats.PktReceived++
-		q.Stats.Received += pktSize
-
-		q.Stats.Unlock()
-
+		q.TrackPacket(pktSize)
 		q.onPacketCallback(pkt)
 
 		// decode eth and ipv4 layers
@@ -200,14 +216,10 @@ func (q *Queue) Send(raw []byte) error {
 	defer q.writes.Done()
 
 	if err := q.handle.WritePacketData(raw); err != nil {
-		q.Stats.Lock()
-		q.Stats.Errors++
-		q.Stats.Unlock()
+		q.TrackError()
 		return err
 	} else {
-		q.Stats.Lock()
-		q.Stats.Sent += uint64(len(raw))
-		q.Stats.Unlock()
+		q.TrackSent(uint64(len(raw)))
 	}
 
 	return nil

@@ -13,14 +13,9 @@ import (
 func (w *WiFiModule) injectPacket(data []byte) {
 	if err := w.handle.WritePacketData(data); err != nil {
 		log.Error("Could not inject WiFi packet: %s", err)
-
-		w.Session.Queue.Stats.Lock()
-		w.Session.Queue.Stats.Errors++
-		w.Session.Queue.Stats.Unlock()
+		w.Session.Queue.TrackError()
 	} else {
-		w.Session.Queue.Stats.Lock()
-		w.Session.Queue.Stats.Sent += uint64(len(data))
-		w.Session.Queue.Stats.Unlock()
+		w.Session.Queue.TrackSent(uint64(len(data)))
 	}
 	// let the network card breath a little
 	time.Sleep(10 * time.Millisecond)

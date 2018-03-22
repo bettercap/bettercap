@@ -19,9 +19,9 @@ func (p *Prober) sendProbeUDP(from net.IP, from_hw net.HardwareAddr, ip net.IP) 
 		wrote, _ := con.Write([]byte{0x00})
 
 		if wrote > 0 {
-			p.Session.Queue.Stats.Lock()
-			p.Session.Queue.Stats.Sent += uint64(wrote)
-			p.Session.Queue.Stats.Unlock()
+			p.Session.Queue.TrackSent(uint64(wrote))
+		} else {
+			p.Session.Queue.TrackError()
 		}
 	}
 }

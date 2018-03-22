@@ -273,17 +273,6 @@ func (w *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	}
 }
 
-func (w *WiFiModule) trackPacket(pkt gopacket.Packet) {
-	pktSize := uint64(len(pkt.Data()))
-
-	w.Session.Queue.Stats.Lock()
-
-	w.Session.Queue.Stats.PktReceived++
-	w.Session.Queue.Stats.Received += pktSize
-
-	w.Session.Queue.Stats.Unlock()
-}
-
 func (w *WiFiModule) Start() error {
 	if err := w.Configure(); err != nil {
 		return err
@@ -306,13 +295,11 @@ func (w *WiFiModule) Start() error {
 		for packet := range w.pktSourceChan {
 			if w.Running() == false {
 				break
-			}
-
-			if packet == nil {
+			} else if packet == nil {
 				continue
 			}
 
-			w.trackPacket(packet)
+			w.Session.Queue.TrackPacket(uint64(len(packet.Data())))
 
 			// perform initial dot11 parsing and layers validation
 			if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok == true {
