@@ -4,7 +4,6 @@
 pcaps
 caplets
 build
-vendor
 bettercap*.*
 bettercap*
 bettercap.history

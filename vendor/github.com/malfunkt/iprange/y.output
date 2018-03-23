@@ -1,0 +1,185 @@
+
+state 0
+	$accept: .result $end 
+
+	num  shift 5
+	'*'  shift 6
+	.  error
+
+	address  goto 3
+	target  goto 2
+	term  goto 4
+	octet_range  goto 7
+	result  goto 1
+
+state 1
+	$accept:  result.$end 
+	result:  result.comma target 
+
+	$end  accept
+	','  shift 9
+	.  error
+
+	comma  goto 8
+
+state 2
+	result:  target.    (1)
+
+	.  reduce 1 (src line 40)
+
+
+state 3
+	target:  address.'/' num 
+	target:  address.    (6)
+
+	'/'  shift 10
+	.  reduce 6 (src line 69)
+
+
+state 4
+	address:  term.'.' term '.' term '.' term 
+
+	'.'  shift 11
+	.  error
+
+
+state 5
+	term:  num.    (8)
+	octet_range:  num.'-' num 
+
+	'-'  shift 12
+	.  reduce 8 (src line 82)
+
+
+state 6
+	term:  '*'.    (9)
+
+	.  reduce 9 (src line 83)
+
+
+state 7
+	term:  octet_range.    (10)
+
+	.  reduce 10 (src line 84)
+
+
+state 8
+	result:  result comma.target 
+
+	num  shift 5
+	'*'  shift 6
+	.  error
+
+	address  goto 3
+	target  goto 13
+	term  goto 4
+	octet_range  goto 7
+
+state 9
+	comma:  ','.    (3)
+	comma:  ','.' ' 
+
+	' '  shift 14
+	.  reduce 3 (src line 51)
+
+
+state 10
+	target:  address '/'.num 
+
+	num  shift 15
+	.  error
+
+
+state 11
+	address:  term '.'.term '.' term '.' term 
+
+	num  shift 5
+	'*'  shift 6
+	.  error
+
+	term  goto 16
+	octet_range  goto 7
+
+state 12
+	octet_range:  num '-'.num 
+
+	num  shift 17
+	.  error
+
+
+state 13
+	result:  result comma target.    (2)
+
+	.  reduce 2 (src line 45)
+
+
+state 14
+	comma:  ',' ' '.    (4)
+
+	.  reduce 4 (src line 51)
+
+
+state 15
+	target:  address '/' num.    (5)
+
+	.  reduce 5 (src line 53)
+
+
+state 16
+	address:  term '.' term.'.' term '.' term 
+
+	'.'  shift 18
+	.  error
+
+
+state 17
+	octet_range:  num '-' num.    (11)
+
+	.  reduce 11 (src line 86)
+
+
+state 18
+	address:  term '.' term '.'.term '.' term 
+
+	num  shift 5
+	'*'  shift 6
+	.  error
+
+	term  goto 19
+	octet_range  goto 7
+
+state 19
+	address:  term '.' term '.' term.'.' term 
+
+	'.'  shift 20
+	.  error
+
+
+state 20
+	address:  term '.' term '.' term '.'.term 
+
+	num  shift 5
+	'*'  shift 6
+	.  error
+
+	term  goto 21
+	octet_range  goto 7
+
+state 21
+	address:  term '.' term '.' term '.' term.    (7)
+
+	.  reduce 7 (src line 74)
+
+
+10 terminals, 7 nonterminals
+12 grammar rules, 22/2000 states
+0 shift/reduce, 0 reduce/reduce conflicts reported
+56 working sets used
+memory: parser 15/30000
+5 extra closures
+19 shift entries, 1 exceptions
+10 goto entries
+6 entries saved by goto default
+Optimizer space used: output 22/30000
+22 table entries, 1 zero
+maximum spread: 10, maximum offset: 20

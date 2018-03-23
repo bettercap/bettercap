@@ -18,7 +18,7 @@ Make sure you have a correctly configured **Go >= 1.8** environment, that `$GOPA
 
     $ go get github.com/bettercap/bettercap
 
-This command will download bettercap, install its dependencies, compile it and move the `bettercap` executable to `$GOPATH/bin`.
+This command will download bettercap, install its dependencies, compile it and move the `bettercap` executable to `$GOPATH/bin`. 
 
 Now you can use `sudo bettercap -h` to show the basic command line options and just `sudo bettercap` to start an 
 [interactive session](https://github.com/bettercap/bettercap/wiki/Interactive-Mode) on your default network interface, otherwise you can [load a caplet](https://github.com/bettercap/bettercap/wiki/Caplets) from [the dedicated repository](https://github.com/bettercap/caplets).
