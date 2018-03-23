@@ -33,6 +33,50 @@ In order to update to an unstable but bleeding edge release from this repository
 
 The project is documented [in this wiki](https://github.com/bettercap/bettercap/wiki).
 
+* **[Known Issues](https://github.com/bettercap/bettercap/wiki/Known-Issues)**
+* [Using with Docker](https://github.com/bettercap/bettercap/wiki/Using-with-Docker)
+* **Compilation**
+  * [on Linux and macOS](https://github.com/bettercap/bettercap/wiki/Compilation-on-Linux-and-macOS)
+  * [on Windows](https://github.com/bettercap/bettercap/wiki/Compilation-on-Windows)
+  * [on Android](https://github.com/bettercap/bettercap/wiki/Compilation-on-Android)
+  * [cross compilation (ARM example)](https://github.com/bettercap/bettercap/wiki/Cross-Compilation-(-ARM-example-))
+* [Interactive Mode and Command Line Arguments](https://github.com/bettercap/bettercap/wiki/Interactive-Mode)
+* [Changing the Prompt](https://github.com/bettercap/bettercap/wiki/Changing-the-Prompt)
+* [Caplets](https://github.com/bettercap/bettercap/wiki/Caplets)
+
+### Modules
+
+* **Core**
+  * [events.stream](https://github.com/bettercap/bettercap/wiki/events.stream)
+  * [ticker](https://github.com/bettercap/bettercap/wiki/ticker)
+  * [api.rest](https://github.com/bettercap/bettercap/wiki/api.rest)
+  * [update.check](https://github.com/bettercap/bettercap/wiki/update.check)
+* **Bluetooth Low Energy**
+  * [ble.recon / enum / write](https://github.com/bettercap/bettercap/wiki/ble)
+* **802.11**
+  * [wifi.recon / deauth / ap](https://github.com/bettercap/bettercap/wiki/wifi)
+* **Ethernet and IP**
+  * [net.recon](https://github.com/bettercap/bettercap/wiki/net.recon)
+  * [net.probe](https://github.com/bettercap/bettercap/wiki/net.probe)
+  * [net.sniff](https://github.com/bettercap/bettercap/wiki/net.sniff)
+  * [syn.scan](https://github.com/bettercap/bettercap/wiki/syn.scan)
+  * [wake on lan](https://github.com/bettercap/bettercap/wiki/wol)
+  * **Spoofers**
+    * [arp.spoof](https://github.com/bettercap/bettercap/wiki/arp.spoof)
+    * [dhcp6.spoof](https://github.com/bettercap/bettercap/wiki/dhcp6.spoof)
+    * [dns.spoof](https://github.com/bettercap/bettercap/wiki/dns.spoof)
+   * **Proxies**
+     * [tcp.proxy](https://github.com/bettercap/bettercap/wiki/tcp.proxy)
+       * [modules](https://github.com/bettercap/bettercap/wiki/tcp.modules)
+     * [http.proxy](https://github.com/bettercap/bettercap/wiki/http.proxy)
+     * [https.proxy](https://github.com/bettercap/bettercap/wiki/https.proxy)
+       * [modules](https://github.com/bettercap/bettercap/wiki/http.modules)
+* **Servers**
+  * [http.server](https://github.com/bettercap/bettercap/wiki/http.server)
+* **Utils**
+  * [mac.changer](https://github.com/bettercap/bettercap/wiki/mac.changer)
+  * [gps](https://github.com/bettercap/bettercap/wiki/gps)
+
 ## License
 
 `bettercap` is made with ♥  by [the dev team](https://github.com/orgs/bettercap/people) and it's released under the GPL 3 license.
