@@ -1,0 +1,86 @@
+hash: fbde0d2452ce166fdbca5d911aa533bef347f420e172f0801a98b90ec6ccf9be
+updated: 2018-03-23T15:14:51.394587797+01:00
+imports:
+- name: github.com/adrianmo/go-nmea
+  version: 22095aa1b48050243d3eb9a001ca80eb91a0c6fa
+  vcs: git
+- name: github.com/bettercap/gatt
+  version: 6475b946a0bff32e906c25d861f2b1c6d2056baa
+  subpackages:
+  - linux
+  - linux/cmd
+  - linux/evt
+  - linux/gioctl
+  - linux/socket
+  - linux/util
+  - xpc
+- name: github.com/bettercap/readline
+  version: 62c6fe6193755f722b8b8788aa7357be55a50ff1
+- name: github.com/dustin/go-humanize
+  version: bb3d318650d48840a39aa21a027c6630e198e626
+- name: github.com/elazarl/goproxy
+  version: a96fa3a318260eab29abaf32f7128c9eb07fb073
+  vcs: git
+- name: github.com/google/go-github
+  version: e48060a28fac52d0f1cb758bc8b87c07bac4a87d
+  subpackages:
+  - github
+- name: github.com/google/go-querystring
+  version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
+  subpackages:
+  - query
+- name: github.com/google/gopacket
+  version: 11c65f1ca9081dfea43b4f9643f5c155583b73ba
+  subpackages:
+  - layers
+  - pcap
+  - pcapgo
+- name: github.com/gorilla/context
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+- name: github.com/gorilla/mux
+  version: 53c1911da2b537f792e7cafcb446b05ffe33b996
+- name: github.com/gorilla/websocket
+  version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
+- name: github.com/inconshreveable/go-vhost
+  version: 06d84117953b22058c096b49a429ebd4f3d3d97b
+- name: github.com/jpillora/go-tld
+  version: a31ae10e978ab5f352c5dad2cfbd60546dcea75f
+- name: github.com/malfunkt/iprange
+  version: 3a31f5ed42d2d8a1fc46f1be91fd693bdef2dd52
+- name: github.com/mattn/go-colorable
+  version: 5411d3eea5978e6cdc258b30de592b60df6aba96
+- name: github.com/mattn/go-isatty
+  version: 0360b2af4f38e8d38c7fce2a9f4e702702d73a39
+- name: github.com/mdlayher/dhcp6
+  version: e26af0688e455a82b14ebdbecf43f87ead3c4624
+  subpackages:
+  - dhcp6opts
+  - internal/buffer
+- name: github.com/mgutz/ansi
+  version: 9520e82c474b0a04dd04f8a40959027271bab992
+- name: github.com/mgutz/logxi
+  version: aebf8a7d67ab4625e0fd4a665766fef9a709161b
+  subpackages:
+  - v1
+- name: github.com/pkg/errors
+  version: 816c9085562cd7ee03e7f8188a1cfd942858cded
+- name: github.com/robertkrimen/otto
+  version: 6c383dd335ef8dcccef05e651ce1eccfe4d0f011
+  subpackages:
+  - ast
+  - dbg
+  - file
+  - parser
+  - registry
+  - token
+- name: github.com/tarm/serial
+  version: eaafced92e9619f03c72527efeab21e326f3bc36
+- name: golang.org/x/sys
+  version: abf9c25f54453410d0c6668e519582a9e1115027
+  subpackages:
+  - unix
+- name: gopkg.in/sourcemap.v1
+  version: 6e83acea0053641eff084973fee085f0c193c61a
+  subpackages:
+  - base64vlq
+testImports: []

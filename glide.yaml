@@ -1,0 +1,39 @@
+package: github.com/bettercap/bettercap
+import:
+- package: github.com/adrianmo/go-nmea
+  vcs: git
+  version: 22095aa1b48050243d3eb9a001ca80eb91a0c6fa
+- package: github.com/bettercap/gatt
+  subpackages:
+  - linux/cmd
+- package: github.com/bettercap/readline
+  version: ^1.4.0
+- package: github.com/dustin/go-humanize
+- package: github.com/elazarl/goproxy
+  vcs: git
+  version: a96fa3a318260eab29abaf32f7128c9eb07fb073
+- package: github.com/google/go-github
+  version: ^15.0.0
+  subpackages:
+  - github
+- package: github.com/google/gopacket
+  version: ^1.1.14
+  subpackages:
+  - layers
+  - pcap
+  - pcapgo
+- package: github.com/gorilla/mux
+  version: ^1.6.1
+- package: github.com/gorilla/websocket
+  version: ^1.2.0
+- package: github.com/inconshreveable/go-vhost
+- package: github.com/jpillora/go-tld
+- package: github.com/malfunkt/iprange
+  version: ^0.9.0
+- package: github.com/mattn/go-isatty
+  version: ^0.0.3
+- package: github.com/mdlayher/dhcp6
+  subpackages:
+  - dhcp6opts
+- package: github.com/robertkrimen/otto
+- package: github.com/tarm/serial

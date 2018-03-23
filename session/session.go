@@ -225,19 +225,10 @@ func (s *Session) setupReadline() error {
 	}
 
 	cfg := readline.Config{
-		HistoryFile:       history,
-		InterruptPrompt:   "^C",
-		EOFPrompt:         "exit",
-		HistorySearchFold: true,
-		AutoComplete:      readline.NewPrefixCompleter(pcompleters...),
-		FuncFilterInputRune: func(r rune) (rune, bool) {
-			switch r {
-			// block CtrlZ feature
-			case readline.CharCtrlZ:
-				return r, false
-			}
-			return r, true
-		},
+		HistoryFile:     history,
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+		AutoComplete:    readline.NewPrefixCompleter(pcompleters...),
 	}
 
 	s.Input, err = readline.NewEx(&cfg)
