@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"runtime/pprof"
@@ -476,6 +477,71 @@ func (s *Session) RunCaplet(filename string) error {
 	return nil
 }
 
+func (s *Session) isCapletCommand(line string) (is bool, filename string, argv []string) {
+	paths := []string{
+		"./",
+		"./caplets/",
+	}
+
+	capspath := core.Trim(os.Getenv("CAPSPATH"))
+	for _, folder := range strings.Split(capspath, ":") {
+		folder = core.Trim(folder)
+		if folder != "" {
+			paths = append(paths, folder)
+		}
+	}
+
+	file := core.Trim(line)
+	parts := strings.Split(file, " ")
+	argc := len(parts)
+	argv = make([]string, 0)
+	// check for any arguments
+	if argc > 1 {
+		file = core.Trim(parts[0])
+		if argc >= 2 {
+			argv = parts[1:]
+		}
+	}
+
+	for _, path := range paths {
+		filename := filepath.Join(path, file) + ".cap"
+		if core.Exists(filename) {
+			return true, filename, argv
+		}
+	}
+
+	return false, "", nil
+}
+
+func (s *Session) runCapletCommand(filename string, argv []string) error {
+	input, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer input.Close()
+
+	scanner := bufio.NewScanner(input)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" || line[0] == '#' {
+			continue
+		}
+
+		// replace $0 with argv[0], $1 with argv[1] and so on
+		for i, arg := range argv {
+			line = strings.Replace(line, fmt.Sprintf("$%d", i), arg, -1)
+		}
+
+		if err = s.Run(line); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *Session) Run(line string) error {
 	line = core.TrimRight(line)
 	// remove extra spaces after the first command
@@ -483,12 +549,14 @@ func (s *Session) Run(line string) error {
 	// to 'arp.spoof on' (fixes #178)
 	line = reCmdSpaceCleaner.ReplaceAllString(line, "$1 $2")
 
+	// is it a core command?
 	for _, h := range s.CoreHandlers {
 		if parsed, args := h.Parse(line); parsed == true {
 			return h.Exec(args, s)
 		}
 	}
 
+	// is it a module command?
 	for _, m := range s.Modules {
 		for _, h := range m.Handlers() {
 			if parsed, args := h.Parse(line); parsed == true {
@@ -497,6 +565,12 @@ func (s *Session) Run(line string) error {
 		}
 	}
 
+	// is it a caplet command?
+	if is, filename, argv := s.isCapletCommand(line); is {
+		return s.runCapletCommand(filename, argv)
+	}
+
+	// is it a proxy module custom command?
 	if s.UnkCmdCallback != nil && s.UnkCmdCallback(line) == true {
 		return nil
 	}
