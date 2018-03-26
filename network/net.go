@@ -71,6 +71,10 @@ func ParseTargets(targets string, aliasMap *Aliases) (ips []net.IP, macs []net.H
 	ips = make([]net.IP, 0)
 	macs = make([]net.HardwareAddr, 0)
 
+	if targets = core.Trim(targets); targets == "" {
+		return
+	}
+
 	// first isolate MACs and parse them
 	for _, mac := range macParser.FindAllString(targets, -1) {
 		mac = NormalizeMac(mac)

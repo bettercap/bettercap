@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"bytes"
 	"net"
 	"sync"
 	"time"
@@ -13,10 +14,12 @@ import (
 
 type ArpSpoofer struct {
 	session.SessionModule
-	addresses []net.IP
-	macs      []net.HardwareAddr
-	ban       bool
-	waitGroup *sync.WaitGroup
+	addresses  []net.IP
+	macs       []net.HardwareAddr
+	wAddresses []net.IP
+	wMacs      []net.HardwareAddr
+	ban        bool
+	waitGroup  *sync.WaitGroup
 }
 
 func NewArpSpoofer(s *session.Session) *ArpSpoofer {
@@ -24,11 +27,15 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 		SessionModule: session.NewSessionModule("arp.spoof", s),
 		addresses:     make([]net.IP, 0),
 		macs:          make([]net.HardwareAddr, 0),
+		wAddresses:    make([]net.IP, 0),
+		wMacs:         make([]net.HardwareAddr, 0),
 		ban:           false,
 		waitGroup:     &sync.WaitGroup{},
 	}
 
-	p.AddParam(session.NewStringParameter("arp.spoof.targets", session.ParamSubnet, "", "IP or MAC addresses to spoof, also supports nmap style IP ranges."))
+	p.AddParam(session.NewStringParameter("arp.spoof.targets", session.ParamSubnet, "", "Comma separated list of IP addresses, MAC addresses or aliases to spoof, also supports nmap style IP ranges."))
+
+	p.AddParam(session.NewStringParameter("arp.spoof.whitelist", "", "", "Comma separated list of IP addresses, MAC addresses or aliases to skip while spoofing."))
 
 	p.AddHandler(session.NewModuleHandler("arp.spoof on", "",
 		"Start ARP spoofer.",
@@ -68,6 +75,80 @@ func (p ArpSpoofer) Description() string {
 
 func (p ArpSpoofer) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
+}
+
+func (p *ArpSpoofer) Configure() error {
+	var err error
+	var targets string
+	var whitelist string
+
+	if err, targets = p.StringParam("arp.spoof.targets"); err != nil {
+		return err
+	} else if err, whitelist = p.StringParam("arp.spoof.whitelist"); err != nil {
+		return err
+	} else if p.addresses, p.macs, err = network.ParseTargets(targets, p.Session.Lan.Aliases()); err != nil {
+		return err
+	} else if p.wAddresses, p.wMacs, err = network.ParseTargets(whitelist, p.Session.Lan.Aliases()); err != nil {
+		return err
+	}
+
+	log.Debug(" addresses=%v macs=%v whitelisted-addresses=%v whitelisted-macs=%v", p.addresses, p.macs, p.wAddresses, p.wMacs)
+
+	if p.ban == true {
+		log.Warning("Running in BAN mode, forwarding not enabled!")
+		p.Session.Firewall.EnableForwarding(false)
+	} else if p.Session.Firewall.IsForwardingEnabled() == false {
+		log.Info("Enabling forwarding.")
+		p.Session.Firewall.EnableForwarding(true)
+	}
+
+	return nil
+}
+
+func (p *ArpSpoofer) Start() error {
+	if err := p.Configure(); err != nil {
+		return err
+	}
+
+	return p.SetRunning(true, func() {
+		from := p.Session.Gateway.IP
+		from_hw := p.Session.Interface.HW
+
+		log.Info("ARP spoofer started, probing %d targets.", len(p.addresses)+len(p.macs))
+
+		p.waitGroup.Add(1)
+		defer p.waitGroup.Done()
+
+		for p.Running() {
+			p.sendArp(from, from_hw, true, false)
+			time.Sleep(1 * time.Second)
+		}
+	})
+}
+
+func (p *ArpSpoofer) Stop() error {
+	return p.SetRunning(false, func() {
+		log.Info("Waiting for ARP spoofer to stop ...")
+		p.unSpoof()
+		p.ban = false
+		p.waitGroup.Wait()
+	})
+}
+
+func (p *ArpSpoofer) isWhitelisted(ip string, mac net.HardwareAddr) bool {
+	for _, addr := range p.wAddresses {
+		if ip == addr.String() {
+			return true
+		}
+	}
+
+	for _, hw := range p.wMacs {
+		if bytes.Compare(hw, mac) == 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running bool, probe bool) {
@@ -110,6 +191,9 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 	for ip, mac := range targets {
 		if check_running && p.Running() == false {
 			return
+		} else if p.isWhitelisted(ip, mac) {
+			log.Debug("%s (%s) is whitelisted, skipping from spoofing loop.", ip, mac)
+			continue
 		}
 
 		if err, pkt := packets.NewARPReply(saddr, smac, net.ParseIP(ip), mac); err != nil {
@@ -130,56 +214,4 @@ func (p *ArpSpoofer) unSpoof() error {
 	p.sendArp(from, from_hw, false, false)
 
 	return nil
-}
-
-func (p *ArpSpoofer) Configure() error {
-	var err error
-	var targets string
-
-	if err, targets = p.StringParam("arp.spoof.targets"); err != nil {
-		return err
-	} else if p.addresses, p.macs, err = network.ParseTargets(targets, p.Session.Lan.Aliases()); err != nil {
-		return err
-	}
-
-	log.Debug(" addresses=%v macs=%v", p.addresses, p.macs)
-	if p.ban == true {
-		log.Warning("Running in BAN mode, forwarding not enabled!")
-		p.Session.Firewall.EnableForwarding(false)
-	} else if p.Session.Firewall.IsForwardingEnabled() == false {
-		log.Info("Enabling forwarding.")
-		p.Session.Firewall.EnableForwarding(true)
-	}
-
-	return nil
-}
-
-func (p *ArpSpoofer) Start() error {
-	if err := p.Configure(); err != nil {
-		return err
-	}
-
-	return p.SetRunning(true, func() {
-		from := p.Session.Gateway.IP
-		from_hw := p.Session.Interface.HW
-
-		log.Info("ARP spoofer started, probing %d targets.", len(p.addresses)+len(p.macs))
-
-		p.waitGroup.Add(1)
-		defer p.waitGroup.Done()
-
-		for p.Running() {
-			p.sendArp(from, from_hw, true, false)
-			time.Sleep(1 * time.Second)
-		}
-	})
-}
-
-func (p *ArpSpoofer) Stop() error {
-	return p.SetRunning(false, func() {
-		log.Info("Waiting for ARP spoofer to stop ...")
-		p.unSpoof()
-		p.ban = false
-		p.waitGroup.Wait()
-	})
 }
