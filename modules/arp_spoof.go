@@ -1,10 +1,7 @@
 package modules
 
 import (
-	"fmt"
 	"net"
-	"regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -12,12 +9,7 @@ import (
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
-
-	"github.com/malfunkt/iprange"
 )
-
-// lulz this sounds like a hamburger
-var macParser = regexp.MustCompile(`([a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2})`)
 
 type ArpSpoofer struct {
 	session.SessionModule
@@ -140,47 +132,17 @@ func (p *ArpSpoofer) unSpoof() error {
 	return nil
 }
 
-func (p *ArpSpoofer) parseTargets(targets string) (err error) {
-	// first isolate MACs and parse them
-	for _, mac := range macParser.FindAllString(targets, -1) {
-		mac = network.NormalizeMac(mac)
-		log.Debug("Parsing MAC %s", mac)
-		hw, err := net.ParseMAC(mac)
-		if err != nil {
-			return fmt.Errorf("Error while parsing MAC '%s': %s", mac, err)
-		}
-		p.macs = append(p.macs, hw)
-		targets = strings.Replace(targets, mac, "", -1)
-	}
-
-	targets = strings.Trim(targets, ", ")
-
-	log.Debug("Parsing IP range %s", targets)
-	if len(p.macs) == 0 || targets != "" {
-		list, err := iprange.ParseList(targets)
-		if err != nil {
-			return fmt.Errorf("Error while parsing arp.spoof.targets variable '%s': %s.", targets, err)
-		}
-
-		p.addresses = list.Expand()
-	}
-
-	log.Debug(" addresses=%v", p.addresses)
-	log.Debug(" macs=%v", p.macs)
-
-	return nil
-}
-
 func (p *ArpSpoofer) Configure() error {
 	var err error
 	var targets string
 
 	if err, targets = p.StringParam("arp.spoof.targets"); err != nil {
 		return err
-	} else if err = p.parseTargets(targets); err != nil {
+	} else if p.addresses, p.macs, err = network.ParseTargets(targets, p.Session.Lan.Aliases()); err != nil {
 		return err
 	}
 
+	log.Debug(" addresses=%v macs=%v", p.addresses, p.macs)
 	if p.ban == true {
 		log.Warning("Running in BAN mode, forwarding not enabled!")
 		p.Session.Firewall.EnableForwarding(false)

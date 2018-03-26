@@ -94,6 +94,10 @@ func (lan *LAN) List() (list []*Endpoint) {
 	return
 }
 
+func (lan *LAN) Aliases() *Aliases {
+	return lan.aliases
+}
+
 func (lan *LAN) WasMissed(mac string) bool {
 	if mac == lan.iface.HwAddress || mac == lan.gateway.HwAddress {
 		return false

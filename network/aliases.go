@@ -83,3 +83,16 @@ func (a *Aliases) Set(mac, alias string) error {
 
 	return a.saveUnlocked()
 }
+
+func (a *Aliases) Find(alias string) (mac string, found bool) {
+	a.Lock()
+	defer a.Unlock()
+
+	for m, a := range a.data {
+		if alias == a {
+			return m, true
+		}
+	}
+
+	return "", false
+}
