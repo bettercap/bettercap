@@ -484,11 +484,8 @@ func (s *Session) isCapletCommand(line string) (is bool, filename string, argv [
 	}
 
 	capspath := core.Trim(os.Getenv("CAPSPATH"))
-	for _, folder := range strings.Split(capspath, ":") {
-		folder = core.Trim(folder)
-		if folder != "" {
-			paths = append(paths, folder)
-		}
+	for _, folder := range core.SepSplit(capspath, ":") {
+		paths = append(paths, folder)
 	}
 
 	file := core.Trim(line)
