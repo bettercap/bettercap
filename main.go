@@ -12,10 +12,8 @@ import (
 )
 
 func main() {
-	var sess *session.Session
-	var err error
-
-	if sess, err = session.New(); err != nil {
+	sess, err := session.New()
+	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -58,12 +56,10 @@ func main() {
 		log.Fatal("%s", err)
 	}
 
-	/*
-	 * Commands sent with -eval are used to set specific
-	 * caplet parameters (i.e. arp.spoof.targets) via command
-	 * line, therefore they need to be executed first otherwise
-	 * modules might already be started.
-	 */
+	// Commands sent with -eval are used to set specific
+	// caplet parameters (i.e. arp.spoof.targets) via command
+	// line, therefore they need to be executed first otherwise
+	// modules might already be started.
 	for _, cmd := range session.ParseCommands(*sess.Options.Commands) {
 		if err = sess.Run(cmd); err != nil {
 			log.Error("Error while running '%s': %s", core.Bold(cmd), core.Red(err.Error()))
