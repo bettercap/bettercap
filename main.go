@@ -11,15 +11,10 @@ import (
 	"github.com/bettercap/bettercap/session"
 )
 
-var sess *session.Session
-var err error
-
-var autoEnableList = []string{
-	"events.stream",
-	"net.recon",
-}
-
 func main() {
+	var sess *session.Session
+	var err error
+
 	if sess, err = session.New(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
