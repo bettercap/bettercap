@@ -120,7 +120,7 @@ func (p *ArpSpoofer) Start() error {
 		defer p.waitGroup.Done()
 
 		for p.Running() {
-			p.sendArp(from, from_hw, true, false)
+			p.sendArp(from, from_hw, true, true)
 			time.Sleep(1 * time.Second)
 		}
 	})
@@ -166,7 +166,7 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 		// do we have this ip mac address?
 		hw, err := findMAC(p.Session, ip, probe)
 		if err != nil {
-			log.Debug("Error while looking up hardware address for %s: %s", ip.String(), err)
+			log.Warning("Could not find hardware address for %s, retrying in one second.", ip.String())
 			continue
 		}
 
@@ -176,7 +176,7 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 	for _, hw := range p.macs {
 		ip, err := network.ArpInverseLookup(p.Session.Interface.Name(), hw.String(), false)
 		if err != nil {
-			log.Debug("Error while looking up ip address for %s: %s", hw.String(), err)
+			log.Warning("Could not find IP address for %s, retrying in one second.", hw.String())
 			continue
 		}
 
