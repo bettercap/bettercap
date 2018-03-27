@@ -319,8 +319,6 @@ func (s *SSLStripper) isMaxRedirs(hostname string) bool {
 func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 	if s.enabled == false {
 		return
-	} else if s.isContentStrippable(res) == false {
-		return
 	}
 
 	// is the server redirecting us?
@@ -355,43 +353,49 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 	// process response headers
 	s.stripResponseHeaders(res)
 
-	// fetch the HTML body
-	raw, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Error("Could not read response body: %s", err)
-		return
-	}
-
-	body := string(raw)
-	urls := make(map[string]string, 0)
-	matches := httpsLinksParser.FindAllString(body, -1)
-	for _, u := range matches {
-		// make sure we only strip stuff we're able to
-		// resolve and process
-		if strings.ContainsRune(u, '.') == true {
-			urls[u] = s.processURL(u)
+	// if we have a text or html content type, fetch the body
+	// and perform sslstripping
+	if s.isContentStrippable(res) == true {
+		raw, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			log.Error("Could not read response body: %s", err)
+			return
 		}
-	}
 
-	nurls := len(urls)
-	if nurls > 0 {
-		plural := "s"
-		if nurls == 1 {
-			plural = ""
+		body := string(raw)
+		urls := make(map[string]string, 0)
+		matches := httpsLinksParser.FindAllString(body, -1)
+		for _, u := range matches {
+			// make sure we only strip stuff we're able to
+			// resolve and process
+			if strings.ContainsRune(u, '.') == true {
+				urls[u] = s.processURL(u)
+			}
 		}
-		log.Info("[%s] Stripping %d SSL link%s from %s", core.Green("sslstrip"), nurls, plural, core.Bold(res.Request.Host))
+
+		nurls := len(urls)
+		if nurls > 0 {
+			plural := "s"
+			if nurls == 1 {
+				plural = ""
+			}
+			log.Info("[%s] Stripping %d SSL link%s from %s", core.Green("sslstrip"), nurls, plural, core.Bold(res.Request.Host))
+		}
+
+		for url, stripped := range urls {
+			log.Debug("Stripping url %s to %s", core.Bold(url), core.Yellow(stripped))
+
+			body = strings.Replace(body, url, stripped, -1)
+
+			hostOriginal := strings.Replace(url, "https://", "", 1)
+			hostStripped := strings.Replace(stripped, "http://", "", 1)
+			s.hosts.Track(hostOriginal, hostStripped)
+		}
+
+		// reset the response body to the original unread state
+		// but with just a string reader, this way further calls
+		// to ioutil.ReadAll(res.Body) will just return the content
+		// we stripped without downloading anything again.
+		res.Body = ioutil.NopCloser(strings.NewReader(body))
 	}
-
-	for url, stripped := range urls {
-		log.Debug("Stripping url %s to %s", core.Bold(url), core.Yellow(stripped))
-
-		body = strings.Replace(body, url, stripped, -1)
-
-		hostOriginal := strings.Replace(url, "https://", "", 1)
-		hostStripped := strings.Replace(stripped, "http://", "", 1)
-		s.hosts.Track(hostOriginal, hostStripped)
-	}
-
-	// reset the response body to the original unread state
-	res.Body = ioutil.NopCloser(strings.NewReader(body))
 }
