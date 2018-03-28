@@ -3,8 +3,6 @@
 package modules
 
 import (
-	"errors"
-
 	"github.com/bettercap/bettercap/session"
 )
 
