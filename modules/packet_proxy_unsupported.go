@@ -1,10 +1,7 @@
 // +build darwin
 // +build windows
-// +build linux,arm
-// +build linux,mips
-// +build linux,mipsle
-// +build linux,mips64
-// +build linux,mips64le
+// +build linux,!amd64
+
 package modules
 
 import (
