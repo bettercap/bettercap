@@ -166,7 +166,7 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 		// do we have this ip mac address?
 		hw, err := findMAC(p.Session, ip, probe)
 		if err != nil {
-			log.Warning("Could not find hardware address for %s, retrying in one second.", ip.String())
+			log.Debug("Could not find hardware address for %s, retrying in one second.", ip.String())
 			continue
 		}
 
