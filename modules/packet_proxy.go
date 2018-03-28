@@ -1,5 +1,6 @@
 // +build !windows
 // +build !darwin
+// +build !android
 
 package modules
 
