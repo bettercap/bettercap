@@ -1,7 +1,3 @@
-// +build darwin
-// +build windows
-// +build linux,!amd64
-
 package modules
 
 import (
