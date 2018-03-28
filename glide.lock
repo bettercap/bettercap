@@ -1,5 +1,5 @@
 hash: fbde0d2452ce166fdbca5d911aa533bef347f420e172f0801a98b90ec6ccf9be
-updated: 2018-03-23T15:14:51.394587797+01:00
+updated: 2018-03-28T13:41:06.165992863+02:00
 imports:
 - name: github.com/adrianmo/go-nmea
   version: 22095aa1b48050243d3eb9a001ca80eb91a0c6fa
@@ -16,6 +16,10 @@ imports:
   - xpc
 - name: github.com/bettercap/readline
   version: 62c6fe6193755f722b8b8788aa7357be55a50ff1
+- name: github.com/chifflier/nfqueue-go
+  version: 61ca646babef3bd4dea1deb610bfb0005c0a1298
+  subpackages:
+  - nfqueue
 - name: github.com/dustin/go-humanize
   version: bb3d318650d48840a39aa21a027c6630e198e626
 - name: github.com/elazarl/goproxy
