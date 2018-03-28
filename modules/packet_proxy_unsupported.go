@@ -1,11 +1,10 @@
-// +build windows
-// +build darwin
-// +build android
+// +build !linux
 // +build arm
 // +build mips
 // +build mipsle
 // +build mips64
 // +build mips64le
+
 package modules
 
 import (

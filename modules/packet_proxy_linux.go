@@ -1,6 +1,3 @@
-// +build !windows
-// +build !darwin
-// +build !android
 // +build !arm
 // +build !mips
 // +build !mipsle
