@@ -1,5 +1,11 @@
-// +build windows darwin android
-// +build arm mips mipsle mips64 mips64le
+// +build windows
+// +build darwin
+// +build android
+// +build arm
+// +build mips
+// +build mipsle
+// +build mips64
+// +build mips64le
 
 package modules
 
