@@ -1,10 +1,10 @@
-// +build !linux
-// +build arm
-// +build mips
-// +build mipsle
-// +build mips64
-// +build mips64le
-
+// +build darwin
+// +build windows
+// +build linux,arm
+// +build linux,mips
+// +build linux,mipsle
+// +build linux,mips64
+// +build linux,mips64le
 package modules
 
 import (
