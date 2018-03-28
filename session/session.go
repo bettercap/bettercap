@@ -34,6 +34,7 @@ var (
 
 	ErrAlreadyStarted = errors.New("Module is already running.")
 	ErrAlreadyStopped = errors.New("Module is not running.")
+	ErrNotSupported   = errors.New("This component is not supported on this OS.")
 
 	reCmdSpaceCleaner = regexp.MustCompile(`^([^\s]+)\s+(.+)$`)
 )

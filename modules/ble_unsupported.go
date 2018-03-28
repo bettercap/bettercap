@@ -3,13 +3,7 @@
 package modules
 
 import (
-	"errors"
-
 	"github.com/bettercap/bettercap/session"
-)
-
-var (
-	notSupported = errors.New("ble.recon is not supported on this OS")
 )
 
 type BLERecon struct {
@@ -35,13 +29,13 @@ func NewBLERecon(s *session.Session) *BLERecon {
 	d.AddHandler(session.NewModuleHandler("ble.recon on", "",
 		"Start Bluetooth Low Energy devices discovery.",
 		func(args []string) error {
-			return notSupported
+			return session.ErrNotSupported
 		}))
 
 	d.AddHandler(session.NewModuleHandler("ble.recon off", "",
 		"Stop Bluetooth Low Energy devices discovery.",
 		func(args []string) error {
-			return notSupported
+			return session.ErrNotSupported
 		}))
 
 	return d
@@ -60,13 +54,13 @@ func (d BLERecon) Author() string {
 }
 
 func (d *BLERecon) Configure() (err error) {
-	return notSupported
+	return session.ErrNotSupported
 }
 
 func (d *BLERecon) Start() error {
-	return notSupported
+	return session.ErrNotSupported
 }
 
 func (d *BLERecon) Stop() error {
-	return notSupported
+	return session.ErrNotSupported
 }

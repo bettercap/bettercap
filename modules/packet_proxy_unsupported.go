@@ -8,10 +8,6 @@ import (
 	"github.com/bettercap/bettercap/session"
 )
 
-var (
-	notSupported = errors.New("packet.proxy is not supported on this OS")
-)
-
 type PacketProxy struct {
 	session.SessionModule
 }
@@ -35,13 +31,13 @@ func (pp PacketProxy) Author() string {
 }
 
 func (pp *PacketProxy) Configure() (err error) {
-	return notSupported
+	return session.ErrNotSupported
 }
 
 func (pp *PacketProxy) Start() error {
-	return notSupported
+	return session.ErrNotSupported
 }
 
 func (pp *PacketProxy) Stop() error {
-	return notSupported
+	return session.ErrNotSupported
 }
