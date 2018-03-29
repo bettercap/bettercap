@@ -1,7 +1,9 @@
 package session
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -199,6 +201,23 @@ func (s *Session) setHandler(args []string, sess *Session) error {
 	return nil
 }
 
+func (s *Session) readHandler(args []string, sess *Session) error {
+	key := args[0]
+	prompt := args[1]
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("%s ", prompt)
+
+	value, _ := reader.ReadString('\n')
+	value = core.Trim(value)
+	if value == "\"\"" {
+		value = ""
+	}
+
+	s.Env.Set(key, value)
+	return nil
+}
+
 func (s *Session) clsHandler(args []string, sess *Session) error {
 	// fixes a weird bug which causes the screen not to be fully
 	// cleared if a "clear; net.show" commands chain is executed
@@ -301,6 +320,12 @@ func (s *Session) registerCoreHandlers() {
 			}
 			return varNames
 		})))
+
+	s.addHandler(NewCommandHandler("read VARIABLE PROMPT",
+		`^read\s+([^\s]+)\s+(.+)$`,
+		"Show a PROMPT to ask the user for input that will be saved inside VARIABLE.",
+		s.readHandler),
+		readline.PcItem("read"))
 
 	s.addHandler(NewCommandHandler("clear",
 		"^(clear|cls)$",
