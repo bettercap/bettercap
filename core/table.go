@@ -5,6 +5,7 @@ import (
 	"io"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 var ansi = regexp.MustCompile("\033\\[(?:[0-9]{1,3}(?:;[0-9]{1,3})*)?[m|K]")
@@ -13,8 +14,7 @@ func viewLen(s string) int {
 	for _, m := range ansi.FindAllString(s, -1) {
 		s = strings.Replace(s, m, "", -1)
 	}
-
-	return len(s)
+	return utf8.RuneCountInString(s)
 }
 
 func maxLen(strings []string) int {
@@ -59,7 +59,6 @@ func padded(s string, maxLen int, align Alignment) string {
 }
 
 func AsTable(w io.Writer, columns []string, rows [][]string) {
-
 	for i, col := range columns {
 		columns[i] = fmt.Sprintf(" %s ", col)
 	}
