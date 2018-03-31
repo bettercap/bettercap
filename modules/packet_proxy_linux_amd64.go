@@ -116,6 +116,7 @@ func (pp *PacketProxy) runRule(enable bool) (err error) {
 	args = append(args, []string{
 		"-j", "NFQUEUE",
 		"--queue-num", fmt.Sprintf("%d", pp.queueNum),
+		"--queue-bypass",
 	}...)
 
 	log.Debug("iptables %s", args)
