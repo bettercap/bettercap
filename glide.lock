@@ -1,5 +1,5 @@
 hash: fbde0d2452ce166fdbca5d911aa533bef347f420e172f0801a98b90ec6ccf9be
-updated: 2018-03-28T13:41:06.165992863+02:00
+updated: 2018-04-01T14:15:20.005813196+02:00
 imports:
 - name: github.com/adrianmo/go-nmea
   version: 22095aa1b48050243d3eb9a001ca80eb91a0c6fa
@@ -25,6 +25,16 @@ imports:
 - name: github.com/elazarl/goproxy
   version: a96fa3a318260eab29abaf32f7128c9eb07fb073
   vcs: git
+- name: github.com/gobwas/glob
+  version: 19c076cdf202b3d1c0489bdfa2f2f289f634474b
+  subpackages:
+  - compiler
+  - match
+  - syntax
+  - syntax/ast
+  - syntax/lexer
+  - util/runes
+  - util/strings
 - name: github.com/google/go-github
   version: e48060a28fac52d0f1cb758bc8b87c07bac4a87d
   subpackages:

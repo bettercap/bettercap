@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"strings"
 	"sync"
 
 	"github.com/bettercap/bettercap/core"
@@ -15,12 +14,14 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+
+	"github.com/gobwas/glob"
 )
 
 type DNSSpoofer struct {
 	session.SessionModule
 	Handle        *pcap.Handle
-	Domains       []string
+	Domains       []glob.Glob
 	Address       net.IP
 	All           bool
 	waitGroup     *sync.WaitGroup
@@ -32,6 +33,7 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		SessionModule: session.NewSessionModule("dns.spoof", s),
 		Handle:        nil,
 		All:           false,
+		Domains:       make([]glob.Glob, 0),
 		waitGroup:     &sync.WaitGroup{},
 	}
 
@@ -79,6 +81,7 @@ func (s DNSSpoofer) Author() string {
 func (s *DNSSpoofer) Configure() error {
 	var err error
 	var addr string
+	var domains []string
 
 	if s.Running() {
 		return session.ErrAlreadyStarted
@@ -97,8 +100,16 @@ func (s *DNSSpoofer) Configure() error {
 		return err
 	}
 
-	if err, s.Domains = s.ListParam("dns.spoof.domains"); err != nil {
+	if err, domains = s.ListParam("dns.spoof.domains"); err != nil {
 		return err
+	}
+
+	for _, domain := range domains {
+		if expr, err := glob.Compile(domain); err != nil {
+			return fmt.Errorf("'%s' is not a valid domain glob expression: %s", domain, err)
+		} else {
+			s.Domains = append(s.Domains, expr)
+		}
 	}
 
 	if err, addr = s.StringParam("dns.spoof.address"); err != nil {
@@ -232,12 +243,8 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 }
 
 func (s *DNSSpoofer) shouldSpoof(domain string) bool {
-	if len(s.Domains) == 1 && s.Domains[0] == "*" {
-		return true
-	}
-
-	for _, d := range s.Domains {
-		if strings.HasSuffix(domain, d) == true {
+	for _, expr := range s.Domains {
+		if expr.Match(domain) {
 			return true
 		}
 	}
