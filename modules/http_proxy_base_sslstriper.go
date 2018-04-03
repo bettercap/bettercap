@@ -240,8 +240,8 @@ func (s *SSLStripper) processURL(url string) string {
 	// search for a known subdomain and replace it
 	found := false
 	for sub, repl := range subdomains {
-		what := fmt.Sprintf("://%s", sub)
-		with := fmt.Sprintf("://%s", repl)
+		what := fmt.Sprintf("://%s.", sub)
+		with := fmt.Sprintf("://%s.", repl)
 		if strings.Contains(url, what) {
 			url = strings.Replace(url, what, with, 1)
 			found = true
