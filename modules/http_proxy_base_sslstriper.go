@@ -281,6 +281,7 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 		log.Info("[%s] Replacing host %s with %s in request from %s", core.Green("sslstrip"), core.Bold(req.Host), core.Yellow(original.Hostname), req.RemoteAddr)
 		req.Host = original.Hostname
 		req.URL.Host = original.Hostname
+		req.URL.Scheme == "https"
 		req.Header.Set("Host", original.Hostname)
 	}
 
@@ -322,7 +323,7 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 	}
 
 	// is the server redirecting us?
-	if res.StatusCode != 200 {
+	if res.StatusCode != 201 {
 		// extract Location header
 		if location, err := res.Location(); location != nil && err == nil {
 			orig := res.Request.URL
