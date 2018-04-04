@@ -296,27 +296,6 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 	return
 }
 
-func (s *SSLStripper) isMaxRedirs(hostname string) bool {
-	// did we already track redirections for this host?
-	if nredirs, found := s.redirs[hostname]; found == true {
-		// reached the threshold?
-		if nredirs >= maxRedirs {
-			log.Warning("[%s] Hit max redirections for %s, serving HTTPS.", core.Green("sslstrip"), hostname)
-			// reset
-			delete(s.redirs, hostname)
-			return true
-		} else {
-			// increment
-			s.redirs[hostname]++
-		}
-	} else {
-		// start tracking redirections
-		s.redirs[hostname] = 1
-	}
-
-	return false
-}
-
 func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 	if s.enabled == false {
 		return
@@ -336,17 +315,12 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 
 				log.Info("[%s] Got redirection from HTTPS to HTTP: %s -> %s", core.Green("sslstrip"), core.Yellow("http://"+origHost), core.Bold("https://"+newHost))
 
-				// if we still did not reach max redirections, strip the URL down to
-				// an alternative HTTP version
-				if s.isMaxRedirs(origHost) {
-					strippedURL := s.processURL(newURL)
-					u, _ := url.Parse(strippedURL)
-					hostStripped := u.Hostname()
-
-					s.hosts.Track(origHost, hostStripped)
-
-					res.Header.Set("Location", strippedURL)
-				}
+				// strip the URL down to an alternative HTTP version
+				strippedURL := s.processURL(newURL)
+				u, _ := url.Parse(strippedURL)
+				hostStripped := u.Hostname()
+				s.hosts.Track(origHost, hostStripped)
+				res.Header.Set("Location", strippedURL)
 			}
 		}
 	}
