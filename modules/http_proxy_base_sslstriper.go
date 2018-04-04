@@ -268,19 +268,13 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 	// preprocess request headers
 	s.stripRequestHeaders(req)
 
-	// well ...
-	if req.URL.Scheme == "https" {
-		// TODO: check for max redirects?
-		req.URL.Scheme = "http"
-	}
-
 	// handle stripped domains
 	original := s.hosts.Unstrip(req.Host)
 	if original != nil {
 		log.Info("[%s] Replacing host %s with %s in request from %s", core.Green("sslstrip"), core.Bold(req.Host), core.Yellow(original.Hostname), req.RemoteAddr)
 		req.Host = original.Hostname
 		req.URL.Host = original.Hostname
-		req.URL.Scheme == "https"
+		req.URL.Scheme = "https"
 		req.Header.Set("Host", original.Hostname)
 	}
 
