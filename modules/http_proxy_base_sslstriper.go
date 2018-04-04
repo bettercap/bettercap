@@ -21,7 +21,6 @@ import (
 )
 
 var (
-	maxRedirs        = 5
 	httpsLinksParser = regexp.MustCompile(`https://[^"'/]+`)
 	subdomains       = map[string]string{
 		"www":     "wwwww",
