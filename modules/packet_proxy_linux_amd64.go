@@ -202,8 +202,6 @@ func (pp *PacketProxy) Start() error {
 
 		pp.done <- true
 	})
-
-	return nil
 }
 
 func (pp *PacketProxy) Stop() error {
