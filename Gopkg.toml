@@ -1,0 +1,98 @@
+# Gopkg.toml example
+#
+# Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#   name = "github.com/x/y"
+#   version = "2.4.0"
+#
+# [prune]
+#   non-go = false
+#   go-tests = true
+#   unused-packages = true
+
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/bettercap/gatt"
+
+[[constraint]]
+  name = "github.com/bettercap/readline"
+  version = "1.4.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/chifflier/nfqueue-go"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/dustin/go-humanize"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/elazarl/goproxy"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/gobwas/glob"
+
+[[constraint]]
+  name = "github.com/google/go-github"
+  version = "15.0.0"
+
+[[constraint]]
+  name = "github.com/google/gopacket"
+  version = "1.1.14"
+
+[[constraint]]
+  name = "github.com/gorilla/mux"
+  version = "1.6.1"
+
+[[constraint]]
+  name = "github.com/gorilla/websocket"
+  version = "1.2.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/inconshreveable/go-vhost"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/jpillora/go-tld"
+
+[[constraint]]
+  name = "github.com/malfunkt/iprange"
+  version = "0.9.0"
+
+[[constraint]]
+  name = "github.com/mattn/go-isatty"
+  version = "0.0.3"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/mdlayher/dhcp6"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/robertkrimen/otto"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/tarm/serial"
+
+[prune]
+  go-tests = true
+  unused-packages = true
