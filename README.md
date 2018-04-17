@@ -8,7 +8,7 @@
   </p>
 </p>
 
-**bettercap** is the Swiss army knife for network attacks and monitoring.
+**bettercap** is the Swiss Army knife for 802.11, BLE and Ethernet networks reconnaissance and attacks.
 
 ## How to Install
 
