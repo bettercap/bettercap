@@ -4,6 +4,8 @@ import:
   vcs: git
   version: 22095aa1b48050243d3eb9a001ca80eb91a0c6fa
 - package: github.com/bettercap/gatt
+  vcs: git
+  version: e65eb2df9116e5ec6e2409b6142a09a93e96b900
   subpackages:
   - linux/cmd
 - package: github.com/bettercap/readline

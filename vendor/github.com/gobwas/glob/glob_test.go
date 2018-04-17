@@ -130,6 +130,10 @@ func TestGlob(t *testing.T) {
 		glob(false, "{*.google.*,yandex.*}", "www.yandex.com", '.'),
 		glob(false, "{*.google.*,yandex.*}", "google.com", '.'),
 
+		glob(true, "*//{,*.}example.com", "https://www.example.com"),
+		glob(true, "*//{,*.}example.com", "http://example.com"),
+		glob(false, "*//{,*.}example.com", "http://example.com.net"),
+
 		glob(true, pattern_all, fixture_all_match),
 		glob(false, pattern_all, fixture_all_mismatch),
 
