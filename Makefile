@@ -10,9 +10,9 @@ build: resources
 	@echo "@ Building ..."
 	@go build -o $(TARGET) .
 
-resources: oui
+resources: network/oui.go
 
-oui:
+network/oui.go:
 	@python ./network/make_oui.py
 
 vet:
@@ -25,7 +25,7 @@ lint:
 	@golint ./...
 
 deps:
-	@go get ./...
+	@dep ensure
 
 clean:
 	@rm -rf $(TARGET).*
