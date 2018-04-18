@@ -4,7 +4,7 @@ ENV GOPATH=/gocode
 ENV SRC_DIR=/gocode/src/github.com/bettercap/bettercap
 
 RUN apk add --update ca-certificates 
-RUN apk add --no-cache --update bash iptables wireless-tools build-base libpcap-dev git python py-six
+RUN apk add --no-cache --update bash iptables wireless-tools build-base libpcap-dev linux-headers libnetfilter_queue-dev git python py-six
 
 WORKDIR $SRC_DIR
 ADD . $SRC_DIR
