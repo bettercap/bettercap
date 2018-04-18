@@ -13,7 +13,7 @@ RUN make
 
 # final stage
 FROM alpine
-RUN apk add --no-cache --update bash iproute2 libpcap-dev 
+RUN apk add --no-cache --update bash iproute2 libpcap libnetfilter_queue
 COPY --from=build-env /gocode/src/github.com/bettercap/bettercap/bettercap /app/
 WORKDIR /app
 EXPOSE 80 443 53 5300 8080 8081 8082 8083 8000
