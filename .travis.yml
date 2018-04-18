@@ -9,6 +9,7 @@ git:
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libpcap-dev libnetfilter-queue-dev
+  - go get -u github.com/golang/dep/...
 
 install:
   - make deps
