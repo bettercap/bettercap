@@ -78,7 +78,7 @@ func main() {
 	// Then run the caplet if specified.
 	if *sess.Options.Caplet != "" {
 		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
-			log.Error("Error while runnig caplet %s: %s", core.Bold(*sess.Options.Caplet), core.Red(err.Error()))
+			log.Error("Error while running caplet %s: %s", core.Bold(*sess.Options.Caplet), core.Red(err.Error()))
 		}
 	}
 
