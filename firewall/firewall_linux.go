@@ -23,7 +23,7 @@ func Make(iface *network.Endpoint) FirewallManager {
 	firewall := &LinuxFirewall{
 		iface:        iface,
 		forwarding:   false,
-		redirections: make(map[string]*Redirection, 0),
+		redirections: make(map[string]*Redirection),
 	}
 
 	firewall.forwarding = firewall.IsForwardingEnabled()
@@ -45,11 +45,8 @@ func (f LinuxFirewall) enableFeature(filename string, enable bool) error {
 	}
 	defer fd.Close()
 
-	if _, err = fd.WriteString(value); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = fd.WriteString(value)
+	return err
 }
 
 func (f LinuxFirewall) IsForwardingEnabled() bool {
@@ -67,7 +64,7 @@ func (f LinuxFirewall) EnableForwarding(enabled bool) error {
 
 func (f *LinuxFirewall) getCommandLine(r *Redirection, enabled bool) (cmdLine []string) {
 	action := "-A"
-	if enabled == false {
+	if !enabled {
 		action = "-D"
 	}
 
@@ -102,8 +99,8 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 	rkey := r.String()
 	_, found := f.redirections[rkey]
 
-	if enabled == true {
-		if found == true {
+	if !enabled {
+		if found {
 			return fmt.Errorf("Redirection '%s' already enabled.", rkey)
 		}
 
@@ -116,7 +113,7 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 			return err
 		}
 	} else {
-		if found == false {
+		if !found {
 			return nil
 		}
 

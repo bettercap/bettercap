@@ -162,7 +162,6 @@ func (s *EventsStream) Start() error {
 				} else {
 					log.Debug("Skipping ignored event %v", e)
 				}
-				break
 
 			case <-s.quit:
 				return

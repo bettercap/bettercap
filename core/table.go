@@ -46,9 +46,9 @@ func getPads(s string, maxLen int, align Alignment) (lPad int, rPad int) {
 	} else if align == AlignCenter {
 		lPad = diff / 2
 		rPad = diff - lPad + 1
-	} else {
-		// TODO
-	}
+	} /* else {
+		TODO
+	} */
 
 	return
 }
