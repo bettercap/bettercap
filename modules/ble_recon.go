@@ -65,7 +65,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 	d.AddHandler(session.NewModuleHandler("ble.enum MAC", "ble.enum "+macRegexp,
 		"Enumerate services and characteristics for the given BLE device.",
 		func(args []string) error {
-			if d.isEnumerating() == true {
+			if d.isEnumerating() {
 				return fmt.Errorf("An enumeration for %s is already running, please wait.", d.currDevice.Device.ID())
 			}
 
@@ -174,7 +174,7 @@ func (d *BLERecon) writeBuffer(mac string, uuid gatt.UUID, data []byte) error {
 
 func (d *BLERecon) enumAllTheThings(mac string) error {
 	dev, found := d.Session.BLE.Get(mac)
-	if found == false || dev == nil {
+	if !found || dev == nil {
 		return fmt.Errorf("BLE device with address %s not found.", mac)
 	} else if d.Running() {
 		d.gattDevice.StopScanning()
@@ -189,7 +189,7 @@ func (d *BLERecon) enumAllTheThings(mac string) error {
 
 	go func() {
 		time.Sleep(d.connTimeout)
-		if d.isEnumerating() && d.connected == false {
+		if d.isEnumerating() && !d.connected {
 			d.Session.Events.Add("ble.connection.timeout", d.currDevice)
 			d.onPeriphDisconnected(nil, nil)
 		}

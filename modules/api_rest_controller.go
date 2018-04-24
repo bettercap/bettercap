@@ -63,7 +63,7 @@ func (api *RestAPI) showBle(w http.ResponseWriter, r *http.Request) {
 
 	if mac == "" {
 		toJSON(w, session.I.BLE)
-	} else if dev, found := session.I.BLE.Get(mac); found == true {
+	} else if dev, found := session.I.BLE.Get(mac); found {
 		toJSON(w, dev)
 	} else {
 		http.Error(w, "Not Found", 404)
@@ -88,7 +88,7 @@ func (api *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
 
 	if mac == "" {
 		toJSON(w, session.I.Lan)
-	} else if host, found := session.I.Lan.Get(mac); found == true {
+	} else if host, found := session.I.Lan.Get(mac); found {
 		toJSON(w, host)
 	} else {
 		http.Error(w, "Not Found", 404)
@@ -113,9 +113,9 @@ func (api *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
 
 	if mac == "" {
 		toJSON(w, session.I.WiFi)
-	} else if station, found := session.I.WiFi.Get(mac); found == true {
+	} else if station, found := session.I.WiFi.Get(mac); found {
 		toJSON(w, station)
-	} else if client, found := session.I.WiFi.GetClient(mac); found == true {
+	} else if client, found := session.I.WiFi.GetClient(mac); found {
 		toJSON(w, client)
 	} else {
 		http.Error(w, "Not Found", 404)
@@ -172,7 +172,7 @@ func (api *RestAPI) clearEvents(w http.ResponseWriter, r *http.Request) {
 func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 	setSecurityHeaders(w)
 
-	if api.checkAuth(r) == false {
+	if !api.checkAuth(r) {
 		setAuthFailed(w, r)
 		return
 	} else if r.Method == "POST" {
@@ -223,7 +223,7 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 	setSecurityHeaders(w)
 
-	if api.checkAuth(r) == false {
+	if !api.checkAuth(r) {
 		setAuthFailed(w, r)
 		return
 	}

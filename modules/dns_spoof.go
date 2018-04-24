@@ -118,7 +118,7 @@ func (s *DNSSpoofer) Configure() error {
 
 	s.Address = net.ParseIP(addr)
 
-	if s.Session.Firewall.IsForwardingEnabled() == false {
+	if !s.Session.Firewall.IsForwardingEnabled() {
 		log.Info("Enabling forwarding.")
 		s.Session.Firewall.EnableForwarding(true)
 	}
@@ -130,7 +130,7 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 	redir := fmt.Sprintf("(->%s)", s.Address)
 	who := target.String()
 
-	if t, found := s.Session.Lan.Get(target.String()); found == true {
+	if t, found := s.Session.Lan.Get(target.String()); found {
 		who = t.String()
 	}
 
@@ -192,7 +192,7 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 
 	var raw []byte
 
-	if ipv6 == true {
+	if ipv6 {
 		ip6 := layers.IPv6{
 			Version:    6,
 			NextHeader: layers.IPProtocolUDP,
@@ -259,14 +259,13 @@ func (s *DNSSpoofer) onPacket(pkt gopacket.Packet) {
 	}
 
 	eth := typeEth.(*layers.Ethernet)
-
-	if s.All || bytes.Compare(eth.DstMAC, s.Session.Interface.HW) == 0 {
+	if s.All || bytes.Equal(eth.DstMAC, s.Session.Interface.HW) {
 		dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
 		if parsed && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
 			udp := typeUDP.(*layers.UDP)
 			for _, q := range dns.Questions {
 				qName := string(q.Name)
-				if s.shouldSpoof(qName) == true {
+				if s.shouldSpoof(qName) {
 					s.dnsReply(pkt, eth, udp, qName, dns, eth.SrcMAC)
 					break
 				} else {
@@ -289,7 +288,7 @@ func (s *DNSSpoofer) Start() error {
 		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
 		s.pktSourceChan = src.Packets()
 		for packet := range s.pktSourceChan {
-			if s.Running() == false {
+			if !s.Running() {
 				break
 			}
 

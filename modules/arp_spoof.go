@@ -94,10 +94,10 @@ func (p *ArpSpoofer) Configure() error {
 
 	log.Debug(" addresses=%v macs=%v whitelisted-addresses=%v whitelisted-macs=%v", p.addresses, p.macs, p.wAddresses, p.wMacs)
 
-	if p.ban == true {
+	if p.ban {
 		log.Warning("Running in BAN mode, forwarding not enabled!")
 		p.Session.Firewall.EnableForwarding(false)
-	} else if p.Session.Firewall.IsForwardingEnabled() == false {
+	} else if !p.Session.Firewall.IsForwardingEnabled() {
 		log.Info("Enabling forwarding.")
 		p.Session.Firewall.EnableForwarding(true)
 	}
@@ -143,7 +143,7 @@ func (p *ArpSpoofer) isWhitelisted(ip string, mac net.HardwareAddr) bool {
 	}
 
 	for _, hw := range p.wMacs {
-		if bytes.Compare(hw, mac) == 0 {
+		if bytes.Equal(hw, mac) {
 			return true
 		}
 	}
@@ -155,10 +155,9 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 	p.waitGroup.Add(1)
 	defer p.waitGroup.Done()
 
-	targets := make(map[string]net.HardwareAddr, 0)
-
+	targets := make(map[string]net.HardwareAddr)
 	for _, ip := range p.addresses {
-		if p.Session.Skip(ip) == true {
+		if p.Session.Skip(ip) {
 			log.Debug("Skipping address %s from ARP spoofing.", ip)
 			continue
 		}
@@ -180,7 +179,7 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 			continue
 		}
 
-		if p.Session.Skip(net.ParseIP(ip)) == true {
+		if p.Session.Skip(net.ParseIP(ip)) {
 			log.Debug("Skipping address %s from ARP spoofing.", ip)
 			continue
 		}
@@ -189,7 +188,7 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 	}
 
 	for ip, mac := range targets {
-		if check_running && p.Running() == false {
+		if check_running && !p.Running() {
 			return
 		} else if p.isWhitelisted(ip, mac) {
 			log.Debug("%s (%s) is whitelisted, skipping from spoofing loop.", ip, mac)

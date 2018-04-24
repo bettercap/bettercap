@@ -37,7 +37,7 @@ func (d *BLERecon) getRow(dev *network.BLEDevice) []string {
 	}
 
 	isConnectable := core.Red("no")
-	if dev.Advertisement.Connectable == true {
+	if dev.Advertisement.Connectable {
 		isConnectable = core.Green("yes")
 	}
 
@@ -112,7 +112,7 @@ func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool, 
 func parseRawData(raw []byte) string {
 	s := ""
 	for _, b := range raw {
-		if b != 00 && strconv.IsPrint(rune(b)) == false {
+		if b != 00 && !strconv.IsPrint(rune(b)) {
 			return fmt.Sprintf("%x", raw)
 		} else if b == 0 {
 			break
@@ -168,7 +168,7 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 
 			props, isReadable, isWritable, withResponse := parseProperties(ch)
 
-			if wantsToWrite && d.writeUUID.Equal(ch.UUID()) == true {
+			if wantsToWrite && d.writeUUID.Equal(ch.UUID()) {
 				foundToWrite = true
 				if isWritable {
 					log.Info("Writing %d bytes to characteristics %s ...", len(d.writeData), d.writeUUID)
@@ -203,7 +203,7 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 		}
 	}
 
-	if wantsToWrite && foundToWrite == false {
+	if wantsToWrite && !foundToWrite {
 		log.Error("Writable characteristics %s not found.", d.writeUUID)
 	} else {
 		core.AsTable(os.Stdout, columns, rows)

@@ -99,7 +99,7 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 	rkey := r.String()
 	_, found := f.redirections[rkey]
 
-	if !enabled {
+	if enabled {
 		if found {
 			return fmt.Errorf("Redirection '%s' already enabled.", rkey)
 		}

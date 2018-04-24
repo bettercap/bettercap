@@ -134,7 +134,7 @@ func (api *RestAPI) Configure() error {
 		return err
 	} else if err, api.useWebsocket = api.BoolParam("api.rest.websocket"); err != nil {
 		return err
-	} else if core.Exists(api.certFile) == false || core.Exists(api.keyFile) == false {
+	} else if !core.Exists(api.certFile) || !core.Exists(api.keyFile) {
 		log.Info("Generating TLS key to %s", api.keyFile)
 		log.Info("Generating TLS certificate to %s", api.certFile)
 		if err := tls.Generate(api.certFile, api.keyFile); err != nil {

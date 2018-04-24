@@ -102,7 +102,7 @@ func (s *DHCP6Spoofer) Configure() error {
 		return err
 	}
 
-	if s.Session.Firewall.IsForwardingEnabled() == false {
+	if !s.Session.Firewall.IsForwardingEnabled() {
 		log.Info("Enabling forwarding.")
 		s.Session.Firewall.EnableForwarding(true)
 	}
@@ -126,7 +126,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 	pip6 := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
 
 	fqdn := target.String()
-	if raw, found := solicit.Options[packets.DHCP6OptClientFQDN]; found == true && len(raw) >= 1 {
+	if raw, found := solicit.Options[packets.DHCP6OptClientFQDN]; found && len(raw) >= 1 {
 		fqdn = string(raw[0])
 	}
 
@@ -140,7 +140,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 
 	var solIANA dhcp6opts.IANA
 
-	if raw, found := solicit.Options[dhcp6.OptionIANA]; found == false || len(raw) < 1 {
+	if raw, found := solicit.Options[dhcp6.OptionIANA]; !found || len(raw) < 1 {
 		log.Error("Unexpected DHCPv6 packet, could not find IANA.")
 		return
 	} else if err := solIANA.UnmarshalBinary(raw[0]); err != nil {
@@ -149,7 +149,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 	}
 
 	var ip net.IP
-	if h, found := s.Session.Lan.Get(target.String()); found == true {
+	if h, found := s.Session.Lan.Get(target.String()); found {
 		ip = h.IP
 	} else {
 		log.Warning("Address %s not known, using random identity association address.", target.String())
@@ -233,7 +233,7 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 	}
 
 	var reqIANA dhcp6opts.IANA
-	if raw, found := req.Options[dhcp6.OptionIANA]; found == false || len(raw) < 1 {
+	if raw, found := req.Options[dhcp6.OptionIANA]; !found || len(raw) < 1 {
 		log.Error("Unexpected DHCPv6 packet, could not find IANA.")
 		return
 	} else if err := reqIANA.UnmarshalBinary(raw[0]); err != nil {
@@ -242,7 +242,7 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 	}
 
 	var reqIAddr []byte
-	if raw, found := reqIANA.Options[dhcp6.OptionIAAddr]; found == true {
+	if raw, found := reqIANA.Options[dhcp6.OptionIAAddr]; found {
 		reqIAddr = raw[0]
 	} else {
 		log.Error("Unexpected DHCPv6 packet, could not deserialize request IANA IAAddr.")
@@ -303,11 +303,11 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 
 	if toType == "request" {
 		var addr net.IP
-		if raw, found := reqIANA.Options[dhcp6.OptionIAAddr]; found == true {
+		if raw, found := reqIANA.Options[dhcp6.OptionIAAddr]; found {
 			addr = net.IP(raw[0])
 		}
 
-		if h, found := s.Session.Lan.Get(target.String()); found == true {
+		if h, found := s.Session.Lan.Get(target.String()); found {
 			log.Info("[%s] IPv6 address %s is now assigned to %s", core.Green("dhcp6"), addr.String(), h)
 		} else {
 			log.Info("[%s] IPv6 address %s is now assigned to %s", core.Green("dhcp6"), addr.String(), target)
@@ -318,8 +318,8 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 }
 
 func (s *DHCP6Spoofer) duidMatches(dhcp dhcp6.Packet) bool {
-	if raw, found := dhcp.Options[dhcp6.OptionServerID]; found == true && len(raw) >= 1 {
-		if bytes.Compare(raw[0], s.DUIDRaw) == 0 {
+	if raw, found := dhcp.Options[dhcp6.OptionServerID]; found && len(raw) >= 1 {
+		if bytes.Equal(raw[0], s.DUIDRaw) {
 			return true
 		}
 	}
@@ -338,7 +338,6 @@ func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 	// we just got a dhcp6 packet?
 	if err = dhcp.UnmarshalBinary(udp.Payload); err == nil {
 		eth := pkt.Layer(layers.LayerTypeEthernet).(*layers.Ethernet)
-
 		switch dhcp.MessageType {
 		case dhcp6.MessageTypeSolicit:
 
@@ -369,7 +368,7 @@ func (s *DHCP6Spoofer) Start() error {
 		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
 		s.pktSourceChan = src.Packets()
 		for packet := range s.pktSourceChan {
-			if s.Running() == false {
+			if !s.Running() {
 				break
 			}
 

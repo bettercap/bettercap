@@ -73,7 +73,7 @@ func (l *IgnoreList) Remove(expr string) (err error) {
 	toRemove := IgnoreFilter(expr)
 	newList := make([]IgnoreFilter, 0)
 	for _, filter := range l.filters {
-		if toRemove.Matches(string(filter)) == false {
+		if !toRemove.Matches(string(filter)) {
 			newList = append(newList, filter)
 		}
 	}
@@ -104,7 +104,6 @@ func (l *IgnoreList) Ignored(e session.Event) bool {
 func (l *IgnoreList) Empty() bool {
 	l.RLock()
 	defer l.RUnlock()
-
 	return len(l.filters) == 0
 }
 

@@ -199,7 +199,7 @@ func (s *ProxyScript) defineBuiltins() error {
 		if argc == 1 {
 			// get
 			varName := call.Argument(0).String()
-			if found, varValue := s.sess.Env.Get(varName); found == true {
+			if found, varValue := s.sess.Env.Get(varName); found {
 				v, err := s.VM.ToValue(varValue)
 				if err != nil {
 					return errOtto("Could not convert to string: %s", varValue)
@@ -228,7 +228,7 @@ func (s *ProxyScript) hasCallback(name string) bool {
 
 	// check the cache
 	has, found := s.cbCache[name]
-	if found == false {
+	if !found {
 		// check the VM
 		cb, err := s.VM.Get(name)
 		if err == nil && cb.IsFunction() {
