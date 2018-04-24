@@ -87,7 +87,7 @@ func (p *HttpsProxy) Configure() error {
 	var keyFile string
 	var stripSSL bool
 
-	if p.Running() == true {
+	if p.Running() {
 		return session.ErrAlreadyStarted
 	} else if err, address = p.StringParam("https.proxy.address"); err != nil {
 		return err
@@ -109,7 +109,7 @@ func (p *HttpsProxy) Configure() error {
 		return err
 	}
 
-	if core.Exists(certFile) == false || core.Exists(keyFile) == false {
+	if !core.Exists(certFile) || !core.Exists(keyFile) {
 		log.Info("Generating proxy certification authority TLS key to %s", keyFile)
 		log.Info("Generating proxy certification authority TLS certificate to %s", certFile)
 		if err := tls.Generate(certFile, keyFile); err != nil {

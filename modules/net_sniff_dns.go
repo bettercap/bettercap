@@ -11,7 +11,7 @@ import (
 
 func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 	dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
-	if parsed == false {
+	if !parsed {
 		return false
 	}
 
@@ -19,14 +19,14 @@ func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 		return false
 	}
 
-	m := make(map[string][]string, 0)
+	m := make(map[string][]string)
 	for _, a := range dns.Answers {
 		if a.IP == nil {
 			continue
 		}
 
 		hostname := string(a.Name)
-		if _, found := m[hostname]; found == false {
+		if _, found := m[hostname]; !found {
 			m[hostname] = make([]string, 0)
 		}
 

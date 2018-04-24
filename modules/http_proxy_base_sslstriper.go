@@ -62,7 +62,7 @@ func (s *SSLStripper) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp 
 	redir := fmt.Sprintf("(->%s)", address)
 	who := target.String()
 
-	if t, found := s.session.Lan.Get(target.String()); found == true {
+	if t, found := s.session.Lan.Get(target.String()); found {
 		who = t.String()
 	}
 
@@ -160,7 +160,7 @@ func (s *SSLStripper) onPacket(pkt gopacket.Packet) {
 func (s *SSLStripper) Enable(enabled bool) {
 	s.enabled = enabled
 
-	if enabled == true && s.handle == nil {
+	if enabled && s.handle == nil {
 		var err error
 
 		if s.handle, err = pcap.OpenLive(s.session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
@@ -181,7 +181,7 @@ func (s *SSLStripper) Enable(enabled bool) {
 				src := gopacket.NewPacketSource(s.handle, s.handle.LinkType())
 				s.pktSourceChan = src.Packets()
 				for packet := range s.pktSourceChan {
-					if s.enabled == false {
+					if !s.enabled {
 						break
 					}
 
@@ -249,7 +249,7 @@ func (s *SSLStripper) processURL(url string) string {
 		}
 	}
 	// fallback
-	if found == false {
+	if !found {
 		url = strings.Replace(url, "://", "://wwww.", 1)
 	}
 
@@ -262,7 +262,7 @@ func (s *SSLStripper) processURL(url string) string {
 // - handling stripped domains
 // - making unknown session cookies expire
 func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redir *http.Response) {
-	if s.enabled == false {
+	if !s.enabled {
 		return
 	}
 
@@ -284,7 +284,7 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 		req.Header.Set("Host", original.Hostname)
 	}
 
-	if s.cookies.IsClean(req) == false {
+	if !s.cookies.IsClean(req) {
 		// check if we need to redirect the user in order
 		// to make unknown session cookies expire
 		log.Info("[%s] Sending expired cookies for %s to %s", core.Green("sslstrip"), core.Yellow(req.Host), req.RemoteAddr)
@@ -297,7 +297,7 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 
 func (s *SSLStripper) isMaxRedirs(hostname string) bool {
 	// did we already track redirections for this host?
-	if nredirs, found := s.redirs[hostname]; found == true {
+	if nredirs, found := s.redirs[hostname]; found {
 		// reached the threshold?
 		if nredirs >= maxRedirs {
 			log.Warning("[%s] Hit max redirections for %s, serving HTTPS.", core.Green("sslstrip"), hostname)
@@ -312,12 +312,11 @@ func (s *SSLStripper) isMaxRedirs(hostname string) bool {
 		// start tracking redirections
 		s.redirs[hostname] = 1
 	}
-
 	return false
 }
 
 func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
-	if s.enabled == false {
+	if !s.enabled {
 		return
 	}
 
@@ -355,7 +354,7 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 
 	// if we have a text or html content type, fetch the body
 	// and perform sslstripping
-	if s.isContentStrippable(res) == true {
+	if s.isContentStrippable(res) {
 		raw, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			log.Error("Could not read response body: %s", err)
@@ -363,12 +362,12 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 		}
 
 		body := string(raw)
-		urls := make(map[string]string, 0)
+		urls := make(map[string]string)
 		matches := httpsLinksParser.FindAllString(body, -1)
 		for _, u := range matches {
 			// make sure we only strip stuff we're able to
 			// resolve and process
-			if strings.ContainsRune(u, '.') == true {
+			if strings.ContainsRune(u, '.') {
 				urls[u] = s.processURL(u)
 			}
 		}

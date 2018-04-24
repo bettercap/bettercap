@@ -35,11 +35,11 @@ func (a BySentSorter) Less(i, j int) bool {
 	var aTraffic *packets.Traffic = nil
 	var bTraffic *packets.Traffic = nil
 
-	if aTraffic, found = session.I.Queue.Traffic[a[i].IpAddress]; found == false {
+	if aTraffic, found = session.I.Queue.Traffic[a[i].IpAddress]; !found {
 		aTraffic = &packets.Traffic{}
 	}
 
-	if bTraffic, found = session.I.Queue.Traffic[a[j].IpAddress]; found == false {
+	if bTraffic, found = session.I.Queue.Traffic[a[j].IpAddress]; !found {
 		bTraffic = &packets.Traffic{}
 	}
 
@@ -58,11 +58,11 @@ func (a ByRcvdSorter) Less(i, j int) bool {
 	var aTraffic *packets.Traffic = nil
 	var bTraffic *packets.Traffic = nil
 
-	if aTraffic, found = session.I.Queue.Traffic[a[i].IpAddress]; found == false {
+	if aTraffic, found = session.I.Queue.Traffic[a[i].IpAddress]; !found {
 		aTraffic = &packets.Traffic{}
 	}
 
-	if bTraffic, found = session.I.Queue.Traffic[a[j].IpAddress]; found == false {
+	if bTraffic, found = session.I.Queue.Traffic[a[j].IpAddress]; !found {
 		bTraffic = &packets.Traffic{}
 	}
 

@@ -103,9 +103,9 @@ func (p *Prober) Start() error {
 
 		for p.Running() {
 			for _, ip := range addresses {
-				if p.Running() == false {
+				if !p.Running() {
 					return
-				} else if p.Session.Skip(ip) == true {
+				} else if p.Session.Skip(ip) {
 					log.Debug("Skipping address %s from UDP probing.", ip)
 					continue
 				}

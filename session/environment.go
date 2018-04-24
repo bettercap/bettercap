@@ -95,7 +95,7 @@ func (env *Environment) Set(name, value string) string {
 	old, _ := env.Data[name]
 	env.Data[name] = value
 
-	if cb, hasCallback := env.cbs[name]; hasCallback == true {
+	if cb, hasCallback := env.cbs[name]; hasCallback {
 		cb(value)
 	}
 
@@ -113,7 +113,7 @@ func (env *Environment) Get(name string) (bool, string) {
 	env.Lock()
 	defer env.Unlock()
 
-	if value, found := env.Data[name]; found == true {
+	if value, found := env.Data[name]; found {
 		return true, value
 	}
 
@@ -121,7 +121,7 @@ func (env *Environment) Get(name string) (bool, string) {
 }
 
 func (env *Environment) GetInt(name string) (error, int) {
-	if found, value := env.Get(name); found == true {
+	if found, value := env.Get(name); found {
 		if i, err := strconv.Atoi(value); err == nil {
 			return nil, i
 		} else {

@@ -42,7 +42,7 @@ func (m *Meta) Get(name string) interface{} {
 	m.Lock()
 	defer m.Unlock()
 
-	if v, found := m.m[name]; found == true {
+	if v, found := m.m[name]; found {
 		return v
 	}
 	return ""
@@ -75,7 +75,7 @@ func (m *Meta) GetOr(name string, dflt interface{}) interface{} {
 	m.Lock()
 	defer m.Unlock()
 
-	if v, found := m.m[name]; found == true {
+	if v, found := m.m[name]; found {
 		return v
 	}
 	return dflt

@@ -20,7 +20,7 @@ func main() {
 	defer sess.Close()
 
 	if core.HasColors == false {
-		if *sess.Options.NoColors == true {
+		if *sess.Options.NoColors {
 			fmt.Printf("\n\nWARNING: Terminal colors have been disabled, view will be very limited.\n\n")
 		} else {
 			fmt.Printf("\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")

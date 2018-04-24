@@ -41,7 +41,7 @@ func NewSynScanner(s *session.Session) *SynScanner {
 	ss.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE [START-PORT] [END-PORT]", "syn.scan ([^\\s]+) ?(\\d+)?([\\s\\d]*)?",
 		"Perform a syn port scanning against an IP address within the provided ports range.",
 		func(args []string) error {
-			if ss.Running() == true {
+			if ss.Running() {
 				return fmt.Errorf("A scan is already running, wait for it to end before starting a new one.")
 			}
 
@@ -176,7 +176,7 @@ func (s *SynScanner) synScan() error {
 
 		// start sending SYN packets and wait
 		for _, address := range s.addresses {
-			if s.Running() == false {
+			if !s.Running() {
 				break
 			}
 			mac, err := findMAC(s.Session, address, true)
@@ -186,7 +186,7 @@ func (s *SynScanner) synScan() error {
 			}
 
 			for dstPort := s.startPort; dstPort < s.endPort+1; dstPort++ {
-				if s.Running() == false {
+				if !s.Running() {
 					break
 				}
 

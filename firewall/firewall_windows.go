@@ -54,7 +54,7 @@ func (f WindowsFirewall) generateRule(r *Redirection, enabled bool) []string {
 		fmt.Sprintf("listenport=%d", r.SrcPort),
 	}
 
-	if enabled == true {
+	if enabled {
 		rule = append(rule, fmt.Sprintf("connectport=%d", r.DstPort))
 		rule = append(rule, fmt.Sprintf("connectaddress=%s", r.DstAddress))
 		rule = append(rule, fmt.Sprintf("protocol=%s", r.Protocol))
@@ -93,7 +93,7 @@ func (f *WindowsFirewall) EnableRedirection(r *Redirection, enabled bool) error 
 	}
 
 	rule := f.generateRule(r, enabled)
-	if enabled == true {
+	if enabled {
 		rule = append([]string{"interface", "portproxy", "add", "v4tov4"}, rule...)
 	} else {
 		rule = append([]string{"interface", "portproxy", "delete", "v4tov4"}, rule...)

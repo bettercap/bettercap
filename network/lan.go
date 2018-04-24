@@ -77,7 +77,7 @@ func (lan *LAN) Get(mac string) (*Endpoint, bool) {
 	lan.Lock()
 	defer lan.Unlock()
 
-	if e, found := lan.hosts[mac]; found == true {
+	if e, found := lan.hosts[mac]; found {
 		return e, true
 	}
 	return nil, false
@@ -106,7 +106,7 @@ func (lan *LAN) WasMissed(mac string) bool {
 	lan.Lock()
 	defer lan.Unlock()
 
-	if ttl, found := lan.ttl[mac]; found == true {
+	if ttl, found := lan.ttl[mac]; found {
 		return ttl < LANDefaultttl
 	}
 	return true

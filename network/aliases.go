@@ -65,7 +65,7 @@ func (a *Aliases) Get(mac string) string {
 	a.Lock()
 	defer a.Unlock()
 
-	if alias, found := a.data[mac]; found == true {
+	if alias, found := a.data[mac]; found {
 		return alias
 	}
 	return ""

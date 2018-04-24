@@ -75,7 +75,7 @@ func (m SessionModule) ListParam(name string) (err error, values []string) {
 }
 
 func (m SessionModule) StringParam(name string) (error, string) {
-	if p, found := m.params[name]; found == true {
+	if p, found := m.params[name]; found {
 		if err, v := p.Get(m.Session); err != nil {
 			return err, ""
 		} else {
@@ -87,7 +87,7 @@ func (m SessionModule) StringParam(name string) (error, string) {
 }
 
 func (m SessionModule) IntParam(name string) (error, int) {
-	if p, found := m.params[name]; found == true {
+	if p, found := m.params[name]; found {
 		if err, v := p.Get(m.Session); err != nil {
 			return err, 0
 		} else {
@@ -136,7 +136,7 @@ func (m *SessionModule) SetRunning(running bool, cb func()) error {
 	m.Started = running
 	m.StatusLock.Unlock()
 
-	if *m.Session.Options.Debug == true {
+	if *m.Session.Options.Debug {
 		if running {
 			m.Session.Events.Add("mod.started", m.Name)
 		} else {
@@ -145,7 +145,7 @@ func (m *SessionModule) SetRunning(running bool, cb func()) error {
 	}
 
 	if cb != nil {
-		if running == true {
+		if running {
 			// this is the worker, start async
 			go cb()
 		} else {

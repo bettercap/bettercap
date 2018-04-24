@@ -88,7 +88,7 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		// method handle both access point and clients
 		// transparently
 		clients := ""
-		if ap, found := w.Session.WiFi.Get(station.HwAddress); found == true {
+		if ap, found := w.Session.WiFi.Get(station.HwAddress); found {
 			if ap.NumClients() > 0 {
 				clients = strconv.Itoa(ap.NumClients())
 			}
@@ -114,7 +114,7 @@ func (w *WiFiModule) Show(by string) error {
 
 	apSelected := w.isApSelected()
 	if apSelected {
-		if ap, found := w.Session.WiFi.Get(w.ap.HwAddress); found == true {
+		if ap, found := w.Session.WiFi.Get(w.ap.HwAddress); found {
 			stations = ap.Clients()
 		} else {
 			return fmt.Errorf("Could not find station %s", w.ap.HwAddress)
@@ -135,7 +135,7 @@ func (w *WiFiModule) Show(by string) error {
 
 	rows := make([][]string, 0)
 	for _, s := range stations {
-		if row, include := w.getRow(s); include == true {
+		if row, include := w.getRow(s); include {
 			rows = append(rows, row)
 		}
 	}

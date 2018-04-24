@@ -69,7 +69,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			bssid, err := net.ParseMAC(args[0])
 			if err != nil {
 				return err
-			} else if ap, found := w.Session.WiFi.Get(bssid.String()); found == true {
+			} else if ap, found := w.Session.WiFi.Get(bssid.String()); found {
 				w.ap = ap
 				w.stickChan = network.Dot11Freq2Chan(ap.Frequency)
 				return nil
@@ -79,14 +79,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon clear", "",
 		"Remove the 802.11 base station filter.",
-		func(args []string) error {
+		func(args []string) (err error) {
 			w.ap = nil
 			w.stickChan = 0
-			var err error
-			if w.frequencies, err = network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
-				return err
-			}
-			return nil
+			w.frequencies, err = network.GetSupportedFrequencies(w.Session.Interface.Name())
+			return err
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wifi.deauth BSSID", `wifi\.deauth ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))`,
@@ -253,19 +250,19 @@ func (w *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 		bytes := uint64(len(packet.Data()))
 
 		dst := dot11.Address1.String()
-		if station, found := w.Session.WiFi.Get(dst); found == true {
+		if station, found := w.Session.WiFi.Get(dst); found {
 			station.Received += bytes
 		}
 
 		src := dot11.Address2.String()
-		if station, found := w.Session.WiFi.Get(src); found == true {
+		if station, found := w.Session.WiFi.Get(src); found {
 			station.Sent += bytes
 		}
 	}
 
-	if ok, enc, cipher, auth := packets.Dot11ParseEncryption(packet, dot11); ok == true {
+	if ok, enc, cipher, auth := packets.Dot11ParseEncryption(packet, dot11); ok {
 		bssid := dot11.Address3.String()
-		if station, found := w.Session.WiFi.Get(bssid); found == true {
+		if station, found := w.Session.WiFi.Get(bssid); found {
 			station.Encryption = enc
 			station.Cipher = cipher
 			station.Authentication = auth
@@ -293,7 +290,7 @@ func (w *WiFiModule) Start() error {
 		src := gopacket.NewPacketSource(w.handle, w.handle.LinkType())
 		w.pktSourceChan = src.Packets()
 		for packet := range w.pktSourceChan {
-			if w.Running() == false {
+			if !w.Running() {
 				break
 			} else if packet == nil {
 				continue
@@ -302,9 +299,9 @@ func (w *WiFiModule) Start() error {
 			w.Session.Queue.TrackPacket(uint64(len(packet.Data())))
 
 			// perform initial dot11 parsing and layers validation
-			if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok == true {
+			if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok {
 				// check FCS checksum
-				if w.skipBroken && dot11.ChecksumValid() == false {
+				if w.skipBroken && !dot11.ChecksumValid() {
 					log.Debug("Skipping dot11 packet with invalid checksum.")
 					continue
 				}
@@ -326,7 +323,7 @@ func (w *WiFiModule) Stop() error {
 		// wait any pending write operation
 		w.writes.Wait()
 		// signal the main for loop we want to exit
-		if w.pktSourceChanClosed == false {
+		if !w.pktSourceChanClosed {
 			w.pktSourceChan <- nil
 		}
 		// close the pcap handle to make the main for exit

@@ -99,7 +99,7 @@ func (s *NTLMState) AddClientResponse(seq uint32, value string, cb func(data NTL
 	s.Lock()
 	defer s.Unlock()
 
-	if chall, found := s.Responses[seq]; found == true {
+	if chall, found := s.Responses[seq]; found {
 		pair := NTLMChallengeResponse{
 			Challenge: chall,
 			Response:  value,

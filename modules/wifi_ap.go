@@ -16,7 +16,6 @@ var errNoRecon = errors.New("Module wifi.ap requires module wifi.recon to be act
 
 func (w *WiFiModule) parseApConfig() (err error) {
 	var bssid string
-
 	if err, w.apConfig.SSID = w.StringParam("wifi.ap.ssid"); err != nil {
 		return
 	} else if err, bssid = w.StringParam("wifi.ap.bssid"); err != nil {
@@ -28,13 +27,12 @@ func (w *WiFiModule) parseApConfig() (err error) {
 	} else if err, w.apConfig.Encryption = w.BoolParam("wifi.ap.encryption"); err != nil {
 		return
 	}
-
 	return
 }
 
 func (w *WiFiModule) startAp() error {
 	// we need channel hopping and packet injection for this
-	if w.Running() == false {
+	if w.Running() {
 		return errNoRecon
 	} else if w.apRunning {
 		return session.ErrAlreadyStarted
@@ -47,7 +45,7 @@ func (w *WiFiModule) startAp() error {
 		}()
 
 		enc := core.Yellow("WPA2")
-		if w.apConfig.Encryption == false {
+		if !w.apConfig.Encryption {
 			enc = core.Green("Open")
 		}
 		log.Info("Sending beacons as SSID %s (%s) on channel %d (%s).",

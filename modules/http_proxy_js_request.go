@@ -77,15 +77,11 @@ func (j *JSRequest) UpdateHash() {
 
 func (j *JSRequest) WasModified() bool {
 	// body was read
-	if j.bodyRead == true {
+	if j.bodyRead {
 		return true
 	}
 	// check if any of the fields has been changed
-	newHash := j.NewHash()
-	if newHash != j.refHash {
-		return true
-	}
-	return false
+	return j.NewHash() != j.refHash
 }
 
 func (j *JSRequest) GetHeader(name, deflt string) string {
@@ -137,7 +133,7 @@ func (j *JSRequest) ParseForm() map[string]string {
 		j.Body = j.ReadBody()
 	}
 
-	form := make(map[string]string, 0)
+	form := make(map[string]string)
 	parts := strings.Split(j.Body, "&")
 
 	for _, part := range parts {
@@ -171,7 +167,7 @@ func (j *JSRequest) ToRequest() (req *http.Request) {
 		}
 	}
 
-	if hadType == false && j.ContentType != "" {
+	if !hadType && j.ContentType != "" {
 		req.Header.Set("Content-Type", j.ContentType)
 	}
 

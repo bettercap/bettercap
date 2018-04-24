@@ -31,28 +31,13 @@ func (p ProtoPairList) Len() int           { return len(p) }
 func (p ProtoPairList) Less(i, j int) bool { return p[i].Hits < p[j].Hits }
 func (p ProtoPairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func rankByProtoHits(protos map[string]uint64) (ProtoPairList, uint64) {
-	pl := make(ProtoPairList, len(protos))
-	max := uint64(0)
-	i := 0
-	for k, v := range protos {
-		pl[i] = ProtoPair{k, v}
-		if v > max {
-			max = v
-		}
-		i++
-	}
-	sort.Sort(sort.Reverse(pl))
-	return pl, max
-}
-
 func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) []string {
 	sinceStarted := time.Since(d.Session.StartedAt)
 	sinceFirstSeen := time.Since(e.FirstSeen)
 
 	addr := e.IpAddress
 	mac := e.HwAddress
-	if d.Session.Lan.WasMissed(e.HwAddress) == true {
+	if d.Session.Lan.WasMissed(e.HwAddress) {
 		// if endpoint was not found in ARP at least once
 		addr = core.Dim(addr)
 		mac = core.Dim(mac)
@@ -75,7 +60,7 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) []string {
 
 	var traffic *packets.Traffic
 	var found bool
-	if traffic, found = d.Session.Queue.Traffic[e.IpAddress]; found == false {
+	if traffic, found = d.Session.Queue.Traffic[e.IpAddress]; !found {
 		traffic = &packets.Traffic{}
 	}
 
@@ -135,7 +120,7 @@ func (d *Discovery) Show(by string) error {
 
 	hasMeta := false
 	for _, t := range targets {
-		if t.Meta.Empty() == false {
+		if !t.Meta.Empty() {
 			hasMeta = true
 			break
 		}

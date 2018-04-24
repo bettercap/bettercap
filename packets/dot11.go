@@ -45,7 +45,7 @@ func Dot11Info(id layers.Dot11InformationElementID, info []byte) *layers.Dot11In
 
 func NewDot11Beacon(conf Dot11ApConfig, seq uint16) (error, []byte) {
 	flags := openFlags
-	if conf.Encryption == true {
+	if conf.Encryption {
 		flags = wpaFlags
 	}
 
@@ -70,7 +70,7 @@ func NewDot11Beacon(conf Dot11ApConfig, seq uint16) (error, []byte) {
 		Dot11Info(layers.Dot11InformationElementIDDSSet, []byte{byte(conf.Channel & 0xff)}),
 	}
 
-	if conf.Encryption == true {
+	if conf.Encryption {
 		stack = append(stack, &layers.Dot11InformationElement{
 			ID:     layers.Dot11InformationElementIDRSNInfo,
 			Length: uint8(len(wpaRSN) & 0xff),
@@ -125,7 +125,7 @@ func Dot11ParseIDSSID(packet gopacket.Packet) (bool, string) {
 	for _, layer := range packet.Layers() {
 		if layer.LayerType() == layers.LayerTypeDot11InformationElement {
 			dot11info, ok := layer.(*layers.Dot11InformationElement)
-			if ok == true && dot11info.ID == layers.Dot11InformationElementIDSSID {
+			if ok && dot11info.ID == layers.Dot11InformationElementIDSSID {
 				if len(dot11info.Info) == 0 {
 					return true, "<hidden>"
 				}
@@ -152,7 +152,7 @@ func Dot11ParseEncryption(packet gopacket.Packet, dot11 *layers.Dot11) (bool, st
 	for _, layer := range packet.Layers() {
 		if layer.LayerType() == layers.LayerTypeDot11InformationElement {
 			info, ok := layer.(*layers.Dot11InformationElement)
-			if ok == true {
+			if ok {
 				found = true
 				if info.ID == layers.Dot11InformationElementIDRSNInfo {
 					enc = "WPA2"
@@ -203,7 +203,7 @@ func Dot11ParseDSSet(packet gopacket.Packet) (bool, int) {
 	found := false
 	for _, layer := range packet.Layers() {
 		info, ok := layer.(*layers.Dot11InformationElement)
-		if ok == true {
+		if ok {
 			if info.ID == layers.Dot11InformationElementIDDSSet {
 				channel, _ = Dot11InformationElementIDDSSetDecode(info.Info)
 				found = true

@@ -2,13 +2,15 @@ package modules
 
 import (
 	"github.com/bettercap/gatt"
-	"github.com/bettercap/gatt/linux/cmd"
+	// "github.com/bettercap/gatt/linux/cmd"
 )
 
 var defaultBLEClientOptions = []gatt.Option{
 	gatt.LnxMaxConnections(255),
 	gatt.LnxDeviceID(-1, true),
 }
+
+/*
 
 var defaultBLEServerOptions = []gatt.Option{
 	gatt.LnxMaxConnections(255),
@@ -19,3 +21,5 @@ var defaultBLEServerOptions = []gatt.Option{
 		AdvertisingChannelMap:  0x7,
 	}),
 }
+
+*/

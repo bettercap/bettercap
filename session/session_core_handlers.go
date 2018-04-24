@@ -178,7 +178,7 @@ func (s *Session) getHandler(args []string, sess *Session) error {
 			}
 		}
 		fmt.Println()
-	} else if found, value := s.Env.Get(key); found == true {
+	} else if found, value := s.Env.Get(key); found {
 		fmt.Println()
 		fmt.Printf("  %s: '%s'\n", key, value)
 		fmt.Println()
@@ -245,7 +245,7 @@ func (s *Session) aliasHandler(args []string, sess *Session) error {
 	mac := args[0]
 	alias := core.Trim(args[1])
 
-	if s.Lan.SetAliasFor(mac, alias) == true {
+	if s.Lan.SetAliasFor(mac, alias) {
 		return nil
 	} else {
 		return fmt.Errorf("Could not find endpoint %s", mac)
@@ -266,7 +266,7 @@ func (s *Session) registerCoreHandlers() {
 			prefix = core.Trim(prefix[4:])
 			modNames := []string{""}
 			for _, m := range s.Modules {
-				if prefix == "" || strings.HasPrefix(m.Name(), prefix) == true {
+				if prefix == "" || strings.HasPrefix(m.Name(), prefix) {
 					modNames = append(modNames, m.Name())
 				}
 			}
@@ -299,7 +299,7 @@ func (s *Session) registerCoreHandlers() {
 			prefix = core.Trim(prefix[3:])
 			varNames := []string{""}
 			for key := range s.Env.Data {
-				if prefix == "" || strings.HasPrefix(key, prefix) == true {
+				if prefix == "" || strings.HasPrefix(key, prefix) {
 					varNames = append(varNames, key)
 				}
 			}
@@ -314,7 +314,7 @@ func (s *Session) registerCoreHandlers() {
 			prefix = core.Trim(prefix[3:])
 			varNames := []string{""}
 			for key := range s.Env.Data {
-				if prefix == "" || strings.HasPrefix(key, prefix) == true {
+				if prefix == "" || strings.HasPrefix(key, prefix) {
 					varNames = append(varNames, key)
 				}
 			}
@@ -362,7 +362,7 @@ func (s *Session) registerCoreHandlers() {
 			prefix = core.Trim(prefix[5:])
 			macs := []string{""}
 			s.Lan.EachHost(func(mac string, e *network.Endpoint) {
-				if prefix == "" || strings.HasPrefix(mac, prefix) == true {
+				if prefix == "" || strings.HasPrefix(mac, prefix) {
 					macs = append(macs, mac)
 				}
 			})

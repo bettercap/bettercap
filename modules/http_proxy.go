@@ -72,7 +72,7 @@ func (p *HttpProxy) Configure() error {
 	var scriptPath string
 	var stripSSL bool
 
-	if p.Running() == true {
+	if p.Running() {
 		return session.ErrAlreadyStarted
 	} else if err, address = p.StringParam("http.proxy.address"); err != nil {
 		return err

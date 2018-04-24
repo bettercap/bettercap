@@ -54,7 +54,7 @@ func parseMAC(args []string) (string, error) {
 	if len(args) == 1 {
 		tmp := core.Trim(args[0])
 		if tmp != "" {
-			if reMAC.MatchString(tmp) == false {
+			if !reMAC.MatchString(tmp) {
 				return "", fmt.Errorf("%s is not a valid MAC address.", tmp)
 			} else {
 				mac = tmp
@@ -91,9 +91,7 @@ func (w *WOL) Stop() error {
 
 func buildPayload(mac string) []byte {
 	raw, _ := net.ParseMAC(mac)
-	payload := make([]byte, 0)
-
-	payload = append(payload, layers.EthernetBroadcast...)
+	payload := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 	for i := 0; i < 16; i++ {
 		payload = append(payload, raw...)
 	}
@@ -118,11 +116,7 @@ func (w *WOL) wolETH(mac string) error {
 	}
 
 	raw = append(raw, payload...)
-	if err := w.Session.Queue.Send(raw); err != nil {
-		return err
-	}
-
-	return nil
+	return w.Session.Queue.Send(raw)
 }
 
 func (w *WOL) wolUDP(mac string) error {
@@ -159,9 +153,5 @@ func (w *WOL) wolUDP(mac string) error {
 	}
 
 	raw = append(raw, payload...)
-	if err := w.Session.Queue.Send(raw); err != nil {
-		return err
-	}
-
-	return nil
+	return w.Session.Queue.Send(raw)
 }

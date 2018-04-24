@@ -100,7 +100,7 @@ func (pp *PacketProxy) destroyQueue() {
 
 func (pp *PacketProxy) runRule(enable bool) (err error) {
 	action := "-A"
-	if enable == false {
+	if !enable {
 		action = "-D"
 	}
 
@@ -142,7 +142,7 @@ func (pp *PacketProxy) Configure() (err error) {
 
 	if pp.pluginPath == "" {
 		return fmt.Errorf("The parameter %s can not be empty.", core.Bold("packet.proxy.plugin"))
-	} else if core.Exists(pp.pluginPath) == false {
+	} else if !core.Exists(pp.pluginPath) {
 		return fmt.Errorf("%s does not exist.", pp.pluginPath)
 	}
 
@@ -155,7 +155,7 @@ func (pp *PacketProxy) Configure() (err error) {
 		return
 	} else if sym, err = pp.plugin.Lookup("OnPacket"); err != nil {
 		return
-	} else if pp.queueCb, ok = sym.(func(*nfqueue.Payload) int); ok == false {
+	} else if pp.queueCb, ok = sym.(func(*nfqueue.Payload) int); !ok {
 		return fmt.Errorf("Symbol OnPacket is not a valid callback function.")
 	}
 
@@ -187,7 +187,7 @@ func dummyCallback(payload *nfqueue.Payload) int {
 }
 
 func (pp *PacketProxy) Start() error {
-	if pp.Running() == true {
+	if pp.Running() {
 		return session.ErrAlreadyStarted
 	} else if err := pp.Configure(); err != nil {
 		return err

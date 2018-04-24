@@ -69,30 +69,19 @@ func (mysql *MySQLServer) Configure() error {
 	var address string
 	var port int
 
-	if mysql.Running() == true {
+	if mysql.Running() {
 		return session.ErrAlreadyStarted
-	}
-
-	if err, mysql.infile = mysql.StringParam("mysql.server.infile"); err != nil {
+	} else if err, mysql.infile = mysql.StringParam("mysql.server.infile"); err != nil {
+		return err
+	} else if err, address = mysql.StringParam("mysql.server.address"); err != nil {
+		return err
+	} else if err, port = mysql.IntParam("mysql.server.port"); err != nil {
+		return err
+	} else if mysql.address, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
+		return err
+	} else if mysql.listener, err = net.ListenTCP("tcp", mysql.address); err != nil {
 		return err
 	}
-
-	if err, address = mysql.StringParam("mysql.server.address"); err != nil {
-		return err
-	}
-
-	if err, port = mysql.IntParam("mysql.server.port"); err != nil {
-		return err
-	}
-
-	if mysql.address, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
-		return err
-	}
-
-	if mysql.listener, err = net.ListenTCP("tcp", mysql.address); err != nil {
-		return err
-	}
-
 	return nil
 }
 

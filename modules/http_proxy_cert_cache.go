@@ -17,7 +17,7 @@ func getCachedCert(domain string, port int) *tls.Certificate {
 	certLock.Lock()
 	defer certLock.Unlock()
 
-	if cert, found := certCache[key]; found == true {
+	if cert, found := certCache[key]; found {
 		return cert
 	}
 	return nil

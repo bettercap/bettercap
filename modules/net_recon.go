@@ -73,7 +73,7 @@ func (d *Discovery) runDiff(cache network.ArpTable) {
 	var rem network.ArpTable = make(network.ArpTable)
 
 	d.Session.Lan.EachHost(func(mac string, e *network.Endpoint) {
-		if _, found := cache[mac]; found == false {
+		if _, found := cache[mac]; !found {
 			rem[mac] = e.IpAddress
 		}
 	})
@@ -100,7 +100,6 @@ func (d *Discovery) Start() error {
 	return d.SetRunning(true, func() {
 		every := time.Duration(1) * time.Second
 		iface := d.Session.Interface.Name()
-
 		for d.Running() {
 			if table, err := network.ArpUpdate(iface); err != nil {
 				log.Error("%s", err)

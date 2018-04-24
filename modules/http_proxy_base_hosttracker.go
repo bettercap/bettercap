@@ -42,7 +42,7 @@ type HostTracker struct {
 
 func NewHostTracker() *HostTracker {
 	return &HostTracker{
-		hosts: make(map[string]*Host, 0),
+		hosts: make(map[string]*Host),
 	}
 }
 
@@ -55,7 +55,7 @@ func (t *HostTracker) Track(host, stripped string) {
 func (t *HostTracker) Unstrip(stripped string) *Host {
 	t.RLock()
 	defer t.RUnlock()
-	if host, found := t.hosts[stripped]; found == true {
+	if host, found := t.hosts[stripped]; found {
 		return host
 	}
 	return nil

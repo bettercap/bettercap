@@ -65,7 +65,7 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 		pktCb:  nil,
 	}
 
-	if q.active == true {
+	if q.active {
 		if q.handle, err = pcap.OpenLive(iface.Name(), 1024, true, pcap.BlockForever); err != nil {
 			return
 		}
@@ -229,7 +229,7 @@ func (q *Queue) Stop() {
 	q.Lock()
 	defer q.Unlock()
 
-	if q.active == true {
+	if q.active {
 		// wait for write operations to be completed
 		q.writes.Wait()
 		// signal the main loop to exit and close the handle

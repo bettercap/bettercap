@@ -3,17 +3,12 @@ package modules
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/google/gopacket/layers"
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/session"
 )
-
-func vTime(t time.Time) string {
-	return t.Format("15:04:05")
-}
 
 func vIP(ip net.IP) string {
 	if session.I.Interface.IP.Equal(ip) {

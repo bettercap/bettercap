@@ -59,7 +59,7 @@ func (t *Ticker) Configure() error {
 	var commands string
 	var period int
 
-	if t.Running() == true {
+	if t.Running() {
 		return session.ErrAlreadyStarted
 	} else if err, commands = t.StringParam("ticker.commands"); err != nil {
 		return err
@@ -82,7 +82,7 @@ func (t *Ticker) Start() error {
 		log.Info("Ticker running with period %.fs.", t.Period.Seconds())
 		tick := time.NewTicker(t.Period)
 		for range tick.C {
-			if t.Running() == false {
+			if !t.Running() {
 				break
 			}
 

@@ -2,7 +2,6 @@ package modules
 
 import (
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/bettercap/bettercap/session"
@@ -91,20 +90,6 @@ func (s Sniffer) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func same(a, b net.HardwareAddr) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for idx, v := range a {
-		if b[idx] != v {
-			return false
-		}
-	}
-
-	return true
-}
-
 func (s Sniffer) isLocalPacket(packet gopacket.Packet) bool {
 	ipl := packet.Layer(layers.LayerTypeIPv4)
 	if ipl != nil {
@@ -117,7 +102,7 @@ func (s Sniffer) isLocalPacket(packet gopacket.Packet) bool {
 }
 
 func (s *Sniffer) onPacketMatched(pkt gopacket.Packet) {
-	if mainParser(pkt, s.Ctx.Verbose) == true {
+	if mainParser(pkt, s.Ctx.Verbose) {
 		s.Stats.NumDumped++
 	}
 }
@@ -125,7 +110,7 @@ func (s *Sniffer) onPacketMatched(pkt gopacket.Packet) {
 func (s *Sniffer) Configure() error {
 	var err error
 
-	if s.Running() == true {
+	if s.Running() {
 		return session.ErrAlreadyStarted
 	} else if err, s.Ctx = s.GetContext(); err != nil {
 		if s.Ctx != nil {
@@ -149,7 +134,7 @@ func (s *Sniffer) Start() error {
 		src := gopacket.NewPacketSource(s.Ctx.Handle, s.Ctx.Handle.LinkType())
 		s.pktSourceChan = src.Packets()
 		for packet := range s.pktSourceChan {
-			if s.Running() == false {
+			if !s.Running() {
 				break
 			}
 
@@ -164,9 +149,9 @@ func (s *Sniffer) Start() error {
 				s.Stats.NumLocal++
 			}
 
-			if s.Ctx.DumpLocal == true || isLocal == false {
+			if s.Ctx.DumpLocal || !isLocal {
 				data := packet.Data()
-				if s.Ctx.Compiled == nil || s.Ctx.Compiled.Match(data) == true {
+				if s.Ctx.Compiled == nil || s.Ctx.Compiled.Match(data) {
 					s.Stats.NumMatched++
 
 					s.onPacketMatched(packet)

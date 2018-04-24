@@ -28,7 +28,7 @@ func (w *WiFiModule) channelHopper() {
 
 	log.Info("Channel hopper started.")
 
-	for w.Running() == true {
+	for w.Running() {
 		delay := w.hopPeriod
 		// if we have both 2.4 and 5ghz capabilities, we have
 		// more channels, therefore we need to increase the time
@@ -53,7 +53,7 @@ func (w *WiFiModule) channelHopper() {
 			}
 
 			time.Sleep(delay)
-			if w.Running() == false {
+			if !w.Running() {
 				return
 			}
 		}

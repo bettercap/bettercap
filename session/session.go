@@ -294,7 +294,7 @@ func (s *Session) startNetMon() {
 				return
 			}
 
-			if s.IsOn("net.recon") == true && event.Source == true {
+			if s.IsOn("net.recon") && event.Source == true {
 				addr := event.IP.String()
 				mac := event.MAC.String()
 
@@ -423,7 +423,7 @@ func (s *Session) Start() error {
 }
 
 func (s *Session) Skip(ip net.IP) bool {
-	if ip.IsLoopback() == true {
+	if ip.IsLoopback() {
 		return true
 	} else if bytes.Compare(ip, s.Interface.IP) == 0 {
 		return true
@@ -549,7 +549,7 @@ func (s *Session) Run(line string) error {
 
 	// is it a core command?
 	for _, h := range s.CoreHandlers {
-		if parsed, args := h.Parse(line); parsed == true {
+		if parsed, args := h.Parse(line); parsed {
 			return h.Exec(args, s)
 		}
 	}
@@ -557,7 +557,7 @@ func (s *Session) Run(line string) error {
 	// is it a module command?
 	for _, m := range s.Modules {
 		for _, h := range m.Handlers() {
-			if parsed, args := h.Parse(line); parsed == true {
+			if parsed, args := h.Parse(line); parsed {
 				return h.Exec(args)
 			}
 		}
@@ -569,7 +569,7 @@ func (s *Session) Run(line string) error {
 	}
 
 	// is it a proxy module custom command?
-	if s.UnkCmdCallback != nil && s.UnkCmdCallback(line) == true {
+	if s.UnkCmdCallback != nil && s.UnkCmdCallback(line) {
 		return nil
 	}
 

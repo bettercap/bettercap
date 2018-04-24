@@ -90,7 +90,7 @@ func ParseTargets(targets string, aliasMap *Aliases) (ips []net.IP, macs []net.H
 
 	// check and resolve aliases
 	for _, alias := range aliasParser.FindAllString(targets, -1) {
-		if mac, found := aliasMap.Find(alias); found == true {
+		if mac, found := aliasMap.Find(alias); found {
 			mac = NormalizeMac(mac)
 			hw, err := net.ParseMAC(mac)
 			if err != nil {

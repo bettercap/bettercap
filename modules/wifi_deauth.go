@@ -42,7 +42,7 @@ func (w *WiFiModule) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAd
 func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	// if not already running, temporarily enable the pcap handle
 	// for packet injection
-	if w.Running() == false {
+	if !w.Running() {
 		if err := w.Configure(); err != nil {
 			return err
 		}
@@ -55,12 +55,12 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	bssid := to.String()
 
 	// are we deauthing every client of a given access point?
-	if ap, found := w.Session.WiFi.Get(bssid); found == true {
+	if ap, found := w.Session.WiFi.Get(bssid); found {
 		clients := ap.Clients()
 		log.Info("Deauthing %d clients from AP %s ...", len(clients), ap.ESSID())
 		w.onChannel(network.Dot11Freq2Chan(ap.Frequency), func() {
 			for _, c := range clients {
-				if w.Running() == false {
+				if !w.Running() {
 					break
 				}
 				w.sendDeauthPacket(ap.HW, c.HW)
@@ -73,9 +73,9 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	// search for a client
 	aps := w.Session.WiFi.List()
 	for _, ap := range aps {
-		if w.Running() == false {
+		if !w.Running() {
 			break
-		} else if c, found := ap.Get(bssid); found == true {
+		} else if c, found := ap.Get(bssid); found {
 			log.Info("Deauthing client %s from AP %s ...", c.HwAddress, ap.ESSID())
 			w.onChannel(network.Dot11Freq2Chan(ap.Frequency), func() {
 				w.sendDeauthPacket(ap.HW, c.HW)

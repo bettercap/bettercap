@@ -58,7 +58,7 @@ func ArpUpdate(iface string) (ArpTable, error) {
 
 func ArpLookup(iface string, address string, refresh bool) (string, error) {
 	// Refresh ARP table if first run or if a force refresh has been instructed.
-	if ArpParsed() == false || refresh == true {
+	if ArpParsed() == false || refresh {
 		if _, err := ArpUpdate(iface); err != nil {
 			return "", err
 		}
@@ -68,7 +68,7 @@ func ArpLookup(iface string, address string, refresh bool) (string, error) {
 	defer arpLock.RUnlock()
 
 	// Lookup the hardware address of this ip.
-	if mac, found := arpTable[address]; found == true {
+	if mac, found := arpTable[address]; found {
 		return mac, nil
 	}
 
@@ -76,7 +76,7 @@ func ArpLookup(iface string, address string, refresh bool) (string, error) {
 }
 
 func ArpInverseLookup(iface string, mac string, refresh bool) (string, error) {
-	if ArpParsed() == false || refresh == true {
+	if ArpParsed() == false || refresh {
 		if _, err := ArpUpdate(iface); err != nil {
 			return "", err
 		}

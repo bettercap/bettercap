@@ -83,7 +83,7 @@ func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte) []byte {
 			return nil
 		}
 
-		if ret.IsUndefined() == false && ret.IsString() {
+		if !ret.IsUndefined() && ret.IsString() {
 			return []byte(ret.String())
 		}
 	}

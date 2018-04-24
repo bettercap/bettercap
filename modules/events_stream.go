@@ -157,7 +157,7 @@ func (s *EventsStream) Start() error {
 					s.waitChan <- &e
 				}
 
-				if s.ignoreList.Ignored(e) == false {
+				if !s.ignoreList.Ignored(e) {
 					s.View(e, true)
 				} else {
 					log.Debug("Skipping ignored event %v", e)

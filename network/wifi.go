@@ -162,7 +162,7 @@ func (w *WiFi) GetClient(mac string) (*Station, bool) {
 
 	mac = NormalizeMac(mac)
 	for _, ap := range w.aps {
-		if client, found := ap.Get(mac); found == true {
+		if client, found := ap.Get(mac); found {
 			return client, true
 		}
 	}

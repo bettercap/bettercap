@@ -22936,7 +22936,7 @@ func OuiLookup(mac string) string {
 	octects := strings.Split(mac, ":")
 	if len(octects) > 3 {
 		prefix := octects[0] + octects[1] + octects[2]
-		if vendor, found := oui[prefix]; found == true {
+		if vendor, found := oui[prefix]; found {
 			return vendor
 		}
 	}

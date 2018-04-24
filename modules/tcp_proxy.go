@@ -83,7 +83,7 @@ func (p *TcpProxy) Configure() error {
 	var proxyAddress string
 	var scriptPath string
 
-	if p.Running() == true {
+	if p.Running() {
 		return session.ErrAlreadyStarted
 	} else if err, address = p.StringParam("tcp.address"); err != nil {
 		return err
@@ -111,7 +111,7 @@ func (p *TcpProxy) Configure() error {
 		}
 	}
 
-	if p.Session.Firewall.IsForwardingEnabled() == false {
+	if !p.Session.Firewall.IsForwardingEnabled() {
 		log.Info("Enabling forwarding.")
 		p.Session.Firewall.EnableForwarding(true)
 	}

@@ -69,8 +69,8 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	p.Proxy.Logger.SetOutput(ioutil.Discard)
 
 	p.Proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if p.doProxy(req) == true {
-			if p.isTLS == false {
+		if p.doProxy(req) {
+			if !p.isTLS {
 				req.URL.Scheme = "http"
 			}
 			req.URL.Host = req.Host
@@ -127,7 +127,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 		WriteTimeout: httpWriteTimeout,
 	}
 
-	if p.sess.Firewall.IsForwardingEnabled() == false {
+	if !p.sess.Firewall.IsForwardingEnabled() {
 		log.Info("Enabling forwarding.")
 		p.sess.Firewall.EnableForwarding(true)
 	}
@@ -303,13 +303,13 @@ func (p *HTTPProxy) Start() {
 		var err error
 
 		strip := core.Yellow("enabled")
-		if p.stripper.Enabled() == false {
+		if !p.stripper.Enabled() {
 			strip = core.Dim("disabled")
 		}
 
 		log.Info("%s started on %s (sslstrip %s)", core.Green(p.Name), p.Server.Addr, strip)
 
-		if p.isTLS == true {
+		if p.isTLS {
 			err = p.httpsWorker()
 		} else {
 			err = p.httpWorker()
@@ -332,7 +332,7 @@ func (p *HTTPProxy) Stop() error {
 
 	p.sess.UnkCmdCallback = nil
 
-	if p.isTLS == true {
+	if p.isTLS {
 		p.isRunning = false
 		p.sniListener.Close()
 		return nil

@@ -122,7 +122,7 @@ func (f *PfFirewall) enable(enabled bool) {
 func (f PfFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 	rule := f.generateRule(r)
 
-	if enabled == true {
+	if enabled {
 		fd, err := os.OpenFile(f.filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			return err

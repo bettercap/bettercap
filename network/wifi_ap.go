@@ -43,7 +43,7 @@ func (ap *AccessPoint) Get(bssid string) (*Station, bool) {
 	defer ap.Unlock()
 
 	bssid = NormalizeMac(bssid)
-	if s, found := ap.clients[bssid]; found == true {
+	if s, found := ap.clients[bssid]; found {
 		return s, true
 	}
 	return nil, false
@@ -55,7 +55,7 @@ func (ap *AccessPoint) AddClient(bssid string, frequency int, rssi int8) *Statio
 
 	bssid = NormalizeMac(bssid)
 
-	if s, found := ap.clients[bssid]; found == true {
+	if s, found := ap.clients[bssid]; found {
 		// update
 		s.Frequency = frequency
 		s.RSSI = rssi

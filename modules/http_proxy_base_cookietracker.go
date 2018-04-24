@@ -54,7 +54,7 @@ func (t *CookieTracker) IsClean(req *http.Request) bool {
 	defer t.RUnlock()
 
 	// was it already processed?
-	if _, found := t.set[t.keyOf(req)]; found == true {
+	if _, found := t.set[t.keyOf(req)]; found {
 		return true
 	}
 

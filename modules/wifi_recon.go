@@ -28,7 +28,7 @@ func (w *WiFiModule) stationPruner() {
 	defer w.reads.Done()
 
 	log.Debug("WiFi stations pruner started.")
-	for w.Running() == true {
+	for w.Running() {
 		for _, s := range w.Session.WiFi.List() {
 			sinceLastSeen := time.Since(s.LastSeen)
 			if sinceLastSeen > maxStationTTL {
@@ -42,15 +42,15 @@ func (w *WiFiModule) stationPruner() {
 
 func (w *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	// search for Dot11InformationElementIDSSID
-	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok == true {
+	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok {
 		from := dot11.Address3
 
 		// skip stuff we're sending
-		if w.apRunning && bytes.Compare(from, w.apConfig.BSSID) == 0 {
+		if w.apRunning && bytes.Equal(from, w.apConfig.BSSID) {
 			return
 		}
 
-		if network.IsZeroMac(from) == false && network.IsBroadcastMac(from) == false {
+		if !network.IsZeroMac(from) && !network.IsBroadcastMac(from) {
 			var frequency int
 			bssid := from.String()
 
@@ -76,7 +76,7 @@ func (w *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot
 	}
 
 	req, ok := reqLayer.(*layers.Dot11MgmtProbeReq)
-	if ok == false {
+	if !ok {
 		return
 	}
 
@@ -106,7 +106,7 @@ func (w *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot
 func (w *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	w.Session.WiFi.EachAccessPoint(func(bssid string, ap *network.AccessPoint) {
 		// packet going to this specific BSSID?
-		if packets.Dot11IsDataFor(dot11, ap.HW) == true {
+		if packets.Dot11IsDataFor(dot11, ap.HW) {
 			ap.AddClient(dot11.Address2.String(), int(radiotap.ChannelFrequency), radiotap.DBMAntennaSignal)
 		}
 	})

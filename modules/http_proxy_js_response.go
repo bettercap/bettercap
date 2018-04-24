@@ -64,20 +64,15 @@ func (j *JSResponse) UpdateHash() {
 }
 
 func (j *JSResponse) WasModified() bool {
-	if j.bodyRead == true {
+	if j.bodyRead {
 		// body was read
 		return true
 	} else if j.Body != "" {
 		// body was not read but just set
 		return true
 	}
-
 	// check if any of the fields has been changed
-	newHash := j.NewHash()
-	if newHash != j.refHash {
-		return true
-	}
-	return false
+	return j.NewHash() != j.refHash
 }
 
 func (j *JSResponse) GetHeader(name, deflt string) string {

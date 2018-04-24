@@ -31,11 +31,10 @@ func (s *SnifferStats) Print() error {
 	first := "never"
 	last := "never"
 
-	if s.FirstPacket.IsZero() == false {
+	if !s.FirstPacket.IsZero() {
 		first = s.FirstPacket.String()
 	}
-
-	if s.LastPacket.IsZero() == false {
+	if !s.LastPacket.IsZero() {
 		last = s.LastPacket.String()
 	}
 

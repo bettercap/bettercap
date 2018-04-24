@@ -99,7 +99,7 @@ func (p *EventPool) Add(tag string, data interface{}) {
 func (p *EventPool) Log(level int, format string, args ...interface{}) {
 	if level == core.DEBUG && p.debug == false {
 		return
-	} else if level < core.ERROR && p.silent == true {
+	} else if level < core.ERROR && p.silent {
 		return
 	}
 
