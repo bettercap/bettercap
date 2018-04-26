@@ -32,7 +32,7 @@ test: deps
 		go vet ./$$pkg ; \
 		megacheck ./$$pkg ; \
 		go test -race ./$$pkg -coverprofile=$$pkg.profile -covermode=atomic; \
-		tail -n +2 $$pkg.profile >> coverage.profile && rm $$pkg.profile ; \
+		tail -n +2 $$pkg.profile >> coverage.profile && rm -rf $$pkg.profile ; \
 	done
 
 html_coverage: test
