@@ -3,35 +3,16 @@ package tls
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
 	"math/big"
 	"net"
-	"sort"
 	"time"
 
 	"github.com/bettercap/bettercap/log"
 )
-
-func hashSorted(lst []string) []byte {
-	c := make([]string, len(lst))
-	copy(c, lst)
-	sort.Strings(c)
-	h := sha1.New()
-	for _, s := range c {
-		h.Write([]byte(s + ","))
-	}
-	return h.Sum(nil)
-}
-
-func hashSortedBigInt(lst []string) *big.Int {
-	rv := new(big.Int)
-	rv.SetBytes(hashSorted(lst))
-	return rv
-}
 
 func getServerCertificate(host string, port int) *x509.Certificate {
 	log.Debug("Fetching TLS certificate from %s:%d ...", host, port)
