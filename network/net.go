@@ -133,7 +133,7 @@ func buildEndpointFromInterface(iface net.Interface) (*Endpoint, error) {
 	for _, a := range addrs {
 		address := a.String()
 		if IPv4Validator.MatchString(address) {
-			if strings.ContainsRune(address, '/') {
+			if !strings.ContainsRune(address, '/') {
 				// plain ip
 				e.SetIP(address)
 			} else {
