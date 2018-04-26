@@ -31,8 +31,9 @@ test: deps
 		go fmt ./$$pkg ; \
 		go vet ./$$pkg ; \
 		megacheck ./$$pkg ; \
+		touch $$pkg.profile ; \
 		go test -race ./$$pkg -coverprofile=$$pkg.profile -covermode=atomic; \
-		tail -n +2 $$pkg.profile >> coverage.profile || true && rm -rf $$pkg.profile ; \
+		tail -n +2 $$pkg.profile >> coverage.profile && rm -rf $$pkg.profile ; \
 	done
 
 html_coverage: test
