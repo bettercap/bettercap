@@ -16,6 +16,7 @@ type TcpProxy struct {
 	Redirection *firewall.Redirection
 	localAddr   *net.TCPAddr
 	remoteAddr  *net.TCPAddr
+	tunnelAddr  *net.TCPAddr
 	listener    *net.TCPListener
 	script      *TcpProxyScript
 }
@@ -48,6 +49,15 @@ func NewTcpProxy(s *session.Session) *TcpProxy {
 		"",
 		"Path of a TCP proxy JS script."))
 
+	p.AddParam(session.NewStringParameter("tcp.tunnel.address",
+		"",
+		"",
+		"Address to redirect the TCP tunnel to (optional)."))
+
+	p.AddParam(session.NewIntParameter("tcp.tunnel.port",
+		"0",
+		"Port to redirect the TCP tunnel to (optional)."))
+
 	p.AddHandler(session.NewModuleHandler("tcp.proxy on", "",
 		"Start TCP proxy.",
 		func(args []string) error {
@@ -68,7 +78,7 @@ func (p *TcpProxy) Name() string {
 }
 
 func (p *TcpProxy) Description() string {
-	return "A full featured TCP proxy, all TCP traffic to a given remote address and port will be redirected to it."
+	return "A full featured TCP proxy and tunnel, all TCP traffic to a given remote address and port will be redirected to it."
 }
 
 func (p *TcpProxy) Author() string {
@@ -82,6 +92,8 @@ func (p *TcpProxy) Configure() error {
 	var address string
 	var proxyAddress string
 	var scriptPath string
+	var tunnelAddress string
+	var tunnelPort int
 
 	if p.Running() {
 		return session.ErrAlreadyStarted
@@ -93,11 +105,17 @@ func (p *TcpProxy) Configure() error {
 		return err
 	} else if err, port = p.IntParam("tcp.port"); err != nil {
 		return err
+	} else if err, tunnelAddress = p.StringParam("tcp.tunnel.address"); err != nil {
+		return err
+	} else if err, tunnelPort = p.IntParam("tcp.tunnel.port"); err != nil {
+		return err
 	} else if err, scriptPath = p.StringParam("tcp.proxy.script"); err != nil {
 		return err
 	} else if p.localAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", proxyAddress, proxyPort)); err != nil {
 		return err
 	} else if p.remoteAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
+		return err
+	} else if p.tunnelAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", tunnelAddress, tunnelPort)); err != nil {
 		return err
 	} else if p.listener, err = net.ListenTCP("tcp", p.localAddr); err != nil {
 		return err
@@ -174,6 +192,12 @@ func (p *TcpProxy) handleConnection(c *net.TCPConn) {
 
 	log.Info("TCP proxy got a connection from %s", c.RemoteAddr().String())
 
+	// tcp tunnel enabled
+	if p.tunnelAddr.IP.To4() != nil {
+		log.Info("TCP tunnel started ( %s -> %s )", p.remoteAddr.String(), p.tunnelAddr.String())
+		p.remoteAddr = p.tunnelAddr
+	}
+
 	remote, err := net.DialTCP("tcp", nil, p.remoteAddr)
 	if err != nil {
 		log.Warning("Error while connecting to remote %s: %s", p.remoteAddr.String(), err)
@@ -197,7 +221,7 @@ func (p *TcpProxy) Start() error {
 	}
 
 	return p.SetRunning(true, func() {
-		log.Info("TCP proxy started ( x -> %s -> %s )", p.localAddr, p.remoteAddr)
+		log.Info("TCP proxy started ( x -> %s -> %s )", p.localAddr.String(), p.remoteAddr.String())
 
 		for p.Running() {
 			conn, err := p.listener.AcceptTCP()
