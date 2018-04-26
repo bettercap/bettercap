@@ -25,7 +25,7 @@ func ParseOptions() (Options, error) {
 		Silent:        flag.Bool("silent", false, "Suppress all logs which are not errors."),
 		NoColors:      flag.Bool("no-colors", false, "Disable output color effects."),
 		NoHistory:     flag.Bool("no-history", false, "Disable interactive session history file."),
-		EnvFile:       flag.String("env-file", "", "Load environment variables from this file if found, set to empty to disable environment persistance."),
+		EnvFile:       flag.String("env-file", "", "Load environment variables from this file if found, set to empty to disable environment persistence."),
 		Commands:      flag.String("eval", "", "Run one or more commands separated by ; in the interactive session, used to set variables via command line."),
 		CpuProfile:    flag.String("cpu-profile", "", "Write cpu profile `file`."),
 		MemProfile:    flag.String("mem-profile", "", "Write memory profile to `file`."),
