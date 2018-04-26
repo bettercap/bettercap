@@ -30,7 +30,7 @@ func UniqueInts(a []int, sorted bool) []int {
 		tmp[n] = true
 	}
 
-	for n, _ := range tmp {
+	for n := range tmp {
 		uniq = append(uniq, n)
 	}
 
