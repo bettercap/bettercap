@@ -157,7 +157,7 @@ func (m *SessionModule) SetRunning(running bool, cb func()) error {
 			}()
 
 			select {
-			case _ = <-done:
+			case <-done:
 				return nil
 			case <-time.After(10 * time.Second):
 				fmt.Printf("%s: Stopping module %s timed out.", core.Yellow(core.Bold("WARNING")), m.Name)

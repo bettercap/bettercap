@@ -92,7 +92,7 @@ func (env *Environment) Set(name, value string) string {
 	env.Lock()
 	defer env.Unlock()
 
-	old, _ := env.Data[name]
+	old := env.Data[name]
 	env.Data[name] = value
 
 	if cb, hasCallback := env.cbs[name]; hasCallback {

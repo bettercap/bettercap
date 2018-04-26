@@ -2,7 +2,6 @@ package session
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"net"
@@ -76,7 +75,7 @@ func ParseCommands(line string) []string {
 	for _, c := range line {
 		switch c {
 		case ';':
-			if singleQuoted == false && doubleQuoted == false {
+			if !singleQuoted && !doubleQuoted {
 				finish = true
 			} else {
 				buf += string(c)
@@ -191,14 +190,13 @@ func (s *Session) setupReadline() error {
 		}
 	}
 
-	tree := make(map[string][]string, 0)
-
+	tree := make(map[string][]string)
 	for _, m := range s.Modules {
 		for _, h := range m.Handlers() {
 			parts := strings.Split(h.Name, " ")
 			name := parts[0]
 
-			if _, found := tree[name]; found == false {
+			if _, found := tree[name]; !found {
 				tree[name] = []string{}
 			}
 
@@ -222,7 +220,7 @@ func (s *Session) setupReadline() error {
 	}
 
 	history := ""
-	if *s.Options.NoHistory == false {
+	if !*s.Options.NoHistory {
 		history, _ = core.ExpandPath(HistoryFile)
 	}
 
@@ -234,11 +232,7 @@ func (s *Session) setupReadline() error {
 	}
 
 	s.Input, err = readline.NewEx(&cfg)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (s *Session) Close() {
@@ -290,11 +284,11 @@ func (s *Session) startNetMon() {
 	// keep reading network events in order to add / update endpoints
 	go func() {
 		for event := range s.Queue.Activities {
-			if s.Active == false {
+			if !s.Active {
 				return
 			}
 
-			if s.IsOn("net.recon") && event.Source == true {
+			if s.IsOn("net.recon") && event.Source {
 				addr := event.IP.String()
 				mac := event.MAC.String()
 
@@ -329,7 +323,7 @@ func (s *Session) setupEnv() {
 	s.Env.Set("gateway.address", s.Gateway.IpAddress)
 	s.Env.Set("gateway.mac", s.Gateway.HwAddress)
 
-	if found, v := s.Env.Get(PromptVariable); found == false || v == "" {
+	if found, v := s.Env.Get(PromptVariable); !found || v == "" {
 		s.Env.Set(PromptVariable, DefaultPrompt)
 	}
 
@@ -425,9 +419,9 @@ func (s *Session) Start() error {
 func (s *Session) Skip(ip net.IP) bool {
 	if ip.IsLoopback() {
 		return true
-	} else if bytes.Compare(ip, s.Interface.IP) == 0 {
+	} else if ip.Equal(s.Interface.IP) {
 		return true
-	} else if bytes.Compare(ip, s.Gateway.IP) == 0 {
+	} else if ip.Equal(s.Gateway.IP) {
 		return true
 	}
 	return false
@@ -485,10 +479,7 @@ func (s *Session) isCapletCommand(line string) (is bool, filename string, argv [
 	}
 
 	capspath := core.Trim(os.Getenv("CAPSPATH"))
-	for _, folder := range core.SepSplit(capspath, ":") {
-		paths = append(paths, folder)
-	}
-
+	paths = append(paths, core.SepSplit(capspath, ":")...)
 	file := core.Trim(line)
 	parts := strings.Split(file, " ")
 	argc := len(parts)

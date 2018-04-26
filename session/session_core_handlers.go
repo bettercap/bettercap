@@ -37,7 +37,7 @@ func (s *Session) helpHandler(args []string, sess *Session) error {
 			fmt.Printf("  "+core.Yellow(pad)+" : %s\n", h.Name, h.Description)
 		}
 
-		fmt.Printf(core.Bold("\nModules\n\n"))
+		fmt.Println(core.Bold("\nModules\n"))
 
 		maxLen = 0
 		for _, m := range s.Modules {
@@ -85,13 +85,13 @@ func (s *Session) helpHandler(args []string, sess *Session) error {
 		}
 
 		for _, h := range handlers {
-			fmt.Printf(h.Help(maxLen))
+			fmt.Print(h.Help(maxLen))
 		}
 		fmt.Println()
 
 		params := m.Parameters()
 		if len(params) > 0 {
-			fmt.Printf("  Parameters\n\n")
+			fmt.Print("  Parameters\n\n")
 			maxLen := 0
 			for _, h := range params {
 				len := len(h.Name)
@@ -101,7 +101,7 @@ func (s *Session) helpHandler(args []string, sess *Session) error {
 			}
 
 			for _, p := range params {
-				fmt.Printf(p.Help(maxLen))
+				fmt.Print(p.Help(maxLen))
 			}
 			fmt.Println()
 		}
@@ -112,7 +112,7 @@ func (s *Session) helpHandler(args []string, sess *Session) error {
 
 func (s *Session) activeHandler(args []string, sess *Session) error {
 	for _, m := range s.Modules {
-		if m.Running() == false {
+		if !m.Running() {
 			continue
 		}
 
@@ -343,8 +343,7 @@ func (s *Session) registerCoreHandlers() {
 				prefix = "."
 			}
 
-			files := []string{}
-			files, _ = filepath.Glob(prefix + "*")
+			files, _ := filepath.Glob(prefix + "*")
 			return files
 		})))
 

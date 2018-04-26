@@ -39,7 +39,7 @@ var PromptCallbacks = map[string]func(s *Session) string{
 	},
 }
 
-var envRe = regexp.MustCompile("{env\\.([^}]+)}")
+var envRe = regexp.MustCompile(`{env\.([^}]+)}`)
 
 type Prompt struct {
 }
@@ -50,7 +50,7 @@ func NewPrompt() Prompt {
 
 func (p Prompt) Render(s *Session) string {
 	found, prompt := s.Env.Get(PromptVariable)
-	if found == false {
+	if !found {
 		prompt = DefaultPrompt
 	}
 
@@ -89,7 +89,7 @@ func (p Prompt) Render(s *Session) string {
 	}
 
 	// make sure an user error does not screw all terminal
-	if strings.HasPrefix(prompt, core.RESET) == false {
+	if !strings.HasPrefix(prompt, core.RESET) {
 		prompt += core.RESET
 	}
 

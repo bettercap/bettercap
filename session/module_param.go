@@ -58,7 +58,7 @@ func NewIntParameter(name string, def_value string, desc string) *ModuleParam {
 
 func (p ModuleParam) Validate(value string) (error, interface{}) {
 	if p.Validator != nil {
-		if p.Validator.MatchString(value) == false {
+		if !p.Validator.MatchString(value) {
 			return fmt.Errorf("Parameter %s not valid: '%s' does not match rule '%s'.", core.Bold(p.Name), value, p.Validator.String()), nil
 		}
 	}
@@ -88,15 +88,7 @@ const ParamSubnet = "<entire subnet>"
 const ParamRandomMAC = "<random mac>"
 
 func (p ModuleParam) Get(s *Session) (error, interface{}) {
-	var v string
-	var found bool
-	var obj interface{}
-	var err error
-
-	if found, v = s.Env.Get(p.Name); found == false {
-		v = ""
-	}
-
+	_, v := s.Env.Get(p.Name)
 	if v == ParamIfaceName {
 		v = s.Interface.Name()
 	} else if v == ParamIfaceAddress {
@@ -108,10 +100,7 @@ func (p ModuleParam) Get(s *Session) (error, interface{}) {
 		rand.Read(hw)
 		v = net.HardwareAddr(hw).String()
 	}
-
-	err, obj = p.Validate(v)
-	return err, obj
-
+	return p.Validate(v)
 }
 
 func (p ModuleParam) Dump(padding int) string {
