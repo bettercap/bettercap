@@ -115,7 +115,7 @@ func (w *WiFi) Remove(mac string) {
 // get non printable characters .... (ref #61)
 func isBogusMacESSID(essid string) bool {
 	for _, c := range essid {
-		if strconv.IsPrint(c) == false {
+		if !strconv.IsPrint(c) {
 			return true
 		}
 	}
@@ -131,7 +131,7 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) *AccessPoint
 		ap.LastSeen = time.Now()
 		ap.RSSI = rssi
 		// always get the cleanest one
-		if isBogusMacESSID(ssid) == false {
+		if !isBogusMacESSID(ssid) {
 			ap.Hostname = ssid
 		}
 		return ap

@@ -12,11 +12,11 @@ import (
 )
 
 // only matches gateway lines
-var IPv4RouteParser = regexp.MustCompile("^(default|[0-9\\.]+)\\svia\\s([0-9\\.]+)\\sdev\\s(\\w+)\\s.*$")
+var IPv4RouteParser = regexp.MustCompile(`^(default|[0-9\.]+)\svia\s([0-9\.]+)\sdev\s(\w+)\s.*$`)
 var IPv4RouteTokens = 4
 var IPv4RouteCmd = "ip"
 var IPv4RouteCmdOpts = []string{"route"}
-var WiFiFreqParser = regexp.MustCompile("^\\s+Channel.([0-9]+)\\s+:\\s+([0-9\\.]+)\\s+GHz.*$")
+var WiFiFreqParser = regexp.MustCompile(`^\s+Channel.([0-9]+)\s+:\s+([0-9\.]+)\s+GHz.*$`)
 
 func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (*Endpoint, error)) (*Endpoint, error) {
 	ifname2 := tokens[3]
@@ -54,7 +54,7 @@ func GetSupportedFrequencies(iface string) ([]int, error) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			matches := WiFiFreqParser.FindStringSubmatch(line)
-			if matches != nil && len(matches) == 3 {
+			if len(matches) == 3 {
 				if freq, err := strconv.ParseFloat(matches[2], 64); err == nil {
 					freqs = append(freqs, int(freq*1000))
 				}

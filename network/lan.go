@@ -16,15 +16,13 @@ type EndpointLostCallback func(e *Endpoint)
 
 type LAN struct {
 	sync.Mutex
-
-	hosts           map[string]*Endpoint
-	iface           *Endpoint
-	gateway         *Endpoint
-	ttl             map[string]uint
-	aliases         *Aliases
-	newCb           EndpointNewCallback
-	lostCb          EndpointLostCallback
-	aliasesFileName string
+	hosts   map[string]*Endpoint
+	iface   *Endpoint
+	gateway *Endpoint
+	ttl     map[string]uint
+	aliases *Aliases
+	newCb   EndpointNewCallback
+	lostCb  EndpointLostCallback
 }
 
 type lanJSON struct {
@@ -146,7 +144,7 @@ func (lan *LAN) shouldIgnore(ip, mac string) bool {
 	}
 	// skip everything which is not in our subnet (multicast noise)
 	addr := net.ParseIP(ip)
-	return lan.iface.Net.Contains(addr) == false
+	return !lan.iface.Net.Contains(addr)
 }
 
 func (lan *LAN) Has(ip string) bool {

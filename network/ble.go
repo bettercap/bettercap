@@ -35,13 +35,8 @@ func NewBLE(newcb BLEDevNewCallback, lostcb BLEDevLostCallback) *BLE {
 
 func (b *BLE) MarshalJSON() ([]byte, error) {
 	doc := bleJSON{
-		Devices: make([]*BLEDevice, 0),
+		Devices: b.Devices(),
 	}
-
-	for _, dev := range b.Devices() {
-		doc.Devices = append(doc.Devices, dev)
-	}
-
 	return json.Marshal(doc)
 }
 
