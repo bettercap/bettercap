@@ -39,9 +39,6 @@ test: deps
 html_coverage: test
 	@go tool cover -html=coverage.profile -o coverage.profile.html
 
-codecov: test
-	@bash <(curl -s https://codecov.io/bash)
-
 benchmark: server_deps
 	@go test ./... -v -run=doNotRunTests -bench=. -benchmem
 
