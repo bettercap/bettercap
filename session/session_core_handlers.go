@@ -161,7 +161,17 @@ func (s *Session) getHandler(args []string, sess *Session) error {
 		fmt.Println()
 		last := len(key) - 1
 		prefix := key[:last]
-		for _, k := range s.Env.Sorted() {
+		sortedKeys := s.Env.Sorted()
+		padding := 0
+
+		for _, k := range sortedKeys {
+			l := len(k)
+			if l > padding {
+				padding = l
+			}
+		}
+
+		for _, k := range sortedKeys {
 			if strings.HasPrefix(k, prefix) {
 				ns := ""
 				toks := strings.Split(k, ".")
@@ -174,7 +184,7 @@ func (s *Session) getHandler(args []string, sess *Session) error {
 					prev_ns = ns
 				}
 
-				fmt.Printf("  %"+strconv.Itoa(s.Env.Padding)+"s: '%s'\n", k, s.Env.Data[k])
+				fmt.Printf("  %"+strconv.Itoa(padding)+"s: '%s'\n", k, s.Env.Data[k])
 			}
 		}
 		fmt.Println()

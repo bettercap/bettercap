@@ -15,20 +15,16 @@ type SetCallback func(newValue string)
 
 type Environment struct {
 	sync.Mutex
-
-	Padding int               `json:"-"`
-	Data    map[string]string `json:"data"`
-
+	Data map[string]string `json:"data"`
 	cbs  map[string]SetCallback
 	sess *Session
 }
 
 func NewEnvironment(s *Session, envFile string) *Environment {
 	env := &Environment{
-		Padding: 0,
-		Data:    make(map[string]string),
-		sess:    s,
-		cbs:     make(map[string]SetCallback),
+		Data: make(map[string]string),
+		sess: s,
+		cbs:  make(map[string]SetCallback),
 	}
 
 	if envFile != "" {
@@ -100,11 +96,6 @@ func (env *Environment) Set(name, value string) string {
 	}
 
 	env.sess.Events.Log(core.DEBUG, "env.change: %s -> '%s'", name, value)
-
-	width := len(name)
-	if width > env.Padding {
-		env.Padding = width
-	}
 
 	return old
 }
