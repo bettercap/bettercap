@@ -1,7 +1,21 @@
-language: go
 sudo: false
+
+language: go
 go:
-  - 1.9.3
+  - 1.9.x
+  - 1.10.x
+  - master
+
+matrix:
+  # It's ok if our code fails on unstable development versions of Go.
+  allow_failures:
+    - go: master
+  # Don't wait for tip tests to finish. Mark the test run green if the
+  # tests pass on the stable versions of Go.
+  fast_finish: true
+
+notifications:
+  email: false
 
 git:
   depth: 3
@@ -9,13 +23,13 @@ git:
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libpcap-dev libnetfilter-queue-dev
-  - go get -u github.com/golang/dep/...
 
 install:
   - make deps
 
-go_import_path: github.com/bettercap/bettercap
-
 script:
   - make test
+
+after_success:
+  - make codecov
 
