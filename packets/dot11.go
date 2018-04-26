@@ -107,7 +107,7 @@ func Dot11Parse(packet gopacket.Packet) (ok bool, radiotap *layers.RadioTap, dot
 		return
 	}
 	radiotap, ok = radiotapLayer.(*layers.RadioTap)
-	if ok == false || radiotap == nil {
+	if !ok || radiotap == nil {
 		return
 	}
 
@@ -165,7 +165,7 @@ func Dot11ParseEncryption(packet gopacket.Packet, dot11 *layers.Dot11) (bool, st
 							auth = rsn.AuthKey.Suites[i].Type.String()
 						}
 					}
-				} else if enc == "" && info.ID == layers.Dot11InformationElementIDVendor && info.Length >= 8 && bytes.Compare(info.OUI, wpaSignatureBytes) == 0 && bytes.HasPrefix(info.Info, []byte{1, 0}) {
+				} else if enc == "" && info.ID == layers.Dot11InformationElementIDVendor && info.Length >= 8 && bytes.Equal(info.OUI, wpaSignatureBytes) && bytes.HasPrefix(info.Info, []byte{1, 0}) {
 					enc = "WPA"
 					vendor, err := Dot11InformationElementVendorInfoDecode(info.Info)
 					if err == nil {
@@ -195,7 +195,7 @@ func Dot11IsDataFor(dot11 *layers.Dot11, station net.HardwareAddr) bool {
 		return false
 	}
 	// packet going to this specific BSSID?
-	return bytes.Compare(dot11.Address1, station) == 0
+	return bytes.Equal(dot11.Address1, station)
 }
 
 func Dot11ParseDSSet(packet gopacket.Packet) (bool, int) {

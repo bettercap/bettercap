@@ -38,7 +38,7 @@ func DHCP6For(what dhcp6.MessageType, to dhcp6.Packet, duid []byte) (err error, 
 	}
 
 	var rawCID []byte
-	if raw, found := to.Options[dhcp6.OptionClientID]; found == false || len(raw) < 1 {
+	if raw, found := to.Options[dhcp6.OptionClientID]; !found || len(raw) < 1 {
 		return ErrNoCID, p
 	} else {
 		rawCID = raw[0]
