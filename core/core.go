@@ -72,18 +72,11 @@ func ExecSilent(executable string, args []string) (string, error) {
 }
 
 func Exec(executable string, args []string) (string, error) {
-	path, err := exec.LookPath(executable)
+	out, err := ExecSilent(executable, args)
 	if err != nil {
-		return "", err
+		fmt.Printf("ERROR for '%s %s': %s\n", executable, args, err)
 	}
-
-	raw, err := exec.Command(path, args...).CombinedOutput()
-	if err != nil {
-		fmt.Printf("ERROR: path=%s args=%s err=%s out='%s'\n", path, args, err, raw)
-		return "", err
-	} else {
-		return Trim(string(raw)), nil
-	}
+	return out, err
 }
 
 func Exists(path string) bool {
@@ -97,12 +90,12 @@ func ExpandPath(path string) (string, error) {
 	// Check if path is empty
 	if path != "" {
 		if strings.HasPrefix(path, "~") {
-			usr, err := user.Current()
-			if err != nil {
+			if usr, err := user.Current(); err != nil {
 				return "", err
+			} else {
+				// Replace only the first occurrence of ~
+				path = strings.Replace(path, "~", usr.HomeDir, 1)
 			}
-			// Replace only the first occurrence of ~
-			path = strings.Replace(path, "~", usr.HomeDir, 1)
 		}
 		return filepath.Abs(path)
 	}
