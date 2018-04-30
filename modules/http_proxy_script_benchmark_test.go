@@ -10,7 +10,7 @@ import (
 
 func getScript(src string) *HttpProxyScript {
 	sess := session.Session{}
-	sess.Env = session.NewEnvironment(&sess, "")
+	sess.Env, _ = session.NewEnvironment("")
 
 	err, script := LoadHttpProxyScriptSource("", src, &sess)
 	if err != nil {

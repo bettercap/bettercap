@@ -39,15 +39,16 @@ func TestSessionCommandHandler(t *testing.T) {
 		if u.panic {
 			assertPanic(t, "", func() {
 				_ = NewCommandHandler("", u.expr, "", nil)
+				t.Fatal("panic expected")
 			})
 		} else {
 			c := NewCommandHandler("", u.expr, "", nil)
 			shouldNotParse := "simple123"
 			shouldParse := "simple 123"
 
-			if parsed, parts := c.Parse(shouldNotParse); parsed {
+			if parsed, _ := c.Parse(shouldNotParse); parsed {
 				t.Fatalf("should not parse '%s'", shouldNotParse)
-			} else if parsed, parts = c.Parse(shouldParse); !parsed {
+			} else if parsed, parts := c.Parse(shouldParse); !parsed {
 				t.Fatalf("should parse '%s'", shouldParse)
 			} else if !sameStrings(parts, u.parsed) {
 				t.Fatalf("expected '%v', got '%v'", u.parsed, parts)

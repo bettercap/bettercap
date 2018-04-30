@@ -157,7 +157,10 @@ func New() (*Session, error) {
 		}
 	}
 
-	s.Env = NewEnvironment(s, *s.Options.EnvFile)
+	if s.Env, err = NewEnvironment(*s.Options.EnvFile); err != nil {
+		return nil, err
+	}
+
 	s.Events = NewEventPool(*s.Options.Debug, *s.Options.Silent)
 
 	s.registerCoreHandlers()
