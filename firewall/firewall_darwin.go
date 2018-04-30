@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	sysCtlParser = regexp.MustCompile("([^:]+):\\s*(.+)")
+	sysCtlParser = regexp.MustCompile(`([^:]+):\s*(.+)`)
 	pfFilePath   = fmt.Sprintf("/tmp/bcap_pf_%d.conf", os.Getpid())
 )
 
