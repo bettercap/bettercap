@@ -163,12 +163,16 @@ func (s *Sniffer) Start() error {
 				}
 			}
 		}
+
+		s.pktSourceChan = nil
 	})
 }
 
 func (s *Sniffer) Stop() error {
 	return s.SetRunning(false, func() {
-		s.pktSourceChan <- nil
+		if s.pktSourceChan != nil {
+			s.pktSourceChan <- nil
+		}
 		s.Ctx.Close()
 	})
 }
