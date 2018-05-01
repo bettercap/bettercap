@@ -143,3 +143,19 @@ func TestHas(t *testing.T) {
 		t.Error("unable find a known IP address in LAN struct")
 	}
 }
+
+func TestEachHost(t *testing.T) {
+	exampleBuffer := []string{}
+	exampleLAN := buildExampleLAN()
+	exampleEndpoint := buildExampleEndpoint()
+	exampleLAN.hosts[exampleEndpoint.HwAddress] = exampleEndpoint
+	exampleCB := func(mac string, e *Endpoint) {
+		exampleBuffer = append(exampleBuffer, exampleEndpoint.HwAddress)
+	}
+	exampleLAN.EachHost(exampleCB)
+	exp := 1
+	got := len(exampleBuffer)
+	if got != exp {
+		t.Fatalf("expected '%d', got '%d'", exp, got)
+	}
+}
