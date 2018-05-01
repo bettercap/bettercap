@@ -167,7 +167,7 @@ func TestCoreExec(t *testing.T) {
 		{"foo", []string{}, "", `exec: "foo": executable file not found in $PATH`, `ERROR for 'foo []': exec: "foo": executable file not found in $PATH`},
 		{"ps", []string{"-someinvalidflag"}, "", "exit status 1", "ERROR for 'ps [-someinvalidflag]': exit status 1"},
 		{"true", []string{}, "", "", ""},
-		{"head", []string{"/proc/self/comm"}, "head", "", ""},
+		{"head", []string{"/path/to/file/that/does/not/exist"}, "", "exit status 1", "ERROR for 'head [/path/to/file/that/does/not/exist]': exit status 1"},
 	}
 
 	for _, u := range units {
