@@ -69,3 +69,13 @@ func TestMarshalJSON(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestSetAliasFor(t *testing.T) {
+	exampleAlias := "picat"
+	exampleLAN := buildExampleLAN()
+	exampleEndpoint := buildExampleEndpoint()
+	exampleLAN.hosts[exampleEndpoint.HwAddress] = exampleEndpoint
+	if !exampleLAN.SetAliasFor(exampleEndpoint.HwAddress, exampleAlias) {
+		t.Error("unable to set alias for a given mac address")
+	}
+}
