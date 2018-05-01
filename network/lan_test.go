@@ -51,3 +51,21 @@ func TestNewLAN(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", 0, len(lan.aliases.data))
 	}
 }
+
+func TestMarshalJSON(t *testing.T) {
+	iface, err := FindInterface("")
+	if err != nil {
+		t.Error("no iface found", err)
+	}
+	gateway, err := FindGateway(iface)
+	if err != nil {
+		t.Error("no gateway found", err)
+	}
+	exNewCallback := func(e *Endpoint) {}
+	exLostCallback := func(e *Endpoint) {}
+	lan := NewLAN(iface, gateway, exNewCallback, exLostCallback)
+	_, err = lan.MarshalJSON()
+	if err != nil {
+		t.Error(err)
+	}
+}
