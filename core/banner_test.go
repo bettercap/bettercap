@@ -14,9 +14,6 @@ func TestBannerWebsite(t *testing.T) {
 	if Website != "https://bettercap.org/" {
 		t.Fatalf("expected '%s', got '%s'", "https://bettercap.org/", Website)
 	}
-	if Website != "https://bettercap.org/" {
-		t.Fatalf("expected '%s', got '%s'", "https://bettercap.org/", Website)
-	}
 }
 
 func TestBannerVersion(t *testing.T) {
