@@ -107,3 +107,15 @@ func TestList(t *testing.T) {
 		t.Fatalf("expected '%d', got '%d'", exp, got)
 	}
 }
+
+func TestAliases(t *testing.T) {
+	exampleAlias := "picat"
+	exampleLAN := buildExampleLAN()
+	exampleEndpoint := buildExampleEndpoint()
+	exampleLAN.hosts[exampleEndpoint.HwAddress] = exampleEndpoint
+	exp := exampleAlias
+	got := exampleLAN.Aliases().Get(exampleEndpoint.HwAddress)
+	if got != exp {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
