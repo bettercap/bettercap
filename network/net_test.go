@@ -46,3 +46,17 @@ func TestParseTargets(t *testing.T) {
 		t.Fatalf("expected '%d', got '%d'", 0, len(macs))
 	}
 }
+
+func TestBuildEndpointFromInterface(t *testing.T) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(ifaces) <= 0 {
+		t.Error("Unable to find any network interfaces to run test with.")
+	}
+	_, err = buildEndpointFromInterface(ifaces[0])
+	if err != nil {
+		t.Error(err)
+	}
+}
