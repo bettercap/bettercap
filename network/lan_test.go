@@ -92,3 +92,18 @@ func TestGet(t *testing.T) {
 		t.Error("unable to get known endpoint via mac address from LAN struct")
 	}
 }
+
+func TestList(t *testing.T) {
+	exampleLAN := buildExampleLAN()
+	exampleEndpoint := buildExampleEndpoint()
+	exampleLAN.hosts[exampleEndpoint.HwAddress] = exampleEndpoint
+	foundList := exampleLAN.List()
+	if len(foundList) != 1 {
+		t.Fatalf("expected '%d', got '%d'", 1, len(foundList))
+	}
+	exp := 1
+	got := len(exampleLAN.List())
+	if got != exp {
+		t.Fatalf("expected '%d', got '%d'", exp, got)
+	}
+}
