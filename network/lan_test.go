@@ -130,3 +130,7 @@ func TestWasMissed(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+// TODO Add TestRemove after removing unnecessary ip argument
+// func TestRemove(t *testing.T) {
+// }
