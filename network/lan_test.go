@@ -79,3 +79,16 @@ func TestSetAliasFor(t *testing.T) {
 		t.Error("unable to set alias for a given mac address")
 	}
 }
+
+func TestGet(t *testing.T) {
+	exampleLAN := buildExampleLAN()
+	exampleEndpoint := buildExampleEndpoint()
+	exampleLAN.hosts[exampleEndpoint.HwAddress] = exampleEndpoint
+	foundEndpoint, foundBool := exampleLAN.Get(exampleEndpoint.HwAddress)
+	if foundEndpoint != exampleEndpoint {
+		t.Fatalf("expected '%v', got '%v'", foundEndpoint, exampleEndpoint)
+	}
+	if !foundBool {
+		t.Error("unable to get known endpoint via mac address from LAN struct")
+	}
+}
