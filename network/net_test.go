@@ -60,3 +60,29 @@ func TestBuildEndpointFromInterface(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestFindInterfaceByName(t *testing.T) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(ifaces) <= 0 {
+		t.Error("Unable to find any network interfaces to run test with.")
+	}
+	var exampleIface net.Interface
+	// emulate libpcap's pcap_lookupdev function to find
+	// default interface to test with ( maybe could use loopback ? )
+	for _, iface := range ifaces {
+		if iface.HardwareAddr != nil {
+			exampleIface = iface
+			break
+		}
+	}
+	foundEndpoint, err := findInterfaceByName(exampleIface.Name, ifaces)
+	if err != nil {
+		t.Error("unable to find a given interface by name to build endpoint", err)
+	}
+	if foundEndpoint.Name() != exampleIface.Name {
+		t.Error("unable to find a given interface by name to build endpoint")
+	}
+}
