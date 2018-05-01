@@ -180,3 +180,15 @@ func TestAddIfNew(t *testing.T) {
 		t.Error("added address that should've been ignored ( your own )")
 	}
 }
+
+func TestGetAlias(t *testing.T) {
+	exampleAlias := "picat"
+	exampleLAN := buildExampleLAN()
+	exampleEndpoint := buildExampleEndpoint()
+	exampleLAN.hosts[exampleEndpoint.HwAddress] = exampleEndpoint
+	exp := exampleAlias
+	got := exampleLAN.GetAlias(exampleEndpoint.HwAddress)
+	if got != exp {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
