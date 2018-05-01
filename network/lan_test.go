@@ -134,3 +134,12 @@ func TestWasMissed(t *testing.T) {
 // TODO Add TestRemove after removing unnecessary ip argument
 // func TestRemove(t *testing.T) {
 // }
+
+func TestHas(t *testing.T) {
+	exampleLAN := buildExampleLAN()
+	exampleEndpoint := buildExampleEndpoint()
+	exampleLAN.hosts[exampleEndpoint.HwAddress] = exampleEndpoint
+	if !exampleLAN.Has(exampleEndpoint.IpAddress) {
+		t.Error("unable find a known IP address in LAN struct")
+	}
+}
