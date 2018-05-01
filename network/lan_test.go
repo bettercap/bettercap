@@ -25,3 +25,29 @@ func buildExampleEndpoint() *Endpoint {
 	foundEndpoint, _ := FindInterface(exampleIface.Name)
 	return foundEndpoint
 }
+
+func TestNewLAN(t *testing.T) {
+	iface, err := FindInterface("")
+	if err != nil {
+		t.Error("no iface found", err)
+	}
+	gateway, err := FindGateway(iface)
+	if err != nil {
+		t.Error("no gateway found", err)
+	}
+	exNewCallback := func(e *Endpoint) {}
+	exLostCallback := func(e *Endpoint) {}
+	lan := NewLAN(iface, gateway, exNewCallback, exLostCallback)
+	if lan.iface != iface {
+		t.Fatalf("expected '%v', got '%v'", iface, lan.iface)
+	}
+	if lan.gateway != gateway {
+		t.Fatalf("expected '%v', got '%v'", gateway, lan.gateway)
+	}
+	if len(lan.hosts) != 0 {
+		t.Fatalf("expected '%v', got '%v'", 0, len(lan.hosts))
+	}
+	if !(len(lan.aliases.data) >= 0) {
+		t.Fatalf("expected '%v', got '%v'", 0, len(lan.aliases.data))
+	}
+}
