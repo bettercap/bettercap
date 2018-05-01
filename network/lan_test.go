@@ -159,3 +159,15 @@ func TestEachHost(t *testing.T) {
 		t.Fatalf("expected '%d', got '%d'", exp, got)
 	}
 }
+
+func TestGetByIp(t *testing.T) {
+	exampleLAN := buildExampleLAN()
+	exampleEndpoint := buildExampleEndpoint()
+	exampleLAN.hosts[exampleEndpoint.HwAddress] = exampleEndpoint
+
+	exp := exampleEndpoint
+	got := exampleLAN.GetByIp(exampleEndpoint.IpAddress)
+	if got != exp {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
