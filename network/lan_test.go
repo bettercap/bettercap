@@ -192,3 +192,18 @@ func TestGetAlias(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestShouldIgnore(t *testing.T) {
+	exampleLAN := buildExampleLAN()
+	iface, _ := FindInterface("")
+	gateway, _ := FindGateway(iface)
+	exp := true
+	got := exampleLAN.shouldIgnore(iface.IpAddress, iface.HwAddress)
+	if got != exp {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+	got = exampleLAN.shouldIgnore(gateway.IpAddress, gateway.HwAddress)
+	if got != exp {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
