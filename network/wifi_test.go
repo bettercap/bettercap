@@ -68,3 +68,15 @@ func TestStations(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestWiFiList(t *testing.T) {
+	exampleWiFi := buildExampleWiFi()
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	exampleWiFi.aps["ff:ff:ff:ff:ff:f1"] = exampleAP
+	exampleWiFi.aps["ff:ff:ff:ff:ff:f2"] = exampleAP
+	exp := 2
+	got := len(exampleWiFi.List())
+	if got != exp {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
