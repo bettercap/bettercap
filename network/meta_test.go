@@ -45,3 +45,15 @@ func TestMetaGetIntsWith(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestMetaSetInts(t *testing.T) {
+	example := buildExampleMeta()
+	example.SetInts("picat", []int{0, 1})
+
+	exp := strings.Join([]string{"0", "1"}, ",")
+	got := example.m["picat"]
+
+	if exp != got {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
