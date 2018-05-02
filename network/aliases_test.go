@@ -20,3 +20,11 @@ func TestAliasesSaveUnlocked(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestAliasesSave(t *testing.T) {
+	exampleAliases := buildExampleAlaises()
+	err := exampleAliases.Save()
+	if err != nil {
+		t.Error(err)
+	}
+}
