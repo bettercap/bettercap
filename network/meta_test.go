@@ -57,3 +57,13 @@ func TestMetaSetInts(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestMetaGetOr(t *testing.T) {
+	example := buildExampleMeta()
+	dflt := "picat"
+	exp := dflt
+	got := example.GetOr("evilsocket", dflt)
+	if exp != got {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
