@@ -39,3 +39,16 @@ func TestAliasesGet(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestAliasesSet(t *testing.T) {
+	exampleAliases := buildExampleAlaises()
+	exampleAliases.data = make(map[string]string)
+
+	if exampleAliases.Set("pi:ca:tw:as:he:re", "picat") != nil {
+		t.Error("unable to set alias")
+	}
+
+	if exampleAliases.Get("pi:ca:tw:as:he:re") != "picat" {
+		t.Error("unable to get set alias")
+	}
+}
