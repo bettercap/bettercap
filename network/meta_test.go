@@ -23,3 +23,11 @@ func TestMetaMarshalJSON(t *testing.T) {
 		t.Error("unable to marshal JSON from meta struct")
 	}
 }
+
+func TestMetaSet(t *testing.T) {
+	example := buildExampleMeta()
+	example.Set("picat", "<3")
+	if example.m["picat"] != "<3" {
+		t.Error("unable to set meta data in struct")
+	}
+}
