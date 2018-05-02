@@ -30,3 +30,14 @@ func TestNewWiFi(t *testing.T) {
 		t.Error("unable to build net wifi struct")
 	}
 }
+
+func TestWiFiMarshalJSON(t *testing.T) {
+	exampleWiFi := buildExampleWiFi()
+	json, err := exampleWiFi.MarshalJSON()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(json) <= 0 {
+		t.Error("unable to marshal JSON from WiFi struct")
+	}
+}
