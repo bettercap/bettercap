@@ -210,9 +210,8 @@ func (s *EventsStream) startWaitingFor(tag string, timeout int) error {
 
 	if event == nil {
 		return fmt.Errorf("'events.waitFor %s %d' timed out.", tag, timeout)
-	} else {
-		log.Debug("Got event: %v", event)
 	}
+	log.Debug("Got event: %v", event)
 
 	return nil
 }
