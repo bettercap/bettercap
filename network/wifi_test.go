@@ -106,3 +106,13 @@ func TestWiFiAddIfNew(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestWiFiGet(t *testing.T) {
+	exampleWiFi := buildExampleWiFi()
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	exampleWiFi.aps["ff:ff:ff:ff:ff:ff"] = exampleAP
+	_, found := exampleWiFi.Get("ff:ff:ff:ff:ff:ff")
+	if !found {
+		t.Error("unable to get access point from wifi struct with mac address")
+	}
+}
