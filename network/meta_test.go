@@ -31,3 +31,17 @@ func TestMetaSet(t *testing.T) {
 		t.Error("unable to set meta data in struct")
 	}
 }
+
+// TODO document what this does, not too clear,
+// at least for me today lolololol
+func TestMetaGetIntsWith(t *testing.T) {
+	example := buildExampleMeta()
+	example.m["picat"] = "3,"
+
+	exp := []int{4, 3}
+	got := example.GetIntsWith("picat", 4, false)
+
+	if exp[0] != got[0] {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
