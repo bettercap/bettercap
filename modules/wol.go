@@ -40,9 +40,8 @@ func NewWOL(s *session.Session) *WOL {
 		func(args []string) error {
 			if mac, err := parseMAC(args); err != nil {
 				return err
-			} else {
-				return w.wolUDP(mac)
 			}
+			return w.wolUDP(mac)
 		}))
 
 	return w
@@ -55,9 +54,8 @@ func parseMAC(args []string) (string, error) {
 		if tmp != "" {
 			if !reMAC.MatchString(tmp) {
 				return "", fmt.Errorf("%s is not a valid MAC address.", tmp)
-			} else {
-				mac = tmp
 			}
+			mac = tmp
 		}
 	}
 
