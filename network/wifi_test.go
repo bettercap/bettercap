@@ -128,3 +128,13 @@ func TestWiFiGetClient(t *testing.T) {
 		t.Error("unable to get client from wifi struct with mac address")
 	}
 }
+
+func TestWiFiClear(t *testing.T) {
+	exampleWiFi := buildExampleWiFi()
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	exampleWiFi.aps["ff:ff:ff:ff:ff:ff"] = exampleAP
+	exampleWiFi.Clear()
+	if len(exampleWiFi.aps) != 0 {
+		t.Error("unable to clear known access point for wifi struct")
+	}
+}
