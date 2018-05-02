@@ -101,9 +101,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		func(args []string) error {
 			if err := w.parseApConfig(); err != nil {
 				return err
-			} else {
-				return w.startAp()
 			}
+			return w.startAp()
 		}))
 
 	w.AddParam(session.NewStringParameter("wifi.ap.ssid",
