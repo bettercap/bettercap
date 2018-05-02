@@ -2,7 +2,7 @@ package network
 
 import "testing"
 
-func buildExampleAlaises() *Aliases {
+func buildExampleAliases() *Aliases {
 	return &Aliases{}
 }
 
@@ -14,7 +14,7 @@ func TestAliasesLoadAliases(t *testing.T) {
 }
 
 func TestAliasesSaveUnlocked(t *testing.T) {
-	exampleAliases := buildExampleAlaises()
+	exampleAliases := buildExampleAliases()
 	err := exampleAliases.saveUnlocked()
 	if err != nil {
 		t.Error(err)
@@ -22,7 +22,7 @@ func TestAliasesSaveUnlocked(t *testing.T) {
 }
 
 func TestAliasesSave(t *testing.T) {
-	exampleAliases := buildExampleAlaises()
+	exampleAliases := buildExampleAliases()
 	err := exampleAliases.Save()
 	if err != nil {
 		t.Error(err)
@@ -30,7 +30,7 @@ func TestAliasesSave(t *testing.T) {
 }
 
 func TestAliasesGet(t *testing.T) {
-	exampleAliases := buildExampleAlaises()
+	exampleAliases := buildExampleAliases()
 
 	exp := ""
 	got := exampleAliases.Get("pi:ca:tw:as:he:re")
@@ -41,7 +41,7 @@ func TestAliasesGet(t *testing.T) {
 }
 
 func TestAliasesSet(t *testing.T) {
-	exampleAliases := buildExampleAlaises()
+	exampleAliases := buildExampleAliases()
 	exampleAliases.data = make(map[string]string)
 
 	if exampleAliases.Set("pi:ca:tw:as:he:re", "picat") != nil {
@@ -54,7 +54,7 @@ func TestAliasesSet(t *testing.T) {
 }
 
 func TestAliasesFind(t *testing.T) {
-	exampleAliases := buildExampleAlaises()
+	exampleAliases := buildExampleAliases()
 	exampleAliases.data = make(map[string]string)
 	err := exampleAliases.Set("pi:ca:tw:as:he:re", "picat")
 	if err != nil {
