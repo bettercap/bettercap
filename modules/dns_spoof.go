@@ -107,9 +107,8 @@ func (s *DNSSpoofer) Configure() error {
 	for _, domain := range domains {
 		if expr, err := glob.Compile(domain); err != nil {
 			return fmt.Errorf("'%s' is not a valid domain glob expression: %s", domain, err)
-		} else {
-			s.Domains = append(s.Domains, expr)
 		}
+		s.Domains = append(s.Domains, expr)
 	}
 
 	if err, addr = s.StringParam("dns.spoof.address"); err != nil {
