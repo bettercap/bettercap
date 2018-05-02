@@ -23,3 +23,10 @@ func TestDot11Chan2Freq(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestNewWiFi(t *testing.T) {
+	exampleWiFi := NewWiFi(buildExampleEndpoint(), func(ap *AccessPoint) {}, func(ap *AccessPoint) {})
+	if exampleWiFi == nil {
+		t.Error("unable to build net wifi struct")
+	}
+}
