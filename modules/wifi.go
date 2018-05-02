@@ -148,9 +148,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				// No channels setted, retrieve frequencies supported by the card
 				if frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
 					return err
-				} else {
-					newfrequencies = frequencies
 				}
+				newfrequencies = frequencies
 			}
 
 			w.frequencies = newfrequencies
