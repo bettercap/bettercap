@@ -85,3 +85,18 @@ func TestMetaEach(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestMetaEmpty(t *testing.T) {
+	example := buildExampleMeta()
+
+	if !example.Empty() {
+		t.Error("unable to check if filled struct is empty")
+	}
+
+	example.m["picat"] = true //fill struct so not empty
+
+	if example.Empty() {
+		t.Error("unable to check if filled struct is empty")
+	}
+
+}
