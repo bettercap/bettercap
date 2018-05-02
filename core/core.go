@@ -66,9 +66,8 @@ func ExecSilent(executable string, args []string) (string, error) {
 	raw, err := exec.Command(path, args...).CombinedOutput()
 	if err != nil {
 		return "", err
-	} else {
-		return Trim(string(raw)), nil
 	}
+	return Trim(string(raw)), nil
 }
 
 func Exec(executable string, args []string) (string, error) {
