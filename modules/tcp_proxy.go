@@ -124,9 +124,8 @@ func (p *TcpProxy) Configure() error {
 	if scriptPath != "" {
 		if err, p.script = LoadTcpProxyScript(scriptPath, p.Session); err != nil {
 			return err
-		} else {
-			log.Debug("TCP proxy script %s loaded.", scriptPath)
 		}
+		log.Debug("TCP proxy script %s loaded.", scriptPath)
 	}
 
 	if !p.Session.Firewall.IsForwardingEnabled() {
