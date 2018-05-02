@@ -52,3 +52,19 @@ func TestAliasesSet(t *testing.T) {
 		t.Error("unable to get set alias")
 	}
 }
+
+func TestAliasesFind(t *testing.T) {
+	exampleAliases := buildExampleAlaises()
+	exampleAliases.data = make(map[string]string)
+	err := exampleAliases.Set("pi:ca:tw:as:he:re", "picat")
+	if err != nil {
+		t.Error(err)
+	}
+	mac, found := exampleAliases.Find("picat")
+	if !found {
+		t.Error("unable to find mac address for alias")
+	}
+	if mac != "pi:ca:tw:as:he:re" {
+		t.Error("unable to find correct mac address for alias")
+	}
+}
