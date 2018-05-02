@@ -41,3 +41,18 @@ func TestWiFiMarshalJSON(t *testing.T) {
 		t.Error("unable to marshal JSON from WiFi struct")
 	}
 }
+
+func TestEachAccessPoint(t *testing.T) {
+	exampleWiFi := buildExampleWiFi()
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	exampleWiFi.aps["ff:ff:ff:ff:ff:f1"] = exampleAP
+	exampleWiFi.aps["ff:ff:ff:ff:ff:f2"] = exampleAP
+	count := 0
+	exampleCB := func(mac string, ap *AccessPoint) {
+		count++
+	}
+	exampleWiFi.EachAccessPoint(exampleCB)
+	if count != 2 {
+		t.Error("unable to perform callback function for each access point")
+	}
+}
