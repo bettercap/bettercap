@@ -41,7 +41,7 @@ func TestMetaGetIntsWith(t *testing.T) {
 	exp := []int{4, 3}
 	got := example.GetIntsWith("picat", 4, false)
 
-	if exp[0] != got[0] {
+	if len(exp) != len(got) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
