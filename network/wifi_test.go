@@ -93,3 +93,16 @@ func TestWiFiRemove(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestWiFiAddIfNew(t *testing.T) {
+	exampleWiFi := buildExampleWiFi()
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	exampleWiFi.aps["ff:ff:ff:ff:ff:f1"] = exampleAP
+	exampleWiFi.aps["ff:ff:ff:ff:ff:f2"] = exampleAP
+	exampleWiFi.AddIfNew("my_wifi2", "ff:ff:ff:ff:ff:f3", 2472, int8(0))
+	exp := 3
+	got := len(exampleWiFi.List())
+	if got != exp {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
