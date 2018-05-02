@@ -116,3 +116,15 @@ func TestWiFiGet(t *testing.T) {
 		t.Error("unable to get access point from wifi struct with mac address")
 	}
 }
+
+func TestWiFiGetClient(t *testing.T) {
+	exampleWiFi := buildExampleWiFi()
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	exampleClient := NewStation("my_wifi", "ff:ff:ff:ff:ff:xx", 2472, int8(0))
+	exampleAP.clients["ff:ff:ff:ff:ff:xx"] = exampleClient
+	exampleWiFi.aps["ff:ff:ff:ff:ff:ff"] = exampleAP
+	_, found := exampleWiFi.GetClient("ff:ff:ff:ff:ff:xx")
+	if !found {
+		t.Error("unable to get client from wifi struct with mac address")
+	}
+}
