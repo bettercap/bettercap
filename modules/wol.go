@@ -31,9 +31,8 @@ func NewWOL(s *session.Session) *WOL {
 		func(args []string) error {
 			if mac, err := parseMAC(args); err != nil {
 				return err
-			} else {
-				return w.wolETH(mac)
 			}
+			return w.wolETH(mac)
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wol.udp MAC", "wol.udp(\\s.+)?",
