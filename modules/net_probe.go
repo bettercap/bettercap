@@ -71,9 +71,8 @@ func (p *Prober) Configure() error {
 	var err error
 	if err, p.throttle = p.IntParam("net.probe.throttle"); err != nil {
 		return err
-	} else {
-		log.Debug("Throttling packets of %d ms.", p.throttle)
 	}
+	log.Debug("Throttling packets of %d ms.", p.throttle)
 	return nil
 }
 

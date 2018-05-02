@@ -101,9 +101,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		func(args []string) error {
 			if err := w.parseApConfig(); err != nil {
 				return err
-			} else {
-				return w.startAp()
 			}
+			return w.startAp()
 		}))
 
 	w.AddParam(session.NewStringParameter("wifi.ap.ssid",
@@ -149,9 +148,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				// No channels setted, retrieve frequencies supported by the card
 				if frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
 					return err
-				} else {
-					newfrequencies = frequencies
 				}
+				newfrequencies = frequencies
 			}
 
 			w.frequencies = newfrequencies
