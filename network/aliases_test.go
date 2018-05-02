@@ -28,3 +28,14 @@ func TestAliasesSave(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestAliasesGet(t *testing.T) {
+	exampleAliases := buildExampleAlaises()
+
+	exp := ""
+	got := exampleAliases.Get("pi:ca:tw:as:he:re")
+
+	if got != exp {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
