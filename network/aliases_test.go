@@ -12,3 +12,11 @@ func TestAliasesLoadAliases(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestAliasesSaveUnlocked(t *testing.T) {
+	exampleAliases := buildExampleAlaises()
+	err := exampleAliases.saveUnlocked()
+	if err != nil {
+		t.Error(err)
+	}
+}
