@@ -67,3 +67,21 @@ func TestMetaGetOr(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", exp, got)
 	}
 }
+
+func TestMetaEach(t *testing.T) {
+	example := buildExampleMeta()
+	example.m["picat"] = true
+	example.m["evilsocket"] = true
+
+	count := 0
+	exampleCB := func(name string, value interface{}) {
+		count++
+	}
+	example.Each(exampleCB)
+
+	exp := 2
+	got := count
+	if exp != got {
+		t.Fatalf("expected '%v', got '%v'", exp, got)
+	}
+}
