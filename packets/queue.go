@@ -106,7 +106,7 @@ func (q *Queue) trackProtocols(pkt gopacket.Packet) {
 		if _, found := q.Protos[name]; !found {
 			q.Protos[name] = 1
 		} else {
-			q.Protos[name] += 1
+			q.Protos[name]++
 		}
 		q.Unlock()
 	}
