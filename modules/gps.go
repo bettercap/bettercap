@@ -98,8 +98,9 @@ func (gps *GPS) readLine() (line string, err error) {
 		} else if n == 1 {
 			if b[0] == '\n' {
 				return core.Trim(line), nil
+			} else {
+				line += string(b[0])
 			}
-			line += string(b[0])
 		}
 	}
 }

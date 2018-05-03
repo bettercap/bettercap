@@ -148,8 +148,9 @@ func (s *Session) sleepHandler(args []string, sess *Session) error {
 	if secs, err := strconv.Atoi(args[0]); err == nil {
 		time.Sleep(time.Duration(secs) * time.Second)
 		return nil
+	} else {
+		return err
 	}
-	return err
 }
 
 func (s *Session) getHandler(args []string, sess *Session) error {
@@ -256,8 +257,9 @@ func (s *Session) aliasHandler(args []string, sess *Session) error {
 
 	if s.Lan.SetAliasFor(mac, alias) {
 		return nil
+	} else {
+		return fmt.Errorf("Could not find endpoint %s", mac)
 	}
-	return fmt.Errorf("Could not find endpoint %s", mac)
 }
 
 func (s *Session) addHandler(h CommandHandler, c *readline.PrefixCompleter) {

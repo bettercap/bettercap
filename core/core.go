@@ -66,8 +66,9 @@ func ExecSilent(executable string, args []string) (string, error) {
 	raw, err := exec.Command(path, args...).CombinedOutput()
 	if err != nil {
 		return "", err
+	} else {
+		return Trim(string(raw)), nil
 	}
-	return Trim(string(raw)), nil
 }
 
 func Exec(executable string, args []string) (string, error) {
@@ -92,9 +93,10 @@ func ExpandPath(path string) (string, error) {
 			usr, err := user.Current()
 			if err != nil {
 				return "", err
+			} else {
+				// Replace only the first occurrence of ~
+				path = strings.Replace(path, "~", usr.HomeDir, 1)
 			}
-			// Replace only the first occurrence of ~
-			path = strings.Replace(path, "~", usr.HomeDir, 1)
 		}
 		return filepath.Abs(path)
 	}

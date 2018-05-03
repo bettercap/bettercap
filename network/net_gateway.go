@@ -20,13 +20,14 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 			return IPv4RouteIsGateway(iface.Name(), m, func(gateway string) (*Endpoint, error) {
 				if gateway == iface.IpAddress {
 					return iface, nil
+				} else {
+					// we have the address, now we need its mac
+					mac, err := ArpLookup(iface.Name(), gateway, false)
+					if err != nil {
+						return nil, err
+					}
+					return NewEndpoint(gateway, mac), nil
 				}
-				// we have the address, now we need its mac
-				mac, err := ArpLookup(iface.Name(), gateway, false)
-				if err != nil {
-					return nil, err
-				}
-				return NewEndpoint(gateway, mac), nil
 			})
 		}
 	}
