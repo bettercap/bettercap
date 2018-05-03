@@ -89,7 +89,8 @@ func ExpandPath(path string) (string, error) {
 	// Check if path is empty
 	if path != "" {
 		if strings.HasPrefix(path, "~") {
-			if usr, err := user.Current(); err != nil {
+			usr, err := user.Current()
+			if err != nil {
 				return "", err
 			}
 			// Replace only the first occurrence of ~
