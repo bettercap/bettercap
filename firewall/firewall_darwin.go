@@ -85,8 +85,9 @@ func (f PfFirewall) enableParam(param string, enabled bool) error {
 
 	if _, err := f.sysCtlWrite(param, value); err != nil {
 		return err
+	} else {
+		return nil
 	}
-	return nil
 }
 
 func (f PfFirewall) EnableForwarding(enabled bool) error {

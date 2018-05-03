@@ -115,8 +115,9 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	if scriptPath != "" {
 		if err, p.Script = LoadHttpProxyScript(scriptPath, p.sess); err != nil {
 			return err
+		} else {
+			log.Debug("Proxy script %s loaded.", scriptPath)
 		}
-		log.Debug("Proxy script %s loaded.", scriptPath)
 	}
 
 	p.Server = &http.Server{
@@ -335,9 +336,9 @@ func (p *HTTPProxy) Stop() error {
 		p.isRunning = false
 		p.sniListener.Close()
 		return nil
+	} else {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		return p.Server.Shutdown(ctx)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	return p.Server.Shutdown(ctx)
 }

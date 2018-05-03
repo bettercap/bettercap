@@ -20,9 +20,9 @@ func findMAC(s *session.Session, ip net.IP, probe bool) (net.HardwareAddr, error
 	mac, err = network.ArpLookup(s.Interface.Name(), ip.String(), false)
 	if err != nil && probe {
 		from := s.Interface.IP
-		fromHw := s.Interface.HW
+		from_hw := s.Interface.HW
 
-		if err, probe := packets.NewUDPProbe(from, fromHw, ip, 139); err != nil {
+		if err, probe := packets.NewUDPProbe(from, from_hw, ip, 139); err != nil {
 			log.Error("Error while creating UDP probe packet for %s: %s", ip.String(), err)
 		} else {
 			s.Queue.Send(probe)
