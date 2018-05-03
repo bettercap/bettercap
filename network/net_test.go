@@ -87,38 +87,6 @@ func TestFindInterfaceByName(t *testing.T) {
 	}
 }
 
-func TestMatchByAddress(t *testing.T) {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		t.Error(err)
-	}
-	if len(ifaces) <= 0 {
-		t.Error("Unable to find any network interfaces to run test with.")
-	}
-	var exampleIface net.Interface
-	// emulate libpcap's pcap_lookupdev function to find
-	// default interface to test with ( maybe could use loopback ? )
-	for _, iface := range ifaces {
-		if iface.HardwareAddr != nil {
-			exampleIface = iface
-			break
-		}
-	}
-	// check match by mac address
-	if !matchByAddress(exampleIface, exampleIface.HardwareAddr.String()) {
-		t.Error("unable to verify a match with a given interface and mac address")
-	}
-	addrs, err := exampleIface.Addrs()
-	if err != nil || len(addrs) <= 0 {
-		t.Error("Unable to find any ip addresses to run test with interface:", exampleIface.Name)
-
-	}
-	// check match by ip address
-	if !matchByAddress(exampleIface, addrs[0].String()) {
-		t.Error("unable to verify a match with a given interface and ip address")
-	}
-}
-
 func TestFindInterface(t *testing.T) {
 	ifaces, err := net.Interfaces()
 	if err != nil {

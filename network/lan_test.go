@@ -1,7 +1,6 @@
 package network
 
 import (
-	"net"
 	"testing"
 )
 
@@ -14,16 +13,8 @@ func buildExampleLAN() *LAN {
 }
 
 func buildExampleEndpoint() *Endpoint {
-	ifaces, _ := net.Interfaces()
-	var exampleIface net.Interface
-	for _, iface := range ifaces {
-		if iface.HardwareAddr != nil {
-			exampleIface = iface
-			break
-		}
-	}
-	foundEndpoint, _ := FindInterface(exampleIface.Name)
-	return foundEndpoint
+	iface, _ := FindInterface("")
+	return iface
 }
 
 func TestNewLAN(t *testing.T) {
