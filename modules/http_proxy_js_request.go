@@ -18,6 +18,7 @@ type JSRequest struct {
 	Client      string
 	Method      string
 	Version     string
+	Scheme      string
 	Path        string
 	Query       string
 	Hostname    string
@@ -48,6 +49,7 @@ func NewJSRequest(req *http.Request) *JSRequest {
 		Client:      strings.Split(req.RemoteAddr, ":")[0],
 		Method:      req.Method,
 		Version:     fmt.Sprintf("%d.%d", req.ProtoMajor, req.ProtoMinor),
+		Scheme:      req.URL.Scheme
 		Hostname:    req.Host,
 		Path:        req.URL.Path,
 		Query:       req.URL.RawQuery,
@@ -63,7 +65,7 @@ func NewJSRequest(req *http.Request) *JSRequest {
 }
 
 func (j *JSRequest) NewHash() string {
-	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s", j.Client, j.Method, j.Version, j.Hostname, j.Path, j.Query, j.ContentType)
+	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s.%s", j.Client, j.Method, j.Version, j.Scheme, j.Hostname, j.Path, j.Query, j.ContentType)
 	for _, h := range j.Headers {
 		hash += fmt.Sprintf(".%s-%s", h.Name, h.Value)
 	}
@@ -152,7 +154,7 @@ func (j *JSRequest) ParseForm() map[string]string {
 }
 
 func (j *JSRequest) ToRequest() (req *http.Request) {
-	url := fmt.Sprintf("%s://%s:%s%s?%s", j.req.URL.Scheme, j.Hostname, j.req.URL.Port(), j.Path, j.Query)
+	url := fmt.Sprintf("%s://%s:%s%s?%s", j.Scheme, j.Hostname, j.req.URL.Port(), j.Path, j.Query)
 	if j.Body == "" {
 		req, _ = http.NewRequest(j.Method, url, j.req.Body)
 	} else {
