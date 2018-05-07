@@ -49,7 +49,7 @@ func NewJSRequest(req *http.Request) *JSRequest {
 		Client:      strings.Split(req.RemoteAddr, ":")[0],
 		Method:      req.Method,
 		Version:     fmt.Sprintf("%d.%d", req.ProtoMajor, req.ProtoMinor),
-		Scheme:      req.URL.Scheme
+		Scheme:      req.URL.Scheme,
 		Hostname:    req.Host,
 		Path:        req.URL.Path,
 		Query:       req.URL.RawQuery,
