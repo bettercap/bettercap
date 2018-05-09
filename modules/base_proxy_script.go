@@ -49,13 +49,13 @@ func LoadProxyScriptSource(path, source string, sess *session.Session) (err erro
 	// define session pointer
 	err = s.VM.Set("env", sess.Env.Data)
 	if err != nil {
-		log.Error("Error while defining environment: %s", err)
+		log.Error( "Error while defining environment: %s", "\nTraceback:\n  " + err.(*otto.Error).String() )
 		return
 	}
 
 	err = s.defineBuiltins()
 	if err != nil {
-		log.Error("Error while defining builtin functions: %s", err)
+		log.Error( "Error while defining builtin functions: %s", "\nTraceback:\n  " + err.(*otto.Error).String() )
 		return
 	}
 
@@ -63,7 +63,7 @@ func LoadProxyScriptSource(path, source string, sess *session.Session) (err erro
 	if s.hasCallback("onLoad") {
 		_, err = s.VM.Run("onLoad()")
 		if err != nil {
-			log.Error("Error while executing onLoad callback: %s", err)
+			log.Error( "Error while executing onLoad callback: %s", "\nTraceback:\n  " + err.(*otto.Error).String() )
 			return
 		}
 	}
