@@ -33,7 +33,7 @@ func LoadHttpProxyScriptSource(path, source string, sess *session.Session) (err 
 	if s.hasCallback("onRequest") {
 		s.onRequestScript, err = s.VM.Compile("", "onRequest(req, res)")
 		if err != nil {
-			log.Error("Error while compiling onRequest callback: %s", err)
+			log.Error( "Error while compiling onRequest callback: %s", "\nTraceback:\n  " + err.(*otto.Error).String() )
 			return
 		}
 	}
@@ -41,7 +41,7 @@ func LoadHttpProxyScriptSource(path, source string, sess *session.Session) (err 
 	if s.hasCallback("onResponse") {
 		s.onResponseScript, err = s.VM.Compile("", "onResponse(req, res)")
 		if err != nil {
-			log.Error("Error while compiling onResponse callback: %s", err)
+			log.Error( "Error while compiling onResponse callback: %s", "\nTraceback:\n  " + err.(*otto.Error).String() )
 			return
 		}
 	}
@@ -49,7 +49,7 @@ func LoadHttpProxyScriptSource(path, source string, sess *session.Session) (err 
 	if s.hasCallback("onCommand") {
 		s.onCommandScript, err = s.VM.Compile("", "onCommand(cmd)")
 		if err != nil {
-			log.Error("Error while compiling onCommand callback: %s", err)
+			log.Error( "Error while compiling onCommand callback: %s", "\nTraceback:\n  " + err.(*otto.Error).String() )
 			return
 		}
 	}
