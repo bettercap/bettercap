@@ -68,6 +68,8 @@ func (api *RestAPI) streamWriter(ws *websocket.Conn, w http.ResponseWriter, r *h
 	log.Debug("Listening for events and streaming to ws endpoint ...")
 
 	pingTicker := time.NewTicker(pingPeriod)
+	listener := session.I.Events.Listen()
+	defer session.I.Events.Unlisten(listener)
 
 	for {
 		select {
@@ -75,7 +77,7 @@ func (api *RestAPI) streamWriter(ws *websocket.Conn, w http.ResponseWriter, r *h
 			if err := api.sendPing(ws); err != nil {
 				return
 			}
-		case event := <-api.eventListener:
+		case event := <-listener:
 			if err := api.streamEvent(ws, event); err != nil {
 				return
 			}

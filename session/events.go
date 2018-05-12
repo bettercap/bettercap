@@ -62,6 +62,19 @@ func (p *EventPool) Listen() <-chan Event {
 	return l
 }
 
+func (p *EventPool) Unlisten(listener <-chan Event) {
+	p.Lock()
+	defer p.Unlock()
+
+	for i, l := range p.listeners {
+		if l == listener {
+			close(l)
+			p.listeners = append(p.listeners[:i], p.listeners[i+1:]...)
+			return
+		}
+	}
+}
+
 func (p *EventPool) SetSilent(s bool) {
 	p.Lock()
 	defer p.Unlock()
@@ -83,16 +96,7 @@ func (p *EventPool) Add(tag string, data interface{}) {
 
 	// broadcast the event to every listener
 	for _, l := range p.listeners {
-		select {
-		case l <- e:
-			// NOTE: Without this 'default', errors in sending the event
-			// to the listener would not empty the channel, therefore
-			// all operations would be stuck at some point (after the first
-			// event if not buffered or after the first N events if buffered)
-			//
-			// See https://github.com/bettercap/bettercap/issues/198
-		default:
-		}
+		l <- e
 	}
 }
 

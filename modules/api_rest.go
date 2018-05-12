@@ -17,15 +17,14 @@ import (
 
 type RestAPI struct {
 	session.SessionModule
-	server        *http.Server
-	username      string
-	password      string
-	certFile      string
-	keyFile       string
-	useWebsocket  bool
-	upgrader      websocket.Upgrader
-	eventListener <-chan session.Event
-	quit          chan bool
+	server       *http.Server
+	username     string
+	password     string
+	certFile     string
+	keyFile      string
+	useWebsocket bool
+	upgrader     websocket.Upgrader
+	quit         chan bool
 }
 
 func NewRestAPI(s *session.Session) *RestAPI {
@@ -34,7 +33,6 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		server:        &http.Server{},
 		quit:          make(chan bool),
 		useWebsocket:  false,
-		eventListener: s.Events.Listen(),
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
