@@ -148,6 +148,8 @@ func (s *EventsStream) Start() error {
 
 	return s.SetRunning(true, func() {
 		s.eventListener = s.Session.Events.Listen()
+		defer s.Session.Events.Unlisten(s.eventListener)
+
 		for {
 			var e session.Event
 			select {
