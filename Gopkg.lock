@@ -19,7 +19,7 @@
     "linux/util",
     "xpc"
   ]
-  revision = "e65eb2df9116e5ec6e2409b6142a09a93e96b900"
+  revision = "66e7446993acb3de936b3f487e5933522ed16923"
 
 [[projects]]
   name = "github.com/bettercap/readline"
@@ -37,7 +37,7 @@
   branch = "master"
   name = "github.com/dustin/go-humanize"
   packages = ["."]
-  revision = "bb3d318650d48840a39aa21a027c6630e198e626"
+  revision = "02af3965c54e8cacf948b97fef38925c4120652c"
 
 [[projects]]
   branch = "master"
@@ -84,10 +84,10 @@
   version = "v1.1.14"
 
 [[projects]]
-  branch = "master"
   name = "github.com/gorilla/context"
   packages = ["."]
-  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
+  revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
+  version = "v1.1"
 
 [[projects]]
   name = "github.com/gorilla/mux"
@@ -122,7 +122,8 @@
 [[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
-  revision = "5411d3eea5978e6cdc258b30de592b60df6aba96"
+  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
+  version = "v0.0.9"
 
 [[projects]]
   name = "github.com/mattn/go-isatty"
@@ -153,10 +154,10 @@
   version = "v1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "816c9085562cd7ee03e7f8188a1cfd942858cded"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   branch = "master"
@@ -170,7 +171,7 @@
     "registry",
     "token"
   ]
-  revision = "6c383dd335ef8dcccef05e651ce1eccfe4d0f011"
+  revision = "03d472dc43abece8691e609a23d295ab732abba6"
 
 [[projects]]
   branch = "master"
@@ -179,9 +180,10 @@
   revision = "eaafced92e9619f03c72527efeab21e326f3bc36"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "abf9c25f54453410d0c6668e519582a9e1115027"
+  revision = "d0faeb539838e250bd0a9db4182d48d4a1915181"
 
 [[projects]]
   name = "gopkg.in/sourcemap.v1"

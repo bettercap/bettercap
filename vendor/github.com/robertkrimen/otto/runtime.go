@@ -1,6 +1,7 @@
 package otto
 
 import (
+	"encoding"
 	"errors"
 	"fmt"
 	"math"
@@ -8,6 +9,7 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/robertkrimen/otto/ast"
@@ -296,7 +298,23 @@ func (self *_runtime) convertCallParameter(v Value, t reflect.Type) reflect.Valu
 	if v.kind == valueObject {
 		if gso, ok := v._object().value.(*_goStructObject); ok {
 			if gso.value.Type().AssignableTo(t) {
-				return gso.value
+				// please see TestDynamicFunctionReturningInterface for why this exists
+				if t.Kind() == reflect.Interface && gso.value.Type().ConvertibleTo(t) {
+					return gso.value.Convert(t)
+				} else {
+					return gso.value
+				}
+			}
+		}
+
+		if gao, ok := v._object().value.(*_goArrayObject); ok {
+			if gao.value.Type().AssignableTo(t) {
+				// please see TestDynamicFunctionReturningInterface for why this exists
+				if t.Kind() == reflect.Interface && gao.value.Type().ConvertibleTo(t) {
+					return gao.value.Convert(t)
+				} else {
+					return gao.value
+				}
 			}
 		}
 	}
@@ -444,6 +462,66 @@ func (self *_runtime) convertCallParameter(v Value, t reflect.Type) reflect.Valu
 				return []reflect.Value{self.convertCallParameter(rv, t.Out(0))}
 			})
 		}
+	case reflect.Struct:
+		if o := v._object(); o != nil && o.class == "Object" {
+			s := reflect.New(t)
+
+			for _, k := range o.propertyOrder {
+				var f *reflect.StructField
+
+				for i := 0; i < t.NumField(); i++ {
+					ff := t.Field(i)
+
+					if j := ff.Tag.Get("json"); j != "" {
+						if j == "-" {
+							continue
+						}
+
+						a := strings.Split(j, ",")
+
+						if a[0] == k {
+							f = &ff
+							break
+						}
+					}
+
+					if ff.Name == k {
+						f = &ff
+						break
+					}
+
+					if strings.EqualFold(ff.Name, k) {
+						f = &ff
+					}
+				}
+
+				if f == nil {
+					panic(self.panicTypeError("can't convert object; field %q was supplied but does not exist on target %v", k, t))
+				}
+
+				ss := s
+
+				for _, i := range f.Index {
+					if ss.Kind() == reflect.Ptr {
+						if ss.IsNil() {
+							if !ss.CanSet() {
+								panic(self.panicTypeError("can't set embedded pointer to unexported struct: %v", ss.Type().Elem()))
+							}
+
+							ss.Set(reflect.New(ss.Type().Elem()))
+						}
+
+						ss = ss.Elem()
+					}
+
+					ss = ss.Field(i)
+				}
+
+				ss.Set(self.convertCallParameter(o.get(k), ss.Type()))
+			}
+
+			return s.Elem()
+		}
 	}
 
 	if tk == reflect.String {
@@ -462,6 +540,20 @@ func (self *_runtime) convertCallParameter(v Value, t reflect.Type) reflect.Valu
 		}
 
 		return reflect.ValueOf(v.String())
+	}
+
+	if v.kind == valueString {
+		var s encoding.TextUnmarshaler
+
+		if reflect.PtrTo(t).Implements(reflect.TypeOf(&s).Elem()) {
+			r := reflect.New(t)
+
+			if err := r.Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(v.string())); err != nil {
+				panic(self.panicSyntaxError("can't convert to %s: %s", t.String(), err.Error()))
+			}
+
+			return r.Elem()
+		}
 	}
 
 	s := "OTTO DOES NOT UNDERSTAND THIS TYPE"
