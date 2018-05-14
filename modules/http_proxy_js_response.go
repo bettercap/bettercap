@@ -16,9 +16,10 @@ type JSResponse struct {
 	Headers     []JSHeader
 	Body        string
 
-	refHash  string
-	resp     *http.Response
-	bodyRead bool
+	refHash   string
+	resp      *http.Response
+	bodyRead  bool
+	bodyClear bool
 }
 
 func NewJSResponse(res *http.Response) *JSResponse {
@@ -45,6 +46,7 @@ func NewJSResponse(res *http.Response) *JSResponse {
 		Headers:     headers,
 		resp:        res,
 		bodyRead:    false,
+		bodyClear:   false,
 	}
 	resp.UpdateHash()
 
@@ -66,6 +68,9 @@ func (j *JSResponse) UpdateHash() {
 func (j *JSResponse) WasModified() bool {
 	if j.bodyRead {
 		// body was read
+		return true
+	} else if j.bodyClear {
+		// body was cleared manually
 		return true
 	} else if j.Body != "" {
 		// body was not read but just set
@@ -105,6 +110,11 @@ func (j *JSResponse) RemoveHeader(name string) {
 	}
 }
 
+func (j *JSResponse) ClearBody() {
+	j.Body = ""
+	j.bodyClear = true
+}
+
 func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
 	resp = goproxy.NewResponse(req, j.ContentType, j.Status, j.Body)
 	if len(j.Headers) > 0 {
@@ -125,6 +135,7 @@ func (j *JSResponse) ReadBody() string {
 
 	j.Body = string(raw)
 	j.bodyRead = true
+	j.bodyClear = false
 	// reset the response body to the original unread state
 	j.resp.Body = ioutil.NopCloser(bytes.NewBuffer(raw))
 
