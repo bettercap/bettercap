@@ -36,6 +36,7 @@ var (
 	ErrNotSupported   = errors.New("This component is not supported on this OS.")
 
 	reCmdSpaceCleaner = regexp.MustCompile(`^([^\s]+)\s+(.+)$`)
+	reEnvVarCapture   = regexp.MustCompile(`{env\.([^}]+)}`)
 )
 
 type UnknownCommandCallback func(cmd string) bool
@@ -439,8 +440,22 @@ func (s *Session) IsOn(moduleName string) bool {
 	return false
 }
 
+func (s *Session) parseEnvTokens(str string) (string, error) {
+	// replace all {env.something} with their values
+	for _, m := range reEnvVarCapture.FindAllString(str, -1) {
+		varName := strings.Trim(strings.Replace(m, "env.", "", -1), "{}")
+		if found, value := s.Env.Get(varName); found {
+			str = strings.Replace(str, m, value, -1)
+		} else {
+			return "", fmt.Errorf("variable '%s' is not defined", varName)
+		}
+	}
+	return str, nil
+}
+
 func (s *Session) Refresh() {
-	s.Input.SetPrompt(s.Prompt.Render(s))
+	p, _ := s.parseEnvTokens(s.Prompt.Render(s))
+	s.Input.SetPrompt(p)
 	s.Input.Refresh()
 }
 
@@ -540,6 +555,11 @@ func (s *Session) Run(line string) error {
 	// so that 'arp.spoof      on' is normalized
 	// to 'arp.spoof on' (fixes #178)
 	line = reCmdSpaceCleaner.ReplaceAllString(line, "$1 $2")
+
+	line, err := s.parseEnvTokens(line)
+	if err != nil {
+		return err
+	}
 
 	// is it a core command?
 	for _, h := range s.CoreHandlers {
