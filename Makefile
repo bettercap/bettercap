@@ -19,6 +19,10 @@ clean:
 	@rm -rf $(TARGET)*
 	@rm -rf build
 
+install:
+	@mkdir -p /usr/share/bettercap/caplets
+	@cp bettercap /usr/local/bin/
+
 docker:
 	@docker build -t bettercap:latest .
 
