@@ -32,7 +32,7 @@ func (w *WiFiModule) parseApConfig() (err error) {
 
 func (w *WiFiModule) startAp() error {
 	// we need channel hopping and packet injection for this
-	if w.Running() {
+	if !w.Running() {
 		return errNoRecon
 	} else if w.apRunning {
 		return session.ErrAlreadyStarted
