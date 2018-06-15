@@ -7,12 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"regexp"
 )
-
-type JSHeader struct {
-	Name  string
-	Value string
-}
 
 type JSRequest struct {
 	Client      string
@@ -23,7 +19,7 @@ type JSRequest struct {
 	Query       string
 	Hostname    string
 	ContentType string
-	Headers     []JSHeader
+	Headers     string
 	Body        string
 
 	req      *http.Request
@@ -31,15 +27,17 @@ type JSRequest struct {
 	bodyRead bool
 }
 
+var header_regexp = regexp.MustCompile(`(.*?): (.*)`)
+
 func NewJSRequest(req *http.Request) *JSRequest {
-	headers := make([]JSHeader, 0)
+	headers := ""
 	cType := ""
 
 	for name, values := range req.Header {
 		for _, value := range values {
-			headers = append(headers, JSHeader{name, value})
+			headers += name + ": " + value + "\r\n"
 
-			if name == "Content-Type" {
+			if strings.ToLower(name) == "content-type" {
 				cType = value
 			}
 		}
@@ -65,10 +63,7 @@ func NewJSRequest(req *http.Request) *JSRequest {
 }
 
 func (j *JSRequest) NewHash() string {
-	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s.%s", j.Client, j.Method, j.Version, j.Scheme, j.Hostname, j.Path, j.Query, j.ContentType)
-	for _, h := range j.Headers {
-		hash += fmt.Sprintf(".%s-%s", h.Name, h.Value)
-	}
+	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s.%s.%s", j.Client, j.Method, j.Version, j.Scheme, j.Hostname, j.Path, j.Query, j.ContentType, j.Headers)
 	hash += "." + j.Body
 	return hash
 }
@@ -87,31 +82,44 @@ func (j *JSRequest) WasModified() bool {
 }
 
 func (j *JSRequest) GetHeader(name, deflt string) string {
-	name = strings.ToLower(name)
-	for _, h := range j.Headers {
-		if name == strings.ToLower(h.Name) {
-			return h.Value
+	headers := strings.Split(j.Headers, "\r\n")
+	for i := 0; i < len(headers); i++ {
+		header_name := header_regexp.ReplaceAllString(headers[i], "$1")
+		header_value := header_regexp.ReplaceAllString(headers[i], "$2")
+
+		if strings.ToLower(name) == strings.ToLower(header_name) {
+			return header_value
 		}
 	}
 	return deflt
 }
 
 func (j *JSRequest) SetHeader(name, value string) {
-	name = strings.ToLower(name)
-	for i, h := range j.Headers {
-		if name == strings.ToLower(h.Name) {
-			j.Headers[i].Value = value
+	headers := strings.Split(j.Headers, "\r\n")
+	for i := 0; i < len(headers); i++ {
+		header_name := header_regexp.ReplaceAllString(headers[i], "$1")
+		header_value := header_regexp.ReplaceAllString(headers[i], "$2")
+
+		if strings.ToLower(name) == strings.ToLower(header_name) {
+			old_header := header_name + ": " + header_value + "\r\n"
+			new_header := header_name + ": " + value + "\r\n"
+			j.Headers = strings.Replace(j.Headers, old_header, new_header, 1)
 			return
 		}
 	}
-	j.Headers = append(j.Headers, JSHeader{name, value})
+	j.Headers += name + ": " + value + "\r\n"
 }
 
 func (j *JSRequest) RemoveHeader(name string) {
-	name = strings.ToLower(name)
-	for i, h := range j.Headers {
-		if name == strings.ToLower(h.Name) {
-			j.Headers = append(j.Headers[:i], j.Headers[i+1:]...)
+	headers := strings.Split(j.Headers, "\r\n")
+	for i := 0; i < len(headers); i++ {
+		header_name := header_regexp.ReplaceAllString(headers[i], "$1")
+		header_value := header_regexp.ReplaceAllString(headers[i], "$2")
+
+		if strings.ToLower(name) == strings.ToLower(header_name) {
+			removed_header := header_name + ": " + header_value + "\r\n"
+			j.Headers = strings.Replace(j.Headers, removed_header, "", 1)
+			return
 		}
 	}
 }
@@ -162,10 +170,17 @@ func (j *JSRequest) ToRequest() (req *http.Request) {
 	}
 
 	hadType := false
-	for _, h := range j.Headers {
-		req.Header.Set(h.Name, h.Value)
-		if h.Name == "Content-Type" {
-			hadType = true
+
+	headers := strings.Split(j.Headers, "\r\n")
+	for i := 0; i < len(headers); i++ {
+		if headers[i] != "" {
+			header_name := header_regexp.ReplaceAllString(headers[i], "$1")
+			header_value := header_regexp.ReplaceAllString(headers[i], "$2")
+
+			req.Header.Set(header_name, header_value)
+			if strings.ToLower(header_name) == "content-type" {
+				hadType = true
+			}
 		}
 	}
 
