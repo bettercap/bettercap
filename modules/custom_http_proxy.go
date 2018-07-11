@@ -15,8 +15,8 @@ func NewCustomHttpProxy(s *session.Session) *CustomHttpProxy {
 		proxy:         NewCustomProxy(s),
 	}
 
-	p.AddParam(session.NewIntParameter("custom.http.port",
-		"80",
+	p.AddParam(session.NewStringParameter("custom.http.port",
+		"80", session.PortListValidator,
 		"HTTP port to redirect when the proxy is activated."))
 
 	p.AddParam(session.NewStringParameter("custom.http.proxy.address",
@@ -63,7 +63,7 @@ func (p *CustomHttpProxy) Configure() error {
 	var err error
 	var address string
 	var proxyPort int
-	var httpPort int
+	var httpPort []string
 	var stripSSL bool
 
 	if p.Running() {
@@ -72,7 +72,7 @@ func (p *CustomHttpProxy) Configure() error {
 		return err
 	} else if err, proxyPort = p.IntParam("custom.http.proxy.port"); err != nil {
 		return err
-	} else if err, httpPort = p.IntParam("custom.http.port"); err != nil {
+	} else if err, httpPort = p.ListParam("custom.http.port"); err != nil {
 		return err
 	} else if err, stripSSL = p.BoolParam("custom.http.proxy.sslstrip"); err != nil {
 		return err
