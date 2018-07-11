@@ -18,8 +18,8 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		proxy:         NewHTTPProxy(s),
 	}
 
-	p.AddParam(session.NewIntParameter("https.port",
-		"443",
+	p.AddParam(session.NewStringParameter("https.port",
+		"443", session.PortListValidator,
 		"HTTPS port to redirect when the proxy is activated."))
 
 	p.AddParam(session.NewStringParameter("https.proxy.address",
@@ -81,7 +81,7 @@ func (p *HttpsProxy) Configure() error {
 	var err error
 	var address string
 	var proxyPort int
-	var httpPort int
+	var httpsPort []string
 	var scriptPath string
 	var certFile string
 	var keyFile string
@@ -93,7 +93,7 @@ func (p *HttpsProxy) Configure() error {
 		return err
 	} else if err, proxyPort = p.IntParam("https.proxy.port"); err != nil {
 		return err
-	} else if err, httpPort = p.IntParam("https.port"); err != nil {
+	} else if err, httpsPort = p.ListParam("https.port"); err != nil {
 		return err
 	} else if err, stripSSL = p.BoolParam("https.proxy.sslstrip"); err != nil {
 		return err
@@ -120,7 +120,7 @@ func (p *HttpsProxy) Configure() error {
 		log.Info("Loading proxy certification authority TLS certificate from %s", certFile)
 	}
 
-	return p.proxy.ConfigureTLS(address, proxyPort, httpPort, scriptPath, certFile, keyFile, stripSSL)
+	return p.proxy.ConfigureTLS(address, proxyPort, httpsPort, scriptPath, certFile, keyFile, stripSSL)
 }
 
 func (p *HttpsProxy) Start() error {
