@@ -15,8 +15,8 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		proxy:         NewHTTPProxy(s),
 	}
 
-	p.AddParam(session.NewIntParameter("http.port",
-		"80",
+	p.AddParam(session.NewStringParameter("http.port",
+		"80", session.PortListValidator,
 		"HTTP port to redirect when the proxy is activated."))
 
 	p.AddParam(session.NewStringParameter("http.proxy.address",
@@ -68,7 +68,7 @@ func (p *HttpProxy) Configure() error {
 	var err error
 	var address string
 	var proxyPort int
-	var httpPort int
+	var httpPort []string
 	var scriptPath string
 	var stripSSL bool
 
@@ -78,7 +78,7 @@ func (p *HttpProxy) Configure() error {
 		return err
 	} else if err, proxyPort = p.IntParam("http.proxy.port"); err != nil {
 		return err
-	} else if err, httpPort = p.IntParam("http.port"); err != nil {
+	} else if err, httpPort = p.ListParam("http.port"); err != nil {
 		return err
 	} else if err, scriptPath = p.StringParam("http.proxy.script"); err != nil {
 		return err
