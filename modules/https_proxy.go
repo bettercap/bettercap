@@ -19,7 +19,7 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 	}
 
 	p.AddParam(session.NewStringParameter("https.port",
-		"443", session.PortListValidator,
+		"443", session.PortsValidator,
 		"HTTPS port to redirect when the proxy is activated."))
 
 	p.AddParam(session.NewStringParameter("https.proxy.address",
@@ -81,7 +81,7 @@ func (p *HttpsProxy) Configure() error {
 	var err error
 	var address string
 	var proxyPort int
-	var httpsPort []string
+	var httpsPort string
 	var scriptPath string
 	var certFile string
 	var keyFile string
@@ -93,7 +93,7 @@ func (p *HttpsProxy) Configure() error {
 		return err
 	} else if err, proxyPort = p.IntParam("https.proxy.port"); err != nil {
 		return err
-	} else if err, httpsPort = p.ListParam("https.port"); err != nil {
+	} else if err, httpsPort = p.StringParam("https.port"); err != nil {
 		return err
 	} else if err, stripSSL = p.BoolParam("https.proxy.sslstrip"); err != nil {
 		return err

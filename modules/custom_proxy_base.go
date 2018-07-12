@@ -8,7 +8,6 @@ import (
 	"strings"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/core"
-	"strconv"
 )
 
 type CustomProxy struct {
@@ -61,7 +60,7 @@ func (p *CustomProxy) stripPort(s string) string {
 	return s[:ix]
 }
 
-func (p *CustomProxy) Configure(proxyAddress string, proxyPort int, srcPort []string, stripSSL bool) error {
+func (p *CustomProxy) Configure(proxyAddress string, proxyPort int, srcPort string, stripSSL bool) error {
 
 	p.stripper.Enable(stripSSL)
 	p.Address = proxyAddress
@@ -71,20 +70,16 @@ func (p *CustomProxy) Configure(proxyAddress string, proxyPort int, srcPort []st
 		p.sess.Firewall.EnableForwarding(true)
 	}
 
-	for _,v := range srcPort {
+	p.Redirection = firewall.NewRedirection(p.sess.Interface.Name(),
+		"TCP",
+		srcPort,
+		p.Address,
+		proxyPort)
 
-		port, _ := strconv.Atoi(v)
-		p.Redirection = firewall.NewRedirection(p.sess.Interface.Name(),
-			"TCP",
-			port,
-			p.Address,
-			proxyPort)
-
-		if err := p.sess.Firewall.EnableRedirection(p.Redirection, true); err != nil {
-			return err
-		}
-		log.Debug("Applied redirection %s", p.Redirection.String())
+	if err := p.sess.Firewall.EnableRedirection(p.Redirection, true); err != nil {
+		return err
 	}
+	log.Debug("Applied redirection %s", p.Redirection.String())
 
 
 	return nil
