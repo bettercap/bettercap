@@ -24,6 +24,7 @@ import (
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/adrianmo/go-nmea"
+	"io/ioutil"
 )
 
 const HistoryFile = "~/bettercap.history"
@@ -212,6 +213,15 @@ func (s *Session) setupReadline() error {
 		}
 	}
 
+	searchForCap("./", tree, false)
+	searchForCap("./caplets/", tree, true)
+	capspath := core.Trim(os.Getenv("CAPSPATH"))
+	var paths []string
+	paths = append(paths, core.SepSplit(capspath, ":")...)
+	for _, path := range paths {
+		searchForCap(path, tree, false)
+	}
+
 	for root, subElems := range tree {
 		item := readline.PcItem(root)
 		item.Children = []readline.PrefixCompleterInterface{}
@@ -237,6 +247,23 @@ func (s *Session) setupReadline() error {
 
 	s.Input, err = readline.NewEx(&cfg)
 	return err
+}
+
+func searchForCap(path string, tree map[string][]string, recursive bool) {
+	_searchForCap(path, tree, recursive, path)
+}
+
+func _searchForCap(path string, tree map[string][]string, recursive bool, prefix string) {
+	subFiles, _ := ioutil.ReadDir(path)
+
+	for _, subF := range subFiles {
+		if strings.HasSuffix(subF.Name(), ".cap") {
+			fmt.Println(path + strings.Replace(subF.Name(), ".cap", "", -1))
+			tree[strings.TrimPrefix(path, prefix)+strings.Replace(subF.Name(), ".cap", "", -1)] = []string{}
+		} else if subF.IsDir() && recursive {
+			_searchForCap(path+subF.Name()+"/", tree, true, prefix)
+		}
+	}
 }
 
 func containsCapitals(s string) bool {
