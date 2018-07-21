@@ -258,7 +258,6 @@ func _searchForCap(path string, tree map[string][]string, recursive bool, prefix
 
 	for _, subF := range subFiles {
 		if strings.HasSuffix(subF.Name(), ".cap") {
-			fmt.Println(path + strings.Replace(subF.Name(), ".cap", "", -1))
 			tree[strings.TrimPrefix(path, prefix)+strings.Replace(subF.Name(), ".cap", "", -1)] = []string{}
 		} else if subF.IsDir() && recursive {
 			_searchForCap(path+subF.Name()+"/", tree, true, prefix)
