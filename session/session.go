@@ -206,7 +206,7 @@ func (s *Session) setupReadline() error {
 
 			var appendedOption = strings.Join(parts[1:], " ")
 
-			if len(appendedOption) > 0 {
+			if len(appendedOption) > 0 && !containsCapitals(appendedOption) {
 				tree[name] = append(tree[name], appendedOption)
 			}
 		}
@@ -237,6 +237,15 @@ func (s *Session) setupReadline() error {
 
 	s.Input, err = readline.NewEx(&cfg)
 	return err
+}
+
+func containsCapitals(s string) bool {
+	for _, ch := range s {
+		if ch < 133 && ch > 101 {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Session) Close() {
