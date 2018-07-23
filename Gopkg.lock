@@ -2,12 +2,15 @@
 
 
 [[projects]]
+  digest = "1:fa526d5f6ec66a1833c687768639251d6db3bc3b7f32abd0265ae9625a9233de"
   name = "github.com/adrianmo/go-nmea"
   packages = ["."]
+  pruneopts = "UT"
   revision = "22095aa1b48050243d3eb9a001ca80eb91a0c6fa"
 
 [[projects]]
   branch = "master"
+  digest = "1:6cd4d9bc1e78392036da7cc4fb1fbd65c10b5807d74aaee5fa5e025b441ff6d2"
   name = "github.com/bettercap/gatt"
   packages = [
     ".",
@@ -17,36 +20,46 @@
     "linux/gioctl",
     "linux/socket",
     "linux/util",
-    "xpc"
+    "xpc",
   ]
+  pruneopts = "UT"
   revision = "66e7446993acb3de936b3f487e5933522ed16923"
 
 [[projects]]
+  digest = "1:b95738a1e6ace058b5b8544303c0871fc01d224ef0d672f778f696265d0f2917"
   name = "github.com/bettercap/readline"
   packages = ["."]
+  pruneopts = "UT"
   revision = "62c6fe6193755f722b8b8788aa7357be55a50ff1"
   version = "v1.4"
 
 [[projects]]
   branch = "master"
+  digest = "1:8efd09ca363b01b7dca5baf091d65473df5f08f107b7c3fcd93c605189e031ed"
   name = "github.com/chifflier/nfqueue-go"
   packages = ["nfqueue"]
+  pruneopts = "UT"
   revision = "61ca646babef3bd4dea1deb610bfb0005c0a1298"
 
 [[projects]]
   branch = "master"
+  digest = "1:6f9339c912bbdda81302633ad7e99a28dfa5a639c864061f1929510a9a64aa74"
   name = "github.com/dustin/go-humanize"
   packages = ["."]
+  pruneopts = "UT"
   revision = "02af3965c54e8cacf948b97fef38925c4120652c"
 
 [[projects]]
   branch = "master"
+  digest = "1:744c8fceaf0e0384d75e2371debd4eda76b1404768328d03a184f1d08be5a60f"
   name = "github.com/elazarl/goproxy"
   packages = ["."]
+  pruneopts = "UT"
   revision = "a96fa3a318260eab29abaf32f7128c9eb07fb073"
 
 [[projects]]
   branch = "master"
+  digest = "1:28e398bb752cd0367439a86d3a7cebfa008c9143d154dd5516397a790a2901e1"
   name = "github.com/gobwas/glob"
   packages = [
     ".",
@@ -56,111 +69,143 @@
     "syntax/ast",
     "syntax/lexer",
     "util/runes",
-    "util/strings"
+    "util/strings",
   ]
+  pruneopts = "UT"
   revision = "f00a7392b43971b2fdb562418faab1f18da2067a"
 
 [[projects]]
+  digest = "1:51bee9f1987dcdb9f9a1b4c20745d78f6bf6f5f14ad4e64ca883eb64df4c0045"
   name = "github.com/google/go-github"
   packages = ["github"]
+  pruneopts = "UT"
   revision = "e48060a28fac52d0f1cb758bc8b87c07bac4a87d"
   version = "v15.0.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:a63cff6b5d8b95638bfe300385d93b2a6d9d687734b863da8e09dc834510a690"
   name = "github.com/google/go-querystring"
   packages = ["query"]
+  pruneopts = "UT"
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
+  digest = "1:22cffca7cf16314eb3cb0c5d2298f7b2f60266d8da172cbae258cdfcc169c1ad"
   name = "github.com/google/gopacket"
   packages = [
     ".",
     "layers",
     "pcap",
-    "pcapgo"
+    "pcapgo",
   ]
+  pruneopts = "UT"
   revision = "11c65f1ca9081dfea43b4f9643f5c155583b73ba"
   version = "v1.1.14"
 
 [[projects]]
+  digest = "1:160eabf7a69910fd74f29c692718bc2437c1c1c7d4c9dea9712357752a70e5df"
   name = "github.com/gorilla/context"
   packages = ["."]
+  pruneopts = "UT"
   revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
   version = "v1.1"
 
 [[projects]]
+  digest = "1:88aa9e326e2bd6045a46e00a922954b3e1a9ac5787109f49ac85366df370e1e5"
   name = "github.com/gorilla/mux"
   packages = ["."]
+  pruneopts = "UT"
   revision = "53c1911da2b537f792e7cafcb446b05ffe33b996"
   version = "v1.6.1"
 
 [[projects]]
+  digest = "1:43dd08a10854b2056e615d1b1d22ac94559d822e1f8b6fcc92c1a1057e85188e"
   name = "github.com/gorilla/websocket"
   packages = ["."]
+  pruneopts = "UT"
   revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
   version = "v1.2.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:6480de9b8abc75bfb06947e139aa07429dfed37f95a258e90865c4c84a9e188b"
   name = "github.com/inconshreveable/go-vhost"
   packages = ["."]
+  pruneopts = "UT"
   revision = "06d84117953b22058c096b49a429ebd4f3d3d97b"
 
 [[projects]]
   branch = "master"
+  digest = "1:031558139b6ee2fb7c1bb9f14bc9f394c9ab94c1722897292622d20d5039b246"
   name = "github.com/jpillora/go-tld"
   packages = ["."]
+  pruneopts = "UT"
   revision = "a31ae10e978ab5f352c5dad2cfbd60546dcea75f"
 
 [[projects]]
+  digest = "1:4701b2acabe16722ecb1e387d39741a29269386bfc4ba6283ecda362d289eff1"
   name = "github.com/malfunkt/iprange"
   packages = ["."]
+  pruneopts = "UT"
   revision = "3a31f5ed42d2d8a1fc46f1be91fd693bdef2dd52"
   version = "v0.9.0"
 
 [[projects]]
+  digest = "1:c658e84ad3916da105a761660dcaeb01e63416c8ec7bc62256a9b411a05fcd67"
   name = "github.com/mattn/go-colorable"
   packages = ["."]
+  pruneopts = "UT"
   revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
   version = "v0.0.9"
 
 [[projects]]
+  digest = "1:d4d17353dbd05cb52a2a52b7fe1771883b682806f68db442b436294926bbfafb"
   name = "github.com/mattn/go-isatty"
   packages = ["."]
+  pruneopts = "UT"
   revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
   version = "v0.0.3"
 
 [[projects]]
   branch = "master"
+  digest = "1:0320f2921b55f500278fec7d7fe4454e401b9074ef1a88597c3359bc66144a6e"
   name = "github.com/mdlayher/dhcp6"
   packages = [
     ".",
     "dhcp6opts",
-    "internal/buffer"
+    "internal/buffer",
   ]
+  pruneopts = "UT"
   revision = "e26af0688e455a82b14ebdbecf43f87ead3c4624"
 
 [[projects]]
   branch = "master"
+  digest = "1:2b32af4d2a529083275afc192d1067d8126b578c7a9613b26600e4df9c735155"
   name = "github.com/mgutz/ansi"
   packages = ["."]
+  pruneopts = "UT"
   revision = "9520e82c474b0a04dd04f8a40959027271bab992"
 
 [[projects]]
+  digest = "1:17bc403348b60bd01bfd2e507fcb23463e76f4b1f433d50b0872b8219df1250d"
   name = "github.com/mgutz/logxi"
   packages = ["v1"]
+  pruneopts = "UT"
   revision = "aebf8a7d67ab4625e0fd4a665766fef9a709161b"
   version = "v1"
 
 [[projects]]
+  digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
   name = "github.com/pkg/errors"
   packages = ["."]
+  pruneopts = "UT"
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:f4877c1ea67bb492d1b91125bb7f45604736bfbd2ffcbfb9eb44055607525fc3"
   name = "github.com/robertkrimen/otto"
   packages = [
     ".",
@@ -169,34 +214,64 @@
     "file",
     "parser",
     "registry",
-    "token"
+    "token",
   ]
+  pruneopts = "UT"
   revision = "03d472dc43abece8691e609a23d295ab732abba6"
 
 [[projects]]
   branch = "master"
+  digest = "1:b9b666a56e920eaa59ffea0d25a9b848d7073be13689c4a29d04e4a0f548a031"
   name = "github.com/tarm/serial"
   packages = ["."]
+  pruneopts = "UT"
   revision = "eaafced92e9619f03c72527efeab21e326f3bc36"
 
 [[projects]]
   branch = "master"
+  digest = "1:32f55762862902f08c5d28ed59fbe86cd0c38b088473ed072807467ebadc3f15"
   name = "golang.org/x/sys"
   packages = ["unix"]
+  pruneopts = "UT"
   revision = "d0faeb539838e250bd0a9db4182d48d4a1915181"
 
 [[projects]]
+  digest = "1:68d74b9fe9594646dc411e68b85b73b70d861b710570a99e0b2803b5844646b5"
   name = "gopkg.in/sourcemap.v1"
   packages = [
     ".",
-    "base64vlq"
+    "base64vlq",
   ]
+  pruneopts = "UT"
   revision = "6e83acea0053641eff084973fee085f0c193c61a"
   version = "v1.0.5"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2b0f222c61ea5761232c564da1ab8bd87de5daf61b4ba4ebc89e8f0965a89f95"
+  input-imports = [
+    "github.com/adrianmo/go-nmea",
+    "github.com/bettercap/gatt",
+    "github.com/bettercap/readline",
+    "github.com/chifflier/nfqueue-go/nfqueue",
+    "github.com/dustin/go-humanize",
+    "github.com/elazarl/goproxy",
+    "github.com/gobwas/glob",
+    "github.com/google/go-github/github",
+    "github.com/google/gopacket",
+    "github.com/google/gopacket/layers",
+    "github.com/google/gopacket/pcap",
+    "github.com/google/gopacket/pcapgo",
+    "github.com/gorilla/mux",
+    "github.com/gorilla/websocket",
+    "github.com/inconshreveable/go-vhost",
+    "github.com/jpillora/go-tld",
+    "github.com/malfunkt/iprange",
+    "github.com/mattn/go-isatty",
+    "github.com/mdlayher/dhcp6",
+    "github.com/mdlayher/dhcp6/dhcp6opts",
+    "github.com/robertkrimen/otto",
+    "github.com/tarm/serial",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
