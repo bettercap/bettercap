@@ -140,13 +140,17 @@ func (t *Endpoint) IsMonitor() bool {
 }
 
 func (t *Endpoint) String() string {
+	ipPart := fmt.Sprintf("%s : ", t.IpAddress)
+	if t.IpAddress == MonitorModeAddress {
+		ipPart = ""
+	}
+
 	if t.HwAddress == "" {
 		return t.IpAddress
 	} else if t.Vendor == "" {
-		return fmt.Sprintf("%s : %s", t.IpAddress, t.HwAddress)
+		return fmt.Sprintf("%s%s", ipPart, t.HwAddress)
 	} else if t.Hostname == "" {
-		return fmt.Sprintf("%s : %s ( %s )", t.IpAddress, t.HwAddress, t.Vendor)
+		return fmt.Sprintf("%s%s ( %s )", ipPart, t.HwAddress, t.Vendor)
 	}
-
-	return fmt.Sprintf("%s : %s ( %s ) - %s", t.IpAddress, t.HwAddress, t.Vendor, core.Bold(t.Hostname))
+	return fmt.Sprintf("%s%s ( %s ) - %s", ipPart, t.HwAddress, t.Vendor, core.Bold(t.Hostname))
 }
