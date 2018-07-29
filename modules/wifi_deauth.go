@@ -54,17 +54,16 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 
 	// deauth all the things!
 	if network.IsBroadcastMac(to) {
-		log.Info("Initiating broadcast deauth attack ...")
 		aps := w.Session.WiFi.List()
 		for _, ap := range aps {
 			clients := ap.Clients()
 			if numClients := len(clients); numClients > 0 {
-				log.Info("Deauthing %d clients from AP %s ...", numClients, ap.ESSID())
 				w.onChannel(network.Dot11Freq2Chan(ap.Frequency), func() {
 					for _, c := range clients {
 						if !w.Running() {
 							break
 						}
+						log.Info("Broadcast deauth client %s from AP %s ...", c.String(), ap.ESSID())
 						w.sendDeauthPacket(ap.HW, c.HW)
 					}
 				})

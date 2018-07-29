@@ -10,7 +10,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6cd4d9bc1e78392036da7cc4fb1fbd65c10b5807d74aaee5fa5e025b441ff6d2"
+  digest = "1:d8ad15f83381fd0e1f6b75c55a3fa3c7070628dbf120a96725183d30dbb0cec9"
   name = "github.com/bettercap/gatt"
   packages = [
     ".",
@@ -59,7 +59,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:28e398bb752cd0367439a86d3a7cebfa008c9143d154dd5516397a790a2901e1"
+  digest = "1:911bcb1598df4c960dd9e0a62443d2ac3fa33111ef691937af3bd1ed7ecdebdd"
   name = "github.com/gobwas/glob"
   packages = [
     ".",
@@ -91,7 +91,7 @@
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
-  digest = "1:22cffca7cf16314eb3cb0c5d2298f7b2f60266d8da172cbae258cdfcc169c1ad"
+  digest = "1:a1b2a09d080e0229db471efc7f030b6d3931cd54989f6a1a4d676e085139cc2d"
   name = "github.com/google/gopacket"
   packages = [
     ".",
@@ -169,7 +169,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0320f2921b55f500278fec7d7fe4454e401b9074ef1a88597c3359bc66144a6e"
+  digest = "1:a55df695568f48d84d2b5c3d250871bb9f74d9950c201190b6615a4f94727e3c"
   name = "github.com/mdlayher/dhcp6"
   packages = [
     ".",
@@ -205,7 +205,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f4877c1ea67bb492d1b91125bb7f45604736bfbd2ffcbfb9eb44055607525fc3"
+  digest = "1:dbfe572cc258e5bcf54cb650a06d90edd0da04e42ca1ed909cc1d49f00011c63"
   name = "github.com/robertkrimen/otto"
   packages = [
     ".",
@@ -236,7 +236,7 @@
   revision = "d0faeb539838e250bd0a9db4182d48d4a1915181"
 
 [[projects]]
-  digest = "1:68d74b9fe9594646dc411e68b85b73b70d861b710570a99e0b2803b5844646b5"
+  digest = "1:9935525a8c49b8434a0b0a54e1980e94a6fae73aaff45c5d33ba8dff69de123e"
   name = "gopkg.in/sourcemap.v1"
   packages = [
     ".",
