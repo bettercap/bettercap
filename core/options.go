@@ -19,7 +19,7 @@ type Options struct {
 func ParseOptions() (Options, error) {
 	o := Options{
 		InterfaceName: flag.String("iface", "", "Network interface to bind to, if empty the default interface will be auto selected."),
-		AutoStart:     flag.String("autostart", "events.stream, net.recon, update.check", "Comma separated list of modules to auto start."),
+		AutoStart:     flag.String("autostart", "events.stream, net.recon", "Comma separated list of modules to auto start."),
 		Caplet:        flag.String("caplet", "", "Read commands from this file and execute them in the interactive session."),
 		Debug:         flag.Bool("debug", false, "Print debug messages."),
 		Silent:        flag.Bool("silent", false, "Suppress all logs which are not errors."),
