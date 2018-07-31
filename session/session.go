@@ -531,6 +531,7 @@ func (s *Session) isCapletCommand(line string) (is bool, filename string, argv [
 	paths := []string{
 		"./",
 		"./caplets/",
+		"/usr/share/bettercap/caplets/",
 	}
 
 	capspath := core.Trim(os.Getenv("CAPSPATH"))
