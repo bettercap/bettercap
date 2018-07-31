@@ -2,11 +2,12 @@
 
 
 [[projects]]
-  digest = "1:fa526d5f6ec66a1833c687768639251d6db3bc3b7f32abd0265ae9625a9233de"
+  digest = "1:4132a4623657c2ba93a7cf83dccc6869b3e3bb91dc2afefa7c7032e10ceeaa12"
   name = "github.com/adrianmo/go-nmea"
   packages = ["."]
   pruneopts = "UT"
-  revision = "22095aa1b48050243d3eb9a001ca80eb91a0c6fa"
+  revision = "a32116e4989e2b0e17c057ee378b4d5246add74e"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"

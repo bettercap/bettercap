@@ -16,43 +16,35 @@ const (
 	ChecksumSep = "*"
 )
 
-// Message interface for all NMEA sentence
-type Message interface {
+// Sentence interface for all NMEA sentence
+type Sentence interface {
 	fmt.Stringer
-	Sentence() Sent
 	Prefix() string
-	Validate() error
 }
 
-// Sent contains the information about the NMEA sentence
-type Sent struct {
+// BaseSentence contains the information about the NMEA sentence
+type BaseSentence struct {
 	Type     string   // The sentence type (e.g $GPGSA)
 	Fields   []string // Array of fields
 	Checksum string   // The Checksum
 	Raw      string   // The raw NMEA sentence received
 }
 
-// Sentence returns the Messages Sent
-func (s Sent) Sentence() Sent { return s }
-
 // Prefix returns the type of the message
-func (s Sent) Prefix() string { return s.Type }
+func (s BaseSentence) Prefix() string { return s.Type }
 
 // String formats the sentence into a string
-func (s Sent) String() string { return s.Raw }
+func (s BaseSentence) String() string { return s.Raw }
 
-// Validate returns an error if the sentence is not valid
-func (s Sent) Validate() error { return nil }
-
-// ParseSentence parses a raw message into it's fields
-func ParseSentence(raw string) (Sent, error) {
+// parseSentence parses a raw message into it's fields
+func parseSentence(raw string) (BaseSentence, error) {
 	startIndex := strings.Index(raw, SentenceStart)
 	if startIndex != 0 {
-		return Sent{}, fmt.Errorf("nmea: sentence does not start with a '$'")
+		return BaseSentence{}, fmt.Errorf("nmea: sentence does not start with a '$'")
 	}
 	sumSepIndex := strings.Index(raw, ChecksumSep)
 	if sumSepIndex == -1 {
-		return Sent{}, fmt.Errorf("nmea: sentence does not contain checksum separator")
+		return BaseSentence{}, fmt.Errorf("nmea: sentence does not contain checksum separator")
 	}
 	var (
 		fieldsRaw   = raw[startIndex+1 : sumSepIndex]
@@ -62,10 +54,10 @@ func ParseSentence(raw string) (Sent, error) {
 	)
 	// Validate the checksum
 	if checksum != checksumRaw {
-		return Sent{}, fmt.Errorf(
+		return BaseSentence{}, fmt.Errorf(
 			"nmea: sentence checksum mismatch [%s != %s]", checksum, checksumRaw)
 	}
-	return Sent{
+	return BaseSentence{
 		Type:     fields[0],
 		Fields:   fields[1:],
 		Checksum: checksumRaw,
@@ -84,34 +76,36 @@ func xorChecksum(s string) string {
 }
 
 // Parse parses the given string into the correct sentence type.
-func Parse(raw string) (Message, error) {
-	s, err := ParseSentence(raw)
+func Parse(raw string) (Sentence, error) {
+	s, err := parseSentence(raw)
 	if err != nil {
 		return nil, err
 	}
 	switch s.Type {
 	case PrefixGPRMC:
-		return NewGPRMC(s)
+		return newGPRMC(s)
 	case PrefixGNRMC:
-		return NewGNRMC(s)
+		return newGNRMC(s)
 	case PrefixGPGGA:
-		return NewGPGGA(s)
+		return newGPGGA(s)
 	case PrefixGNGGA:
-		return NewGNGGA(s)
+		return newGNGGA(s)
 	case PrefixGPGSA:
-		return NewGPGSA(s)
+		return newGPGSA(s)
 	case PrefixGPGLL:
-		return NewGPGLL(s)
+		return newGPGLL(s)
 	case PrefixGPVTG:
-		return NewGPVTG(s)
+		return newGPVTG(s)
 	case PrefixGPZDA:
-		return NewGPZDA(s)
+		return newGPZDA(s)
 	case PrefixPGRME:
-		return NewPGRME(s)
+		return newPGRME(s)
 	case PrefixGPGSV:
-		return NewGPGSV(s)
+		return newGPGSV(s)
 	case PrefixGLGSV:
-		return NewGLGSV(s)
+		return newGLGSV(s)
+	case PrefixGPHDT:
+		return newGPHDT(s)
 	default:
 		return nil, fmt.Errorf("nmea: sentence type '%s' not implemented", s.Type)
 	}

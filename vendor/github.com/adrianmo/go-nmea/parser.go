@@ -8,21 +8,21 @@ import (
 // parser provides a simple way of accessing and parsing
 // sentence fields
 type parser struct {
-	Sent
+	BaseSentence
 	prefix string
 	err    error
 }
 
 // newParser constructor
-func newParser(s Sent, prefix string) *parser {
-	p := &parser{Sent: s, prefix: prefix}
+func newParser(s BaseSentence, prefix string) *parser {
+	p := &parser{BaseSentence: s, prefix: prefix}
 	if p.Type != prefix {
 		p.SetErr("prefix", p.Type)
 	}
 	return p
 }
 
-// Err returns the first error encounterd during the parser's usage.
+// Err returns the first error encountered during the parser's usage.
 func (p *parser) Err() error {
 	return p.err
 }
@@ -48,10 +48,10 @@ func (p *parser) String(i int, context string) string {
 }
 
 // EnumString returns the field value at the specified index.
-// An error occurs if the value is not one of the options.
+// An error occurs if the value is not one of the options and not empty.
 func (p *parser) EnumString(i int, context string, options ...string) string {
 	s := p.String(i, context)
-	if p.err != nil {
+	if p.err != nil || s == "" {
 		return ""
 	}
 	for _, o := range options {
@@ -64,7 +64,7 @@ func (p *parser) EnumString(i int, context string, options ...string) string {
 }
 
 // Int64 returns the int64 value at the specified index.
-// If the value is an emtpy string, 0 is returned.
+// If the value is an empty string, 0 is returned.
 func (p *parser) Int64(i int, context string) int64 {
 	s := p.String(i, context)
 	if p.err != nil {
@@ -126,7 +126,7 @@ func (p *parser) Date(i int, context string) Date {
 }
 
 // LatLong returns the coordinate value of the specified fields.
-func (p *parser) LatLong(i, j int, context string) LatLong {
+func (p *parser) LatLong(i, j int, context string) float64 {
 	a := p.String(i, context)
 	b := p.String(j, context)
 	if p.err != nil {

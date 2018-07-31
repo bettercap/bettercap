@@ -8,7 +8,7 @@ const (
 // GPGSV represents the GPS Satellites in view
 // http://aprs.gids.nl/nmea/#gpgsv
 type GPGSV struct {
-	Sent
+	BaseSentence
 	TotalMessages   int64       // Total number of messages of this type in this cycle
 	MessageNumber   int64       // Message number
 	NumberSVsInView int64       // Total number of SVs in view
@@ -23,11 +23,11 @@ type GPGSVInfo struct {
 	SNR         int64 // SNR, 00-99 dB (null when not tracking)
 }
 
-// NewGPGSV constructor
-func NewGPGSV(s Sent) (GPGSV, error) {
+// newGPGSV constructor
+func newGPGSV(s BaseSentence) (GPGSV, error) {
 	p := newParser(s, PrefixGPGSV)
 	m := GPGSV{
-		Sent:            s,
+		BaseSentence:    s,
 		TotalMessages:   p.Int64(0, "total number of messages"),
 		MessageNumber:   p.Int64(1, "message number"),
 		NumberSVsInView: p.Int64(2, "number of SVs in view"),

@@ -27,6 +27,7 @@ At this moment, this library supports the following sentence types:
 - [GPVTG](http://aprs.gids.nl/nmea/#vtg) - Track Made Good and Ground Speed
 - [GPZDA](http://aprs.gids.nl/nmea/#zda) - Date & time data
 - [PGRME](http://aprs.gids.nl/nmea/#rme) - Estimated Position Error (Garmin proprietary sentence)
+- [GPHDT](http://aprs.gids.nl/nmea/#hdt) - Actual vessel heading in degrees True
 
 
 ## Example
@@ -35,16 +36,48 @@ At this moment, this library supports the following sentence types:
 package main
 
 import (
-  "fmt"
-  "github.com/adrianmo/go-nmea"
+	"fmt"
+	"log"
+	"github.com/adrianmo/go-nmea"
 )
 
 func main() {
-  m, err := nmea.Parse("$GPRMC,220516,A,5133.82,N,00042.24,W,173.8,231.8,130694,004.2,W*70")
-  if err == nil {
-    fmt.Printf("%+v\n", m)
-  }
+	sentence := "$GPRMC,220516,A,5133.82,N,00042.24,W,173.8,231.8,130694,004.2,W*70"
+	s, err := nmea.Parse(sentence)
+	if err != nil {
+		log.Fatal(err)
+	}
+	m := s.(nmea.GPRMC)
+	fmt.Printf("Raw sentence: %v\n", m)
+	fmt.Printf("Time: %s\n", m.Time)
+	fmt.Printf("Validity: %s\n", m.Validity)
+	fmt.Printf("Latitude GPS: %s\n", nmea.FormatGPS(m.Latitude))
+	fmt.Printf("Latitude DMS: %s\n", nmea.FormatDMS(m.Latitude))
+	fmt.Printf("Longitude GPS: %s\n", nmea.FormatGPS(m.Longitude))
+	fmt.Printf("Longitude DMS: %s\n", nmea.FormatDMS(m.Longitude))
+	fmt.Printf("Speed: %f\n", m.Speed)
+	fmt.Printf("Course: %f\n", m.Course)
+	fmt.Printf("Date: %s\n", m.Date)
+	fmt.Printf("Variation: %f\n", m.Variation)
 }
+```
+
+Output:
+
+```
+$ go run main/main.go
+
+Raw sentence: $GPRMC,220516,A,5133.82,N,00042.24,W,173.8,231.8,130694,004.2,W*70
+Time: 22:05:16.0000
+Validity: A
+Latitude GPS: 5133.8200
+Latitude DMS: 51° 33' 49.200000"
+Longitude GPS: 042.2400
+Longitude DMS: 0° 42' 14.400000"
+Speed: 173.800000
+Course: 231.800000
+Date: 13/06/94
+Variation: -4.200000
 ```
 
 ## Contributions

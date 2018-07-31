@@ -8,19 +8,19 @@ const (
 // GPVTG represents track & speed data.
 // http://aprs.gids.nl/nmea/#vtg
 type GPVTG struct {
-	Sent
+	BaseSentence
 	TrueTrack        float64
 	MagneticTrack    float64
 	GroundSpeedKnots float64
 	GroundSpeedKPH   float64
 }
 
-// NewGPVTG parses the GPVTG sentence into this struct.
+// newGPVTG parses the GPVTG sentence into this struct.
 // e.g: $GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43
-func NewGPVTG(s Sent) (GPVTG, error) {
+func newGPVTG(s BaseSentence) (GPVTG, error) {
 	p := newParser(s, PrefixGPVTG)
 	return GPVTG{
-		Sent:             s,
+		BaseSentence:     s,
 		TrueTrack:        p.Float64(0, "true track"),
 		MagneticTrack:    p.Float64(2, "magnetic track"),
 		GroundSpeedKnots: p.Float64(4, "ground speed (knots)"),
