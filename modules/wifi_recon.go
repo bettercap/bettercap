@@ -29,11 +29,21 @@ func (w *WiFiModule) stationPruner() {
 
 	log.Debug("WiFi stations pruner started.")
 	for w.Running() {
-		for _, s := range w.Session.WiFi.List() {
-			sinceLastSeen := time.Since(s.LastSeen)
+		// loop every AP
+		for _, ap := range w.Session.WiFi.List() {
+			sinceLastSeen := time.Since(ap.LastSeen)
 			if sinceLastSeen > maxStationTTL {
-				log.Debug("Station %s not seen in %s, removing.", s.BSSID(), sinceLastSeen)
-				w.Session.WiFi.Remove(s.BSSID())
+				log.Debug("Station %s not seen in %s, removing.", ap.BSSID(), sinceLastSeen)
+				w.Session.WiFi.Remove(ap.BSSID())
+				continue
+			}
+			// loop every AP client
+			for _, c := range ap.Clients() {
+				sinceLastSeen := time.Since(c.LastSeen)
+				if sinceLastSeen > maxStationTTL {
+					log.Debug("Client %s of station %s not seen in %s, removing.", c.String(), ap.BSSID(), sinceLastSeen)
+					ap.RemoveClient(c.BSSID())
+				}
 			}
 		}
 		time.Sleep(1 * time.Second)

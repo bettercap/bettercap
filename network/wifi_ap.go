@@ -49,6 +49,16 @@ func (ap *AccessPoint) Get(bssid string) (*Station, bool) {
 	return nil, false
 }
 
+func (ap *AccessPoint) RemoveClient(mac string) {
+	ap.Lock()
+	defer ap.Unlock()
+
+	bssid := NormalizeMac(mac)
+	if _, found := ap.clients[bssid]; found {
+		delete(ap.clients, bssid)
+	}
+}
+
 func (ap *AccessPoint) AddClient(bssid string, frequency int, rssi int8) *Station {
 	ap.Lock()
 	defer ap.Unlock()
