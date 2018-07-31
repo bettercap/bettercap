@@ -215,6 +215,8 @@ func (s *Session) setupReadline() error {
 
 	searchForCap("./", tree, false)
 	searchForCap("./caplets/", tree, true)
+	searchForCap("/usr/share/bettercap/caplets/", tree, true)
+
 	capspath := core.Trim(os.Getenv("CAPSPATH"))
 	var paths []string
 	paths = append(paths, core.SepSplit(capspath, ":")...)
