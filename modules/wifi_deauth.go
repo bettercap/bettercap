@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"time"
@@ -52,59 +53,28 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	w.writes.Add(1)
 	defer w.writes.Done()
 
-	// deauth all the things!
-	if network.IsBroadcastMac(to) {
-		aps := w.Session.WiFi.List()
-		for _, ap := range aps {
-			clients := ap.Clients()
-			if numClients := len(clients); numClients > 0 {
-				w.onChannel(network.Dot11Freq2Chan(ap.Frequency), func() {
-					for _, c := range clients {
-						if !w.Running() {
-							break
-						}
-						log.Info("Broadcast deauth client %s from AP %s ...", c.String(), ap.ESSID())
-						w.sendDeauthPacket(ap.HW, c.HW)
-					}
-				})
+	isBcast := network.IsBroadcastMac(to)
+	found := isBcast
+	for _, ap := range w.Session.WiFi.List() {
+		for _, client := range ap.Clients() {
+			doDeauth := isBcast ||
+				bytes.Equal(ap.HW, to) ||
+				bytes.Equal(client.HW, to)
 
-			}
-		}
-
-		return nil
-	}
-
-	bssid := to.String()
-
-	// are we deauthing every client of a given access point?
-	if ap, found := w.Session.WiFi.Get(bssid); found {
-		clients := ap.Clients()
-		log.Info("Deauthing %d clients from AP %s ...", len(clients), ap.ESSID())
-		w.onChannel(network.Dot11Freq2Chan(ap.Frequency), func() {
-			for _, c := range clients {
-				if !w.Running() {
-					break
+			if doDeauth {
+				found = true
+				if w.Running() {
+					log.Info("Deauthing client %s from AP %s ...", client.String(), ap.ESSID())
+					w.onChannel(network.Dot11Freq2Chan(ap.Frequency), func() {
+						w.sendDeauthPacket(ap.HW, client.HW)
+					})
 				}
-				w.sendDeauthPacket(ap.HW, c.HW)
 			}
-		})
-
-		return nil
-	}
-
-	// search for a client
-	aps := w.Session.WiFi.List()
-	for _, ap := range aps {
-		if !w.Running() {
-			break
-		} else if c, found := ap.Get(bssid); found {
-			log.Info("Deauthing client %s from AP %s ...", c.HwAddress, ap.ESSID())
-			w.onChannel(network.Dot11Freq2Chan(ap.Frequency), func() {
-				w.sendDeauthPacket(ap.HW, c.HW)
-			})
-			return nil
 		}
 	}
 
-	return fmt.Errorf("%s is an unknown BSSID.", bssid)
+	if found {
+		return nil
+	}
+	return fmt.Errorf("%s is an unknown BSSID.", to.String())
 }
