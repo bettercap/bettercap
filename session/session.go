@@ -27,7 +27,9 @@ import (
 	"io/ioutil"
 )
 
-const HistoryFile = "~/bettercap.history"
+const (
+	HistoryFile = "~/bettercap.history"
+)
 
 var (
 	I = (*Session)(nil)
@@ -38,6 +40,11 @@ var (
 
 	reCmdSpaceCleaner = regexp.MustCompile(`^([^\s]+)\s+(.+)$`)
 	reEnvVarCapture   = regexp.MustCompile(`{env\.([^}]+)}`)
+
+	CapPaths = []string{
+		"./caplets/",
+		"/usr/share/bettercap/caplets/",
+	}
 )
 
 type UnknownCommandCallback func(cmd string) bool
@@ -213,15 +220,14 @@ func (s *Session) setupReadline() error {
 		}
 	}
 
-	searchForCap("./", tree, false)
-	searchForCap("./caplets/", tree, true)
-	searchForCap("/usr/share/bettercap/caplets/", tree, true)
+	for _, path := range core.SepSplit(core.Trim(os.Getenv("CAPSPATH")), ":") {
+		if path = core.Trim(path); len(path) > 0 {
+			CapPaths = append(CapPaths, path)
+		}
+	}
 
-	capspath := core.Trim(os.Getenv("CAPSPATH"))
-	var paths []string
-	paths = append(paths, core.SepSplit(capspath, ":")...)
-	for _, path := range paths {
-		searchForCap(path, tree, false)
+	for _, path := range CapPaths {
+		buildCapletsTree(path, tree)
 	}
 
 	for root, subElems := range tree {
@@ -251,18 +257,17 @@ func (s *Session) setupReadline() error {
 	return err
 }
 
-func searchForCap(path string, tree map[string][]string, recursive bool) {
-	_searchForCap(path, tree, recursive, path)
+func buildCapletsTree(path string, tree map[string][]string) {
+	_buildCapletsTree(path, tree, path)
 }
 
-func _searchForCap(path string, tree map[string][]string, recursive bool, prefix string) {
+func _buildCapletsTree(path string, tree map[string][]string, prefix string) {
 	subFiles, _ := ioutil.ReadDir(path)
-
 	for _, subF := range subFiles {
 		if strings.HasSuffix(subF.Name(), ".cap") {
 			tree[strings.TrimPrefix(path, prefix)+strings.Replace(subF.Name(), ".cap", "", -1)] = []string{}
-		} else if subF.IsDir() && recursive {
-			_searchForCap(path+subF.Name()+"/", tree, true, prefix)
+		} else if subF.IsDir() {
+			_buildCapletsTree(path+subF.Name()+"/", tree, prefix)
 		}
 	}
 }
@@ -528,14 +533,6 @@ func (s *Session) RunCaplet(filename string) error {
 }
 
 func (s *Session) isCapletCommand(line string) (is bool, filename string, argv []string) {
-	paths := []string{
-		"./",
-		"./caplets/",
-		"/usr/share/bettercap/caplets/",
-	}
-
-	capspath := core.Trim(os.Getenv("CAPSPATH"))
-	paths = append(paths, core.SepSplit(capspath, ":")...)
 	file := core.Trim(line)
 	parts := strings.Split(file, " ")
 	argc := len(parts)
@@ -548,7 +545,7 @@ func (s *Session) isCapletCommand(line string) (is bool, filename string, argv [
 		}
 	}
 
-	for _, path := range paths {
+	for _, path := range CapPaths {
 		filename := filepath.Join(path, file) + ".cap"
 		if core.Exists(filename) {
 			return true, filename, argv
