@@ -36,6 +36,7 @@ type WiFiModule struct {
 	apConfig            packets.Dot11ApConfig
 	writes              *sync.WaitGroup
 	reads               *sync.WaitGroup
+	chanLock            *sync.Mutex
 }
 
 func NewWiFiModule(s *session.Session) *WiFiModule {
@@ -49,6 +50,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		apRunning:     false,
 		writes:        &sync.WaitGroup{},
 		reads:         &sync.WaitGroup{},
+		chanLock:      &sync.Mutex{},
 	}
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon on", "",

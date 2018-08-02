@@ -8,6 +8,9 @@ import (
 )
 
 func (w *WiFiModule) onChannel(channel int, cb func()) {
+	w.chanLock.Lock()
+	defer w.chanLock.Unlock()
+
 	prev := w.stickChan
 	w.stickChan = channel
 
@@ -46,11 +49,13 @@ func (w *WiFiModule) channelHopper() {
 				channel = w.stickChan
 			}
 
-			log.Debug("Hopping on channel %d", channel)
+			log.Info("Hopping on channel %d", channel)
 
+			w.chanLock.Lock()
 			if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
 				log.Warning("Error while hopping to channel %d: %s", channel, err)
 			}
+			w.chanLock.Unlock()
 
 			time.Sleep(delay)
 			if !w.Running() {
