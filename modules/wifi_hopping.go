@@ -49,7 +49,7 @@ func (w *WiFiModule) channelHopper() {
 				channel = w.stickChan
 			}
 
-			log.Info("Hopping on channel %d", channel)
+			log.Debug("Hopping on channel %d", channel)
 
 			w.chanLock.Lock()
 			if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
