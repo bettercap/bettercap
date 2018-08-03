@@ -106,7 +106,7 @@ func (p *HTTPProxy) doProxy(req *http.Request) bool {
 	return true
 }
 
-func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scriptPath string, stripSSL bool) error {
+func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort string, scriptPath string, stripSSL bool) error {
 	var err error
 
 	p.stripper.Enable(stripSSL)
@@ -141,7 +141,6 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	if err := p.sess.Firewall.EnableRedirection(p.Redirection, true); err != nil {
 		return err
 	}
-
 	log.Debug("Applied redirection %s", p.Redirection.String())
 
 	p.sess.UnkCmdCallback = func(cmd string) bool {
@@ -187,7 +186,7 @@ func TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCt
 	}
 }
 
-func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, scriptPath string, certFile string, keyFile string, stripSSL bool) (err error) {
+func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort string, scriptPath string, certFile string, keyFile string, stripSSL bool) (err error) {
 	if p.Configure(address, proxyPort, httpPort, scriptPath, stripSSL); err != nil {
 		return err
 	}

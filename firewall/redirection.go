@@ -1,17 +1,28 @@
 package firewall
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type Redirection struct {
 	Interface  string
 	Protocol   string
 	SrcAddress string
-	SrcPort    int
+	SrcPort    string
 	DstAddress string
 	DstPort    int
+	MultiPort	bool
 }
 
-func NewRedirection(iface string, proto string, port_from int, addr_to string, port_to int) *Redirection {
+func NewRedirection(iface string, proto string, port_from string, addr_to string, port_to int) *Redirection {
+	_, err := strconv.Atoi(port_from)
+	multi_port := false
+	if err != nil {
+		multi_port = true
+	} else {
+		multi_port = false
+	}
 	return &Redirection{
 		Interface:  iface,
 		Protocol:   proto,
@@ -19,6 +30,7 @@ func NewRedirection(iface string, proto string, port_from int, addr_to string, p
 		SrcPort:    port_from,
 		DstAddress: addr_to,
 		DstPort:    port_to,
+		MultiPort:  multi_port,
 	}
 }
 

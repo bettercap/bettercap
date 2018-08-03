@@ -87,7 +87,7 @@ func (p *TcpProxy) Author() string {
 
 func (p *TcpProxy) Configure() error {
 	var err error
-	var port int
+	var port string
 	var proxyPort int
 	var address string
 	var proxyAddress string
@@ -103,7 +103,7 @@ func (p *TcpProxy) Configure() error {
 		return err
 	} else if err, proxyPort = p.IntParam("tcp.proxy.port"); err != nil {
 		return err
-	} else if err, port = p.IntParam("tcp.port"); err != nil {
+	} else if err, port = p.StringParam("tcp.port"); err != nil {
 		return err
 	} else if err, tunnelAddress = p.StringParam("tcp.tunnel.address"); err != nil {
 		return err
@@ -113,7 +113,7 @@ func (p *TcpProxy) Configure() error {
 		return err
 	} else if p.localAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", proxyAddress, proxyPort)); err != nil {
 		return err
-	} else if p.remoteAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
+	} else if p.remoteAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%s", address, port)); err != nil {
 		return err
 	} else if p.tunnelAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", tunnelAddress, tunnelPort)); err != nil {
 		return err

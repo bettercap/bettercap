@@ -74,7 +74,7 @@ func (f *LinuxFirewall) getCommandLine(r *Redirection, enabled bool) (cmdLine []
 			action, "PREROUTING",
 			"-i", r.Interface,
 			"-p", r.Protocol,
-			"--dport", fmt.Sprintf("%d", r.SrcPort),
+			"--dport", fmt.Sprintf("%s", r.SrcPort),
 			"-j", "DNAT",
 			"--to", fmt.Sprintf("%s:%d", r.DstAddress, r.DstPort),
 		}
@@ -85,7 +85,7 @@ func (f *LinuxFirewall) getCommandLine(r *Redirection, enabled bool) (cmdLine []
 			"-i", r.Interface,
 			"-p", r.Protocol,
 			"-d", r.SrcAddress,
-			"--dport", fmt.Sprintf("%d", r.SrcPort),
+			"--dport", fmt.Sprintf("%s", r.SrcPort),
 			"-j", "DNAT",
 			"--to", fmt.Sprintf("%s:%d", r.DstAddress, r.DstPort),
 		}
