@@ -75,20 +75,23 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 
 	// inject javascript code if specified and needed
 	if cType := getContentType(res); p.jsHook != "" && strings.Contains(cType, "text/html") {
-		log.Info("(%s) > injecting javascript (%d bytes) into %s for %s", core.Green(p.Name), len(p.jsHook), core.Yellow(req.Host+req.URL.Path), core.Bold(req.RemoteAddr))
 		defer res.Body.Close()
 
 		raw, _ := ioutil.ReadAll(res.Body)
-		html := strings.Replace(string(raw), "</head>", p.jsHook, -1)
 
-		newResp := goproxy.NewResponse(req, cType, res.StatusCode, html)
-		for k, vv := range res.Header {
-			for _, v := range vv {
-				newResp.Header.Add(k, v)
+		if strings.Contains(string(raw), "</head>") {
+			log.Info("(%s) > injecting javascript (%d bytes) into %s for %s", core.Green(p.Name), len(p.jsHook), core.Yellow(req.Host+req.URL.Path), core.Bold(req.RemoteAddr))
+			html := strings.Replace(string(raw), "</head>", p.jsHook, -1)
+
+			newResp := goproxy.NewResponse(req, cType, res.StatusCode, html)
+			for k, vv := range res.Header {
+				for _, v := range vv {
+					newResp.Header.Add(k, v)
+				}
 			}
-		}
 
-		return newResp
+			return newResp
+		}
 	}
 
 	return res
