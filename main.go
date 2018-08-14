@@ -42,6 +42,7 @@ func main() {
 	sess.Register(modules.NewDNSSpoofer(sess))
 	sess.Register(modules.NewSniffer(sess))
 	sess.Register(modules.NewPacketProxy(sess))
+	sess.Register(modules.NewAnyProxy(sess))
 	sess.Register(modules.NewTcpProxy(sess))
 	sess.Register(modules.NewHttpProxy(sess))
 	sess.Register(modules.NewHttpsProxy(sess))
