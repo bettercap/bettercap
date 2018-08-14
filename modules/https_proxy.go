@@ -35,6 +35,11 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"false",
 		"Enable or disable SSL stripping."))
 
+	p.AddParam(session.NewStringParameter("https.proxy.injectjs",
+		"",
+		"",
+		"URL, path or javascript code to inject into every HTML page."))
+
 	p.AddParam(session.NewStringParameter("https.proxy.certificate",
 		"~/.bettercap-ca.cert.pem",
 		"",
@@ -86,6 +91,7 @@ func (p *HttpsProxy) Configure() error {
 	var certFile string
 	var keyFile string
 	var stripSSL bool
+	var jsToInject string
 
 	if p.Running() {
 		return session.ErrAlreadyStarted
@@ -107,6 +113,8 @@ func (p *HttpsProxy) Configure() error {
 		return err
 	} else if err, scriptPath = p.StringParam("https.proxy.script"); err != nil {
 		return err
+	} else if err, jsToInject = p.StringParam("https.proxy.injectjs"); err != nil {
+		return err
 	}
 
 	if !core.Exists(certFile) || !core.Exists(keyFile) {
@@ -120,7 +128,7 @@ func (p *HttpsProxy) Configure() error {
 		log.Info("Loading proxy certification authority TLS certificate from %s", certFile)
 	}
 
-	return p.proxy.ConfigureTLS(address, proxyPort, httpPort, scriptPath, certFile, keyFile, stripSSL)
+	return p.proxy.ConfigureTLS(address, proxyPort, httpPort, scriptPath, certFile, keyFile, jsToInject, stripSSL)
 }
 
 func (p *HttpsProxy) Start() error {

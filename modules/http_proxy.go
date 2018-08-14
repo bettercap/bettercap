@@ -33,6 +33,11 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		"",
 		"Path of a proxy JS script."))
 
+	p.AddParam(session.NewStringParameter("http.proxy.injectjs",
+		"",
+		"",
+		"URL, path or javascript code to inject into every HTML page."))
+
 	p.AddParam(session.NewBoolParameter("http.proxy.sslstrip",
 		"false",
 		"Enable or disable SSL stripping."))
@@ -71,6 +76,7 @@ func (p *HttpProxy) Configure() error {
 	var httpPort int
 	var scriptPath string
 	var stripSSL bool
+	var jsToInject string
 
 	if p.Running() {
 		return session.ErrAlreadyStarted
@@ -84,9 +90,11 @@ func (p *HttpProxy) Configure() error {
 		return err
 	} else if err, stripSSL = p.BoolParam("http.proxy.sslstrip"); err != nil {
 		return err
+	} else if err, jsToInject = p.StringParam("http.proxy.injectjs"); err != nil {
+		return err
 	}
 
-	return p.proxy.Configure(address, proxyPort, httpPort, scriptPath, stripSSL)
+	return p.proxy.Configure(address, proxyPort, httpPort, scriptPath, jsToInject, stripSSL)
 }
 
 func (p *HttpProxy) Start() error {

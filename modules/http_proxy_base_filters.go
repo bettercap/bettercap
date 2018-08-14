@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -40,6 +41,17 @@ func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*
 	return req, nil
 }
 
+func getContentType(res *http.Response) string {
+	for name, values := range res.Header {
+		for _, value := range values {
+			if strings.ToLower(name) == "content-type" {
+				return value
+			}
+		}
+	}
+	return ""
+}
+
 func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 	// sometimes it happens ¯\_(ツ)_/¯
 	if res == nil {
@@ -52,15 +64,31 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 	p.stripper.Process(res, ctx)
 
 	// do we have a proxy script?
-	if p.Script == nil {
-		return res
+	if p.Script != nil {
+		_, jsres := p.Script.OnResponse(res)
+		if jsres != nil {
+			// the response has been changed by the script
+			p.logResponseAction(res.Request, jsres)
+			return jsres.ToResponse(res.Request)
+		}
 	}
 
-	_, jsres := p.Script.OnResponse(res)
-	if jsres != nil {
-		// the response has been changed by the script
-		p.logResponseAction(res.Request, jsres)
-		return jsres.ToResponse(res.Request)
+	// inject javascript code if specified and needed
+	if cType := getContentType(res); p.jsHook != "" && strings.Contains(cType, "text/html") {
+		log.Info("(%s) > injecting javascript (%d bytes) into %s for %s", core.Green(p.Name), len(p.jsHook), core.Yellow(req.Host+req.URL.Path), core.Bold(req.RemoteAddr))
+		defer res.Body.Close()
+
+		raw, _ := ioutil.ReadAll(res.Body)
+		html := strings.Replace(string(raw), "</head>", p.jsHook, -1)
+
+		newResp := goproxy.NewResponse(req, cType, res.StatusCode, html)
+		for k, vv := range res.Header {
+			for _, v := range vv {
+				newResp.Header.Add(k, v)
+			}
+		}
+
+		return newResp
 	}
 
 	return res

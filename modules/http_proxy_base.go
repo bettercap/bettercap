@@ -40,6 +40,7 @@ type HTTPProxy struct {
 	CertFile    string
 	KeyFile     string
 
+	jsHook      string
 	isTLS       bool
 	isRunning   bool
 	stripper    *SSLStripper
@@ -106,11 +107,28 @@ func (p *HTTPProxy) doProxy(req *http.Request) bool {
 	return true
 }
 
-func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scriptPath string, stripSSL bool) error {
+func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scriptPath string, jsToInject string, stripSSL bool) error {
 	var err error
 
 	p.stripper.Enable(stripSSL)
 	p.Address = address
+
+	if strings.HasPrefix(jsToInject, "http://") || strings.HasPrefix(jsToInject, "https://") {
+		p.jsHook = fmt.Sprintf("<script src=\"%s\" type=\"text/javascript\"></script></head>", jsToInject)
+	} else if core.Exists(jsToInject) {
+		if data, err := ioutil.ReadFile(jsToInject); err != nil {
+			return err
+		} else {
+			jsToInject = string(data)
+		}
+	}
+
+	if p.jsHook == "" && jsToInject != "" {
+		if strings.HasPrefix(jsToInject, "<script ") == false {
+			jsToInject = fmt.Sprintf("<script type=\"text/javascript\">%s</script>", jsToInject)
+		}
+		p.jsHook = fmt.Sprintf("%s</head>", jsToInject)
+	}
 
 	if scriptPath != "" {
 		if err, p.Script = LoadHttpProxyScript(scriptPath, p.sess); err != nil {
@@ -187,8 +205,8 @@ func TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCt
 	}
 }
 
-func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, scriptPath string, certFile string, keyFile string, stripSSL bool) (err error) {
-	if p.Configure(address, proxyPort, httpPort, scriptPath, stripSSL); err != nil {
+func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, scriptPath string, certFile string, keyFile string, jsToInject string, stripSSL bool) (err error) {
+	if p.Configure(address, proxyPort, httpPort, scriptPath, jsToInject, stripSSL); err != nil {
 		return err
 	}
 
