@@ -56,12 +56,9 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	isBcast := network.IsBroadcastMac(to)
 	found := isBcast
 	for _, ap := range w.Session.WiFi.List() {
+		isAP := bytes.Equal(ap.HW, to)
 		for _, client := range ap.Clients() {
-			doDeauth := isBcast ||
-				bytes.Equal(ap.HW, to) ||
-				bytes.Equal(client.HW, to)
-
-			if doDeauth {
+			if isBcast || isAP || bytes.Equal(client.HW, to) {
 				found = true
 				if w.Running() {
 					log.Info("Deauthing client %s from AP %s ...", client.String(), ap.ESSID())
