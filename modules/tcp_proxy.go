@@ -236,6 +236,15 @@ func (p *TcpProxy) Start() error {
 }
 
 func (p *TcpProxy) Stop() error {
+
+	if p.Redirection != nil {
+		log.Debug("Disabling redirection %s", p.Redirection.String())
+		if err := p.Session.Firewall.EnableRedirection(p.Redirection, false); err != nil {
+			return err
+		}
+		p.Redirection = nil
+	}
+
 	return p.SetRunning(false, func() {
 		p.listener.Close()
 	})
