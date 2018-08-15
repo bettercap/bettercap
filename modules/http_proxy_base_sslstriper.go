@@ -192,35 +192,6 @@ func (s *SSLStripper) Enable(enabled bool) {
 	}
 }
 
-func (s *SSLStripper) stripRequestHeaders(req *http.Request) {
-	req.Header.Del("Accept-Encoding")
-	req.Header.Del("If-None-Match")
-	req.Header.Del("If-Modified-Since")
-	req.Header.Del("Upgrade-Insecure-Requests")
-
-	req.Header.Set("Pragma", "no-cache")
-}
-
-func (s *SSLStripper) stripResponseHeaders(res *http.Response) {
-	res.Header.Del("Content-Security-Policy-Report-Only")
-	res.Header.Del("Content-Security-Policy")
-	res.Header.Del("Strict-Transport-Security")
-	res.Header.Del("Public-Key-Pins")
-	res.Header.Del("Public-Key-Pins-Report-Only")
-	res.Header.Del("X-Frame-Options")
-	res.Header.Del("X-Content-Type-Options")
-	res.Header.Del("X-WebKit-CSP")
-	res.Header.Del("X-Content-Security-Policy")
-	res.Header.Del("X-Download-Options")
-	res.Header.Del("X-Permitted-Cross-Domain-Policies")
-	res.Header.Del("X-Xss-Protection")
-
-	res.Header.Set("Allow-Access-From-Same-Origin", "*")
-	res.Header.Set("Access-Control-Allow-Origin", "*")
-	res.Header.Set("Access-Control-Allow-Methods", "*")
-	res.Header.Set("Access-Control-Allow-Headers", "*")
-}
-
 func (s *SSLStripper) isContentStrippable(res *http.Response) bool {
 	for name, values := range res.Header {
 		for _, value := range values {
@@ -258,16 +229,12 @@ func (s *SSLStripper) processURL(url string) string {
 
 // sslstrip preprocessing, takes care of:
 //
-// - patching / removing security related headers
 // - handling stripped domains
 // - making unknown session cookies expire
 func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redir *http.Response) {
 	if !s.enabled {
 		return
 	}
-
-	// preprocess request headers
-	s.stripRequestHeaders(req)
 
 	// well ...
 	if req.URL.Scheme == "https" {
@@ -348,9 +315,6 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			}
 		}
 	}
-
-	// process response headers
-	s.stripResponseHeaders(res)
 
 	// if we have a text or html content type, fetch the body
 	// and perform sslstripping
