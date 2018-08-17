@@ -83,19 +83,22 @@ func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte) []byte {
 			return nil
 		}
 
-		exported, err := ret.Export()
-		if err != nil {
-			log.Error("Error while exporting results: %s", err)
-			return nil
-		}
+		// do we have any return value to override the buffer with?
+		if !ret.IsNull() && !ret.IsUndefined() {
+			exported, err := ret.Export()
+			if err != nil {
+				log.Error("Error while exporting results: %s", err)
+				return nil
+			}
 
-		array, ok := exported.([]byte)
-		if !ok {
-			log.Error("Error while casting exported value to array of byte: value = %s", exported)
-			return nil
-		}
+			array, ok := exported.([]byte)
+			if !ok {
+				log.Error("Error while casting exported value to array of byte: value = %s", exported)
+				return nil
+			}
 
-		return array
+			return array
+		}
 	}
 
 	return nil
