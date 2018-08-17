@@ -43,3 +43,7 @@ func (s Station) BSSID() string {
 func (s *Station) ESSID() string {
 	return s.Hostname
 }
+
+func (s *Station) Channel() int {
+	return Dot11Freq2Chan(s.Frequency)
+}
