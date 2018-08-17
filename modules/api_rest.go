@@ -63,6 +63,8 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"",
 		"API TLS certificate."))
 
+	tls.CertConfigToModule("api.rest", &api.SessionModule, tls.DefaultLegitConfig)
+
 	api.AddParam(session.NewStringParameter("api.rest.key",
 		"~/.bcap-api.rest.key.pem",
 		"",
@@ -132,10 +134,18 @@ func (api *RestAPI) Configure() error {
 		return err
 	} else if err, api.useWebsocket = api.BoolParam("api.rest.websocket"); err != nil {
 		return err
-	} else if !core.Exists(api.certFile) || !core.Exists(api.keyFile) {
+	}
+
+	if !core.Exists(api.certFile) || !core.Exists(api.keyFile) {
+		err, cfg := tls.CertConfigFromModule("api.rest", api.SessionModule)
+		if err != nil {
+			return err
+		}
+
+		log.Debug("%+v", cfg)
 		log.Info("Generating TLS key to %s", api.keyFile)
 		log.Info("Generating TLS certificate to %s", api.certFile)
-		if err := tls.Generate(api.certFile, api.keyFile); err != nil {
+		if err := tls.Generate(cfg, api.certFile, api.keyFile); err != nil {
 			return err
 		}
 	} else {

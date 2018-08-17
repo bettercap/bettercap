@@ -50,6 +50,8 @@ func NewHttpServer(s *session.Session) *HttpServer {
 		"",
 		"TLS key file, if not empty will configure this as a HTTPS server (will be auto generated if filled but not existing)."))
 
+	tls.CertConfigToModule("http.server", &httpd.SessionModule, tls.DefaultLegitConfig)
+
 	httpd.AddHandler(session.NewModuleHandler("http.server on", "",
 		"Start httpd server.",
 		func(args []string) error {
@@ -131,9 +133,15 @@ func (httpd *HttpServer) Configure() error {
 
 	if certFile != "" && keyFile != "" {
 		if !core.Exists(certFile) || !core.Exists(keyFile) {
+			err, cfg := tls.CertConfigFromModule("http.server", httpd.SessionModule)
+			if err != nil {
+				return err
+			}
+
+			log.Debug("%+v", cfg)
 			log.Info("Generating server TLS key to %s", keyFile)
 			log.Info("Generating server TLS certificate to %s", certFile)
-			if err := tls.Generate(certFile, keyFile); err != nil {
+			if err := tls.Generate(cfg, certFile, keyFile); err != nil {
 				return err
 			}
 		} else {

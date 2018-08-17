@@ -50,6 +50,8 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"",
 		"HTTPS proxy certification authority TLS key file."))
 
+	tls.CertConfigToModule("https.proxy", &p.SessionModule, tls.DefaultSpoofConfig)
+
 	p.AddParam(session.NewStringParameter("https.proxy.script",
 		"",
 		"",
@@ -118,9 +120,15 @@ func (p *HttpsProxy) Configure() error {
 	}
 
 	if !core.Exists(certFile) || !core.Exists(keyFile) {
+		err, cfg := tls.CertConfigFromModule("https.proxy", p.SessionModule)
+		if err != nil {
+			return err
+		}
+
+		log.Debug("%+v", cfg)
 		log.Info("Generating proxy certification authority TLS key to %s", keyFile)
 		log.Info("Generating proxy certification authority TLS certificate to %s", certFile)
-		if err := tls.Generate(certFile, keyFile); err != nil {
+		if err := tls.Generate(cfg, certFile, keyFile); err != nil {
 			return err
 		}
 	} else {
