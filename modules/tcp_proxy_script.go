@@ -59,7 +59,7 @@ func (s *TcpProxyScript) doDefines(from, to net.Addr, data []byte) (err error) {
 	} else if err = s.VM.Set("to", addrTo); err != nil {
 		log.Error("Error while defining to: %s", err)
 		return
-	} else if err = s.VM.Set("data", string(data)); err != nil {
+	} else if err = s.VM.Set("data", data); err != nil {
 		log.Error("Error while defining data: %s", err)
 		return
 	}
@@ -83,9 +83,19 @@ func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte) []byte {
 			return nil
 		}
 
-		if !ret.IsUndefined() && ret.IsString() {
-			return []byte(ret.String())
+		exported, err := ret.Export()
+		if err != nil {
+			log.Error("Error while exporting results: %s", err)
+			return nil
 		}
+
+		array, ok := exported.([]byte)
+		if !ok {
+			log.Error("Error while casting exported value to array of byte: value = %s", exported)
+			return nil
+		}
+
+		return array
 	}
 
 	return nil
