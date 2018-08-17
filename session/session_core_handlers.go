@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,101 @@ import (
 	"github.com/bettercap/readline"
 )
 
+func (s *Session) generalHelp() {
+	fmt.Println()
+
+	maxLen := 0
+	for _, h := range s.CoreHandlers {
+		len := len(h.Name)
+		if len > maxLen {
+			maxLen = len
+		}
+	}
+	pad := "%" + strconv.Itoa(maxLen) + "s"
+
+	for _, h := range s.CoreHandlers {
+		fmt.Printf("  "+core.Yellow(pad)+" : %s\n", h.Name, h.Description)
+	}
+
+	fmt.Println(core.Bold("\nModules\n"))
+
+	maxLen = 0
+	for _, m := range s.Modules {
+		len := len(m.Name())
+		if len > maxLen {
+			maxLen = len
+		}
+	}
+	pad = "%" + strconv.Itoa(maxLen) + "s"
+
+	for _, m := range s.Modules {
+		status := ""
+		if m.Running() {
+			status = core.Green("running")
+		} else {
+			status = core.Red("not running")
+		}
+		fmt.Printf("  "+core.Yellow(pad)+" > %s\n", m.Name(), status)
+	}
+
+	fmt.Println()
+}
+
+func (s *Session) moduleHelp(filter string) error {
+	err, m := s.Module(filter)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println()
+	status := ""
+	if m.Running() {
+		status = core.Green("running")
+	} else {
+		status = core.Red("not running")
+	}
+	fmt.Printf("%s (%s): %s\n\n", core.Yellow(m.Name()), status, core.Dim(m.Description()))
+
+	maxLen := 0
+	handlers := m.Handlers()
+	for _, h := range handlers {
+		len := len(h.Name)
+		if len > maxLen {
+			maxLen = len
+		}
+	}
+
+	for _, h := range handlers {
+		fmt.Print(h.Help(maxLen))
+	}
+	fmt.Println()
+
+	params := m.Parameters()
+	if len(params) > 0 {
+		v := make([]*ModuleParam, 0)
+		maxLen := 0
+		for _, h := range params {
+			len := len(h.Name)
+			if len > maxLen {
+				maxLen = len
+			}
+			v = append(v, h)
+		}
+
+		sort.Slice(v, func(i, j int) bool {
+			return v[i].Name < v[j].Name
+		})
+
+		fmt.Print("  Parameters\n\n")
+		for _, p := range v {
+			fmt.Print(p.Help(maxLen))
+		}
+		fmt.Println()
+	}
+
+	return nil
+}
+
 func (s *Session) helpHandler(args []string, sess *Session) error {
 	filter := ""
 	if len(args) == 2 {
@@ -22,88 +118,10 @@ func (s *Session) helpHandler(args []string, sess *Session) error {
 	}
 
 	if filter == "" {
-		fmt.Println()
-
-		maxLen := 0
-		for _, h := range s.CoreHandlers {
-			len := len(h.Name)
-			if len > maxLen {
-				maxLen = len
-			}
-		}
-		pad := "%" + strconv.Itoa(maxLen) + "s"
-
-		for _, h := range s.CoreHandlers {
-			fmt.Printf("  "+core.Yellow(pad)+" : %s\n", h.Name, h.Description)
-		}
-
-		fmt.Println(core.Bold("\nModules\n"))
-
-		maxLen = 0
-		for _, m := range s.Modules {
-			len := len(m.Name())
-			if len > maxLen {
-				maxLen = len
-			}
-		}
-		pad = "%" + strconv.Itoa(maxLen) + "s"
-
-		for _, m := range s.Modules {
-			status := ""
-			if m.Running() {
-				status = core.Green("running")
-			} else {
-				status = core.Red("not running")
-			}
-			fmt.Printf("  "+core.Yellow(pad)+" > %s\n", m.Name(), status)
-		}
-
-		fmt.Println()
-
+		s.generalHelp()
 	} else {
-		err, m := s.Module(filter)
-		if err != nil {
+		if err := s.moduleHelp(filter); err != nil {
 			return err
-		}
-
-		fmt.Println()
-		status := ""
-		if m.Running() {
-			status = core.Green("running")
-		} else {
-			status = core.Red("not running")
-		}
-		fmt.Printf("%s (%s): %s\n\n", core.Yellow(m.Name()), status, core.Dim(m.Description()))
-
-		maxLen := 0
-		handlers := m.Handlers()
-		for _, h := range handlers {
-			len := len(h.Name)
-			if len > maxLen {
-				maxLen = len
-			}
-		}
-
-		for _, h := range handlers {
-			fmt.Print(h.Help(maxLen))
-		}
-		fmt.Println()
-
-		params := m.Parameters()
-		if len(params) > 0 {
-			fmt.Print("  Parameters\n\n")
-			maxLen := 0
-			for _, h := range params {
-				len := len(h.Name)
-				if len > maxLen {
-					maxLen = len
-				}
-			}
-
-			for _, p := range params {
-				fmt.Print(p.Help(maxLen))
-			}
-			fmt.Println()
 		}
 	}
 
