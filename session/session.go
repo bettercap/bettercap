@@ -282,9 +282,8 @@ func containsCapitals(s string) bool {
 }
 
 func (s *Session) Close() {
-	fmt.Printf("\nStopping modules and cleaning session state ...\n")
-
 	if *s.Options.Debug {
+		fmt.Printf("\nStopping modules and cleaning session state ...\n")
 		s.Events.Add("session.closing", nil)
 	}
 
