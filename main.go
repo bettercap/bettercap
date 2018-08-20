@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
@@ -90,8 +91,19 @@ func main() {
 		if err != nil {
 			if err == io.EOF {
 				continue
+			} else if err.Error() == "Interrupt" {
+				var ans string
+				fmt.Printf("Are you sure you want to quit this session? y/n ")
+				fmt.Scan(&ans)
+
+				if strings.ToLower(ans) == "y" {
+					sess.Run("exit")
+					os.Exit(0)
+				}
+				continue
+			} else {
+				log.Fatal("%s", err)
 			}
-			log.Fatal("%s", err)
 		}
 
 		for _, cmd := range session.ParseCommands(line) {
