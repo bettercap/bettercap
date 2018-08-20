@@ -11,6 +11,8 @@ import (
 	"github.com/bettercap/gatt"
 )
 
+const BLEMacValidator = "([a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2})"
+
 type BLEDevNewCallback func(dev *BLEDevice)
 type BLEDevLostCallback func(dev *BLEDevice)
 

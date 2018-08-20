@@ -17,10 +17,6 @@ import (
 	"github.com/bettercap/gatt"
 )
 
-const (
-	macRegexp = "([a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2})"
-)
-
 type BLERecon struct {
 	session.SessionModule
 	gattDevice  gatt.Device
@@ -62,7 +58,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 			return d.Show()
 		}))
 
-	d.AddHandler(session.NewModuleHandler("ble.enum MAC", "ble.enum "+macRegexp,
+	d.AddHandler(session.NewModuleHandler("ble.enum MAC", "ble.enum "+network.BLEMacValidator,
 		"Enumerate services and characteristics for the given BLE device.",
 		func(args []string) error {
 			if d.isEnumerating() {
@@ -75,7 +71,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 			return d.enumAllTheThings(network.NormalizeMac(args[0]))
 		}))
 
-	d.AddHandler(session.NewModuleHandler("ble.write MAC UUID HEX_DATA", "ble.write "+macRegexp+" ([a-fA-F0-9]+) ([a-fA-F0-9]+)",
+	d.AddHandler(session.NewModuleHandler("ble.write MAC UUID HEX_DATA", "ble.write "+network.BLEMacValidator+" ([a-fA-F0-9]+) ([a-fA-F0-9]+)",
 		"Write the HEX_DATA buffer to the BLE device with the specified MAC address, to the characteristics with the given UUID.",
 		func(args []string) error {
 			mac := network.NormalizeMac(args[0])
@@ -117,7 +113,7 @@ func (d *BLERecon) Configure() (err error) {
 		log.Info("Initializing BLE device ...")
 
 		// hey Paypal GATT library, could you please just STFU?!
-		golog.SetOutput(ioutil.Discard)
+		// golog.SetOutput(ioutil.Discard)
 		if d.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
 			return err
 		}
@@ -132,20 +128,6 @@ func (d *BLERecon) Configure() (err error) {
 	}
 
 	return nil
-}
-
-func (d *BLERecon) pruner() {
-	log.Debug("Started BLE devices pruner ...")
-
-	for d.Running() {
-		for _, dev := range d.Session.BLE.Devices() {
-			if time.Since(dev.LastSeen) > blePresentInterval {
-				d.Session.BLE.Remove(dev.Device.ID())
-			}
-		}
-
-		time.Sleep(5 * time.Second)
-	}
 }
 
 func (d *BLERecon) Start() error {
@@ -164,6 +146,32 @@ func (d *BLERecon) Start() error {
 
 		d.done <- true
 	})
+}
+
+func (d *BLERecon) Stop() error {
+	return d.SetRunning(false, func() {
+		d.quit <- true
+		<-d.done
+	})
+}
+
+func (d *BLERecon) pruner() {
+	log.Debug("Started BLE devices pruner ...")
+
+	for d.Running() {
+		for _, dev := range d.Session.BLE.Devices() {
+			if time.Since(dev.LastSeen) > blePresentInterval {
+				d.Session.BLE.Remove(dev.Device.ID())
+			}
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func (d *BLERecon) setCurrentDevice(dev *network.BLEDevice) {
+	d.connected = false
+	d.currDevice = dev
 }
 
 func (d *BLERecon) writeBuffer(mac string, uuid gatt.UUID, data []byte) error {
@@ -198,77 +206,4 @@ func (d *BLERecon) enumAllTheThings(mac string) error {
 	d.gattDevice.Connect(dev.Device)
 
 	return nil
-}
-
-func (d *BLERecon) Stop() error {
-	return d.SetRunning(false, func() {
-		d.quit <- true
-		<-d.done
-	})
-}
-
-func (d *BLERecon) setCurrentDevice(dev *network.BLEDevice) {
-	d.connected = false
-	d.currDevice = dev
-}
-
-func (d *BLERecon) onStateChanged(dev gatt.Device, s gatt.State) {
-	switch s {
-	case gatt.StatePoweredOn:
-		if d.currDevice == nil {
-			log.Info("Starting BLE discovery ...")
-			dev.Scan([]gatt.UUID{}, true)
-		}
-	case gatt.StatePoweredOff:
-		d.gattDevice = nil
-
-	default:
-		log.Warning("Unexpected BLE state: %v", s)
-	}
-}
-
-func (d *BLERecon) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
-	d.Session.BLE.AddIfNew(p.ID(), p, a, rssi)
-}
-
-func (d *BLERecon) onPeriphDisconnected(p gatt.Peripheral, err error) {
-	if d.Running() {
-		// restore scanning
-		log.Info("Device disconnected, restoring BLE discovery.")
-		d.setCurrentDevice(nil)
-		d.gattDevice.Scan([]gatt.UUID{}, true)
-	}
-}
-
-func (d *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
-	if err != nil {
-		log.Warning("Connected to %s but with error: %s", p.ID(), err)
-		return
-	} else if d.currDevice == nil {
-		// timed out
-		log.Warning("Connected to %s but after the timeout :(", p.ID())
-		return
-	}
-
-	d.connected = true
-
-	defer func(per gatt.Peripheral) {
-		log.Info("Disconnecting from %s ...", per.ID())
-		per.Device().CancelConnection(per)
-	}(p)
-
-	d.Session.Events.Add("ble.device.connected", d.currDevice)
-
-	if err := p.SetMTU(500); err != nil {
-		log.Warning("Failed to set MTU: %s", err)
-	}
-
-	log.Info("Connected, enumerating all the things for %s!", p.ID())
-	services, err := p.DiscoverServices(nil)
-	if err != nil {
-		log.Error("Error discovering services: %s", err)
-		return
-	}
-
-	d.showServices(p, services)
 }
