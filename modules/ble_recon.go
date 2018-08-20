@@ -113,7 +113,7 @@ func (d *BLERecon) Configure() (err error) {
 		log.Info("Initializing BLE device ...")
 
 		// hey Paypal GATT library, could you please just STFU?!
-		// golog.SetOutput(ioutil.Discard)
+		golog.SetOutput(ioutil.Discard)
 		if d.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
 			return err
 		}
