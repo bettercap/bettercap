@@ -504,10 +504,33 @@ func (s *Session) ReadLine() (string, error) {
 	return s.Input.Readline()
 }
 
-func (s *Session) RunCaplet(filename string) error {
-	s.Events.Log(core.INFO, "Reading from caplet %s ...", filename)
+func (s *Session) getCapletFilePath(caplet string) string {
+	if core.Exists(caplet) {
+		return caplet
+	}
 
-	input, err := os.Open(filename)
+	for _, path := range CapPaths {
+		filename := filepath.Join(path, caplet)
+		if !strings.HasSuffix(filename, ".cap") {
+			filename += ".cap"
+		}
+		if core.Exists(filename) {
+			return filename
+		}
+	}
+
+	return ""
+}
+
+func (s *Session) RunCaplet(filename string) error {
+	var caplet string
+	if caplet = s.getCapletFilePath(filename); caplet == "" {
+		return fmt.Errorf("could not load caplet from %s", filename)
+	}
+
+	s.Events.Log(core.INFO, "Reading from caplet %s ...", caplet)
+
+	input, err := os.Open(caplet)
 	if err != nil {
 		return err
 	}
@@ -543,11 +566,8 @@ func (s *Session) isCapletCommand(line string) (is bool, filename string, argv [
 		}
 	}
 
-	for _, path := range CapPaths {
-		filename := filepath.Join(path, file) + ".cap"
-		if core.Exists(filename) {
-			return true, filename, argv
-		}
+	if filename := s.getCapletFilePath(file); filename != "" {
+		return true, filename, argv
 	}
 
 	return false, "", nil
