@@ -1,13 +1,11 @@
 package session
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"runtime/pprof"
@@ -24,7 +22,6 @@ import (
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/adrianmo/go-nmea"
-	"io/ioutil"
 )
 
 const (
@@ -40,11 +37,6 @@ var (
 
 	reCmdSpaceCleaner = regexp.MustCompile(`^([^\s]+)\s+(.+)$`)
 	reEnvVarCapture   = regexp.MustCompile(`{env\.([^}]+)}`)
-
-	CapPaths = []string{
-		"./caplets/",
-		"/usr/share/bettercap/caplets/",
-	}
 )
 
 type UnknownCommandCallback func(cmd string) bool
@@ -220,24 +212,12 @@ func (s *Session) setupReadline() error {
 		}
 	}
 
-	for _, path := range core.SepSplit(core.Trim(os.Getenv("CAPSPATH")), ":") {
-		if path = core.Trim(path); len(path) > 0 {
-			CapPaths = append(CapPaths, path)
-		}
-	}
-
-	for _, path := range CapPaths {
-		buildCapletsTree(path, tree)
-	}
-
-	for root, subElems := range tree {
+	for root, subElems := range CapletsTree {
 		item := readline.PcItem(root)
 		item.Children = []readline.PrefixCompleterInterface{}
-
 		for _, child := range subElems {
 			item.Children = append(item.Children, readline.PcItem(child))
 		}
-
 		pcompleters = append(pcompleters, item)
 	}
 
@@ -255,21 +235,6 @@ func (s *Session) setupReadline() error {
 
 	s.Input, err = readline.NewEx(&cfg)
 	return err
-}
-
-func buildCapletsTree(path string, tree map[string][]string) {
-	_buildCapletsTree(path, tree, path)
-}
-
-func _buildCapletsTree(path string, tree map[string][]string, prefix string) {
-	subFiles, _ := ioutil.ReadDir(path)
-	for _, subF := range subFiles {
-		if strings.HasSuffix(subF.Name(), ".cap") {
-			tree[strings.TrimPrefix(path, prefix)+strings.Replace(subF.Name(), ".cap", "", -1)] = []string{}
-		} else if subF.IsDir() {
-			_buildCapletsTree(path+subF.Name()+"/", tree, prefix)
-		}
-	}
 }
 
 func containsCapitals(s string) bool {
@@ -504,97 +469,14 @@ func (s *Session) ReadLine() (string, error) {
 	return s.Input.Readline()
 }
 
-func (s *Session) getCapletFilePath(caplet string) string {
-	if core.Exists(caplet) {
-		return caplet
-	}
-
-	for _, path := range CapPaths {
-		filename := filepath.Join(path, caplet)
-		if !strings.HasSuffix(filename, ".cap") {
-			filename += ".cap"
-		}
-		if core.Exists(filename) {
-			return filename
-		}
-	}
-
-	return ""
-}
-
 func (s *Session) RunCaplet(filename string) error {
-	var caplet string
-	if caplet = s.getCapletFilePath(filename); caplet == "" {
-		return fmt.Errorf("could not load caplet from %s", filename)
-	}
-
-	s.Events.Log(core.INFO, "Reading from caplet %s ...", caplet)
-
-	input, err := os.Open(caplet)
+	err, caplet := LoadCaplet(filename)
 	if err != nil {
 		return err
 	}
-	defer input.Close()
 
-	scanner := bufio.NewScanner(input)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" || line[0] == '#' {
-			continue
-		}
-
-		if err = s.Run(line); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *Session) isCapletCommand(line string) (is bool, filename string, argv []string) {
-	file := core.Trim(line)
-	parts := strings.Split(file, " ")
-	argc := len(parts)
-	argv = make([]string, 0)
-	// check for any arguments
-	if argc > 1 {
-		file = core.Trim(parts[0])
-		if argc >= 2 {
-			argv = parts[1:]
-		}
-	}
-
-	if filename := s.getCapletFilePath(file); filename != "" {
-		return true, filename, argv
-	}
-
-	return false, "", nil
-}
-
-func (s *Session) runCapletCommand(filename string, argv []string) error {
-	input, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer input.Close()
-
-	scanner := bufio.NewScanner(input)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" || line[0] == '#' {
-			continue
-		}
-
-		// replace $0 with argv[0], $1 with argv[1] and so on
-		for i, arg := range argv {
-			line = strings.Replace(line, fmt.Sprintf("$%d", i), arg, -1)
-		}
-
-		if err = s.Run(line); err != nil {
+	for _, line := range caplet.Code {
+		if err = s.Run(line + "\n"); err != nil {
 			return err
 		}
 	}
@@ -631,8 +513,17 @@ func (s *Session) Run(line string) error {
 	}
 
 	// is it a caplet command?
-	if is, filename, argv := s.isCapletCommand(line); is {
-		return s.runCapletCommand(filename, argv)
+	if parsed, caplet, argv := parseCapletCommand(line); parsed {
+		for _, line := range caplet.Code {
+			// replace $0 with argv[0], $1 with argv[1] and so on
+			for i, arg := range argv {
+				line = strings.Replace(line, fmt.Sprintf("$%d", i), arg, -1)
+			}
+
+			if err = s.Run(line + "\n"); err != nil {
+				return err
+			}
+		}
 	}
 
 	// is it a proxy module custom command?
@@ -640,5 +531,5 @@ func (s *Session) Run(line string) error {
 		return nil
 	}
 
-	return fmt.Errorf("Unknown or invalid syntax \"%s%s%s\", type %shelp%s for the help menu.", core.BOLD, line, core.RESET, core.BOLD, core.RESET)
+	return fmt.Errorf("unknown or invalid syntax \"%s%s%s\", type %shelp%s for the help menu.", core.BOLD, line, core.RESET, core.BOLD, core.RESET)
 }
