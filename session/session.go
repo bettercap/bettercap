@@ -524,6 +524,8 @@ func (s *Session) Run(line string) error {
 				return err
 			}
 		}
+
+		return nil
 	}
 
 	// is it a proxy module custom command?
