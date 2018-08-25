@@ -22,15 +22,13 @@ func containsCapitals(s string) bool {
 	return true
 }
 
-func (s *Session) setupReadline() error {
-	var err error
-
-	pcompleters := make([]readline.PrefixCompleterInterface, 0)
+func (s *Session) setupReadline() (err error) {
+	prefixCompleters := make([]readline.PrefixCompleterInterface, 0)
 	for _, h := range s.CoreHandlers {
 		if h.Completer == nil {
-			pcompleters = append(pcompleters, readline.PcItem(h.Name))
+			prefixCompleters = append(prefixCompleters, readline.PcItem(h.Name))
 		} else {
-			pcompleters = append(pcompleters, h.Completer)
+			prefixCompleters = append(prefixCompleters, h.Completer)
 		}
 	}
 
@@ -61,7 +59,7 @@ func (s *Session) setupReadline() error {
 		HistoryFile:     history,
 		InterruptPrompt: "^C",
 		EOFPrompt:       "exit",
-		AutoComplete:    readline.NewPrefixCompleter(pcompleters...),
+		AutoComplete:    readline.NewPrefixCompleter(prefixCompleters...),
 	}
 
 	s.Input, err = readline.NewEx(&cfg)

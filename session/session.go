@@ -28,9 +28,9 @@ const (
 var (
 	I = (*Session)(nil)
 
-	ErrAlreadyStarted = errors.New("Module is already running.")
-	ErrAlreadyStopped = errors.New("Module is not running.")
-	ErrNotSupported   = errors.New("This component is not supported on this OS.")
+	ErrAlreadyStarted = errors.New("module is already running")
+	ErrAlreadyStopped = errors.New("module is not running")
+	ErrNotSupported   = errors.New("this component is not supported on this OS")
 
 	reCmdSpaceCleaner = regexp.MustCompile(`^([^\s]+)\s+(.+)$`)
 	reEnvVarCapture   = regexp.MustCompile(`{env\.([^}]+)}`)
@@ -112,7 +112,7 @@ func (s *Session) Module(name string) (err error, mod Module) {
 			return nil, m
 		}
 	}
-	return fmt.Errorf("Module %s not found", name), mod
+	return fmt.Errorf("module %s not found", name), mod
 }
 
 func (s *Session) Close() {
@@ -132,7 +132,7 @@ func (s *Session) Close() {
 	if *s.Options.EnvFile != "" {
 		envFile, _ := core.ExpandPath(*s.Options.EnvFile)
 		if err := s.Env.Save(envFile); err != nil {
-			fmt.Printf("Error while storing the environment to %s: %s", envFile, err)
+			fmt.Printf("error while storing the environment to %s: %s", envFile, err)
 		}
 	}
 
@@ -143,13 +143,13 @@ func (s *Session) Close() {
 	if *s.Options.MemProfile != "" {
 		f, err := os.Create(*s.Options.MemProfile)
 		if err != nil {
-			fmt.Printf("Could not create memory profile: %s\n", err)
+			fmt.Printf("could not create memory profile: %s\n", err)
 			return
 		}
 		defer f.Close()
 		runtime.GC() // get up-to-date statistics
 		if err := pprof.WriteHeapProfile(f); err != nil {
-			fmt.Printf("Could not write memory profile: %s\n", err)
+			fmt.Printf("could not write memory profile: %s\n", err)
 		}
 	}
 }
