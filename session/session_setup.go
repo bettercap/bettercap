@@ -50,6 +50,15 @@ func (s *Session) setupReadline() (err error) {
 		}
 	}
 
+	for root, subElems := range tree {
+		item := readline.PcItem(root)
+		item.Children = []readline.PrefixCompleterInterface{}
+		for _, child := range subElems {
+			item.Children = append(item.Children, readline.PcItem(child))
+		}
+		prefixCompleters = append(prefixCompleters, item)
+	}
+
 	history := ""
 	if !*s.Options.NoHistory {
 		history, _ = core.ExpandPath(HistoryFile)
