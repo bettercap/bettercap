@@ -3,7 +3,6 @@ package session
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,7 +21,6 @@ type Caplet struct {
 }
 
 var (
-	CapletsTree     = make(map[string][]string)
 	CapletLoadPaths = []string{
 		"./caplets/",
 		"/usr/share/bettercap/caplets/",
@@ -31,20 +29,6 @@ var (
 	cache     = make(map[string]*Caplet)
 	cacheLock = sync.Mutex{}
 )
-
-func buildCapletsTree(path string, prefix string) {
-	files, _ := ioutil.ReadDir(path)
-	for _, file := range files {
-		filename := file.Name()
-		if strings.HasSuffix(filename, CapletSuffix) {
-			base := strings.TrimPrefix(path, prefix)
-			name := strings.Replace(filename, CapletSuffix, "", -1)
-			CapletsTree[base+name] = []string{}
-		} else if file.IsDir() {
-			buildCapletsTree(filepath.Join(path, filename)+"/", prefix)
-		}
-	}
-}
 
 func init() {
 	for _, path := range core.SepSplit(core.Trim(os.Getenv("CAPSPATH")), ":") {
@@ -55,10 +39,6 @@ func init() {
 
 	for i, path := range CapletLoadPaths {
 		CapletLoadPaths[i], _ = filepath.Abs(path)
-	}
-
-	for _, path := range CapletLoadPaths {
-		buildCapletsTree(path, path)
 	}
 }
 
@@ -132,4 +112,42 @@ func parseCapletCommand(line string) (is bool, caplet *Caplet, argv []string) {
 	}
 
 	return false, nil, nil
+}
+
+func (cap *Caplet) Eval(s *Session, argv []string) error {
+	// the caplet might include other files (include directive, proxy modules, etc),
+	// temporarily change the working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error while getting current working directory: %v", err)
+	}
+
+	capPath := filepath.Dir(cap.Path)
+	if err := os.Chdir(capPath); err != nil {
+		return fmt.Errorf("error while changing current working directory: %v", err)
+	}
+
+	defer func() {
+		if err := os.Chdir(cwd); err != nil {
+			s.Events.Log(core.ERROR, "error while restoring working directory: %v", err)
+		}
+	}()
+
+	if argv == nil {
+		argv = []string{}
+	}
+
+	for _, line := range cap.Code {
+		// replace $0 with argv[0], $1 with argv[1] and so on
+		for i, arg := range argv {
+			what := fmt.Sprintf("$%d", i)
+			line = strings.Replace(line, what, arg, -1)
+		}
+
+		if err = s.Run(line + "\n"); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

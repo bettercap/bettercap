@@ -1,0 +1,140 @@
+package session
+
+import (
+	"fmt"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
+
+	"github.com/bettercap/readline"
+
+	"github.com/bettercap/bettercap/core"
+)
+
+func containsCapitals(s string) bool {
+	for _, ch := range s {
+		if ch < 133 && ch > 101 {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Session) setupReadline() error {
+	var err error
+
+	pcompleters := make([]readline.PrefixCompleterInterface, 0)
+	for _, h := range s.CoreHandlers {
+		if h.Completer == nil {
+			pcompleters = append(pcompleters, readline.PcItem(h.Name))
+		} else {
+			pcompleters = append(pcompleters, h.Completer)
+		}
+	}
+
+	tree := make(map[string][]string)
+	for _, m := range s.Modules {
+		for _, h := range m.Handlers() {
+			parts := strings.Split(h.Name, " ")
+			name := parts[0]
+
+			if _, found := tree[name]; !found {
+				tree[name] = []string{}
+			}
+
+			var appendedOption = strings.Join(parts[1:], " ")
+
+			if len(appendedOption) > 0 && !containsCapitals(appendedOption) {
+				tree[name] = append(tree[name], appendedOption)
+			}
+		}
+	}
+
+	history := ""
+	if !*s.Options.NoHistory {
+		history, _ = core.ExpandPath(HistoryFile)
+	}
+
+	cfg := readline.Config{
+		HistoryFile:     history,
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+		AutoComplete:    readline.NewPrefixCompleter(pcompleters...),
+	}
+
+	s.Input, err = readline.NewEx(&cfg)
+	return err
+}
+
+func (s *Session) startNetMon() {
+	// keep reading network events in order to add / update endpoints
+	go func() {
+		for event := range s.Queue.Activities {
+			if !s.Active {
+				return
+			}
+
+			if s.IsOn("net.recon") && event.Source {
+				addr := event.IP.String()
+				mac := event.MAC.String()
+
+				existing := s.Lan.AddIfNew(addr, mac)
+				if existing != nil {
+					existing.LastSeen = time.Now()
+				}
+			}
+		}
+	}()
+}
+
+func (s *Session) setupSignals() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println()
+		s.Events.Log(core.WARNING, "Got SIGTERM")
+		s.Close()
+		os.Exit(0)
+	}()
+}
+
+func (s *Session) setupEnv() {
+	s.Env.Set("iface.index", fmt.Sprintf("%d", s.Interface.Index))
+	s.Env.Set("iface.name", s.Interface.Name())
+	s.Env.Set("iface.ipv4", s.Interface.IpAddress)
+	s.Env.Set("iface.ipv6", s.Interface.Ip6Address)
+	s.Env.Set("iface.mac", s.Interface.HwAddress)
+	s.Env.Set("gateway.address", s.Gateway.IpAddress)
+	s.Env.Set("gateway.mac", s.Gateway.HwAddress)
+
+	if found, v := s.Env.Get(PromptVariable); !found || v == "" {
+		s.Env.Set(PromptVariable, DefaultPrompt)
+	}
+
+	dbg := "false"
+	if *s.Options.Debug {
+		dbg = "true"
+	}
+	s.Env.WithCallback("log.debug", dbg, func(newValue string) {
+		newDbg := false
+		if newValue == "true" {
+			newDbg = true
+		}
+		s.Events.SetDebug(newDbg)
+	})
+
+	silent := "false"
+	if *s.Options.Silent {
+		silent = "true"
+	}
+	s.Env.WithCallback("log.silent", silent, func(newValue string) {
+		newSilent := false
+		if newValue == "true" {
+			newSilent = true
+		}
+		s.Events.SetSilent(newSilent)
+	})
+}
