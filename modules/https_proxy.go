@@ -132,8 +132,8 @@ func (p *HttpsProxy) Configure() error {
 			return err
 		}
 	} else {
-		log.Info("Loading proxy certification authority TLS key from %s", keyFile)
-		log.Info("Loading proxy certification authority TLS certificate from %s", certFile)
+		log.Info("loading proxy certification authority TLS key from %s", keyFile)
+		log.Info("loading proxy certification authority TLS certificate from %s", certFile)
 	}
 
 	return p.proxy.ConfigureTLS(address, proxyPort, httpPort, scriptPath, certFile, keyFile, jsToInject, stripSSL)

@@ -39,7 +39,7 @@ func LoadTcpProxyScriptSource(path, source string, sess *session.Session) (err e
 }
 
 func LoadTcpProxyScript(path string, sess *session.Session) (err error, s *TcpProxyScript) {
-	log.Info("Loading TCP proxy script %s ...", path)
+	log.Info("loading TCP proxy script %s ...", path)
 
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {

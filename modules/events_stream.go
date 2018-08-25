@@ -162,7 +162,7 @@ func (s *EventsStream) Start() error {
 				if !s.ignoreList.Ignored(e) {
 					s.View(e, true)
 				} else {
-					log.Debug("Skipping ignored event %v", e)
+					log.Debug("skipping ignored event %v", e)
 				}
 
 			case <-s.quit:
@@ -197,9 +197,9 @@ func (s *EventsStream) Show(limit int) error {
 
 func (s *EventsStream) startWaitingFor(tag string, timeout int) error {
 	if timeout == 0 {
-		log.Info("Waiting for event %s ...", core.Green(tag))
+		log.Info("waiting for event %s ...", core.Green(tag))
 	} else {
-		log.Info("Waiting for event %s for %d seconds ...", core.Green(tag), timeout)
+		log.Info("waiting for event %s for %d seconds ...", core.Green(tag), timeout)
 		go func() {
 			time.Sleep(time.Duration(timeout) * time.Second)
 			s.waitFor = ""
@@ -213,7 +213,7 @@ func (s *EventsStream) startWaitingFor(tag string, timeout int) error {
 	if event == nil {
 		return fmt.Errorf("'events.waitFor %s %d' timed out.", tag, timeout)
 	} else {
-		log.Debug("Got event: %v", event)
+		log.Debug("got event: %v", event)
 	}
 
 	return nil

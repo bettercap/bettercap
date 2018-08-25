@@ -146,7 +146,7 @@ func (pp *PacketProxy) Configure() (err error) {
 		return fmt.Errorf("%s does not exist.", pp.pluginPath)
 	}
 
-	log.Info("Loading packet proxy plugin from %s ...", pp.pluginPath)
+	log.Info("loading packet proxy plugin from %s ...", pp.pluginPath)
 
 	var ok bool
 	var sym plugin.Symbol

@@ -145,8 +145,8 @@ func (httpd *HttpServer) Configure() error {
 				return err
 			}
 		} else {
-			log.Info("Loading server TLS key from %s", keyFile)
-			log.Info("Loading server TLS certificate from %s", certFile)
+			log.Info("loading server TLS key from %s", keyFile)
+			log.Info("loading server TLS certificate from %s", certFile)
 		}
 	}
 

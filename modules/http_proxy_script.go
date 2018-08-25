@@ -58,7 +58,7 @@ func LoadHttpProxyScriptSource(path, source string, sess *session.Session) (err 
 }
 
 func LoadHttpProxyScript(path string, sess *session.Session) (err error, s *HttpProxyScript) {
-	log.Info("Loading proxy script %s ...", path)
+	log.Info("loading proxy script %s ...", path)
 
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {

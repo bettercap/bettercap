@@ -23,7 +23,7 @@ func (s *EventsStream) viewBLEEvent(e session.Event) {
 			vend = fmt.Sprintf(" (%s)", core.Yellow(vend))
 		}
 
-		fmt.Fprintf(s.output, "[%s] [%s] New BLE device%s detected as %s%s %s.\n",
+		fmt.Fprintf(s.output, "[%s] [%s] new BLE device%s detected as %s%s %s.\n",
 			e.Time.Format(eventTimeFormat),
 			core.Green(e.Tag),
 			name,

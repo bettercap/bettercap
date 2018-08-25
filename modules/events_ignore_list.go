@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	ErrEmptyExpression = errors.New("Expression can not be empty.")
+	ErrEmptyExpression = errors.New("expression can not be empty")
 )
 
 type IgnoreFilter string
@@ -51,7 +51,7 @@ func (l *IgnoreList) Add(expr string) (err error) {
 	// first check for duplicates
 	for _, filter := range l.filters {
 		if filter.Matches(expr) {
-			return fmt.Errorf("Filter '%s' already matches the expression '%s'.", filter, expr)
+			return fmt.Errorf("filter '%s' already matches the expression '%s'", filter, expr)
 		}
 	}
 
@@ -79,7 +79,7 @@ func (l *IgnoreList) Remove(expr string) (err error) {
 	}
 
 	if len(newList) == len(l.filters) {
-		return fmt.Errorf("Expression '%s' did not match any filter.", expr)
+		return fmt.Errorf("expression '%s' did not match any filter", expr)
 	}
 
 	// swap

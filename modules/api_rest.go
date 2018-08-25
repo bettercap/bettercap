@@ -149,8 +149,8 @@ func (api *RestAPI) Configure() error {
 			return err
 		}
 	} else {
-		log.Info("Loading TLS key from %s", api.keyFile)
-		log.Info("Loading TLS certificate from %s", api.certFile)
+		log.Info("loading TLS key from %s", api.keyFile)
+		log.Info("loading TLS certificate from %s", api.certFile)
 	}
 
 	api.server.Addr = fmt.Sprintf("%s:%d", ip, port)

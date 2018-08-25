@@ -154,7 +154,7 @@ func (p *ArpSpoofer) Start() error {
 
 func (p *ArpSpoofer) unSpoof() error {
 	nTargets := len(p.addresses) + len(p.macs)
-	log.Info("Restoring ARP cache of %d targets.", nTargets)
+	log.Info("restoring ARP cache of %d targets.", nTargets)
 	p.sendArp(p.Session.Gateway.IP, p.Session.Gateway.HW, false, false)
 
 	if p.internal {
@@ -174,7 +174,7 @@ func (p *ArpSpoofer) unSpoof() error {
 
 func (p *ArpSpoofer) Stop() error {
 	return p.SetRunning(false, func() {
-		log.Info("Waiting for ARP spoofer to stop ...")
+		log.Info("waiting for ARP spoofer to stop ...")
 		p.unSpoof()
 		p.ban = false
 		p.waitGroup.Wait()
