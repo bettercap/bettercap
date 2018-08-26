@@ -87,7 +87,7 @@ func NewSnifferContext() *SnifferContext {
 	return &SnifferContext{
 		Handle:       nil,
 		DumpLocal:    false,
-		Verbose:      true,
+		Verbose:      false,
 		Filter:       "",
 		Expression:   "",
 		Compiled:     nil,
