@@ -14,7 +14,7 @@ import (
 
 func (w *WiFiModule) injectPacket(data []byte) {
 	if err := w.handle.WritePacketData(data); err != nil {
-		log.Error("Could not inject WiFi packet: %s", err)
+		log.Error("cloud not inject WiFi packet: %s", err)
 		w.Session.Queue.TrackError()
 	} else {
 		w.Session.Queue.TrackSent(uint64(len(data)))
@@ -26,14 +26,14 @@ func (w *WiFiModule) injectPacket(data []byte) {
 func (w *WiFiModule) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
 	for seq := uint16(0); seq < 64 && w.Running(); seq++ {
 		if err, pkt := packets.NewDot11Deauth(ap, client, ap, seq); err != nil {
-			log.Error("Could not create deauth packet: %s", err)
+			log.Error("cloud not create deauth packet: %s", err)
 			continue
 		} else {
 			w.injectPacket(pkt)
 		}
 
 		if err, pkt := packets.NewDot11Deauth(client, ap, ap, seq); err != nil {
-			log.Error("Could not create deauth packet: %s", err)
+			log.Error("cloud not create deauth packet: %s", err)
 			continue
 		} else {
 			w.injectPacket(pkt)
