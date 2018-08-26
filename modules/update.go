@@ -80,17 +80,17 @@ func (u *UpdateModule) Start() error {
 	return u.SetRunning(true, func() {
 		defer u.SetRunning(false, nil)
 
-		log.Info("Checking latest stable release ...")
+		log.Info("checking latest stable release ...")
 
 		if releases, _, err := u.client.Repositories.ListReleases(context.Background(), "bettercap", "bettercap", nil); err == nil {
 			latest := releases[0]
 			if u.versionToNum(core.Version) < u.versionToNum(*latest.TagName) {
 				u.Session.Events.Add("update.available", latest)
 			} else {
-				log.Info("You are running %s which is the latest stable version.", core.Bold(core.Version))
+				log.Info("you are running %s which is the latest stable version.", core.Bold(core.Version))
 			}
 		} else {
-			log.Error("Error while fetching latest release info from GitHub: %s", err)
+			log.Error("error while fetching latest release info from GitHub: %s", err)
 		}
 	})
 }
