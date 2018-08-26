@@ -140,8 +140,12 @@ func (s *EventsStream) viewSnifferEvent(e session.Event) {
 
 			if err := req.ParseForm(); err == nil {
 				misc += "  \n  Form:\n\n"
-				for key, values := range req.Form {
-					misc += fmt.Sprintf("    %s => %s\n", core.Green(key), core.Bold(strings.Join(values, ", ")))
+				if len(req.Form) == 0 {
+					misc += fmt.Sprintf("    %s\n", core.Dim("<empty>"))
+				} else {
+					for key, values := range req.Form {
+						misc += fmt.Sprintf("    %s => %s\n", core.Green(key), core.Bold(strings.Join(values, ", ")))
+					}
 				}
 			} else if req.Body != nil {
 				b, _ := ioutil.ReadAll(req.Body)
