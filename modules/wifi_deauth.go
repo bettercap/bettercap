@@ -71,8 +71,7 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	}
 
 	if len(toDeauth) == 0 {
-		return fmt.Errorf("%s is an unknown BSSID.", to.String())
-
+		return fmt.Errorf("%s is an unknown BSSID or doesn't have detected clients.", to.String())
 	}
 
 	// since we need to change the wifi adapter channel for each
