@@ -143,8 +143,8 @@ func (api *RestAPI) Configure() error {
 		}
 
 		log.Debug("%+v", cfg)
-		log.Info("Generating TLS key to %s", api.keyFile)
-		log.Info("Generating TLS certificate to %s", api.certFile)
+		log.Info("generating TLS key to %s", api.keyFile)
+		log.Info("generating TLS certificate to %s", api.certFile)
 		if err := tls.Generate(cfg, api.certFile, api.keyFile); err != nil {
 			return err
 		}
