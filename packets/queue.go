@@ -13,9 +13,10 @@ import (
 )
 
 type Activity struct {
-	IP     net.IP
-	MAC    net.HardwareAddr
-	Source bool
+	IP       net.IP
+	MAC      net.HardwareAddr
+	Hostname string
+	Source   bool
 }
 
 type Traffic struct {
@@ -112,12 +113,13 @@ func (q *Queue) trackProtocols(pkt gopacket.Packet) {
 	}
 }
 
-func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, pktSize uint64, isSent bool) {
+func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, hostname string, pktSize uint64, isSent bool) {
 	// push to activity channel
 	q.Activities <- Activity{
-		IP:     address,
-		MAC:    eth.SrcMAC,
-		Source: isSent,
+		IP:       address,
+		MAC:      eth.SrcMAC,
+		Hostname: hostname,
+		Source:   isSent,
 	}
 
 	q.Lock()
@@ -190,14 +192,17 @@ func (q *Queue) worker() {
 			isFromMe := q.iface.IP.Equal(ip4.SrcIP)
 			isFromLAN := q.iface.Net.Contains(ip4.SrcIP)
 			if !isFromMe && isFromLAN {
-				q.trackActivity(eth, ip4, ip4.SrcIP, pktSize, true)
+				// check if the packet is a useful MDNS query response
+				hostname := MDNSGetHostname(pkt)
+
+				q.trackActivity(eth, ip4, ip4.SrcIP, hostname, pktSize, true)
 			}
 
 			// something going to someone on the LAN
 			isToMe := q.iface.IP.Equal(ip4.DstIP)
 			isToLAN := q.iface.Net.Contains(ip4.DstIP)
 			if !isToMe && isToLAN {
-				q.trackActivity(eth, ip4, ip4.DstIP, pktSize, false)
+				q.trackActivity(eth, ip4, ip4.DstIP, "", pktSize, false)
 			}
 		}
 	}
