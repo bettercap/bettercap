@@ -1,0 +1,15 @@
+[Unit]
+Description=bettercap api.rest service.
+Documentation=https://bettercap.org
+Wants=network.target
+After=network.target
+
+[Service]
+Type=simple
+PermissionsStartOnly=true
+ExecStart=/usr/local/bin/bettercap -autostart "events.stream, net.recon, api.rest" -no-colors -eval "set events.stream.output /var/log/bettercap.log"
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

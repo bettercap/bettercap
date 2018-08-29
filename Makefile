@@ -22,6 +22,8 @@ clean:
 install:
 	@mkdir -p /usr/share/bettercap/caplets
 	@cp bettercap /usr/local/bin/
+	@cp bettercap.service /etc/systemd/system/
+	@systemctl daemon-reload
 
 docker:
 	@docker build -t bettercap:latest .
