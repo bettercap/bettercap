@@ -90,6 +90,12 @@ func (s *Session) startNetMon() {
 				existing := s.Lan.AddIfNew(addr, mac)
 				if existing != nil {
 					existing.LastSeen = time.Now()
+				} else {
+					existing, _ = s.Lan.Get(mac)
+				}
+
+				if existing != nil && existing.Hostname == "" && event.Hostname != "" {
+					existing.Hostname = event.Hostname
 				}
 			}
 		}

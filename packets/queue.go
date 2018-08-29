@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net"
 	"sync"
@@ -13,9 +14,10 @@ import (
 )
 
 type Activity struct {
-	IP     net.IP
-	MAC    net.HardwareAddr
-	Source bool
+	IP       net.IP
+	MAC      net.HardwareAddr
+	Hostname string
+	Source   bool
 }
 
 type Traffic struct {
@@ -112,12 +114,13 @@ func (q *Queue) trackProtocols(pkt gopacket.Packet) {
 	}
 }
 
-func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, pktSize uint64, isSent bool) {
+func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, hostname string, pktSize uint64, isSent bool) {
 	// push to activity channel
 	q.Activities <- Activity{
-		IP:     address,
-		MAC:    eth.SrcMAC,
-		Source: isSent,
+		IP:       address,
+		MAC:      eth.SrcMAC,
+		Hostname: hostname,
+		Source:   isSent,
 	}
 
 	q.Lock()
@@ -162,6 +165,35 @@ func (q *Queue) TrackError() {
 	q.Stats.Errors++
 }
 
+func (q *Queue) getHostname(eth *layers.Ethernet, ip *layers.IPv4, pkt gopacket.Packet) string {
+	if ludp := pkt.Layer(layers.LayerTypeUDP); ludp != nil {
+		if udp := ludp.(*layers.UDP); udp != nil && udp.SrcPort == 5353 && udp.DstPort == 5353 {
+			data := udp.Payload
+			dataSize := len(data)
+			// mDNS query response, no errors
+			if dataSize > 4 && data[2] == 0x84 && data[3] == 0x00 {
+				// no questions
+				if dataSize > 6 && data[4] == 0x00 && data[5] == 0x00 {
+					if dataSize > 8 {
+						nAnswers := binary.BigEndian.Uint16(data[6:8])
+						auth := binary.BigEndian.Uint16(data[9:11])
+						addt := binary.BigEndian.Uint16(data[12:14])
+
+						for i := 0; i < nAnswers; i++ {
+
+						}
+
+						return fmt.Sprintf("%d answs", nAnswers)
+					}
+				}
+				return "OK"
+			}
+		}
+	}
+
+	return ""
+}
+
 func (q *Queue) worker() {
 	for pkt := range q.srcChannel {
 		if !q.active {
@@ -190,14 +222,14 @@ func (q *Queue) worker() {
 			isFromMe := q.iface.IP.Equal(ip4.SrcIP)
 			isFromLAN := q.iface.Net.Contains(ip4.SrcIP)
 			if !isFromMe && isFromLAN {
-				q.trackActivity(eth, ip4, ip4.SrcIP, pktSize, true)
+				q.trackActivity(eth, ip4, ip4.SrcIP, q.getHostname(eth, ip4, pkt), pktSize, true)
 			}
 
 			// something going to someone on the LAN
 			isToMe := q.iface.IP.Equal(ip4.DstIP)
 			isToLAN := q.iface.Net.Contains(ip4.DstIP)
 			if !isToMe && isToLAN {
-				q.trackActivity(eth, ip4, ip4.DstIP, pktSize, false)
+				q.trackActivity(eth, ip4, ip4.DstIP, "", pktSize, false)
 			}
 		}
 	}
