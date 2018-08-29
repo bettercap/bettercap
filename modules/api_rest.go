@@ -50,12 +50,12 @@ func NewRestAPI(s *session.Session) *RestAPI {
 
 	api.AddParam(session.NewStringParameter("api.rest.username",
 		"",
-		".+",
+		"",
 		"API authentication username."))
 
 	api.AddParam(session.NewStringParameter("api.rest.password",
 		"",
-		".+",
+		"",
 		"API authentication password."))
 
 	api.AddParam(session.NewStringParameter("api.rest.certificate",

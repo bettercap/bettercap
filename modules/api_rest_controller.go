@@ -43,12 +43,14 @@ func toJSON(w http.ResponseWriter, o interface{}) {
 }
 
 func (api *RestAPI) checkAuth(r *http.Request) bool {
-	user, pass, _ := r.BasicAuth()
-	// timing attack my ass
-	if subtle.ConstantTimeCompare([]byte(user), []byte(api.username)) != 1 {
-		return false
-	} else if subtle.ConstantTimeCompare([]byte(pass), []byte(api.password)) != 1 {
-		return false
+	if api.username != "" && api.password != "" {
+		user, pass, _ := r.BasicAuth()
+		// timing attack my ass
+		if subtle.ConstantTimeCompare([]byte(user), []byte(api.username)) != 1 {
+			return false
+		} else if subtle.ConstantTimeCompare([]byte(pass), []byte(api.password)) != 1 {
+			return false
+		}
 	}
 	return true
 }
