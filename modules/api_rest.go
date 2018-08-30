@@ -109,6 +109,10 @@ func (api *RestAPI) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
+func (api *RestAPI) isTLS() bool {
+	return api.certFile != "" && api.keyFile != ""
+}
+
 func (api *RestAPI) Configure() error {
 	var err error
 	var ip string
@@ -136,21 +140,23 @@ func (api *RestAPI) Configure() error {
 		return err
 	}
 
-	if !core.Exists(api.certFile) || !core.Exists(api.keyFile) {
-		err, cfg := tls.CertConfigFromModule("api.rest", api.SessionModule)
-		if err != nil {
-			return err
-		}
+	if api.isTLS() {
+		if !core.Exists(api.certFile) || !core.Exists(api.keyFile) {
+			err, cfg := tls.CertConfigFromModule("api.rest", api.SessionModule)
+			if err != nil {
+				return err
+			}
 
-		log.Debug("%+v", cfg)
-		log.Info("generating TLS key to %s", api.keyFile)
-		log.Info("generating TLS certificate to %s", api.certFile)
-		if err := tls.Generate(cfg, api.certFile, api.keyFile); err != nil {
-			return err
+			log.Debug("%+v", cfg)
+			log.Info("generating TLS key to %s", api.keyFile)
+			log.Info("generating TLS certificate to %s", api.certFile)
+			if err := tls.Generate(cfg, api.certFile, api.keyFile); err != nil {
+				return err
+			}
+		} else {
+			log.Info("loading TLS key from %s", api.keyFile)
+			log.Info("loading TLS certificate from %s", api.certFile)
 		}
-	} else {
-		log.Info("loading TLS key from %s", api.keyFile)
-		log.Info("loading TLS certificate from %s", api.certFile)
 	}
 
 	api.server.Addr = fmt.Sprintf("%s:%d", ip, port)
@@ -183,8 +189,16 @@ func (api *RestAPI) Start() error {
 	}
 
 	api.SetRunning(true, func() {
-		log.Info("API server starting on https://%s", api.server.Addr)
-		err := api.server.ListenAndServeTLS(api.certFile, api.keyFile)
+		var err error
+
+		if api.isTLS() {
+			log.Info("API server starting on https://%s", api.server.Addr)
+			err = api.server.ListenAndServeTLS(api.certFile, api.keyFile)
+		} else {
+			log.Info("API server starting on http://%s", api.server.Addr)
+			err = api.server.ListenAndServe()
+		}
+
 		if err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}
