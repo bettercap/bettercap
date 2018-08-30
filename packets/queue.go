@@ -16,6 +16,7 @@ type Activity struct {
 	IP       net.IP
 	MAC      net.HardwareAddr
 	Hostname string
+	Meta     map[string]string
 	Source   bool
 }
 
@@ -113,12 +114,13 @@ func (q *Queue) trackProtocols(pkt gopacket.Packet) {
 	}
 }
 
-func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, hostname string, pktSize uint64, isSent bool) {
+func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, hostname string, meta map[string]string, pktSize uint64, isSent bool) {
 	// push to activity channel
 	q.Activities <- Activity{
 		IP:       address,
 		MAC:      eth.SrcMAC,
 		Hostname: hostname,
+		Meta:     meta,
 		Source:   isSent,
 	}
 
@@ -192,17 +194,19 @@ func (q *Queue) worker() {
 			isFromMe := q.iface.IP.Equal(ip4.SrcIP)
 			isFromLAN := q.iface.Net.Contains(ip4.SrcIP)
 			if !isFromMe && isFromLAN {
-				// check if the packet is a useful MDNS query response
+				// check if the packet is a useful mDNS query response
 				hostname := MDNSGetHostname(pkt)
+				// check if we can get some meta info from mDNS TXT records
+				meta := MDNSGetMeta(pkt)
 
-				q.trackActivity(eth, ip4, ip4.SrcIP, hostname, pktSize, true)
+				q.trackActivity(eth, ip4, ip4.SrcIP, hostname, meta, pktSize, true)
 			}
 
 			// something going to someone on the LAN
 			isToMe := q.iface.IP.Equal(ip4.DstIP)
 			isToLAN := q.iface.Net.Contains(ip4.DstIP)
 			if !isToMe && isToLAN {
-				q.trackActivity(eth, ip4, ip4.DstIP, "", pktSize, false)
+				q.trackActivity(eth, ip4, ip4.DstIP, "", nil, pktSize, false)
 			}
 		}
 	}

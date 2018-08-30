@@ -89,10 +89,11 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) []string {
 	if withMeta {
 		metas := []string{}
 		e.Meta.Each(func(name string, value interface{}) {
-			metas = append(metas, fmt.Sprintf("%s: %s", name, value.(string)))
+			metas = append(metas, fmt.Sprintf("%s=%s", core.Bold(name), core.Yellow(value.(string))))
 		})
 
-		row = append(row, strings.Join(metas, "\n"))
+		sort.Strings(metas)
+		row = append(row, strings.Join(metas, ", "))
 	}
 
 	return row

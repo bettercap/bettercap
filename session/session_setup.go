@@ -94,8 +94,15 @@ func (s *Session) startNetMon() {
 					existing, _ = s.Lan.Get(mac)
 				}
 
-				if existing != nil && existing.Hostname == "" && event.Hostname != "" {
-					existing.Hostname = event.Hostname
+				if existing != nil {
+					if existing.Hostname == "" && event.Hostname != "" {
+						existing.Hostname = event.Hostname
+					}
+					if event.Meta != nil {
+						for k, v := range event.Meta {
+							existing.Meta.Set(k, v)
+						}
+					}
 				}
 			}
 		}
