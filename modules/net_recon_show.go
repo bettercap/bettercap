@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/bettercap/bettercap/core"
@@ -31,7 +30,7 @@ func (p ProtoPairList) Len() int           { return len(p) }
 func (p ProtoPairList) Less(i, j int) bool { return p[i].Hits < p[j].Hits }
 func (p ProtoPairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) []string {
+func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	sinceStarted := time.Since(d.Session.StartedAt)
 	sinceFirstSeen := time.Since(e.FirstSeen)
 
@@ -86,17 +85,28 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) []string {
 		seen,
 	}
 
-	if withMeta {
-		metas := []string{}
-		e.Meta.Each(func(name string, value interface{}) {
-			metas = append(metas, fmt.Sprintf("%s=%s", core.Bold(name), core.Yellow(value.(string))))
-		})
-
-		sort.Strings(metas)
-		row = append(row, strings.Join(metas, ", "))
+	if !withMeta {
+		return [][]string{row}
+	} else if e.Meta.Empty() {
+		return [][]string{append(row, core.Dim("-"))}
 	}
 
-	return row
+	metas := []string{}
+	e.Meta.Each(func(name string, value interface{}) {
+		metas = append(metas, fmt.Sprintf("%s:%s", core.Green(name), core.Yellow(value.(string))))
+	})
+	sort.Strings(metas)
+
+	rows := [][]string{}
+	for i, m := range metas {
+		if i == 0 {
+			rows = append(rows, append(row, m))
+		} else {
+			rows = append(rows, []string{"", "", "", "", "", "", "", m})
+		}
+	}
+
+	return rows
 }
 
 func (d *Discovery) Show(by string) error {
@@ -136,7 +146,9 @@ func (d *Discovery) Show(by string) error {
 
 	rows := make([][]string, 0)
 	for i, t := range targets {
-		rows = append(rows, d.getRow(t, hasMeta))
+		for _, r := range d.getRow(t, hasMeta) {
+			rows = append(rows, r)
+		}
 		if i == pad {
 			rows = append(rows, padCols)
 		}
