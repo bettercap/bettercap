@@ -23,7 +23,7 @@ type Caplet struct {
 var (
 	CapletLoadPaths = []string{
 		"./caplets/",
-		"/usr/share/bettercap/caplets/",
+		"/usr/local/share/bettercap/caplets/",
 	}
 
 	cache     = make(map[string]*Caplet)

@@ -20,7 +20,7 @@ clean:
 	@rm -rf build
 
 install:
-	@mkdir -p /usr/share/bettercap/caplets
+	@mkdir -p /usr/local/share/bettercap/caplets
 	@cp bettercap /usr/local/bin/
 	@cp bettercap.service /etc/systemd/system/
 	@systemctl daemon-reload
