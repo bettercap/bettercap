@@ -12,6 +12,13 @@ import (
 	"github.com/miekg/dns"
 )
 
+func mdnsCollectHostname(m map[string][]string, hostname string, address string) {
+	if _, found := m[hostname]; found == false {
+		m[hostname] = make([]string, 0)
+	}
+	m[hostname] = append(m[hostname], address)
+}
+
 func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 	if udp.SrcPort == packets.MDNSPort && udp.DstPort == packets.MDNSPort {
 		var msg dns.Msg
@@ -20,22 +27,11 @@ func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 			for _, answer := range append(msg.Answer, msg.Extra...) {
 				switch rr := answer.(type) {
 				case *dns.A:
-					name := rr.Header().Name
-					if _, found := m[name]; found == false {
-						m[name] = make([]string, 0)
-					}
-
-					m[name] = append(m[name], answer.(*dns.A).A.String())
+					mdnsCollectHostname(m, rr.Header().Name, answer.(*dns.A).A.String())
 
 				case *dns.AAAA:
-					name := rr.Header().Name
-					if _, found := m[name]; found == false {
-						m[name] = make([]string, 0)
-					}
-
-					m[name] = append(m[name], answer.(*dns.AAAA).AAAA.String())
+					mdnsCollectHostname(m, rr.Header().Name, answer.(*dns.AAAA).AAAA.String())
 				}
-
 			}
 
 			for hostname, ips := range m {
