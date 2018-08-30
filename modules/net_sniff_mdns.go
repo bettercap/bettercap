@@ -8,29 +8,22 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-
-	"github.com/miekg/dns"
 )
-
-func mdnsCollectHostname(m map[string][]string, hostname string, address string) {
-	if _, found := m[hostname]; found == false {
-		m[hostname] = make([]string, 0)
-	}
-	m[hostname] = append(m[hostname], address)
-}
 
 func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 	if udp.SrcPort == packets.MDNSPort && udp.DstPort == packets.MDNSPort {
-		var msg dns.Msg
-		if err := msg.Unpack(udp.Payload); err == nil && msg.Opcode == dns.OpcodeQuery && len(msg.Answer) > 0 {
+		dns := layers.DNS{}
+		if err := dns.DecodeFromBytes(udp.Payload, gopacket.NilDecodeFeedback); err == nil && dns.OpCode == layers.DNSOpCodeQuery {
 			m := make(map[string][]string)
-			for _, answer := range append(msg.Answer, msg.Extra...) {
-				switch rr := answer.(type) {
-				case *dns.A:
-					mdnsCollectHostname(m, rr.Header().Name, answer.(*dns.A).A.String())
-
-				case *dns.AAAA:
-					mdnsCollectHostname(m, rr.Header().Name, answer.(*dns.AAAA).AAAA.String())
+			answers := append(dns.Answers, dns.Additionals...)
+			answers = append(answers, dns.Authorities...)
+			for _, answer := range answers {
+				if answer.Type == layers.DNSTypeA || answer.Type == layers.DNSTypeAAAA {
+					hostname := string(answer.Name)
+					if _, found := m[hostname]; found == false {
+						m[hostname] = make([]string, 0)
+					}
+					m[hostname] = append(m[hostname], answer.IP.String())
 				}
 			}
 

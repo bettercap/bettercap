@@ -7,8 +7,6 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-
-	"github.com/miekg/dns"
 )
 
 const MDNSPort = 5353
@@ -16,15 +14,16 @@ const MDNSPort = 5353
 func MDNSGetMeta(pkt gopacket.Packet) map[string]string {
 	if ludp := pkt.Layer(layers.LayerTypeUDP); ludp != nil {
 		if udp := ludp.(*layers.UDP); udp != nil && udp.SrcPort == MDNSPort && udp.DstPort == MDNSPort {
-			var msg dns.Msg
-			if err := msg.Unpack(udp.Payload); err == nil && msg.Opcode == dns.OpcodeQuery && len(msg.Answer) > 0 {
-				for _, answer := range append(msg.Answer, msg.Extra...) {
-					switch answer.(type) {
-					case *dns.TXT:
+			dns := layers.DNS{}
+			if err := dns.DecodeFromBytes(udp.Payload, gopacket.NilDecodeFeedback); err == nil {
+				answers := append(dns.Answers, dns.Additionals...)
+				answers = append(answers, dns.Authorities...)
+				for _, answer := range answers {
+					switch answer.Type {
+					case layers.DNSTypeTXT:
 						meta := make(map[string]string)
-						txt := answer.(*dns.TXT)
-						for _, value := range txt.Txt {
-							if strings.Contains(value, "=") {
+						for _, raw := range answer.TXTs {
+							if value := string(raw); strings.Contains(value, "=") {
 								parts := strings.SplitN(value, "=", 2)
 								meta[core.Trim(parts[0])] = core.Trim(parts[1])
 							}
@@ -43,14 +42,16 @@ func MDNSGetMeta(pkt gopacket.Packet) map[string]string {
 func MDNSGetHostname(pkt gopacket.Packet) string {
 	if ludp := pkt.Layer(layers.LayerTypeUDP); ludp != nil {
 		if udp := ludp.(*layers.UDP); udp != nil && udp.SrcPort == MDNSPort && udp.DstPort == MDNSPort {
-			var msg dns.Msg
-			if err := msg.Unpack(udp.Payload); err == nil && msg.Opcode == dns.OpcodeQuery && len(msg.Answer) > 0 {
-				for _, answer := range append(msg.Answer, msg.Extra...) {
-					switch rr := answer.(type) {
-					case *dns.PTR:
-					case *dns.A:
-					case *dns.AAAA:
-						return rr.Header().Name
+			dns := layers.DNS{}
+			if err := dns.DecodeFromBytes(udp.Payload, gopacket.NilDecodeFeedback); err == nil {
+				answers := append(dns.Answers, dns.Additionals...)
+				answers = append(answers, dns.Authorities...)
+				for _, answer := range answers {
+					switch answer.Type {
+					case layers.DNSTypePTR:
+					case layers.DNSTypeA:
+					case layers.DNSTypeAAAA:
+						return string(answer.Name)
 					}
 				}
 			}
