@@ -14,6 +14,21 @@ func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 	if udp.SrcPort == packets.MDNSPort && udp.DstPort == packets.MDNSPort {
 		dns := layers.DNS{}
 		if err := dns.DecodeFromBytes(udp.Payload, gopacket.NilDecodeFeedback); err == nil && dns.OpCode == layers.DNSOpCodeQuery {
+			for _, q := range dns.Questions {
+				NewSnifferEvent(
+					pkt.Metadata().Timestamp,
+					"mdns",
+					ip.SrcIP.String(),
+					ip.DstIP.String(),
+					nil,
+					"%s %s : %s query for %s",
+					core.W(core.BG_DGRAY+core.FG_WHITE, "mdns"),
+					vIP(ip.SrcIP),
+					core.Dim(q.Type.String()),
+					core.Yellow(string(q.Name)),
+				).Push()
+			}
+
 			m := make(map[string][]string)
 			answers := append(dns.Answers, dns.Additionals...)
 			answers = append(answers, dns.Authorities...)
