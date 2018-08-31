@@ -146,9 +146,7 @@ func (d *Discovery) Show(by string) error {
 
 	rows := make([][]string, 0)
 	for i, t := range targets {
-		for _, r := range d.getRow(t, hasMeta) {
-			rows = append(rows, r)
-		}
+		rows = append(rows, d.getRow(t, hasMeta)...)
 		if i == pad {
 			rows = append(rows, padCols)
 		}
