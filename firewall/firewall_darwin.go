@@ -50,13 +50,13 @@ func (f PfFirewall) sysCtlRead(param string) (string, error) {
 
 func (f PfFirewall) sysCtlWrite(param string, value string) (string, error) {
 	args := []string{"-w", fmt.Sprintf("%s=%s", param, value)}
-	out, err := core.ExecSilent("sysctl", args)
+	_, err := core.ExecSilent("sysctl", args)
 	if err != nil {
 		return "", err
 	}
 
 	// make sure we actually wrote the value
-	if out, err = f.sysCtlRead(param); err != nil {
+	if out, err := f.sysCtlRead(param); err != nil {
 		return "", err
 	} else if out != value {
 		return "", fmt.Errorf("Expected value for '%s' is %s, found %s", param, value, out)
