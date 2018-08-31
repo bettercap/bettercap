@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 type JSRequest struct {
