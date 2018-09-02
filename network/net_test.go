@@ -35,15 +35,52 @@ func TestNormalizeMac(t *testing.T) {
 
 // TODO: refactor to parse targets with an actual alias map
 func TestParseTargets(t *testing.T) {
-	ips, macs, err := ParseTargets("192.168.1.2, 192.168.1.3", &Aliases{})
-	if err != nil {
-		t.Error("ips:", ips, "macs:", macs, "err:", err)
+	cases := []struct {
+		Name             string
+		InputTargets     string
+		InputAliases     *Aliases
+		ExpectedIPCount  int
+		ExpectedMACCount int
+		ExpectedError    bool
+	}{
+		// Not sure how to trigger sad path where macParser.FindAllString()
+		// finds a MAC but net.ParseMac() fails on the result.
+		{
+			"empty target string causes empty return",
+			"",
+			&Aliases{},
+			0,
+			0,
+			false,
+		},
+		{
+			"MACs are parsed",
+			"192.168.1.2, 192.168.1.3, 5c:00:0b:90:a9:f0, 6c:00:0b:90:a9:f0",
+			&Aliases{},
+			2,
+			2,
+			false,
+		},
 	}
-	if len(ips) != 2 {
-		t.Fatalf("expected '%d', got '%d'", 2, len(ips))
-	}
-	if len(macs) != 0 {
-		t.Fatalf("expected '%d', got '%d'", 0, len(macs))
+	for _, test := range cases {
+		t.Run(test.Name, func(t *testing.T) {
+			ips, macs, err := ParseTargets(test.InputTargets, test.InputAliases)
+			if err != nil && !test.ExpectedError {
+				t.Errorf("unexpected error: %s", err)
+			}
+			if err == nil && test.ExpectedError {
+				t.Error("Expected error, but got none")
+			}
+			if test.ExpectedError {
+				return
+			}
+			if len(ips) != test.ExpectedIPCount {
+				t.Errorf("Wrong number of IPs. Got %v for targets %s", ips, test.InputTargets)
+			}
+			if len(macs) != test.ExpectedMACCount {
+				t.Errorf("Wrong number of MACs. Got %v for targets %s", macs, test.InputTargets)
+			}
+		})
 	}
 }
 

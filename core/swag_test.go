@@ -1,6 +1,22 @@
 package core
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
+
+func TestIsDumbTerminal(t *testing.T) {
+	term := os.Getenv("TERM")
+	os.Setenv("TERM", "dumb")
+	if !isDumbTerminal() {
+		t.Fatal("Expected false when TERM==dumb")
+	}
+	os.Setenv("TERM", "")
+	if !isDumbTerminal() {
+		t.Fatal("Expected false when TERM empty")
+	}
+	os.Setenv("TERM", term)
+}
 
 func TestW(t *testing.T) {
 	exp := "<3\033[0m"
@@ -56,4 +72,24 @@ func TestYellow(t *testing.T) {
 	if got != exp {
 		t.Fatalf("expected path '%s', got '%s'", exp, got)
 	}
+}
+
+func TestInitSwag(t *testing.T) {
+	// Run after other tests to avoid breaking globals
+	// Test InitSwag unsets globals when set
+	BOLD = "\033[1m"
+	InitSwag(true)
+	if BOLD != "" {
+		t.Fatal("expected BOLD to be empty string")
+	}
+	term := os.Getenv("TERM")
+	os.Setenv("TERM", "dumb")
+	BOLD = "\033[1m"
+	InitSwag(false)
+	if BOLD != "" {
+		t.Fatal("expected BOLD to be empty string")
+	}
+	os.Setenv("TERM", term)
+	// Would be good to test BOLD *isn't* unset when we have a TTY
+	// but less trivial to stub os.File.Fd() without complicating architecture
 }

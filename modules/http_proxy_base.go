@@ -124,7 +124,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	}
 
 	if p.jsHook == "" && jsToInject != "" {
-		if strings.HasPrefix(jsToInject, "<script ") == false {
+		if !strings.HasPrefix(jsToInject, "<script ") {
 			jsToInject = fmt.Sprintf("<script type=\"text/javascript\">%s</script>", jsToInject)
 		}
 		p.jsHook = fmt.Sprintf("%s</head>", jsToInject)

@@ -35,7 +35,7 @@ func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 			for _, answer := range answers {
 				if answer.Type == layers.DNSTypeA || answer.Type == layers.DNSTypeAAAA {
 					hostname := string(answer.Name)
-					if _, found := m[hostname]; found == false {
+					if _, found := m[hostname]; !found {
 						m[hostname] = make([]string, 0)
 					}
 					m[hostname] = append(m[hostname], answer.IP.String())

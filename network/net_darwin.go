@@ -10,7 +10,7 @@ import (
 
 const airPortPath = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
-var IPv4RouteParser = regexp.MustCompile("^([a-z]+)+\\s+(\\d+\\.+\\d+.\\d.+\\d)+\\s+([a-zA-z]+)+\\s+(\\d+)+\\s+(\\d+)+\\s+([a-zA-Z]+\\d+)$")
+var IPv4RouteParser = regexp.MustCompile(`^([a-z]+)+\s+(\d+\.+\d+.\d.+\d)+\s+([a-zA-z]+)+\s+(\d+)+\s+(\d+)+\s+([a-zA-Z]+\d+)$`)
 var IPv4RouteTokens = 7
 var IPv4RouteCmd = "netstat"
 var IPv4RouteCmdOpts = []string{"-n", "-r"}

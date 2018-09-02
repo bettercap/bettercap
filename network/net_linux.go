@@ -59,13 +59,12 @@ func SetInterfaceChannel(iface string, channel int) error {
 	return nil
 }
 
-func GetSupportedFrequencies(iface string) ([]int, error) {
+func processSupportedFrequencies(output string, err error) ([]int, error) {
 	freqs := make([]int, 0)
-	out, err := core.Exec("iwlist", []string{iface, "freq"})
 	if err != nil {
 		return freqs, err
-	} else if out != "" {
-		scanner := bufio.NewScanner(strings.NewReader(out))
+	} else if output != "" {
+		scanner := bufio.NewScanner(strings.NewReader(output))
 		for scanner.Scan() {
 			line := scanner.Text()
 			matches := WiFiFreqParser.FindStringSubmatch(line)
@@ -77,4 +76,9 @@ func GetSupportedFrequencies(iface string) ([]int, error) {
 		}
 	}
 	return freqs, nil
+}
+
+func GetSupportedFrequencies(iface string) ([]int, error) {
+	out, err := core.Exec("iwlist", []string{iface, "freq"})
+	return processSupportedFrequencies(out, err)
 }
