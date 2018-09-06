@@ -102,6 +102,8 @@ func (p *Prober) Start() error {
 		throttle := time.Duration(p.throttle) * time.Millisecond
 
 		for p.Running() {
+			p.sendProbeMDNS(from, from_hw)
+
 			for _, ip := range addresses {
 				if !p.Running() {
 					return

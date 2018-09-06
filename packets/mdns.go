@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"net"
 	"strings"
 
 	"github.com/bettercap/bettercap/core"
@@ -10,6 +11,11 @@ import (
 )
 
 const MDNSPort = 5353
+
+var (
+	MDNSDestMac = net.HardwareAddr{0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb}
+	MDNSDestIP  = net.ParseIP("224.0.0.251")
+)
 
 func MDNSGetMeta(pkt gopacket.Packet) map[string]string {
 	if ludp := pkt.Layer(layers.LayerTypeUDP); ludp != nil {
@@ -58,4 +64,44 @@ func MDNSGetHostname(pkt gopacket.Packet) string {
 		}
 	}
 	return ""
+}
+
+func NewMDNSProbe(from net.IP, from_hw net.HardwareAddr) (error, []byte) {
+	eth := layers.Ethernet{
+		SrcMAC:       from_hw,
+		DstMAC:       MDNSDestMac,
+		EthernetType: layers.EthernetTypeIPv4,
+	}
+
+	ip4 := layers.IPv4{
+		Protocol: layers.IPProtocolUDP,
+		Version:  4,
+		TTL:      64,
+		SrcIP:    from,
+		DstIP:    MDNSDestIP,
+	}
+
+	udp := layers.UDP{
+		SrcPort: layers.UDPPort(12345),
+		DstPort: layers.UDPPort(MDNSPort),
+	}
+
+	dns := layers.DNS{
+		ID:     1,
+		RD:     true,
+		OpCode: layers.DNSOpCodeQuery,
+		Questions: []layers.DNSQuestion{
+			layers.DNSQuestion{
+				Name:  []byte("_services._dns-sd._udp.local"),
+				Type:  layers.DNSTypePTR,
+				Class: layers.DNSClassIN,
+			},
+		},
+	}
+
+	if err := udp.SetNetworkLayerForChecksum(&ip4); err != nil {
+		return err, nil
+	}
+
+	return Serialize(&eth, &ip4, &udp, &dns)
 }
