@@ -15,6 +15,7 @@ import (
 type Probes struct {
 	NBNS bool
 	MDNS bool
+	UPNP bool
 }
 
 type Prober struct {
@@ -37,6 +38,10 @@ func NewProber(s *session.Session) *Prober {
 	p.AddParam(session.NewBoolParameter("net.probe.mdns",
 		"true",
 		"Enable mDNS discovery probes."))
+
+	p.AddParam(session.NewBoolParameter("net.probe.upnp",
+		"true",
+		"Enable UPNP discovery probes."))
 
 	p.AddParam(session.NewIntParameter("net.probe.throttle",
 		"10",
@@ -89,6 +94,8 @@ func (p *Prober) Configure() error {
 		return err
 	} else if err, p.probes.MDNS = p.BoolParam("net.probe.mdns"); err != nil {
 		return err
+	} else if err, p.probes.UPNP = p.BoolParam("net.probe.upnp"); err != nil {
+		return err
 	} else {
 		log.Debug("Throttling packets of %d ms.", p.throttle)
 	}
@@ -122,6 +129,10 @@ func (p *Prober) Start() error {
 		for p.Running() {
 			if p.probes.MDNS {
 				p.sendProbeMDNS(from, from_hw)
+			}
+
+			if p.probes.UPNP {
+				p.sendProbeUPNP(from, from_hw)
 			}
 
 			for _, ip := range addresses {
