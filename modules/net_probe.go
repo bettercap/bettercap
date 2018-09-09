@@ -60,7 +60,7 @@ func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
 
 	wg.Add(1)
 	go func(w *sync.WaitGroup) {
-		p.sendProbeUDP(from, from_hw, ip)
+		p.sendProbeNBNS(from, from_hw, ip)
 		w.Done()
 	}(&wg)
 
@@ -109,6 +109,9 @@ func (p *Prober) Start() error {
 					return
 				} else if p.Session.Skip(ip) {
 					log.Debug("Skipping address %s from UDP probing.", ip)
+					continue
+				} else if p.Session.Lan.GetByIp(ip.String()) != nil {
+					log.Debug("Skipping address %s from UDP probing (already in the arp cache).", ip)
 					continue
 				}
 
