@@ -20,6 +20,12 @@ var (
 func MDNSGetMeta(pkt gopacket.Packet) map[string]string {
 	meta := make(map[string]string)
 
+	defer func() {
+		if r := recover(); r != nil {
+			meta = nil
+		}
+	}()
+
 	if ludp := pkt.Layer(layers.LayerTypeUDP); ludp != nil {
 		if udp := ludp.(*layers.UDP); udp != nil && udp.SrcPort == MDNSPort && udp.DstPort == MDNSPort {
 			dns := layers.DNS{}
@@ -47,7 +53,7 @@ func MDNSGetMeta(pkt gopacket.Packet) map[string]string {
 		}
 	}
 
-	if len(meta) > 0 {
+	if meta != nil && len(meta) > 0 {
 		return meta
 	}
 	return nil
