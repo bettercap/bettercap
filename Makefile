@@ -9,14 +9,13 @@ deps: godep golint gomegacheck
 build: resources
 	@go build -o $(TARGET) .
 
-resources: network/oui.go
+resources: network/manuf.go
 
-network/oui.go:
-	@python ./network/make_oui.py
+network/manuf.go:
+	@python ./network/make_manuf.py
 
 clean:
-	@rm -rf $(TARGET).*
-	@rm -rf $(TARGET)*
+	@rm -rf $(TARGET)
 	@rm -rf build
 
 install:

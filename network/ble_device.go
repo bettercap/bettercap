@@ -30,7 +30,7 @@ func NewBLEDevice(p gatt.Peripheral, a *gatt.Advertisement, rssi int) *BLEDevice
 	return &BLEDevice{
 		LastSeen:      time.Now(),
 		Device:        p,
-		Vendor:        OuiLookup(NormalizeMac(p.ID())),
+		Vendor:        ManufLookup(NormalizeMac(p.ID())),
 		Advertisement: a,
 		RSSI:          rssi,
 	}

@@ -1,0 +1,28 @@
+package network
+
+import (
+    "fmt"
+	"strings"
+    "math/big"
+)
+
+var manuf = #MAP#
+
+func ManufLookup(mac string) string {
+    macHex := strings.Replace(mac, ":", "", -1)
+    macInt := new(big.Int)
+
+    if _, ok := macInt.SetString(macHex, 16); ok == false {
+        return ""
+    }
+
+    for mask := uint(0); mask < 48; mask++ {
+        shifted := new(big.Int).Rsh(macInt, mask)
+        key := fmt.Sprintf("%d.%s", mask, shifted)
+        if vendor, found := manuf[key]; found {
+            return vendor
+        }   
+    }
+
+	return ""
+}

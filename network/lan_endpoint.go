@@ -47,7 +47,7 @@ func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 		SubnetBits:       bits,
 		HwAddress:        mac,
 		Hostname:         name,
-		Vendor:           OuiLookup(mac),
+		Vendor:           ManufLookup(mac),
 		ResolvedCallback: nil,
 		FirstSeen:        now,
 		LastSeen:         now,
