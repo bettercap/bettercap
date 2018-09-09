@@ -79,7 +79,7 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 		addr,
 		mac,
 		name,
-		e.Vendor,
+		core.Dim(e.Vendor),
 		humanize.Bytes(traffic.Sent),
 		humanize.Bytes(traffic.Received),
 		seen,
