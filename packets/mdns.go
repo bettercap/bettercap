@@ -38,7 +38,7 @@ func MDNSGetMeta(pkt gopacket.Packet) map[string]string {
 						for _, raw := range answer.TXTs {
 							if value := string(raw); strings.Contains(value, "=") {
 								parts := strings.SplitN(value, "=", 2)
-								meta[core.Trim(parts[0])] = core.Trim(parts[1])
+								meta["mdns:"+core.Trim(parts[0])] = core.Trim(parts[1])
 							}
 						}
 					}
