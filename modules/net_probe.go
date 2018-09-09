@@ -12,9 +12,15 @@ import (
 	"github.com/malfunkt/iprange"
 )
 
+type Probes struct {
+	NBNS bool
+	MDNS bool
+}
+
 type Prober struct {
 	session.SessionModule
 	throttle  int
+	probes    Probes
 	waitGroup *sync.WaitGroup
 }
 
@@ -23,6 +29,14 @@ func NewProber(s *session.Session) *Prober {
 		SessionModule: session.NewSessionModule("net.probe", s),
 		waitGroup:     &sync.WaitGroup{},
 	}
+
+	p.AddParam(session.NewBoolParameter("net.probe.nbns",
+		"true",
+		"Enable NetBIOS name service discovery probes."))
+
+	p.AddParam(session.NewBoolParameter("net.probe.mdns",
+		"true",
+		"Enable mDNS discovery probes."))
 
 	p.AddParam(session.NewIntParameter("net.probe.throttle",
 		"10",
@@ -71,6 +85,10 @@ func (p *Prober) Configure() error {
 	var err error
 	if err, p.throttle = p.IntParam("net.probe.throttle"); err != nil {
 		return err
+	} else if err, p.probes.NBNS = p.BoolParam("net.probe.nbns"); err != nil {
+		return err
+	} else if err, p.probes.MDNS = p.BoolParam("net.probe.mdns"); err != nil {
+		return err
 	} else {
 		log.Debug("Throttling packets of %d ms.", p.throttle)
 	}
@@ -102,7 +120,9 @@ func (p *Prober) Start() error {
 		throttle := time.Duration(p.throttle) * time.Millisecond
 
 		for p.Running() {
-			p.sendProbeMDNS(from, from_hw)
+			if p.probes.MDNS {
+				p.sendProbeMDNS(from, from_hw)
+			}
 
 			for _, ip := range addresses {
 				if !p.Running() {
@@ -112,7 +132,9 @@ func (p *Prober) Start() error {
 					continue
 				}
 
-				p.sendProbe(from, from_hw, ip)
+				if p.probes.NBNS {
+					p.sendProbe(from, from_hw, ip)
+				}
 
 				time.Sleep(throttle)
 			}
