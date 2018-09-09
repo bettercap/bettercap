@@ -29,6 +29,10 @@ func NewDiscovery(s *session.Session) *Discovery {
 			return d.Stop()
 		}))
 
+	d.AddParam(session.NewBoolParameter("net.show.meta",
+		"true",
+		"If true, the net.show command will show all metadata collected about each endpoint."))
+
 	d.AddHandler(session.NewModuleHandler("net.show", "",
 		"Show cache hosts list (default sorting by ip).",
 		func(args []string) error {

@@ -110,6 +110,11 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 }
 
 func (d *Discovery) Show(by string, addr string) error {
+	err, showMeta := d.BoolParam("net.show.meta")
+	if err != nil {
+		return err
+	}
+
 	targets := d.Session.Lan.List()
 	if by == "seen" {
 		sort.Sort(BySeenSorter(targets))
@@ -141,10 +146,12 @@ func (d *Discovery) Show(by string, addr string) error {
 	}
 
 	hasMeta := false
-	for _, t := range targets {
-		if !t.Meta.Empty() {
-			hasMeta = true
-			break
+	if showMeta {
+		for _, t := range targets {
+			if !t.Meta.Empty() {
+				hasMeta = true
+				break
+			}
 		}
 	}
 
