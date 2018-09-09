@@ -166,30 +166,18 @@ func (q *Queue) TrackError() {
 
 func (q *Queue) getPacketMeta(pkt gopacket.Packet) map[string]string {
 	meta := make(map[string]string)
-	mdns := MDNSGetMeta(pkt)
-	nbns := NBNSGetMeta(pkt)
 
-	if mdns != nil {
+	if mdns := MDNSGetMeta(pkt); mdns != nil {
 		for k, v := range mdns {
 			meta[k] = v
 		}
 	}
 
-	if nbns != nil {
+	if nbns := NBNSGetMeta(pkt); nbns != nil {
 		for k, v := range nbns {
 			meta[k] = v
 		}
 	}
-	/*
-		// check if the packet is a useful mDNS query response
-		hostname := MDNSGetHostname(pkt)
-		// check if we can get some meta info from mDNS TXT records
-		meta := MDNSGetMeta(pkt)
-
-		if hostname != "" {
-			meta["mdns:hostname"] = hostname
-		}
-	*/
 
 	return meta
 }

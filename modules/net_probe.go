@@ -110,9 +110,6 @@ func (p *Prober) Start() error {
 				} else if p.Session.Skip(ip) {
 					log.Debug("Skipping address %s from UDP probing.", ip)
 					continue
-				} else if p.Session.Lan.GetByIp(ip.String()) != nil {
-					log.Debug("Skipping address %s from UDP probing (already in the arp cache).", ip)
-					continue
 				}
 
 				p.sendProbe(from, from_hw, ip)
