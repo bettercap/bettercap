@@ -32,25 +32,31 @@ func NewDiscovery(s *session.Session) *Discovery {
 	d.AddHandler(session.NewModuleHandler("net.show", "",
 		"Show cache hosts list (default sorting by ip).",
 		func(args []string) error {
-			return d.Show("address")
+			return d.Show("address", "")
 		}))
 
 	d.AddHandler(session.NewModuleHandler("net.show by seen", "",
 		"Show cache hosts list (sort by last seen).",
 		func(args []string) error {
-			return d.Show("seen")
+			return d.Show("seen", "")
 		}))
 
 	d.AddHandler(session.NewModuleHandler("net.show by sent", "",
 		"Show cache hosts list (sort by sent packets).",
 		func(args []string) error {
-			return d.Show("sent")
+			return d.Show("sent", "")
 		}))
 
 	d.AddHandler(session.NewModuleHandler("net.show by rcvd", "",
 		"Show cache hosts list (sort by received packets).",
 		func(args []string) error {
-			return d.Show("rcvd")
+			return d.Show("rcvd", "")
+		}))
+
+	d.AddHandler(session.NewModuleHandler("net.show ADDRESS", `net.show ([\d\.]+)`,
+		"Show information about a specific address.",
+		func(args []string) error {
+			return d.Show("address", args[0])
 		}))
 
 	return d

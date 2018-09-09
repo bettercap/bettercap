@@ -109,7 +109,7 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	return rows
 }
 
-func (d *Discovery) Show(by string) error {
+func (d *Discovery) Show(by string, addr string) error {
 	targets := d.Session.Lan.List()
 	if by == "seen" {
 		sort.Sort(BySeenSorter(targets))
@@ -127,6 +127,17 @@ func (d *Discovery) Show(by string) error {
 		targets = append([]*network.Endpoint{d.Session.Interface}, targets...)
 	} else {
 		targets = append([]*network.Endpoint{d.Session.Interface, d.Session.Gateway}, targets...)
+	}
+
+	if addr != "" {
+		tmp := make([]*network.Endpoint, 0)
+		pad = 0
+		for _, t := range targets {
+			if t.IP.String() == addr {
+				tmp = append(tmp, t)
+			}
+		}
+		targets = tmp
 	}
 
 	hasMeta := false
