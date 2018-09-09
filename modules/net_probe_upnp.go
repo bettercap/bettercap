@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/bettercap/bettercap/log"
@@ -8,13 +9,18 @@ import (
 )
 
 func (p *Prober) sendProbeUPNP(from net.IP, from_hw net.HardwareAddr) {
-	err, raw := packets.NewUPNPProbe(from, from_hw)
-	if err != nil {
-		log.Error("error while sending upnp probe: %v", err)
-		return
-	} else if err := p.Session.Queue.Send(raw); err != nil {
-		log.Error("error sending upnp packet: %s", err)
+	name := fmt.Sprintf("%s:%d", packets.UPNPDestIP, packets.UPNPPort)
+	if addr, err := net.ResolveUDPAddr("udp", name); err != nil {
+		log.Debug("could not resolve %s.", name)
+	} else if con, err := net.DialUDP("udp", nil, addr); err != nil {
+		log.Debug("could not dial %s.", name)
 	} else {
-		log.Debug("sent %d bytes of UPNP probe", len(raw))
+		defer con.Close()
+		if wrote, _ := con.Write(packets.UPNPDiscoveryPayload); wrote > 0 {
+			p.Session.Queue.TrackSent(uint64(wrote))
+		} else {
+			p.Session.Queue.TrackError()
+		}
 	}
+
 }
