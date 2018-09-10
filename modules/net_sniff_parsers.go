@@ -69,6 +69,31 @@ func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	}
 }
 
+// icmpParser logs ICMPv4 events when verbose, and does nothing otherwise.
+//
+// A useful improvement would be to log the ICMP code
+// and add meaningful interpretation of the payload based on code.
+func icmpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
+	if verbose {
+		icmp := pkt.Layer(layers.LayerTypeICMPv4)
+		layerType := icmp.LayerType().String()
+		NewSnifferEvent(
+			pkt.Metadata().Timestamp,
+			layerType,
+			vIP(ip.SrcIP),
+			vIP(ip.DstIP),
+			SniffData{
+				"Size": len(ip.Payload),
+			},
+			"%s %s > %s %s",
+			core.W(core.BG_DGRAY+core.FG_WHITE, layerType),
+			vIP(ip.SrcIP),
+			vIP(ip.DstIP),
+			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
+		).Push()
+	}
+}
+
 func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	if verbose {
 		NewSnifferEvent(
@@ -105,8 +130,14 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 
 		tlayer := pkt.TransportLayer()
 		if tlayer == nil {
-			log.Debug("Missing transport layer skipping packet.")
-			return false
+			_, icmpOk := pkt.Layer(layers.LayerTypeICMPv4).(*layers.ICMPv4)
+			if icmpOk {
+				icmpParser(ip, pkt, verbose)
+				return true
+			} else {
+				log.Debug("Missing transport layer skipping packet.")
+				return false
+			}
 		}
 
 		if tlayer.LayerType() == layers.LayerTypeTCP {
