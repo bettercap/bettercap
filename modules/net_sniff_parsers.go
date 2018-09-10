@@ -12,7 +12,11 @@ import (
 )
 
 func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
-	tcp := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
+	tcp, tcpOk := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
+	if !tcpOk {
+		log.Debug("Could not parse TCP layer, skipping packet")
+		return
+	}
 
 	if sniParser(ip, pkt, tcp) {
 		return
@@ -41,7 +45,11 @@ func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 }
 
 func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
-	udp := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
+	udp, udpOk := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
+	if !udpOk {
+		log.Debug("Could not parse UDP layer, skipping packet")
+		return
+	}
 
 	if dnsParser(ip, pkt, udp) {
 		return
@@ -122,8 +130,8 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 			return false
 		}
 
-		ip, ok := nlayer.(*layers.IPv4)
-		if !ok {
+		ip, ipOk := nlayer.(*layers.IPv4)
+		if !ipOk {
 			log.Debug("Could not extract network layer, skipping packet")
 			return false
 		}
