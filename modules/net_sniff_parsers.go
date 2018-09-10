@@ -12,7 +12,11 @@ import (
 )
 
 func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
-	tcp := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
+	tcp, tcpOk := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
+	if !tcpOk {
+		log.Debug("Could not parse TCP layer, skipping packet")
+		return
+	}
 
 	if sniParser(ip, pkt, tcp) {
 		return
@@ -41,7 +45,11 @@ func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 }
 
 func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
-	udp := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
+	udp, udpOk := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
+	if !udpOk {
+		log.Debug("Could not parse UDP layer, skipping packet")
+		return
+	}
 
 	if dnsParser(ip, pkt, udp) {
 		return
@@ -64,6 +72,31 @@ func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 			vPort(udp.SrcPort),
 			vIP(ip.DstIP),
 			vPort(udp.DstPort),
+			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
+		).Push()
+	}
+}
+
+// icmpParser logs ICMPv4 events when verbose, and does nothing otherwise.
+//
+// A useful improvement would be to log the ICMP code
+// and add meaningful interpretation of the payload based on code.
+func icmpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
+	if verbose {
+		icmp := pkt.Layer(layers.LayerTypeICMPv4)
+		layerType := icmp.LayerType().String()
+		NewSnifferEvent(
+			pkt.Metadata().Timestamp,
+			layerType,
+			vIP(ip.SrcIP),
+			vIP(ip.DstIP),
+			SniffData{
+				"Size": len(ip.Payload),
+			},
+			"%s %s > %s %s",
+			core.W(core.BG_DGRAY+core.FG_WHITE, layerType),
+			vIP(ip.SrcIP),
+			vIP(ip.DstIP),
 			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
 		).Push()
 	}
@@ -97,12 +130,22 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 			return false
 		}
 
-		ip := nlayer.(*layers.IPv4)
+		ip, ipOk := nlayer.(*layers.IPv4)
+		if !ipOk {
+			log.Debug("Could not extract network layer, skipping packet")
+			return false
+		}
 
 		tlayer := pkt.TransportLayer()
 		if tlayer == nil {
-			log.Debug("Missing transport layer skipping packet.")
-			return false
+			_, icmpOk := pkt.Layer(layers.LayerTypeICMPv4).(*layers.ICMPv4)
+			if icmpOk {
+				icmpParser(ip, pkt, verbose)
+				return true
+			} else {
+				log.Debug("Missing transport layer skipping packet.")
+				return false
+			}
 		}
 
 		if tlayer.LayerType() == layers.LayerTypeTCP {
