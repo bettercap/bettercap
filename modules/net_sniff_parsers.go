@@ -97,7 +97,11 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 			return false
 		}
 
-		ip := nlayer.(*layers.IPv4)
+		ip, ok := nlayer.(*layers.IPv4)
+		if !ok {
+			log.Debug("Could not extract network layer, skipping packet")
+			return false
+		}
 
 		tlayer := pkt.TransportLayer()
 		if tlayer == nil {
