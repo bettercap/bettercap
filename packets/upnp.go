@@ -1,8 +1,18 @@
 package packets
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"net"
+	"net/http"
+	// "net/url"
+	"strings"
+
+	"github.com/bettercap/bettercap/core"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 const (
@@ -19,3 +29,25 @@ var (
 		"MX: 2\r\n" +
 		"\r\n")
 )
+
+func UPNPGetMeta(pkt gopacket.Packet) map[string]string {
+	if ludp := pkt.Layer(layers.LayerTypeUDP); ludp != nil {
+		if udp := ludp.(*layers.UDP); udp != nil && udp.SrcPort == UPNPPort && len(udp.Payload) > 0 {
+			request := &http.Request{}
+			reader := bufio.NewReader(bytes.NewReader(udp.Payload))
+			if response, err := http.ReadResponse(reader, request); err == nil {
+				meta := make(map[string]string)
+				for name, values := range response.Header {
+					if name != "Cache-Control" && len(values) > 0 {
+						if data := strings.Join(values, ", "); core.Trim(data) != "" {
+							meta["upnp:"+name] = data
+						}
+
+					}
+				}
+				return meta
+			}
+		}
+	}
+	return nil
+}

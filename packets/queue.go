@@ -166,19 +166,13 @@ func (q *Queue) TrackError() {
 
 func (q *Queue) getPacketMeta(pkt gopacket.Packet) map[string]string {
 	meta := make(map[string]string)
-
 	if mdns := MDNSGetMeta(pkt); mdns != nil {
-		for k, v := range mdns {
-			meta[k] = v
-		}
+		meta = mdns
+	} else if nbns := NBNSGetMeta(pkt); nbns != nil {
+		meta = nbns
+	} else if upnp := UPNPGetMeta(pkt); upnp != nil {
+		meta = upnp
 	}
-
-	if nbns := NBNSGetMeta(pkt); nbns != nil {
-		for k, v := range nbns {
-			meta[k] = v
-		}
-	}
-
 	return meta
 }
 
