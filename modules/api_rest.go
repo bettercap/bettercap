@@ -180,6 +180,10 @@ func (api *RestAPI) Configure() error {
 
 	api.server.Handler = router
 
+	if api.username == "" || api.password == "" {
+		log.Warning("api.rest.username and/or api.rest.password parameters are empty, authentication is disabled.")
+	}
+
 	return nil
 }
 
@@ -192,10 +196,10 @@ func (api *RestAPI) Start() error {
 		var err error
 
 		if api.isTLS() {
-			log.Info("API server starting on https://%s", api.server.Addr)
+			log.Info("api server starting on https://%s", api.server.Addr)
 			err = api.server.ListenAndServeTLS(api.certFile, api.keyFile)
 		} else {
-			log.Info("API server starting on http://%s", api.server.Addr)
+			log.Info("api server starting on http://%s", api.server.Addr)
 			err = api.server.ListenAndServe()
 		}
 
