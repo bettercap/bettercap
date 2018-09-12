@@ -39,7 +39,7 @@ func UPNPGetMeta(pkt gopacket.Packet) map[string]string {
 				meta := make(map[string]string)
 				for name, values := range response.Header {
 					if name != "Cache-Control" && len(values) > 0 {
-						if data := strings.Join(values, ", "); core.Trim(data) != "" {
+						if data := core.Trim(strings.Join(values, ", ")); data != "" {
 							meta["upnp:"+name] = data
 						}
 
