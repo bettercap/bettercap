@@ -96,6 +96,7 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 	if nlayer != nil {
 		if nlayer.LayerType() != layers.LayerTypeIPv4 {
 			log.Debug("Unexpected layer type %s, skipping packet.", nlayer.LayerType())
+			log.Debug("%s", pkt.Dump())
 			return false
 		}
 
