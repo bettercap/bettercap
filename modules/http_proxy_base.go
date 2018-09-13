@@ -97,8 +97,9 @@ func (p *HTTPProxy) doProxy(req *http.Request) bool {
 		return false
 	}
 
+	host := strings.Split(req.Host, ":")[0]
 	for _, blacklisted := range blacklist {
-		if strings.Split(req.Host, ":")[0] == blacklisted {
+		if host == blacklisted {
 			log.Error("Got request with blacklisted host: %s", req.Host)
 			return false
 		}
