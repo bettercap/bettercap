@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"net"
 	"sync"
 	"time"
 
@@ -79,18 +78,6 @@ func (p Prober) Author() string {
 	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (p *Prober) sendProbe(from net.IP, from_hw net.HardwareAddr, ip net.IP) {
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func(w *sync.WaitGroup) {
-		p.sendProbeNBNS(from, from_hw, ip)
-		w.Done()
-	}(&wg)
-
-	wg.Wait()
-}
-
 func (p *Prober) Configure() error {
 	var err error
 	if err, p.throttle = p.IntParam("net.probe.throttle"); err != nil {
@@ -150,14 +137,11 @@ func (p *Prober) Start() error {
 				if !p.Running() {
 					return
 				} else if p.Session.Skip(ip) {
-					log.Debug("Skipping address %s from UDP probing.", ip)
+					log.Debug("skipping address %s from probing.", ip)
 					continue
+				} else if p.probes.NBNS {
+					p.sendProbeNBNS(from, from_hw, ip)
 				}
-
-				if p.probes.NBNS {
-					p.sendProbe(from, from_hw, ip)
-				}
-
 				time.Sleep(throttle)
 			}
 
