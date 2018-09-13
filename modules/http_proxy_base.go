@@ -309,8 +309,7 @@ func (p *HTTPProxy) httpsWorker() error {
 				Host:   hostname,
 				Header: make(http.Header),
 			}
-			resp := dumbResponseWriter{tlsConn}
-			p.Proxy.ServeHTTP(resp, req)
+			p.Proxy.ServeHTTP(dumbResponseWriter{tlsConn}, req)
 		}(c)
 	}
 
