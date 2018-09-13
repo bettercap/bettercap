@@ -3,6 +3,7 @@
 package serial
 
 import (
+	"fmt"
 	"os"
 	"time"
 	"unsafe"
@@ -44,10 +45,10 @@ func openPort(name string, baud int, databits byte, parity Parity, stopbits Stop
 		4000000: unix.B4000000,
 	}
 
-	rate := bauds[baud]
+	rate, ok := bauds[baud]
 
-	if rate == 0 {
-		return
+	if !ok {
+		return nil, fmt.Errorf("Unrecognized baud rate")
 	}
 
 	f, err := os.OpenFile(name, unix.O_RDWR|unix.O_NOCTTY|unix.O_NONBLOCK, 0666)

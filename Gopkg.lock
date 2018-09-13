@@ -48,19 +48,19 @@
   name = "github.com/dustin/go-humanize"
   packages = ["."]
   pruneopts = "UT"
-  revision = "02af3965c54e8cacf948b97fef38925c4120652c"
+  revision = "9f541cc9db5d55bce703bd99987c9d5cb8eea45e"
 
 [[projects]]
   branch = "master"
-  digest = "1:744c8fceaf0e0384d75e2371debd4eda76b1404768328d03a184f1d08be5a60f"
+  digest = "1:2b7b174ae68705866555b73fd848de0749b93b1f99e3295e27f89bebe8702203"
   name = "github.com/elazarl/goproxy"
   packages = ["."]
   pruneopts = "UT"
-  revision = "a96fa3a318260eab29abaf32f7128c9eb07fb073"
+  revision = "947c36da3153ff334e74d9d980de341d25f358ba"
 
 [[projects]]
   branch = "master"
-  digest = "1:911bcb1598df4c960dd9e0a62443d2ac3fa33111ef691937af3bd1ed7ecdebdd"
+  digest = "1:f46dd7c5783c6caa5ea1072eb4165446c58651ff0849c9d366ac318f140661fa"
   name = "github.com/gobwas/glob"
   packages = [
     ".",
@@ -73,7 +73,7 @@
     "util/strings",
   ]
   pruneopts = "UT"
-  revision = "f00a7392b43971b2fdb562418faab1f18da2067a"
+  revision = "f756513aec94125582ee6c0dc94179251ef87370"
 
 [[projects]]
   digest = "1:51bee9f1987dcdb9f9a1b4c20745d78f6bf6f5f14ad4e64ca883eb64df4c0045"
@@ -105,28 +105,28 @@
   version = "v1.1.14"
 
 [[projects]]
-  digest = "1:160eabf7a69910fd74f29c692718bc2437c1c1c7d4c9dea9712357752a70e5df"
+  digest = "1:c79fb010be38a59d657c48c6ba1d003a8aa651fa56b579d959d74573b7dff8e1"
   name = "github.com/gorilla/context"
   packages = ["."]
   pruneopts = "UT"
-  revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
-  version = "v1.1"
+  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
+  version = "v1.1.1"
 
 [[projects]]
-  digest = "1:88aa9e326e2bd6045a46e00a922954b3e1a9ac5787109f49ac85366df370e1e5"
+  digest = "1:e73f5b0152105f18bc131fba127d9949305c8693f8a762588a82a48f61756f5f"
   name = "github.com/gorilla/mux"
   packages = ["."]
   pruneopts = "UT"
-  revision = "53c1911da2b537f792e7cafcb446b05ffe33b996"
-  version = "v1.6.1"
+  revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
+  version = "v1.6.2"
 
 [[projects]]
-  digest = "1:43dd08a10854b2056e615d1b1d22ac94559d822e1f8b6fcc92c1a1057e85188e"
+  digest = "1:7b5c6e2eeaa9ae5907c391a91c132abfd5c9e8a784a341b5625e750c67e6825d"
   name = "github.com/gorilla/websocket"
   packages = ["."]
   pruneopts = "UT"
-  revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
-  version = "v1.2.0"
+  revision = "66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -138,11 +138,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:031558139b6ee2fb7c1bb9f14bc9f394c9ab94c1722897292622d20d5039b246"
+  digest = "1:afaa86f5ab9275b1c5cccb3343fa3b7ea77045572a59e9f97d36fd67d14fbe62"
   name = "github.com/jpillora/go-tld"
   packages = ["."]
   pruneopts = "UT"
-  revision = "a31ae10e978ab5f352c5dad2cfbd60546dcea75f"
+  revision = "4bfc8d9a90b591e101a56265afc2239359fb0810"
 
 [[projects]]
   digest = "1:4701b2acabe16722ecb1e387d39741a29269386bfc4ba6283ecda362d289eff1"
@@ -161,12 +161,12 @@
   version = "v0.0.9"
 
 [[projects]]
-  digest = "1:d4d17353dbd05cb52a2a52b7fe1771883b682806f68db442b436294926bbfafb"
+  digest = "1:0981502f9816113c9c8c4ac301583841855c8cf4da8c72f696b3ebedf6d0e4e5"
   name = "github.com/mattn/go-isatty"
   packages = ["."]
   pruneopts = "UT"
-  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
-  version = "v0.0.3"
+  revision = "6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c"
+  version = "v0.0.4"
 
 [[projects]]
   branch = "master"
@@ -218,23 +218,23 @@
     "token",
   ]
   pruneopts = "UT"
-  revision = "03d472dc43abece8691e609a23d295ab732abba6"
+  revision = "15f95af6e78dcd2030d8195a138bd88d4f403546"
 
 [[projects]]
   branch = "master"
-  digest = "1:b9b666a56e920eaa59ffea0d25a9b848d7073be13689c4a29d04e4a0f548a031"
+  digest = "1:52b21e6be25049834aea5ecdde35d723c00fbdad3ea0357f2072dfb105836e02"
   name = "github.com/tarm/serial"
   packages = ["."]
   pruneopts = "UT"
-  revision = "eaafced92e9619f03c72527efeab21e326f3bc36"
+  revision = "98f6abe2eb07edd42f6dfa2a934aea469acc29b7"
 
 [[projects]]
   branch = "master"
-  digest = "1:32f55762862902f08c5d28ed59fbe86cd0c38b088473ed072807467ebadc3f15"
+  digest = "1:6eb2645d74b43d9c87b51947df39f7c668a4f422cd512053f7f6f75bfaad0197"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "d0faeb539838e250bd0a9db4182d48d4a1915181"
+  revision = "d0be0721c37eeb5299f245a996a483160fc36940"
 
 [[projects]]
   digest = "1:9935525a8c49b8434a0b0a54e1980e94a6fae73aaff45c5d33ba8dff69de123e"
