@@ -102,6 +102,7 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 		tlayer := pkt.TransportLayer()
 		if tlayer == nil {
 			log.Debug("Missing transport layer skipping packet.")
+			log.Debug("%s", pkt.Dump())
 			return false
 		}
 
