@@ -49,6 +49,8 @@ func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 		return
 	} else if krb5Parser(ip, pkt, udp) {
 		return
+	} else if upnpParser(ip, pkt, udp) {
+		return
 	} else if verbose {
 		NewSnifferEvent(
 			pkt.Metadata().Timestamp,
