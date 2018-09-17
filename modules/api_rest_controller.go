@@ -35,6 +35,7 @@ func setSecurityHeaders(w http.ResponseWriter) {
 	w.Header().Add("X-Content-Type-Options", "nosniff")
 	w.Header().Add("X-XSS-Protection", "1; mode=block")
 	w.Header().Add("Referrer-Policy", "same-origin")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func toJSON(w http.ResponseWriter, o interface{}) {
