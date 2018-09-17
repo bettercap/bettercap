@@ -45,7 +45,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"Address to bind the API REST server to."))
 
 	api.AddParam(session.NewIntParameter("api.rest.port",
-		"8083",
+		"8081",
 		"Port to bind the API REST server to."))
 
 	api.AddParam(session.NewStringParameter("api.rest.username",
@@ -59,14 +59,14 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"API authentication password."))
 
 	api.AddParam(session.NewStringParameter("api.rest.certificate",
-		"~/.bcap-api.rest.certificate.pem",
+		"",
 		"",
 		"API TLS certificate."))
 
 	tls.CertConfigToModule("api.rest", &api.SessionModule, tls.DefaultLegitConfig)
 
 	api.AddParam(session.NewStringParameter("api.rest.key",
-		"~/.bcap-api.rest.key.pem",
+		"",
 		"",
 		"API TLS key"))
 
