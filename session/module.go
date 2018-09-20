@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"net"
 	"strings"
 	"sync"
 	"time"
@@ -83,6 +84,14 @@ func (m SessionModule) StringParam(name string) (error, string) {
 		}
 	} else {
 		return fmt.Errorf("Parameter %s does not exist.", name), ""
+	}
+}
+
+func (m SessionModule) IPParam(name string) (error, net.IP) {
+	if err, v := m.StringParam(name); err != nil {
+		return err, nil
+	} else {
+		return nil, net.ParseIP(v)
 	}
 }
 

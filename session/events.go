@@ -62,8 +62,8 @@ func (p *EventPool) Listen() <-chan Event {
 	// make sure, without blocking, the new listener
 	// will receive all the queued events
 	go func() {
-		for _, e := range p.events {
-			l <- e
+		for i := len(p.events) - 1; i >= 0; i-- {
+			l <- p.events[i]
 		}
 	}()
 
