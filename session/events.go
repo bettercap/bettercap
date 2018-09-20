@@ -58,6 +58,15 @@ func (p *EventPool) Listen() <-chan Event {
 	p.Lock()
 	defer p.Unlock()
 	l := make(chan Event)
+
+	// make sure, without blocking, the new listener
+	// will receive all the queued events
+	go func() {
+		for _, e := range p.events {
+			l <- e
+		}
+	}()
+
 	p.listeners = append(p.listeners, l)
 	return l
 }
