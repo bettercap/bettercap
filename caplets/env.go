@@ -8,16 +8,18 @@ import (
 )
 
 const (
-	EnvVarName         = "CAPSPATH"
-	Suffix             = ".cap"
-	InstallArchive     = "https://github.com/bettercap/caplets/archive/master.zip"
-	InstallBase        = "/usr/local/share/bettercap/"
-	InstallPathArchive = "/usr/local/share/bettercap/caplets-master/"
-	InstallPath        = "/usr/local/share/bettercap/caplets/"
+	EnvVarName     = "CAPSPATH"
+	Suffix         = ".cap"
+	InstallArchive = "https://github.com/bettercap/caplets/archive/master.zip"
+	InstallBase    = "/usr/local/share/bettercap/"
 )
 
 var (
+	InstallPathArchive = filepath.Join(InstallBase, "caplets-master")
+	InstallPath        = filepath.Join(InstallBase, "caplets")
+
 	LoadPaths = []string{
+		"./",
 		"./caplets/",
 		InstallPath,
 	}

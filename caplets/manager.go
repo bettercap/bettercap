@@ -19,9 +19,7 @@ var (
 
 func List() []Caplet {
 	caplets := make([]Caplet, 0)
-	cwd, _ := filepath.Abs(".")
-
-	for _, searchPath := range append([]string{cwd}, LoadPaths...) {
+	for _, searchPath := range LoadPaths {
 		files, _ := filepath.Glob(searchPath + "/*" + Suffix)
 		files2, _ := filepath.Glob(searchPath + "/*/*" + Suffix)
 
@@ -54,15 +52,12 @@ func Load(name string) (error, *Caplet) {
 		return nil, caplet
 	}
 
-	names := []string{name}
+	names := []string{}
 	if !strings.HasSuffix(name, Suffix) {
-		names = append(names, name+Suffix)
+		name += Suffix
 	}
 
 	for _, path := range LoadPaths {
-		if !strings.HasSuffix(name, Suffix) {
-			name += Suffix
-		}
 		names = append(names, filepath.Join(path, name))
 	}
 

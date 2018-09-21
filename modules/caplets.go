@@ -98,7 +98,7 @@ func (c *CapletsModule) Paths() error {
 	colNames := []string{
 		"Path",
 	}
-	rows := [][]string{[]string{"."}}
+	rows := [][]string{}
 
 	for _, path := range caplets.LoadPaths {
 		rows = append(rows, []string{path})
