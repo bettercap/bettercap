@@ -35,6 +35,7 @@ func main() {
 	sess.Register(modules.NewEventsStream(sess))
 	sess.Register(modules.NewTicker(sess))
 	sess.Register(modules.NewUpdateModule(sess))
+	sess.Register(modules.NewCapletsModule(sess))
 	sess.Register(modules.NewMacChanger(sess))
 	sess.Register(modules.NewProber(sess))
 	sess.Register(modules.NewDiscovery(sess))

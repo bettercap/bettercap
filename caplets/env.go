@@ -8,8 +8,12 @@ import (
 )
 
 const (
-	Suffix      = ".cap"
-	InstallPath = "/usr/local/share/bettercap/caplets/"
+	EnvVarName         = "CAPSPATH"
+	Suffix             = ".cap"
+	InstallArchive     = "https://github.com/bettercap/caplets/archive/master.zip"
+	InstallBase        = "/usr/local/share/bettercap/"
+	InstallPathArchive = "/usr/local/share/bettercap/caplets-master/"
+	InstallPath        = "/usr/local/share/bettercap/caplets/"
 )
 
 var (
@@ -20,7 +24,7 @@ var (
 )
 
 func init() {
-	for _, path := range core.SepSplit(core.Trim(os.Getenv("CAPSPATH")), ":") {
+	for _, path := range core.SepSplit(core.Trim(os.Getenv(EnvVarName)), ":") {
 		if path = core.Trim(path); len(path) > 0 {
 			LoadPaths = append(LoadPaths, path)
 		}

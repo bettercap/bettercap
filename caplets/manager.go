@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -37,6 +38,10 @@ func List() []Caplet {
 			}
 		}
 	}
+
+	sort.Slice(caplets, func(i, j int) bool {
+		return strings.Compare(caplets[i].Name, caplets[j].Name) == -1
+	})
 
 	return caplets
 }
