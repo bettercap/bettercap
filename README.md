@@ -24,7 +24,11 @@ Make sure you have a correctly configured **Go >= 1.8** environment, that `$GOPA
 This command will download bettercap, install its dependencies, compile it and move the `bettercap` executable to `/usr/local/bin`. 
 
 Now you can use `sudo bettercap -h` to show the basic command line options and just `sudo bettercap` to start an 
-[interactive session](https://github.com/bettercap/bettercap/wiki/Interactive-Mode) on your default network interface, otherwise you can [load a caplet](https://github.com/bettercap/bettercap/wiki/Caplets) from [the dedicated repository](https://github.com/bettercap/caplets).
+[interactive session](https://github.com/bettercap/bettercap/wiki/Interactive-Mode) on your default network interface, otherwise you can [load a caplet](https://github.com/bettercap/bettercap/wiki/Caplets).
+
+Once bettercap is installed, you can download/update system caplet with the command:
+
+    sudo bettercap -eval "caplets.update; q"
 
 ## Update
 
