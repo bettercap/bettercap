@@ -9,10 +9,12 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/bettercap/readline"
 
+	"github.com/bettercap/bettercap/caplets"
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/firewall"
 	"github.com/bettercap/bettercap/network"
@@ -255,12 +257,34 @@ func (s *Session) ReadLine() (string, error) {
 }
 
 func (s *Session) RunCaplet(filename string) error {
-	err, caplet := LoadCaplet(filename)
+	err, caplet := caplets.Load(filename)
 	if err != nil {
 		return err
 	}
 
-	return caplet.Eval(s, nil)
+	return caplet.Eval(nil, func(line string) error {
+		return s.Run(line + "\n")
+	})
+}
+
+func parseCapletCommand(line string) (is bool, caplet *caplets.Caplet, argv []string) {
+	file := core.Trim(line)
+	parts := strings.Split(file, " ")
+	argc := len(parts)
+	argv = make([]string, 0)
+	// check for any arguments
+	if argc > 1 {
+		file = core.Trim(parts[0])
+		if argc >= 2 {
+			argv = parts[1:]
+		}
+	}
+
+	if err, cap := caplets.Load(file); err == nil {
+		return true, cap, argv
+	}
+
+	return false, nil, nil
 }
 
 func (s *Session) Run(line string) error {
@@ -294,7 +318,9 @@ func (s *Session) Run(line string) error {
 
 	// is it a caplet command?
 	if parsed, caplet, argv := parseCapletCommand(line); parsed {
-		return caplet.Eval(s, argv)
+		return caplet.Eval(argv, func(line string) error {
+			return s.Run(line + "\n")
+		})
 	}
 
 	// is it a proxy module custom command?
