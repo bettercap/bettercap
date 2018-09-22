@@ -95,12 +95,7 @@ func (s *Session) startNetMon() {
 				}
 
 				if existing != nil && event.Meta != nil {
-					for k, v := range event.Meta {
-						if strings.HasSuffix(k, ":hostname") && existing.Hostname == "" {
-							existing.Hostname = v
-						}
-						existing.Meta.Set(k, v)
-					}
+					existing.OnMeta(event.Meta)
 				}
 			}
 		}
