@@ -277,7 +277,7 @@ func (p *HTTPProxy) httpsWorker() error {
 	for p.isRunning {
 		c, err := p.sniListener.Accept()
 		if err != nil {
-			log.Warning("Error accepting connection: %s.", err)
+			log.Warning("error accepting connection: %s.", err)
 			continue
 		}
 
@@ -288,17 +288,17 @@ func (p *HTTPProxy) httpsWorker() error {
 
 			tlsConn, err := vhost.TLS(c)
 			if err != nil {
-				log.Warning("Error reading SNI: %s.", err)
+				log.Warning("error reading SNI: %s.", err)
 				return
 			}
 
 			hostname := tlsConn.Host()
 			if hostname == "" {
-				log.Warning("Client does not support SNI.")
+				log.Warning("client does not support SNI.")
 				return
 			}
 
-			log.Debug("Got new SNI from %s for %s", core.Bold(stripPort(c.RemoteAddr().String())), core.Yellow(hostname))
+			log.Debug("[%s] proxying connection from %s to %s", core.Green("https.proxy"), core.Bold(stripPort(c.RemoteAddr().String())), core.Yellow(hostname))
 
 			req := &http.Request{
 				Method: "CONNECT",
