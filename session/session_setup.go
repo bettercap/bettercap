@@ -8,9 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bettercap/readline"
-
+	"github.com/bettercap/bettercap/caplets"
 	"github.com/bettercap/bettercap/core"
+
+	"github.com/bettercap/readline"
 )
 
 func containsCapitals(s string) bool {
@@ -49,7 +50,7 @@ func (s *Session) setupReadline() (err error) {
 			}
 		}
 	}
-	
+
 	for _, caplet := range caplets.List() {
 		tree[caplet.Name] = []string{}
 	}
