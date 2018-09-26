@@ -49,6 +49,10 @@ func (s *Session) setupReadline() (err error) {
 			}
 		}
 	}
+	
+	for _, caplet := range caplets.List() {
+		tree[caplet.Name] = []string{}
+	}
 
 	for root, subElems := range tree {
 		item := readline.PcItem(root)
