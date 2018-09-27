@@ -7,7 +7,7 @@ After=network.target
 [Service]
 Type=simple
 PermissionsStartOnly=true
-ExecStart=/usr/local/bin/bettercap -autostart "events.stream, net.recon, api.rest" -no-colors -eval "set events.stream.output /var/log/bettercap.log"
+ExecStart=/usr/local/bin/bettercap -no-colors -eval "set events.stream.output /var/log/bettercap.log; api.rest on"
 Restart=always
 RestartSec=30
 
