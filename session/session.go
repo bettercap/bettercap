@@ -108,6 +108,18 @@ func New() (*Session, error) {
 	return s, nil
 }
 
+func (s *Session) Lock() {
+	s.Env.Lock()
+	s.Lan.Lock()
+	s.WiFi.Lock()
+}
+
+func (s *Session) Unlock() {
+	s.Env.Unlock()
+	s.Lan.Unlock()
+	s.WiFi.Unlock()
+}
+
 func (s *Session) Module(name string) (err error, mod Module) {
 	for _, m := range s.Modules {
 		if m.Name() == name {

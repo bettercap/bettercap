@@ -186,6 +186,9 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	session.I.Lock()
+	defer session.I.Unlock()
+
 	path := r.URL.String()
 	switch {
 	case path == "/api/session":
