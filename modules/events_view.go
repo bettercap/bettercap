@@ -2,8 +2,6 @@ package modules
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strings"
 
@@ -128,17 +126,17 @@ func (s *EventsStream) viewSnifferEvent(e session.Event) {
 	misc := ""
 
 	if e.Tag == "net.sniff.leak.http" {
-		req := se.Data.(*http.Request)
+		req := se.Data.(HTTPRequest)
 		if req.Method != "GET" {
 			misc += "\n\n"
 			misc += fmt.Sprintf("  Method: %s\n", core.Yellow(req.Method))
-			misc += fmt.Sprintf("  URL: %s\n", core.Yellow(req.URL.String()))
+			misc += fmt.Sprintf("  URL: %s\n", core.Yellow(req.URL))
 			misc += fmt.Sprintf("  Headers:\n")
-			for name, values := range req.Header {
+			for name, values := range req.Headers {
 				misc += fmt.Sprintf("    %s => %s\n", core.Green(name), strings.Join(values, ", "))
 			}
 
-			if err := req.ParseForm(); err == nil {
+			if req.Form != nil {
 				misc += "  \n  Form:\n\n"
 				if len(req.Form) == 0 {
 					misc += fmt.Sprintf("    %s\n", core.Dim("<empty>"))
@@ -148,8 +146,7 @@ func (s *EventsStream) viewSnifferEvent(e session.Event) {
 					}
 				}
 			} else if req.Body != nil {
-				b, _ := ioutil.ReadAll(req.Body)
-				misc += fmt.Sprintf("  \n  %s:\n\n    %s\n", core.Bold("Body"), string(b))
+				misc += fmt.Sprintf("  \n  %s:\n\n    %s\n", core.Bold("Body"), string(req.Body))
 			}
 		}
 	}

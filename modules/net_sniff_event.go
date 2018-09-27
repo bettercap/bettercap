@@ -10,12 +10,12 @@ import (
 type SniffData map[string]interface{}
 
 type SnifferEvent struct {
-	PacketTime  time.Time
-	Protocol    string
-	Source      string
-	Destination string
-	Message     string
-	Data        interface{}
+	PacketTime  time.Time   `json:"time"`
+	Protocol    string      `json:"protocol"`
+	Source      string      `json:"from"`
+	Destination string      `json:"to"`
+	Message     string      `json:"message"`
+	Data        interface{} `json:"data"`
 }
 
 func NewSnifferEvent(t time.Time, proto string, src string, dst string, data interface{}, format string, args ...interface{}) SnifferEvent {

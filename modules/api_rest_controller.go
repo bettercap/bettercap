@@ -40,7 +40,9 @@ func setSecurityHeaders(w http.ResponseWriter) {
 
 func toJSON(w http.ResponseWriter, o interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(o)
+	if err := json.NewEncoder(w).Encode(o); err != nil {
+		log.Error("error while encoding object to JSON: %v", err)
+	}
 }
 
 func (api *RestAPI) checkAuth(r *http.Request) bool {
