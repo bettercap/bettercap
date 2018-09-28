@@ -1,6 +1,7 @@
 package session
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -40,28 +41,42 @@ var (
 
 type UnknownCommandCallback func(cmd string) bool
 
+type ModuleList []Module
+
 type Session struct {
-	Options   core.Options             `json:"options"`
-	Interface *network.Endpoint        `json:"interface"`
-	Gateway   *network.Endpoint        `json:"gateway"`
-	Firewall  firewall.FirewallManager `json:"-"`
-	Env       *Environment             `json:"env"`
-	Lan       *network.LAN             `json:"lan"`
-	WiFi      *network.WiFi            `json:"wifi"`
-	BLE       *network.BLE             `json:"ble"`
-	Queue     *packets.Queue           `json:"packets"`
-	Input     *readline.Instance       `json:"-"`
-	StartedAt time.Time                `json:"started_at"`
-	Active    bool                     `json:"active"`
-	GPS       nmea.GNGGA               `json:"gps"`
-	Prompt    Prompt                   `json:"-"`
+	Options   core.Options      `json:"options"`
+	Interface *network.Endpoint `json:"interface"`
+	Gateway   *network.Endpoint `json:"gateway"`
+	Env       *Environment      `json:"env"`
+	Lan       *network.LAN      `json:"lan"`
+	WiFi      *network.WiFi     `json:"wifi"`
+	BLE       *network.BLE      `json:"ble"`
+	Queue     *packets.Queue    `json:"packets"`
+	StartedAt time.Time         `json:"started_at"`
+	Active    bool              `json:"active"`
+	GPS       nmea.GNGGA        `json:"gps"`
+	Modules   ModuleList        `json:"modules"`
 
-	CoreHandlers []CommandHandler `json:"-"`
-	Modules      []Module         `json:"-"`
+	Input          *readline.Instance       `json:"-"`
+	Prompt         Prompt                   `json:"-"`
+	CoreHandlers   []CommandHandler         `json:"-"`
+	Events         *EventPool               `json:"-"`
+	UnkCmdCallback UnknownCommandCallback   `json:"-"`
+	Firewall       firewall.FirewallManager `json:"-"`
+}
 
-	Events *EventPool `json:"-"`
-
-	UnkCmdCallback UnknownCommandCallback `json:"-"`
+func (mm ModuleList) MarshalJSON() ([]byte, error) {
+	mods := []JSONModule{}
+	for _, m := range mm {
+		mods = append(mods, JSONModule{
+			Name:        m.Name(),
+			Description: m.Description(),
+			Author:      m.Author(),
+			Parameters:  m.Parameters(),
+			Running:     m.Running(),
+		})
+	}
+	return json.Marshal(mods)
 }
 
 func New() (*Session, error) {
