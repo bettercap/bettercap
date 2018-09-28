@@ -122,40 +122,14 @@ func (s *EventsStream) viewModuleEvent(e session.Event) {
 }
 
 func (s *EventsStream) viewSnifferEvent(e session.Event) {
-	se := e.Data.(SnifferEvent)
-	misc := ""
-
-	if e.Tag == "net.sniff.leak.http" {
-		req := se.Data.(HTTPRequest)
-		if req.Method != "GET" {
-			misc += "\n\n"
-			misc += fmt.Sprintf("  Method: %s\n", core.Yellow(req.Method))
-			misc += fmt.Sprintf("  URL: %s\n", core.Yellow(req.URL))
-			misc += fmt.Sprintf("  Headers:\n")
-			for name, values := range req.Headers {
-				misc += fmt.Sprintf("    %s => %s\n", core.Green(name), strings.Join(values, ", "))
-			}
-
-			if req.Form != nil {
-				misc += "  \n  Form:\n\n"
-				if len(req.Form) == 0 {
-					misc += fmt.Sprintf("    %s\n", core.Dim("<empty>"))
-				} else {
-					for key, values := range req.Form {
-						misc += fmt.Sprintf("    %s => %s\n", core.Green(key), core.Bold(strings.Join(values, ", ")))
-					}
-				}
-			} else if req.Body != nil {
-				misc += fmt.Sprintf("  \n  %s:\n\n    %s\n", core.Bold("Body"), string(req.Body))
-			}
-		}
+	if strings.HasPrefix(e.Tag, "net.sniff.http.") {
+		s.viewHttpEvent(e)
+	} else {
+		fmt.Fprintf(s.output, "[%s] [%s] %s\n",
+			e.Time.Format(eventTimeFormat),
+			core.Green(e.Tag),
+			e.Data.(SnifferEvent).Message)
 	}
-
-	fmt.Fprintf(s.output, "[%s] [%s] %s %s\n",
-		e.Time.Format(eventTimeFormat),
-		core.Green(e.Tag),
-		se.Message,
-		misc)
 }
 
 func (s *EventsStream) viewSynScanEvent(e session.Event) {
