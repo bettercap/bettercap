@@ -36,7 +36,7 @@ In order to update to an unstable but bleeding edge release from this repository
 
     $ go get -u github.com/bettercap/bettercap
     $ cd $GOPATH/src/github.com/bettercap/bettercap
-    $ make && sudo make install
+    $ make build && sudo make install
 
 ## Documentation and Examples
 
