@@ -1,6 +1,7 @@
 package session
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -48,4 +49,21 @@ func (h *ModuleHandler) Parse(line string) (bool, []string) {
 		return true, result[1:]
 	}
 	return false, nil
+}
+
+type JSONModuleHandler struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Parser      string `json:"parser"`
+}
+
+func (h ModuleHandler) MarshalJSON() ([]byte, error) {
+	j := JSONModuleHandler{
+		Name:        h.Name,
+		Description: h.Description,
+	}
+	if h.Parser != nil {
+		j.Parser = h.Parser.String()
+	}
+	return json.Marshal(j)
 }

@@ -22,14 +22,6 @@ type Module interface {
 	Stop() error
 }
 
-type JSONModule struct {
-	Name        string                  `json:"name"`
-	Description string                  `json:"description"`
-	Author      string                  `json:"author"`
-	Parameters  map[string]*ModuleParam `json:"parameters"`
-	Running     bool                    `json:"running"`
-}
-
 type SessionModule struct {
 	Name       string        `json:"name"`
 	Session    *Session      `json:"-"`

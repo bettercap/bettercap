@@ -2,6 +2,7 @@ package session
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"net"
 	"regexp"
@@ -116,4 +117,25 @@ func (p ModuleParam) Help(padding int) string {
 
 func (p ModuleParam) Register(s *Session) {
 	s.Env.Set(p.Name, p.Value)
+}
+
+type JSONModuleParam struct {
+	Name        string    `json:"name"`
+	Type        ParamType `json:"type"`
+	Description string    `json:"description"`
+	Value       string    `json:"default_value"`
+	Validator   string    `json:"validator"`
+}
+
+func (p ModuleParam) MarshalJSON() ([]byte, error) {
+	j := JSONModuleParam{
+		Name:        p.Name,
+		Type:        p.Type,
+		Description: p.Description,
+		Value:       p.Value,
+	}
+	if p.Validator != nil {
+		j.Validator = p.Validator.String()
+	}
+	return json.Marshal(j)
 }

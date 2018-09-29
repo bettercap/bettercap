@@ -43,6 +43,30 @@ type UnknownCommandCallback func(cmd string) bool
 
 type ModuleList []Module
 
+type JSONModule struct {
+	Name        string                  `json:"name"`
+	Description string                  `json:"description"`
+	Author      string                  `json:"author"`
+	Parameters  map[string]*ModuleParam `json:"parameters"`
+	Handlers    []ModuleHandler         `json:"handlers"`
+	Running     bool                    `json:"running"`
+}
+
+func (mm ModuleList) MarshalJSON() ([]byte, error) {
+	mods := []JSONModule{}
+	for _, m := range mm {
+		mods = append(mods, JSONModule{
+			Name:        m.Name(),
+			Description: m.Description(),
+			Author:      m.Author(),
+			Parameters:  m.Parameters(),
+			Handlers:    m.Handlers(),
+			Running:     m.Running(),
+		})
+	}
+	return json.Marshal(mods)
+}
+
 type Session struct {
 	Options   core.Options      `json:"options"`
 	Interface *network.Endpoint `json:"interface"`
@@ -63,20 +87,6 @@ type Session struct {
 	Events         *EventPool               `json:"-"`
 	UnkCmdCallback UnknownCommandCallback   `json:"-"`
 	Firewall       firewall.FirewallManager `json:"-"`
-}
-
-func (mm ModuleList) MarshalJSON() ([]byte, error) {
-	mods := []JSONModule{}
-	for _, m := range mm {
-		mods = append(mods, JSONModule{
-			Name:        m.Name(),
-			Description: m.Description(),
-			Author:      m.Author(),
-			Parameters:  m.Parameters(),
-			Running:     m.Running(),
-		})
-	}
-	return json.Marshal(mods)
 }
 
 func New() (*Session, error) {
