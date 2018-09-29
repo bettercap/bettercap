@@ -50,8 +50,9 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"8081",
 		"Port to bind the API REST server to."))
 
-	api.AddParam(session.NewIntParameter("api.rest.alloworigin",
+	api.AddParam(session.NewStringParameter("api.rest.alloworigin",
 		api.allowOrigin,
+		"",
 		"Value of the Access-Control-Allow-Origin header of the API server."))
 
 	api.AddParam(session.NewStringParameter("api.rest.username",
