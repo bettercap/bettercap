@@ -30,19 +30,19 @@ func setAuthFailed(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Unauthorized"))
 }
 
-func setSecurityHeaders(w http.ResponseWriter) {
-	w.Header().Add("X-Frame-Options", "DENY")
-	w.Header().Add("X-Content-Type-Options", "nosniff")
-	w.Header().Add("X-XSS-Protection", "1; mode=block")
-	w.Header().Add("Referrer-Policy", "same-origin")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-}
-
 func toJSON(w http.ResponseWriter, o interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(o); err != nil {
 		log.Error("error while encoding object to JSON: %v", err)
 	}
+}
+
+func (api *RestAPI) setSecurityHeaders(w http.ResponseWriter) {
+	w.Header().Add("X-Frame-Options", "DENY")
+	w.Header().Add("X-Content-Type-Options", "nosniff")
+	w.Header().Add("X-XSS-Protection", "1; mode=block")
+	w.Header().Add("Referrer-Policy", "same-origin")
+	w.Header().Set("Access-Control-Allow-Origin", api.allowOrigin)
 }
 
 func (api *RestAPI) checkAuth(r *http.Request) bool {
@@ -175,7 +175,7 @@ func (api *RestAPI) clearEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
-	setSecurityHeaders(w)
+	api.setSecurityHeaders(w)
 
 	if !api.checkAuth(r) {
 		setAuthFailed(w, r)
@@ -229,7 +229,7 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
-	setSecurityHeaders(w)
+	api.setSecurityHeaders(w)
 
 	if !api.checkAuth(r) {
 		setAuthFailed(w, r)

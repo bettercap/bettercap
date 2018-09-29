@@ -22,6 +22,7 @@ type RestAPI struct {
 	password     string
 	certFile     string
 	keyFile      string
+	allowOrigin  string
 	useWebsocket bool
 	upgrader     websocket.Upgrader
 	quit         chan bool
@@ -33,6 +34,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		server:        &http.Server{},
 		quit:          make(chan bool),
 		useWebsocket:  false,
+		allowOrigin:   "*",
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -47,6 +49,10 @@ func NewRestAPI(s *session.Session) *RestAPI {
 	api.AddParam(session.NewIntParameter("api.rest.port",
 		"8081",
 		"Port to bind the API REST server to."))
+
+	api.AddParam(session.NewIntParameter("api.rest.alloworigin",
+		api.allowOrigin,
+		"Value of the Access-Control-Allow-Origin header of the API server."))
 
 	api.AddParam(session.NewStringParameter("api.rest.username",
 		"",
@@ -123,6 +129,8 @@ func (api *RestAPI) Configure() error {
 	} else if err, ip = api.StringParam("api.rest.address"); err != nil {
 		return err
 	} else if err, port = api.IntParam("api.rest.port"); err != nil {
+		return err
+	} else if err, api.allowOrigin = api.StringParam("api.rest.alloworigin"); err != nil {
 		return err
 	} else if err, api.certFile = api.StringParam("api.rest.certificate"); err != nil {
 		return err
