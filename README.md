@@ -19,7 +19,7 @@ Make sure you have a correctly configured **Go >= 1.8** environment, that `$GOPA
 
     $ go get github.com/bettercap/bettercap
     $ cd $GOPATH/src/github.com/bettercap/bettercap
-    $ make && sudo make install
+    $ make build && sudo make install
 
 This command will download bettercap, install its dependencies, compile it and move the `bettercap` executable to `/usr/local/bin`. 
 
