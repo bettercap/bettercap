@@ -26,6 +26,10 @@ type HTTPRequest struct {
 	Body        []byte      `json:"body"`
 }
 
+func (r HTTPRequest) IsType(ctype string) bool {
+	return strings.Contains(r.ContentType, ctype)
+}
+
 type HTTPResponse struct {
 	Protocol         string      `json:"protocol"`
 	Status           string      `json:"status"`
@@ -35,6 +39,10 @@ type HTTPResponse struct {
 	ContentLength    int64       `json:"content_length"`
 	ContentType      string      `json:"content_type"`
 	TransferEncoding []string    `json:"transfer_encoding"`
+}
+
+func (r HTTPResponse) IsType(ctype string) bool {
+	return strings.Contains(r.ContentType, ctype)
 }
 
 func toSerializableRequest(req *http.Request) HTTPRequest {

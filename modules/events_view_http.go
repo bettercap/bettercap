@@ -149,15 +149,15 @@ func (s *EventsStream) viewHttpRequest(e session.Event) {
 		}
 
 		if req.Body != nil {
-			if strings.Contains(req.ContentType, "application/x-www-form-urlencoded") {
+			if req.IsType("application/x-www-form-urlencoded") {
 				dump += s.dumpForm(req.Body)
-			} else if strings.Contains(req.ContentType, "text/plain") {
+			} else if req.IsType("text/plain") {
 				dump += s.dumpText(req.Body)
-			} else if strings.Contains(req.ContentType, "text/xml") {
+			} else if req.IsType("text/xml") {
 				dump += s.dumpXML(req.Body)
-			} else if strings.Contains(req.ContentType, "gzip") {
+			} else if req.IsType("gzip") {
 				dump += s.dumpGZIP(req.Body)
-			} else if strings.Contains(req.ContentType, "application/json") {
+			} else if req.IsType("application/json") {
 				dump += s.dumpJSON(req.Body)
 			} else {
 				dump += s.dumpRaw(req.Body)
@@ -187,11 +187,11 @@ func (s *EventsStream) viewHttpResponse(e session.Event) {
 
 		if res.Body != nil {
 			// TODO: add more interesting response types
-			if strings.Contains(res.ContentType, "text/plain") {
+			if res.IsType("text/plain") {
 				dump += s.dumpText(res.Body)
-			} else if strings.Contains(res.ContentType, "application/json") {
+			} else if res.IsType("application/json") {
 				dump += s.dumpJSON(res.Body)
-			} else if strings.Contains(res.ContentType, "text/xml") {
+			} else if res.IsType("text/xml") {
 				dump += s.dumpXML(res.Body)
 			}
 		}
