@@ -179,6 +179,7 @@ func (api *RestAPI) Configure() error {
 	router.HandleFunc("/api/session/env", api.sessionRoute)
 	router.HandleFunc("/api/session/gateway", api.sessionRoute)
 	router.HandleFunc("/api/session/interface", api.sessionRoute)
+	router.HandleFunc("/api/session/modules", api.sessionRoute)
 	router.HandleFunc("/api/session/lan", api.sessionRoute)
 	router.HandleFunc("/api/session/lan/{mac}", api.sessionRoute)
 	router.HandleFunc("/api/session/options", api.sessionRoute)

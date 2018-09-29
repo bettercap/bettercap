@@ -87,6 +87,10 @@ func (api *RestAPI) showInterface(w http.ResponseWriter, r *http.Request) {
 	toJSON(w, session.I.Interface)
 }
 
+func (api *RestAPI) showModules(w http.ResponseWriter, r *http.Request) {
+	toJSON(w, session.I.Modules)
+}
+
 func (api *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	mac := strings.ToLower(params["mac"])
@@ -204,6 +208,9 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 
 	case path == "/api/session/interface":
 		api.showInterface(w, r)
+
+	case strings.HasPrefix(path, "/api/session/modules"):
+		api.showModules(w, r)
 
 	case strings.HasPrefix(path, "/api/session/lan"):
 		api.showLan(w, r)
