@@ -15,49 +15,37 @@ import (
 )
 
 var (
-	cookieFilter = map[string]bool{
-		"__cfduid": true,
-		"_ga":      true,
-		"_gat":     true,
-	}
-
 	reJsonKey = regexp.MustCompile(`("[^"]+"):`)
 )
 
 func (s *EventsStream) shouldDumpHttpRequest(req HTTPRequest) bool {
-	// dump if it's not just a GET
-	if req.Method != "GET" {
+	if s.dumpHttpReqs {
+		// dump all
+		return true
+	} else if req.Method != "GET" {
+		// dump if it's not just a GET
 		return true
 	}
 	// search for interesting headers and cookies
-	for name, values := range req.Headers {
+	for name, _ := range req.Headers {
 		headerName := strings.ToLower(name)
 		if strings.Contains(headerName, "auth") || strings.Contains(headerName, "token") {
 			return true
-		} else if headerName == "cookie" {
-			for _, value := range values {
-				cookies := strings.Split(value, ";")
-				for _, cookie := range cookies {
-					parts := strings.Split(cookie, "=")
-					if _, found := cookieFilter[parts[0]]; found == false {
-						return true
-					}
-				}
-			}
 		}
 	}
 	return false
 }
 
 func (s *EventsStream) shouldDumpHttpResponse(res HTTPResponse) bool {
-	if strings.Contains(res.ContentType, "text/plain") {
+	if s.dumpHttpResp {
+		return true
+	} else if strings.Contains(res.ContentType, "text/plain") {
 		return true
 	} else if strings.Contains(res.ContentType, "application/json") {
 		return true
 	} else if strings.Contains(res.ContentType, "text/xml") {
 		return true
 	}
-
 	// search for interesting headers
 	for name, _ := range res.Headers {
 		headerName := strings.ToLower(name)
@@ -65,7 +53,6 @@ func (s *EventsStream) shouldDumpHttpResponse(res HTTPResponse) bool {
 			return true
 		}
 	}
-
 	return false
 }
 

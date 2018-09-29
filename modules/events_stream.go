@@ -19,6 +19,8 @@ type EventsStream struct {
 	waitChan      chan *session.Event
 	eventListener <-chan session.Event
 	quit          chan bool
+	dumpHttpReqs  bool
+	dumpHttpResp  bool
 }
 
 func NewEventsStream(s *session.Session) *EventsStream {
@@ -112,6 +114,14 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		"",
 		"If not empty, events will be written to this file instead of the standard output."))
 
+	stream.AddParam(session.NewBoolParameter("events.stream.http.request.dump",
+		"false",
+		"If true all HTTP requests will be dumped."))
+
+	stream.AddParam(session.NewBoolParameter("events.stream.http.response.dump",
+		"false",
+		"If true all HTTP responses will be dumped."))
+
 	return stream
 }
 
@@ -136,6 +146,10 @@ func (s *EventsStream) Configure() (err error) {
 		} else if output, err = core.ExpandPath(output); err == nil {
 			s.output, err = os.OpenFile(output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		}
+	} else if err, s.dumpHttpReqs = s.BoolParam("events.stream.http.request.dump"); err != nil {
+		return err
+	} else if err, s.dumpHttpResp = s.BoolParam("events.stream.http.response.dump"); err != nil {
+		return err
 	}
 
 	return err
