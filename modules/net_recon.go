@@ -57,8 +57,8 @@ func NewDiscovery(s *session.Session) *Discovery {
 			return d.Show("rcvd", "")
 		}))
 
-	d.AddHandler(session.NewModuleHandler("net.show ADDRESS", `net.show ([\d\.]+)`,
-		"Show information about a specific address.",
+	d.AddHandler(session.NewModuleHandler("net.show ADDRESS1, ADDRESS2", `net.show (.+)`,
+		"Show information about a specific list of addresses (by IP or MAC).",
 		func(args []string) error {
 			return d.Show("address", args[0])
 		}))

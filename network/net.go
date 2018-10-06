@@ -118,6 +118,32 @@ func ParseTargets(targets string, aliasMap *Aliases) (ips []net.IP, macs []net.H
 	return
 }
 
+func ParseEndpoints(targets string, lan *LAN) ([]*Endpoint, error) {
+	ips, macs, err := ParseTargets(targets, lan.Aliases())
+	if err != nil {
+		return nil, err
+	}
+
+	tmp := make(map[string]*Endpoint)
+	for _, ip := range ips {
+		if e := lan.GetByIp(ip.String()); e != nil {
+			tmp[e.HW.String()] = e
+		}
+	}
+
+	for _, mac := range macs {
+		if e, found := lan.Get(mac.String()); found {
+			tmp[e.HW.String()] = e
+		}
+	}
+
+	ret := make([]*Endpoint, 0)
+	for _, e := range tmp {
+		ret = append(ret, e)
+	}
+	return ret, nil
+}
+
 func buildEndpointFromInterface(iface net.Interface) (*Endpoint, error) {
 	addrs, err := iface.Addrs()
 	if err != nil {

@@ -81,6 +81,19 @@ func (lan *LAN) Get(mac string) (*Endpoint, bool) {
 	return nil, false
 }
 
+func (lan *LAN) GetByIp(ip string) *Endpoint {
+	lan.Lock()
+	defer lan.Unlock()
+
+	for _, e := range lan.hosts {
+		if e.IpAddress == ip {
+			return e
+		}
+	}
+
+	return nil
+}
+
 func (lan *LAN) List() (list []*Endpoint) {
 	lan.Lock()
 	defer lan.Unlock()
@@ -167,19 +180,6 @@ func (lan *LAN) EachHost(cb func(mac string, e *Endpoint)) {
 	for m, h := range lan.hosts {
 		cb(m, h)
 	}
-}
-
-func (lan *LAN) GetByIp(ip string) *Endpoint {
-	lan.Lock()
-	defer lan.Unlock()
-
-	for _, e := range lan.hosts {
-		if e.IpAddress == ip {
-			return e
-		}
-	}
-
-	return nil
 }
 
 func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
