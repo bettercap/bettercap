@@ -13,6 +13,9 @@ import (
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/chifflier/nfqueue-go/nfqueue"
+
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/tui"
 )
 
 type PacketProxy struct {
@@ -141,8 +144,8 @@ func (pp *PacketProxy) Configure() (err error) {
 	}
 
 	if pp.pluginPath == "" {
-		return fmt.Errorf("The parameter %s can not be empty.", core.Bold("packet.proxy.plugin"))
-	} else if !core.Exists(pp.pluginPath) {
+		return fmt.Errorf("The parameter %s can not be empty.", tui.Bold("packet.proxy.plugin"))
+	} else if !fs.Exists(pp.pluginPath) {
 		return fmt.Errorf("%s does not exist.", pp.pluginPath)
 	}
 
@@ -194,7 +197,7 @@ func (pp *PacketProxy) Start() error {
 	}
 
 	return pp.SetRunning(true, func() {
-		log.Info("%s started on queue number %d", core.Green("packet.proxy"), pp.queueNum)
+		log.Info("%s started on queue number %d", tui.Green("packet.proxy"), pp.queueNum)
 
 		defer pp.destroyQueue()
 

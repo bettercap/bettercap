@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/fs"
 )
 
 type EnvironmentChangedCallback func(newValue string)
@@ -26,8 +26,8 @@ func NewEnvironment(envFile string) (*Environment, error) {
 	}
 
 	if envFile != "" {
-		envFile, _ := core.ExpandPath(envFile)
-		if core.Exists(envFile) {
+		envFile, _ := fs.Expand(envFile)
+		if fs.Exists(envFile) {
 			if err := env.Load(envFile); err != nil {
 				return nil, err
 			}

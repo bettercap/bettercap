@@ -11,6 +11,8 @@ import (
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/go-github/github"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 type UpdateModule struct {
@@ -87,7 +89,7 @@ func (u *UpdateModule) Start() error {
 			if u.versionToNum(core.Version) < u.versionToNum(*latest.TagName) {
 				u.Session.Events.Add("update.available", latest)
 			} else {
-				log.Info("you are running %s which is the latest stable version.", core.Bold(core.Version))
+				log.Info("you are running %s which is the latest stable version.", tui.Bold(core.Version))
 			}
 		} else {
 			log.Error("error while fetching latest release info from GitHub: %s", err)

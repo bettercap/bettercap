@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
@@ -22,6 +21,8 @@ import (
 	// will fix this > https://github.com/google/gopacket/issues/334
 	"github.com/mdlayher/dhcp6"
 	"github.com/mdlayher/dhcp6/dhcp6opts"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 type DHCP6Spoofer struct {
@@ -130,7 +131,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 		fqdn = string(raw[0])
 	}
 
-	log.Info("[%s] Got DHCPv6 Solicit request from %s (%s), sending spoofed advertisement for %d domains.", core.Green("dhcp6"), core.Bold(fqdn), target, len(s.Domains))
+	log.Info("[%s] Got DHCPv6 Solicit request from %s (%s), sending spoofed advertisement for %d domains.", tui.Green("dhcp6"), tui.Bold(fqdn), target, len(s.Domains))
 
 	err, adv := s.dhcp6For(dhcp6.MessageTypeAdvertise, solicit)
 	if err != nil {
@@ -224,7 +225,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 }
 
 func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.Packet, target net.HardwareAddr) {
-	log.Debug("Sending spoofed DHCPv6 reply to %s after its %s packet.", core.Bold(target.String()), toType)
+	log.Debug("Sending spoofed DHCPv6 reply to %s after its %s packet.", tui.Bold(target.String()), toType)
 
 	err, reply := s.dhcp6For(dhcp6.MessageTypeReply, req)
 	if err != nil {
@@ -308,9 +309,9 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 		}
 
 		if h, found := s.Session.Lan.Get(target.String()); found {
-			log.Info("[%s] IPv6 address %s is now assigned to %s", core.Green("dhcp6"), addr.String(), h)
+			log.Info("[%s] IPv6 address %s is now assigned to %s", tui.Green("dhcp6"), addr.String(), h)
 		} else {
-			log.Info("[%s] IPv6 address %s is now assigned to %s", core.Green("dhcp6"), addr.String(), target)
+			log.Info("[%s] IPv6 address %s is now assigned to %s", tui.Green("dhcp6"), addr.String(), target)
 		}
 	} else {
 		log.Debug("DHCPv6 renew sent to %s", target)

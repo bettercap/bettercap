@@ -7,10 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 	"github.com/bettercap/bettercap/tls"
+
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/tui"
 )
 
 type HttpServer struct {
@@ -103,7 +105,7 @@ func (httpd *HttpServer) Configure() error {
 	fileServer := http.FileServer(http.Dir(path))
 
 	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Info("(%s) %s %s %s%s", core.Green("httpd"), core.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		log.Info("(%s) %s %s %s%s", tui.Green("httpd"), tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
 		fileServer.ServeHTTP(w, r)
 	}))
 
@@ -121,18 +123,18 @@ func (httpd *HttpServer) Configure() error {
 
 	if err, certFile = httpd.StringParam("http.server.certificate"); err != nil {
 		return err
-	} else if certFile, err = core.ExpandPath(certFile); err != nil {
+	} else if certFile, err = fs.Expand(certFile); err != nil {
 		return err
 	}
 
 	if err, keyFile = httpd.StringParam("http.server.key"); err != nil {
 		return err
-	} else if keyFile, err = core.ExpandPath(keyFile); err != nil {
+	} else if keyFile, err = fs.Expand(keyFile); err != nil {
 		return err
 	}
 
 	if certFile != "" && keyFile != "" {
-		if !core.Exists(certFile) || !core.Exists(keyFile) {
+		if !fs.Exists(certFile) || !fs.Exists(keyFile) {
 			err, cfg := tls.CertConfigFromModule("http.server", httpd.SessionModule)
 			if err != nil {
 				return err

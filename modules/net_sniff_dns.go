@@ -3,10 +3,10 @@ package modules
 import (
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
-
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
@@ -41,11 +41,11 @@ func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 			ip.DstIP.String(),
 			nil,
 			"%s %s > %s : %s is %s",
-			core.W(core.BG_DGRAY+core.FG_WHITE, "dns"),
+			tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "dns"),
 			vIP(ip.SrcIP),
 			vIP(ip.DstIP),
-			core.Yellow(hostname),
-			core.Dim(strings.Join(ips, ", ")),
+			tui.Yellow(hostname),
+			tui.Dim(strings.Join(ips, ", ")),
 		).Push()
 	}
 

@@ -3,11 +3,12 @@ package modules
 import (
 	"fmt"
 
-	"github.com/bettercap/bettercap/core"
 	"regexp"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 // poor man's TLS Client Hello with SNI extension parser :P
@@ -38,9 +39,9 @@ func sniParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 		domain,
 		nil,
 		"%s %s > %s",
-		core.W(core.BG_YELLOW+core.FG_WHITE, "sni"),
+		tui.Wrap(tui.BACKYELLOW+tui.FOREWHITE, "sni"),
 		vIP(ip.SrcIP),
-		core.Yellow("https://"+domain),
+		tui.Yellow("https://"+domain),
 	).Push()
 
 	return true

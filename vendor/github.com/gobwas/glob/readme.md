@@ -126,10 +126,10 @@ Pattern | Fixture | Match | Speed (ns/op)
 `^[a-z][^a-x].*cat.*[h][^b].*eyes.*$` | `my dog has very bright eyes` | `false` | 1383
 `^https:\/\/.*\.google\..*$` | `https://account.google.com` | `true` | 1205
 `^https:\/\/.*\.google\..*$` | `https://google.com` | `false` | 767
-`^(https:\/\/.*\.google\..*|.*yandex\..*|.*yahoo\..*|.*mail\.ru)$` | `http://yahoo.com` | `true` | 1435
-`^(https:\/\/.*\.google\..*|.*yandex\..*|.*yahoo\..*|.*mail\.ru)$` | `http://google.com` | `false` | 1674
-`^(https:\/\/.*gobwas\.com|http://exclude.gobwas.com)$` | `https://safe.gobwas.com` | `true` | 1039
-`^(https:\/\/.*gobwas\.com|http://exclude.gobwas.com)$` | `http://safe.gobwas.com` | `false` | 272
+`^(https:\/\/.*\.google\..*\|.*yandex\..*\|.*yahoo\..*\|.*mail\.ru)$` | `http://yahoo.com` | `true` | 1435
+`^(https:\/\/.*\.google\..*\|.*yandex\..*\|.*yahoo\..*\|.*mail\.ru)$` | `http://google.com` | `false` | 1674
+`^(https:\/\/.*gobwas\.com\|http://exclude.gobwas.com)$` | `https://safe.gobwas.com` | `true` | 1039
+`^(https:\/\/.*gobwas\.com\|http://exclude.gobwas.com)$` | `http://safe.gobwas.com` | `false` | 272
 `^abc.*$` | `abcdef` | `true` | 237
 `^abc.*$` | `af` | `false` | 100
 `^.*def$` | `abcdef` | `true` | 464

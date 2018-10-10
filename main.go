@@ -10,6 +10,9 @@ import (
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/modules"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
 )
 
 func main() {
@@ -20,7 +23,7 @@ func main() {
 	}
 	defer sess.Close()
 
-	if !core.HasColors {
+	if !tui.Effects() {
 		if *sess.Options.NoColors {
 			fmt.Printf("\n\nWARNING: Terminal colors have been disabled, view will be very limited.\n\n")
 		} else {
@@ -30,7 +33,7 @@ func main() {
 
 	appName := fmt.Sprintf("%s v%s", core.Name, core.Version)
 
-	fmt.Printf("%s (type '%s' for a list of commands)\n\n", core.Bold(appName), core.Bold("help"))
+	fmt.Printf("%s (type '%s' for a list of commands)\n\n", tui.Bold(appName), tui.Bold("help"))
 
 	sess.Register(modules.NewEventsStream(sess))
 	sess.Register(modules.NewTicker(sess))
@@ -67,13 +70,13 @@ func main() {
 	// modules might already be started.
 	for _, cmd := range session.ParseCommands(*sess.Options.Commands) {
 		if err = sess.Run(cmd); err != nil {
-			log.Error("Error while running '%s': %s", core.Bold(cmd), core.Red(err.Error()))
+			log.Error("Error while running '%s': %s", tui.Bold(cmd), tui.Red(err.Error()))
 		}
 	}
 
 	// Some modules are enabled by default in order
 	// to make the interactive session useful.
-	for _, modName := range core.CommaSplit(*sess.Options.AutoStart) {
+	for _, modName := range str.Comma(*sess.Options.AutoStart) {
 		if err = sess.Run(modName + " on"); err != nil {
 			log.Fatal("Error while starting module %s: %s", modName, err)
 		}
@@ -82,7 +85,7 @@ func main() {
 	// Then run the caplet if specified.
 	if *sess.Options.Caplet != "" {
 		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
-			log.Error("Error while running caplet %s: %s", core.Bold(*sess.Options.Caplet), core.Red(err.Error()))
+			log.Error("Error while running caplet %s: %s", tui.Bold(*sess.Options.Caplet), tui.Red(err.Error()))
 		}
 	}
 

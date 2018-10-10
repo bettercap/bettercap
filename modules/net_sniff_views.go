@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/google/gopacket/layers"
-
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/tui"
+	"github.com/google/gopacket/layers"
 )
 
 func vIP(ip net.IP) string {
 	if session.I.Interface.IP.Equal(ip) {
-		return core.Dim("local")
+		return tui.Dim("local")
 	} else if session.I.Gateway.IP.Equal(ip) {
 		return "gateway"
 	}
@@ -32,11 +32,11 @@ func vPort(p interface{}) string {
 	sp := fmt.Sprintf("%d", p)
 	if tcp, ok := p.(layers.TCPPort); ok {
 		if name, found := layers.TCPPortNames[tcp]; found {
-			sp = core.Yellow(name)
+			sp = tui.Yellow(name)
 		}
 	} else if udp, ok := p.(layers.UDPPort); ok {
 		if name, found := layers.UDPPortNames[udp]; found {
-			sp = core.Yellow(name)
+			sp = tui.Yellow(name)
 		}
 	}
 

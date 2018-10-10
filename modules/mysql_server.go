@@ -8,10 +8,11 @@ import (
 	"net"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 type MySQLServer struct {
@@ -103,10 +104,10 @@ func (mysql *MySQLServer) Start() error {
 	}
 
 	return mysql.SetRunning(true, func() {
-		log.Info("[%s] server starting on address %s", core.Green("mysql.server"), mysql.address)
+		log.Info("[%s] server starting on address %s", tui.Green("mysql.server"), mysql.address)
 		for mysql.Running() {
 			if conn, err := mysql.listener.AcceptTCP(); err != nil {
-				log.Warning("[%s] error while accepting tcp connection: %s", core.Green("mysql.server"), err)
+				log.Warning("[%s] error while accepting tcp connection: %s", tui.Green("mysql.server"), err)
 				continue
 			} else {
 				defer conn.Close()
@@ -117,13 +118,13 @@ func (mysql *MySQLServer) Start() error {
 				reader := bufio.NewReader(conn)
 				read := 0
 
-				log.Info("[%s] connection from %s", core.Green("mysql.server"), clientAddress)
+				log.Info("[%s] connection from %s", tui.Green("mysql.server"), clientAddress)
 
 				if _, err := conn.Write(packets.MySQLGreeting); err != nil {
-					log.Warning("[%s] error while writing server greeting: %s", core.Green("mysql.server"), err)
+					log.Warning("[%s] error while writing server greeting: %s", tui.Green("mysql.server"), err)
 					continue
 				} else if read, err = reader.Read(readBuffer); err != nil {
-					log.Warning("[%s] error while reading client message: %s", core.Green("mysql.server"), err)
+					log.Warning("[%s] error while reading client message: %s", tui.Green("mysql.server"), err)
 					continue
 				}
 
@@ -134,38 +135,38 @@ func (mysql *MySQLServer) Start() error {
 				loadData := string(capabilities[8])
 				username := string(bytes.Split(readBuffer[36:], []byte{0})[0])
 
-				log.Info("[%s] can use LOAD DATA LOCAL: %s", core.Green("mysql.server"), loadData)
-				log.Info("[%s] login request username: %s", core.Green("mysql.server"), core.Bold(username))
+				log.Info("[%s] can use LOAD DATA LOCAL: %s", tui.Green("mysql.server"), loadData)
+				log.Info("[%s] login request username: %s", tui.Green("mysql.server"), tui.Bold(username))
 
 				if _, err := conn.Write(packets.MySQLFirstResponseOK); err != nil {
-					log.Warning("[%s] error while writing server first response ok: %s", core.Green("mysql.server"), err)
+					log.Warning("[%s] error while writing server first response ok: %s", tui.Green("mysql.server"), err)
 					continue
 				} else if _, err := reader.Read(readBuffer); err != nil {
-					log.Warning("[%s] error while reading client message: %s", core.Green("mysql.server"), err)
+					log.Warning("[%s] error while reading client message: %s", tui.Green("mysql.server"), err)
 					continue
 				} else if _, err := conn.Write(packets.MySQLGetFile(mysql.infile)); err != nil {
-					log.Warning("[%s] error while writing server get file request: %s", core.Green("mysql.server"), err)
+					log.Warning("[%s] error while writing server get file request: %s", tui.Green("mysql.server"), err)
 					continue
 				} else if read, err = reader.Read(readBuffer); err != nil {
-					log.Warning("[%s] error while readind buffer: %s", core.Green("mysql.server"), err)
+					log.Warning("[%s] error while readind buffer: %s", tui.Green("mysql.server"), err)
 					continue
 				}
 
 				if strings.HasPrefix(mysql.infile, "\\") {
-					log.Info("[%s] NTLM from '%s' relayed to %s", core.Green("mysql.server"), clientAddress, mysql.infile)
+					log.Info("[%s] NTLM from '%s' relayed to %s", tui.Green("mysql.server"), clientAddress, mysql.infile)
 				} else if fileSize := read - 9; fileSize < 4 {
-					log.Warning("[%s] unpexpected buffer size %d", core.Green("mysql.server"), read)
+					log.Warning("[%s] unpexpected buffer size %d", tui.Green("mysql.server"), read)
 				} else {
-					log.Info("[%s] read file ( %s ) is %d bytes", core.Green("mysql.server"), mysql.infile, fileSize)
+					log.Info("[%s] read file ( %s ) is %d bytes", tui.Green("mysql.server"), mysql.infile, fileSize)
 
 					fileData := readBuffer[4 : read-4]
 
 					if mysql.outfile == "" {
 						log.Info("\n%s", string(fileData))
 					} else {
-						log.Info("[%s] saving to %s ...", core.Green("mysql.server"), mysql.outfile)
+						log.Info("[%s] saving to %s ...", tui.Green("mysql.server"), mysql.outfile)
 						if err := ioutil.WriteFile(mysql.outfile, fileData, 0755); err != nil {
-							log.Warning("[%s] error while saving the file: %s", core.Green("mysql.server"), err)
+							log.Warning("[%s] error while saving the file: %s", tui.Green("mysql.server"), err)
 						}
 					}
 				}

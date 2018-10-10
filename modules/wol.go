@@ -5,12 +5,14 @@ import (
 	"net"
 	"regexp"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
 )
 
 var (
@@ -52,7 +54,7 @@ func NewWOL(s *session.Session) *WOL {
 func parseMAC(args []string) (string, error) {
 	mac := "ff:ff:ff:ff:ff:ff"
 	if len(args) == 1 {
-		tmp := core.Trim(args[0])
+		tmp := str.Trim(args[0])
 		if tmp != "" {
 			if !reMAC.MatchString(tmp) {
 				return "", fmt.Errorf("%s is not a valid MAC address.", tmp)
@@ -103,7 +105,7 @@ func (w *WOL) wolETH(mac string) error {
 	defer w.SetRunning(false, nil)
 
 	payload := buildPayload(mac)
-	log.Info("Sending %d bytes of ethernet WOL packet to %s", len(payload), core.Bold(mac))
+	log.Info("Sending %d bytes of ethernet WOL packet to %s", len(payload), tui.Bold(mac))
 	eth := layers.Ethernet{
 		SrcMAC:       w.Session.Interface.HW,
 		DstMAC:       layers.EthernetBroadcast,
@@ -124,7 +126,7 @@ func (w *WOL) wolUDP(mac string) error {
 	defer w.SetRunning(false, nil)
 
 	payload := buildPayload(mac)
-	log.Info("Sending %d bytes of UDP WOL packet to %s", len(payload), core.Bold(mac))
+	log.Info("Sending %d bytes of UDP WOL packet to %s", len(payload), tui.Bold(mac))
 
 	eth := layers.Ethernet{
 		SrcMAC:       w.Session.Interface.HW,

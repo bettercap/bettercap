@@ -7,11 +7,14 @@ import (
 	"os"
 
 	"github.com/bettercap/bettercap/caplets"
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/dustin/go-humanize"
+
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/tui"
+	"github.com/evilsocket/islazy/zip"
 )
 
 type CapletsModule struct {
@@ -83,13 +86,13 @@ func (c *CapletsModule) Show() error {
 
 	for _, caplet := range caplets {
 		rows = append(rows, []string{
-			core.Bold(caplet.Name),
+			tui.Bold(caplet.Name),
 			caplet.Path,
-			core.Dim(humanize.Bytes(uint64(caplet.Size))),
+			tui.Dim(humanize.Bytes(uint64(caplet.Size))),
 		})
 	}
 
-	core.AsTable(os.Stdout, colNames, rows)
+	tui.Table(os.Stdout, colNames, rows)
 
 	return nil
 }
@@ -104,14 +107,14 @@ func (c *CapletsModule) Paths() error {
 		rows = append(rows, []string{path})
 	}
 
-	core.AsTable(os.Stdout, colNames, rows)
-	fmt.Printf("(paths can be customized by defining the %s environment variable)\n", core.Bold(caplets.EnvVarName))
+	tui.Table(os.Stdout, colNames, rows)
+	fmt.Printf("(paths can be customized by defining the %s environment variable)\n", tui.Bold(caplets.EnvVarName))
 
 	return nil
 }
 
 func (c *CapletsModule) Update() error {
-	if !core.Exists(caplets.InstallBase) {
+	if !fs.Exists(caplets.InstallBase) {
 		log.Info("creating caplets install path %s ...", caplets.InstallBase)
 		if err := os.MkdirAll(caplets.InstallBase, os.ModePerm); err != nil {
 			return err
@@ -138,7 +141,7 @@ func (c *CapletsModule) Update() error {
 
 	log.Info("installing caplets to %s ...", caplets.InstallPath)
 
-	if _, err = core.Unzip("/tmp/caplets.zip", caplets.InstallBase); err != nil {
+	if _, err = zip.Unzip("/tmp/caplets.zip", caplets.InstallBase); err != nil {
 		return err
 	}
 

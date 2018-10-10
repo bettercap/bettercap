@@ -6,9 +6,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
 )
 
 type EventsStream struct {
@@ -50,7 +53,7 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		func(args []string) error {
 			limit := -1
 			if len(args) == 1 {
-				arg := core.Trim(args[0])
+				arg := str.Trim(args[0])
 				limit, _ = strconv.Atoi(arg)
 			}
 			return stream.Show(limit)
@@ -62,7 +65,7 @@ func NewEventsStream(s *session.Session) *EventsStream {
 			tag := args[0]
 			timeout := 0
 			if len(args) == 2 {
-				t := core.Trim(args[1])
+				t := str.Trim(args[1])
 				if t != "" {
 					n, err := strconv.Atoi(t)
 					if err != nil {
@@ -143,7 +146,7 @@ func (s *EventsStream) Configure() (err error) {
 	if err, output = s.StringParam("events.stream.output"); err == nil {
 		if output == "" {
 			s.output = os.Stdout
-		} else if output, err = core.ExpandPath(output); err == nil {
+		} else if output, err = fs.Expand(output); err == nil {
 			s.output, err = os.OpenFile(output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		}
 	} else if err, s.dumpHttpReqs = s.BoolParam("events.stream.http.request.dump"); err != nil {
@@ -211,9 +214,9 @@ func (s *EventsStream) Show(limit int) error {
 
 func (s *EventsStream) startWaitingFor(tag string, timeout int) error {
 	if timeout == 0 {
-		log.Info("waiting for event %s ...", core.Green(tag))
+		log.Info("waiting for event %s ...", tui.Green(tag))
 	} else {
-		log.Info("waiting for event %s for %d seconds ...", core.Green(tag), timeout)
+		log.Info("waiting for event %s for %d seconds ...", tui.Green(tag), timeout)
 		go func() {
 			time.Sleep(time.Duration(timeout) * time.Second)
 			s.waitFor = ""

@@ -3,11 +3,12 @@ package modules
 import (
 	"encoding/asn1"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 func krb5Parser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
@@ -29,7 +30,7 @@ func krb5Parser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 			ip.DstIP.String(),
 			nil,
 			"%s %s -> %s : %s",
-			core.W(core.BG_RED+core.FG_BLACK, "krb-as-req"),
+			tui.Wrap(tui.BACKRED+tui.FOREBLACK, "krb-as-req"),
 			vIP(ip.SrcIP),
 			vIP(ip.DstIP),
 			s,

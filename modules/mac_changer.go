@@ -10,6 +10,8 @@ import (
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 type MacChanger struct {
@@ -110,14 +112,14 @@ func (mc *MacChanger) Start() error {
 	}
 
 	return mc.SetRunning(true, func() {
-		log.Info("Interface mac address set to %s", core.Bold(mc.fakeMac.String()))
+		log.Info("Interface mac address set to %s", tui.Bold(mc.fakeMac.String()))
 	})
 }
 
 func (mc *MacChanger) Stop() error {
 	return mc.SetRunning(false, func() {
 		if err := mc.setMac(mc.originalMac); err == nil {
-			log.Info("Interface mac address restored to %s", core.Bold(mc.originalMac.String()))
+			log.Info("Interface mac address restored to %s", tui.Bold(mc.originalMac.String()))
 		} else {
 			log.Error("Error while restoring mac address: %s", err)
 		}

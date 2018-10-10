@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 	"github.com/bettercap/bettercap/tls"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+
+	"github.com/evilsocket/islazy/fs"
 )
 
 type RestAPI struct {
@@ -135,11 +136,11 @@ func (api *RestAPI) Configure() error {
 		return err
 	} else if err, api.certFile = api.StringParam("api.rest.certificate"); err != nil {
 		return err
-	} else if api.certFile, err = core.ExpandPath(api.certFile); err != nil {
+	} else if api.certFile, err = fs.Expand(api.certFile); err != nil {
 		return err
 	} else if err, api.keyFile = api.StringParam("api.rest.key"); err != nil {
 		return err
-	} else if api.keyFile, err = core.ExpandPath(api.keyFile); err != nil {
+	} else if api.keyFile, err = fs.Expand(api.keyFile); err != nil {
 		return err
 	} else if err, api.username = api.StringParam("api.rest.username"); err != nil {
 		return err
@@ -150,7 +151,7 @@ func (api *RestAPI) Configure() error {
 	}
 
 	if api.isTLS() {
-		if !core.Exists(api.certFile) || !core.Exists(api.keyFile) {
+		if !fs.Exists(api.certFile) || !fs.Exists(api.keyFile) {
 			err, cfg := tls.CertConfigFromModule("api.rest", api.SessionModule)
 			if err != nil {
 				return err

@@ -9,7 +9,7 @@ import (
 	// "net/url"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/str"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -39,7 +39,7 @@ func UPNPGetMeta(pkt gopacket.Packet) map[string]string {
 				meta := make(map[string]string)
 				for name, values := range response.Header {
 					if name != "Cache-Control" && len(values) > 0 {
-						if data := core.Trim(strings.Join(values, ", ")); data != "" {
+						if data := str.Trim(strings.Join(values, ", ")); data != "" {
 							meta["upnp:"+name] = data
 						}
 

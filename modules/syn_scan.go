@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
@@ -17,6 +16,8 @@ import (
 	"github.com/google/gopacket/layers"
 
 	"github.com/malfunkt/iprange"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 const synSourcePort = 666
@@ -55,8 +56,8 @@ func NewSynScanner(s *session.Session) *SynScanner {
 			ss.startPort = 1
 			ss.endPort = 65535
 
-			if argc > 1 && core.Trim(args[1]) != "" {
-				if ss.startPort, err = strconv.Atoi(core.Trim(args[1])); err != nil {
+			if argc > 1 && str.Trim(args[1]) != "" {
+				if ss.startPort, err = strconv.Atoi(str.Trim(args[1])); err != nil {
 					return fmt.Errorf("Invalid START-PORT: %s", err)
 				}
 
@@ -66,8 +67,8 @@ func NewSynScanner(s *session.Session) *SynScanner {
 				ss.endPort = ss.startPort
 			}
 
-			if argc > 2 && core.Trim(args[2]) != "" {
-				if ss.endPort, err = strconv.Atoi(core.Trim(args[2])); err != nil {
+			if argc > 2 && str.Trim(args[2]) != "" {
+				if ss.endPort, err = strconv.Atoi(str.Trim(args[2])); err != nil {
 					return fmt.Errorf("Invalid END-PORT: %s", err)
 				}
 			}

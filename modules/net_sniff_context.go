@@ -4,12 +4,13 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/pcapgo"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 type SnifferContext struct {
@@ -98,8 +99,8 @@ func NewSnifferContext() *SnifferContext {
 }
 
 var (
-	no  = core.Red("no")
-	yes = core.Green("yes")
+	no  = tui.Red("no")
+	yes = tui.Green("yes")
 	yn  = map[bool]string{
 		true:  yes,
 		false: no,
@@ -109,9 +110,9 @@ var (
 func (c *SnifferContext) Log(sess *session.Session) {
 	log.Info("Skip local packets : %s", yn[c.DumpLocal])
 	log.Info("Verbose            : %s", yn[c.Verbose])
-	log.Info("BPF Filter         : '%s'", core.Yellow(c.Filter))
-	log.Info("Regular expression : '%s'", core.Yellow(c.Expression))
-	log.Info("File output        : '%s'", core.Yellow(c.Output))
+	log.Info("BPF Filter         : '%s'", tui.Yellow(c.Filter))
+	log.Info("Regular expression : '%s'", tui.Yellow(c.Expression))
+	log.Info("File output        : '%s'", tui.Yellow(c.Output))
 }
 
 func (c *SnifferContext) Close() {

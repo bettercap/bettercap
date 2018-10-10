@@ -329,7 +329,7 @@ the following manner:
   }
   buf := gopacket.NewSerializeBuffer()
   opts := gopacket.SerializeOptions{}  // See SerializeOptions for more details.
-  err := ip.SerializeTo(&buf, opts)
+  err := ip.SerializeTo(buf, opts)
   if err != nil { panic(err) }
   fmt.Println(buf.Bytes())  // prints out a byte slice containing the serialized IPv4 layer.
 

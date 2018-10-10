@@ -3,12 +3,13 @@ package modules
 import (
 	"fmt"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
@@ -30,12 +31,12 @@ func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 				"Size": len(ip.Payload),
 			},
 			"%s %s:%s > %s:%s %s",
-			core.W(core.BG_LBLUE+core.FG_BLACK, "tcp"),
+			tui.Wrap(tui.BACKLIGHTBLUE+tui.FOREBLACK, "tcp"),
 			vIP(ip.SrcIP),
 			vPort(tcp.SrcPort),
 			vIP(ip.DstIP),
 			vPort(tcp.DstPort),
-			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
+			tui.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
 		).Push()
 	}
 }
@@ -61,12 +62,12 @@ func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 				"Size": len(ip.Payload),
 			},
 			"%s %s:%s > %s:%s %s",
-			core.W(core.BG_DGRAY+core.FG_WHITE, "udp"),
+			tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "udp"),
 			vIP(ip.SrcIP),
 			vPort(udp.SrcPort),
 			vIP(ip.DstIP),
 			vPort(udp.DstPort),
-			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
+			tui.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
 		).Push()
 	}
 }
@@ -82,10 +83,10 @@ func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 				"Size": len(ip.Payload),
 			},
 			"%s %s > %s %s",
-			core.W(core.BG_DGRAY+core.FG_WHITE, pkt.TransportLayer().LayerType().String()),
+			tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, pkt.TransportLayer().LayerType().String()),
 			vIP(ip.SrcIP),
 			vIP(ip.DstIP),
-			core.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
+			tui.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
 		).Push()
 	}
 }

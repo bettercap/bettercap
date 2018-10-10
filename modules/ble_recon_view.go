@@ -11,11 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 
 	"github.com/bettercap/gatt"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 var (
@@ -30,15 +31,15 @@ func (d *BLERecon) getRow(dev *network.BLEDevice) []string {
 	lastSeen := dev.LastSeen.Format("15:04:05")
 
 	if sinceSeen <= bleAliveInterval {
-		lastSeen = core.Bold(lastSeen)
+		lastSeen = tui.Bold(lastSeen)
 	} else if sinceSeen > blePresentInterval {
-		lastSeen = core.Dim(lastSeen)
-		address = core.Dim(address)
+		lastSeen = tui.Dim(lastSeen)
+		address = tui.Dim(address)
 	}
 
-	isConnectable := core.Red("no")
+	isConnectable := tui.Red("no")
 	if dev.Advertisement.Connectable {
-		isConnectable = core.Green("yes")
+		isConnectable = tui.Green("yes")
 	}
 
 	return []string{
@@ -65,7 +66,7 @@ func (d *BLERecon) Show() error {
 	columns := []string{"RSSI", "Address", "Name", "Vendor", "Connectable", "Last Seen"}
 
 	if nrows > 0 {
-		core.AsTable(os.Stdout, columns, rows)
+		tui.Table(os.Stdout, columns, rows)
 	}
 
 	d.Session.Refresh()
@@ -87,7 +88,7 @@ func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool, 
 		props = append(props, "read")
 	}
 	if (mask&gatt.CharWriteNR) != 0 || (mask&gatt.CharWrite) != 0 {
-		props = append(props, core.Bold("write"))
+		props = append(props, tui.Bold("write"))
 		isWritable = true
 		withResponse = (mask & gatt.CharWriteNR) == 0
 	}
@@ -98,7 +99,7 @@ func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool, 
 		props = append(props, "indicate")
 	}
 	if (mask & gatt.CharSignedWrite) != 0 {
-		props = append(props, core.Yellow("*write"))
+		props = append(props, tui.Yellow("*write"))
 		isWritable = true
 		withResponse = true
 	}
@@ -121,7 +122,7 @@ func parseRawData(raw []byte) string {
 		}
 	}
 
-	return core.Yellow(s)
+	return tui.Yellow(s)
 }
 
 func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
@@ -138,7 +139,7 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 		if name == "" {
 			name = svc.UUID().String()
 		} else {
-			name = fmt.Sprintf("%s (%s)", core.Green(name), core.Dim(svc.UUID().String()))
+			name = fmt.Sprintf("%s (%s)", tui.Green(name), tui.Dim(svc.UUID().String()))
 		}
 
 		row := []string{
@@ -163,7 +164,7 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 			if name == "" {
 				name = "    " + ch.UUID().String()
 			} else {
-				name = fmt.Sprintf("    %s (%s)", core.Green(name), core.Dim(ch.UUID().String()))
+				name = fmt.Sprintf("    %s (%s)", tui.Green(name), tui.Dim(ch.UUID().String()))
 			}
 
 			props, isReadable, isWritable, withResponse := parseProperties(ch)
@@ -186,7 +187,7 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 			if isReadable {
 				raw, err := p.ReadCharacteristic(ch)
 				if err != nil {
-					data = core.Red(err.Error())
+					data = tui.Red(err.Error())
 				} else {
 					data = parseRawData(raw)
 				}
@@ -206,7 +207,7 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 	if wantsToWrite && !foundToWrite {
 		log.Error("Writable characteristics %s not found.", d.writeUUID)
 	} else {
-		core.AsTable(os.Stdout, columns, rows)
+		tui.Table(os.Stdout, columns, rows)
 		d.Session.Refresh()
 	}
 }

@@ -859,12 +859,36 @@ func (m *RadioTap) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) erro
 	}
 
 	payload := data[m.Length:]
-	if !m.Flags.FCS() { // Dot11.DecodeFromBytes() expects FCS present
-		fcs := make([]byte, 4)
+
+	// Remove non standard padding used by some Wi-Fi drivers
+	if m.Flags.Datapad() &&
+		payload[0]&0xC == 0x8 { //&& // Data frame
+		headlen := 24
+		if payload[0]&0x8C == 0x88 { // QoS
+			headlen += 2
+		}
+		if payload[1]&0x3 == 0x3 { // 4 addresses
+			headlen += 2
+		}
+		if headlen%4 == 2 {
+			payload = append(payload[:headlen], payload[headlen+2:len(payload)]...)
+		}
+	}
+
+	if !m.Flags.FCS() {
+		// Dot11.DecodeFromBytes() expects FCS present and performs a hard chop on the checksum
+		// If a user is handing in subslices or packets from a buffered stream, the capacity of the slice
+		// may extend beyond the len, rather than expecting callers to enforce cap==len on every packet
+		// we take the hit in this one case and do a reallocation.  If the user DOES enforce cap==len
+		// then the reallocation will happen anyway on the append.  This is requried because the append
+		// write to the memory directly after the payload if there is sufficient capacity, which callers
+		// may not expect.
+		reallocPayload := make([]byte, len(payload)+4)
+		copy(reallocPayload[0:len(payload)], payload)
 		h := crc32.NewIEEE()
 		h.Write(payload)
-		binary.LittleEndian.PutUint32(fcs, h.Sum32())
-		payload = append(payload, fcs...)
+		binary.LittleEndian.PutUint32(reallocPayload[len(payload):], h.Sum32())
+		payload = reallocPayload
 	}
 	m.BaseLayer = BaseLayer{Contents: data[:m.Length], Payload: payload}
 

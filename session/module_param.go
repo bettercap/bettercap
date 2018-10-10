@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/tui"
 )
 
 type ParamType int
@@ -60,7 +60,7 @@ func NewIntParameter(name string, def_value string, desc string) *ModuleParam {
 func (p ModuleParam) Validate(value string) (error, interface{}) {
 	if p.Validator != nil {
 		if !p.Validator.MatchString(value) {
-			return fmt.Errorf("Parameter %s not valid: '%s' does not match rule '%s'.", core.Bold(p.Name), value, p.Validator.String()), nil
+			return fmt.Errorf("Parameter %s not valid: '%s' does not match rule '%s'.", tui.Bold(p.Name), value, p.Validator.String()), nil
 		}
 	}
 
@@ -105,14 +105,14 @@ func (p ModuleParam) Get(s *Session) (error, interface{}) {
 }
 
 func (p ModuleParam) Dump(padding int) string {
-	return fmt.Sprintf("  "+core.YELLOW+"%"+strconv.Itoa(padding)+"s"+core.RESET+
+	return fmt.Sprintf("  "+tui.YELLOW+"%"+strconv.Itoa(padding)+"s"+tui.RESET+
 		" : %s\n", p.Name, p.Value)
 }
 
 func (p ModuleParam) Help(padding int) string {
-	return fmt.Sprintf("  "+core.YELLOW+"%"+strconv.Itoa(padding)+"s"+core.RESET+
+	return fmt.Sprintf("  "+tui.YELLOW+"%"+strconv.Itoa(padding)+"s"+tui.RESET+
 		" : "+
-		"%s "+core.DIM+"(default=%s"+core.RESET+")\n", p.Name, p.Description, p.Value)
+		"%s "+tui.DIM+"(default=%s"+tui.RESET+")\n", p.Name, p.Description, p.Value)
 }
 
 func (p ModuleParam) Register(s *Session) {

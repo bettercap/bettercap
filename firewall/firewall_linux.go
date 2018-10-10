@@ -7,6 +7,8 @@ import (
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/network"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 type LinuxFirewall struct {
@@ -54,7 +56,7 @@ func (f LinuxFirewall) IsForwardingEnabled() bool {
 	if out, err := ioutil.ReadFile(IPV4ForwardingFile); err != nil {
 		return false
 	} else {
-		return core.Trim(string(out)) == "1"
+		return str.Trim(string(out)) == "1"
 	}
 }
 

@@ -6,11 +6,12 @@ import (
 	"sort"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/dustin/go-humanize"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 var (
@@ -38,12 +39,12 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	mac := e.HwAddress
 	if d.Session.Lan.WasMissed(e.HwAddress) {
 		// if endpoint was not found in ARP at least once
-		addr = core.Dim(addr)
-		mac = core.Dim(mac)
+		addr = tui.Dim(addr)
+		mac = tui.Dim(mac)
 	} else if sinceStarted > (justJoinedTimeInterval*2) && sinceFirstSeen <= justJoinedTimeInterval {
 		// if endpoint was first seen in the last 10 seconds
-		addr = core.Bold(addr)
-		mac = core.Bold(mac)
+		addr = tui.Bold(addr)
+		mac = tui.Bold(mac)
 	}
 
 	name := ""
@@ -52,9 +53,9 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	} else if e == d.Session.Gateway {
 		name = "gateway"
 	} else if e.Alias != "" {
-		name = core.Green(e.Alias)
+		name = tui.Green(e.Alias)
 	} else if e.Hostname != "" {
-		name = core.Yellow(e.Hostname)
+		name = tui.Yellow(e.Hostname)
 	}
 
 	var traffic *packets.Traffic
@@ -67,19 +68,19 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	sinceLastSeen := time.Since(e.LastSeen)
 	if sinceStarted > aliveTimeInterval && sinceLastSeen <= aliveTimeInterval {
 		// if endpoint seen in the last 10 seconds
-		seen = core.Bold(seen)
+		seen = tui.Bold(seen)
 	} else if sinceLastSeen <= presentTimeInterval {
 		// if endpoint seen in the last 60 seconds
 	} else {
 		// not seen in a while
-		seen = core.Dim(seen)
+		seen = tui.Dim(seen)
 	}
 
 	row := []string{
 		addr,
 		mac,
 		name,
-		core.Dim(e.Vendor),
+		tui.Dim(e.Vendor),
 		humanize.Bytes(traffic.Sent),
 		humanize.Bytes(traffic.Received),
 		seen,
@@ -88,12 +89,12 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	if !withMeta {
 		return [][]string{row}
 	} else if e.Meta.Empty() {
-		return [][]string{append(row, core.Dim("-"))}
+		return [][]string{append(row, tui.Dim("-"))}
 	}
 
 	metas := []string{}
 	e.Meta.Each(func(name string, value interface{}) {
-		metas = append(metas, fmt.Sprintf("%s:%s", core.Green(name), core.Yellow(value.(string))))
+		metas = append(metas, fmt.Sprintf("%s:%s", tui.Green(name), tui.Yellow(value.(string))))
 	})
 	sort.Strings(metas)
 
@@ -164,13 +165,13 @@ func (d *Discovery) Show(by string, expr string) (err error) {
 		}
 	}
 
-	core.AsTable(os.Stdout, colNames, rows)
+	tui.Table(os.Stdout, colNames, rows)
 
 	d.Session.Queue.Stats.RLock()
 	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
-		core.Red("↑"),
+		tui.Red("↑"),
 		humanize.Bytes(d.Session.Queue.Stats.Sent),
-		core.Green("↓"),
+		tui.Green("↓"),
 		humanize.Bytes(d.Session.Queue.Stats.Received),
 		d.Session.Queue.Stats.PktReceived,
 		d.Session.Queue.Stats.Errors)

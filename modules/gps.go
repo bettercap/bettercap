@@ -5,12 +5,13 @@ import (
 	"io"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/adrianmo/go-nmea"
 	"github.com/tarm/serial"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 type GPS struct {
@@ -97,7 +98,7 @@ func (gps *GPS) readLine() (line string, err error) {
 			return
 		} else if n == 1 {
 			if b[0] == '\n' {
-				return core.Trim(line), nil
+				return str.Trim(line), nil
 			} else {
 				line += string(b[0])
 			}

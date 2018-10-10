@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/str"
 
 	"github.com/malfunkt/iprange"
 )
@@ -71,7 +71,7 @@ func ParseTargets(targets string, aliasMap *Aliases) (ips []net.IP, macs []net.H
 	ips = make([]net.IP, 0)
 	macs = make([]net.HardwareAddr, 0)
 
-	if targets = core.Trim(targets); targets == "" {
+	if targets = str.Trim(targets); targets == "" {
 		return
 	}
 
@@ -210,7 +210,7 @@ func FindInterface(name string) (*Endpoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	name = core.Trim(name)
+	name = str.Trim(name)
 	if name != "" {
 		return findInterfaceByName(name, ifaces)
 	}

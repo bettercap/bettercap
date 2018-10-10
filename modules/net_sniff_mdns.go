@@ -3,11 +3,12 @@ package modules
 import (
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
@@ -22,10 +23,10 @@ func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 					ip.DstIP.String(),
 					nil,
 					"%s %s : %s query for %s",
-					core.W(core.BG_DGRAY+core.FG_WHITE, "mdns"),
+					tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "mdns"),
 					vIP(ip.SrcIP),
-					core.Dim(q.Type.String()),
-					core.Yellow(string(q.Name)),
+					tui.Dim(q.Type.String()),
+					tui.Yellow(string(q.Name)),
 				).Push()
 			}
 
@@ -50,10 +51,10 @@ func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 					ip.DstIP.String(),
 					nil,
 					"%s %s : %s is %s",
-					core.W(core.BG_DGRAY+core.FG_WHITE, "mdns"),
+					tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "mdns"),
 					vIP(ip.SrcIP),
-					core.Yellow(hostname),
-					core.Dim(strings.Join(ips, ", ")),
+					tui.Yellow(hostname),
+					tui.Dim(strings.Join(ips, ", ")),
 				).Push()
 			}
 

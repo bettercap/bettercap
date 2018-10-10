@@ -31,6 +31,10 @@ type CaptureInfo struct {
 	Length int
 	// InterfaceIndex
 	InterfaceIndex int
+	// The packet source can place ancillary data of various types here.
+	// For example, the afpacket source can report the VLAN of captured
+	// packets this way.
+	AncillaryData []interface{}
 }
 
 // PacketMetadata contains metadata for a packet.

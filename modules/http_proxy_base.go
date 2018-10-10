@@ -15,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/firewall"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
@@ -23,6 +22,9 @@ import (
 
 	"github.com/elazarl/goproxy"
 	"github.com/inconshreveable/go-vhost"
+
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/tui"
 )
 
 const (
@@ -116,7 +118,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 
 	if strings.HasPrefix(jsToInject, "http://") || strings.HasPrefix(jsToInject, "https://") {
 		p.jsHook = fmt.Sprintf("<script src=\"%s\" type=\"text/javascript\"></script></head>", jsToInject)
-	} else if core.Exists(jsToInject) {
+	} else if fs.Exists(jsToInject) {
 		if data, err := ioutil.ReadFile(jsToInject); err != nil {
 			return err
 		} else {
@@ -187,7 +189,7 @@ func TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCt
 
 		cert := getCachedCert(hostname, port)
 		if cert == nil {
-			log.Debug("Creating spoofed certificate for %s:%d", core.Yellow(hostname), port)
+			log.Debug("Creating spoofed certificate for %s:%d", tui.Yellow(hostname), port)
 			cert, err = btls.SignCertificateForHost(ca, hostname, port)
 			if err != nil {
 				log.Warning("Cannot sign host certificate with provided CA: %s", err)
@@ -298,7 +300,7 @@ func (p *HTTPProxy) httpsWorker() error {
 				return
 			}
 
-			log.Debug("[%s] proxying connection from %s to %s", core.Green("https.proxy"), core.Bold(stripPort(c.RemoteAddr().String())), core.Yellow(hostname))
+			log.Debug("[%s] proxying connection from %s to %s", tui.Green("https.proxy"), tui.Bold(stripPort(c.RemoteAddr().String())), tui.Yellow(hostname))
 
 			req := &http.Request{
 				Method: "CONNECT",
@@ -320,12 +322,12 @@ func (p *HTTPProxy) Start() {
 	go func() {
 		var err error
 
-		strip := core.Yellow("enabled")
+		strip := tui.Yellow("enabled")
 		if !p.stripper.Enabled() {
-			strip = core.Dim("disabled")
+			strip = tui.Dim("disabled")
 		}
 
-		log.Info("%s started on %s (sslstrip %s)", core.Green(p.Name), p.Server.Addr, strip)
+		log.Info("%s started on %s (sslstrip %s)", tui.Green(p.Name), p.Server.Addr, strip)
 
 		if p.isTLS {
 			err = p.httpsWorker()

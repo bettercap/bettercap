@@ -43,10 +43,11 @@ import "C"
 
 import (
 	"errors"
+	"os"
 	"unsafe"
 )
 
-func (p *Handle) openLive() error {
+func (p *Handle) setNonBlocking() error {
 	buf := (*C.char)(C.calloc(errorBufferSize, 1))
 	defer C.free(unsafe.Pointer(buf))
 
@@ -68,4 +69,19 @@ func (p *Handle) waitForPacket() {
 	usec -= 100
 
 	C.pcap_wait(p.cptr, usec)
+}
+
+// openOfflineFile returns contents of input file as a *Handle.
+func openOfflineFile(file *os.File) (handle *Handle, err error) {
+	buf := (*C.char)(C.calloc(errorBufferSize, 1))
+	defer C.free(unsafe.Pointer(buf))
+	cmode := C.CString("rb")
+	defer C.free(unsafe.Pointer(cmode))
+	cf := C.fdopen(C.int(file.Fd()), cmode)
+
+	cptr := C.pcap_fopen_offline(cf, buf)
+	if cptr == nil {
+		return nil, errors.New(C.GoString(buf))
+	}
+	return &Handle{cptr: cptr}, nil
 }

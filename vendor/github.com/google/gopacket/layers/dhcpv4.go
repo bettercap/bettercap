@@ -9,7 +9,6 @@ package layers
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"net"
 
@@ -125,6 +124,7 @@ func (d *DHCPv4) LayerType() gopacket.LayerType { return LayerTypeDHCPv4 }
 
 // DecodeFromBytes decodes the given bytes into this layer.
 func (d *DHCPv4) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	d.Options = d.Options[:0]
 	d.Operation = DHCPOp(data[0])
 	d.HardwareType = LinkType(data[1])
 	d.HardwareLen = data[2]
@@ -140,7 +140,7 @@ func (d *DHCPv4) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error 
 	d.ServerName = data[44:108]
 	d.File = data[108:236]
 	if binary.BigEndian.Uint32(data[236:240]) != DHCPMagic {
-		return errors.New("Bad DHCP header")
+		return InvalidMagicCookie
 	}
 
 	if len(data) <= 240 {
@@ -538,9 +538,6 @@ func (o *DHCPOption) encode(b []byte) error {
 	case DHCPOptPad, DHCPOptEnd:
 		b[0] = byte(o.Type)
 	default:
-		if o.Length > 253 {
-			return errors.New("data too long to encode")
-		}
 		b[0] = byte(o.Type)
 		b[1] = o.Length
 		copy(b[2:], o.Data)
@@ -551,21 +548,38 @@ func (o *DHCPOption) encode(b []byte) error {
 func (o *DHCPOption) decode(data []byte) error {
 	if len(data) < 1 {
 		// Pad/End have a length of 1
-		return errors.New("Not enough data to decode")
+		return DecOptionNotEnoughData
 	}
 	o.Type = DHCPOpt(data[0])
 	switch o.Type {
 	case DHCPOptPad, DHCPOptEnd:
 		o.Data = nil
 	default:
-		if len(data) < 3 {
-			return errors.New("Not enough data to decode")
+		if len(data) < 2 {
+			return DecOptionNotEnoughData
 		}
 		o.Length = data[1]
-		if o.Length > 253 {
-			return errors.New("data too long to decode")
+		if int(o.Length) > len(data[2:]) {
+			return DecOptionMalformed
 		}
-		o.Data = data[2 : 2+o.Length]
+		o.Data = data[2 : 2+int(o.Length)]
 	}
 	return nil
 }
+
+// DHCPv4Error is used for constant errors for DHCPv4. It is needed for test asserts.
+type DHCPv4Error string
+
+// DHCPv4Error implements error interface.
+func (d DHCPv4Error) Error() string {
+	return string(d)
+}
+
+const (
+	// DecOptionNotEnoughData is returned when there is not enough data during option's decode process
+	DecOptionNotEnoughData = DHCPv4Error("Not enough data to decode")
+	// DecOptionMalformed is returned when the option is malformed
+	DecOptionMalformed = DHCPv4Error("Option is malformed")
+	// InvalidMagicCookie is returned when Magic cookie is missing into BOOTP header
+	InvalidMagicCookie = DHCPv4Error("Bad DHCP header")
+)

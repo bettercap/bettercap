@@ -4,7 +4,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/str"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -44,7 +44,7 @@ func MDNSGetMeta(pkt gopacket.Packet) map[string]string {
 						for _, raw := range answer.TXTs {
 							if value := string(raw); strings.Contains(value, "=") {
 								parts := strings.SplitN(value, "=", 2)
-								meta["mdns:"+core.Trim(parts[0])] = core.Trim(parts[1])
+								meta["mdns:"+str.Trim(parts[0])] = str.Trim(parts[1])
 							}
 						}
 					}

@@ -4,11 +4,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 var (
@@ -53,7 +54,7 @@ func ntlmParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 						ip.DstIP.String(),
 						nil,
 						"%s %s > %s | %s",
-						core.W(core.BG_DGRAY+core.FG_WHITE, "ntlm.response"),
+						tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "ntlm.response"),
 						vIP(ip.SrcIP),
 						vIP(ip.DstIP),
 						data.LcString(),

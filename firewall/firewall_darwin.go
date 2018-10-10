@@ -148,13 +148,13 @@ func (f PfFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 			lines := ""
 			scanner := bufio.NewScanner(fd)
 			for scanner.Scan() {
-				line := core.Trim(scanner.Text())
+				line := str.Trim(scanner.Text())
 				if line != rule {
 					lines += line + "\n"
 				}
 			}
 
-			if core.Trim(lines) == "" {
+			if str.Trim(lines) == "" {
 				os.Remove(f.filename)
 				f.enable(false)
 			} else {

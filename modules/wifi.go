@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
@@ -17,6 +16,8 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 type WiFiModule struct {
@@ -209,7 +210,7 @@ func (w *WiFiModule) Configure() error {
 		defer ihandle.CleanUp()
 
 		if err = ihandle.SetRFMon(true); err != nil {
-			return fmt.Errorf("Error while setting interface %s in monitor mode: %s", core.Bold(w.Session.Interface.Name()), err)
+			return fmt.Errorf("Error while setting interface %s in monitor mode: %s", tui.Bold(w.Session.Interface.Name()), err)
 		} else if err = ihandle.SetSnapLen(65536); err != nil {
 			return err
 		} else if err = ihandle.SetTimeout(pcap.BlockForever); err != nil {

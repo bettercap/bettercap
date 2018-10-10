@@ -5,11 +5,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/go-github/github"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 const eventTimeFormat = "15:04:05"
@@ -17,7 +18,7 @@ const eventTimeFormat = "15:04:05"
 func (s *EventsStream) viewLogEvent(e session.Event) {
 	fmt.Fprintf(s.output, "[%s] [%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
-		core.Green(e.Tag),
+		tui.Green(e.Tag),
 		e.Label(),
 		e.Data.(session.LogMessage).Message)
 }
@@ -37,21 +38,21 @@ func (s *EventsStream) viewWiFiEvent(e session.Event) {
 		if e.Tag == "wifi.ap.new" {
 			fmt.Fprintf(s.output, "[%s] [%s] wifi access point %s%s detected as %s%s.\n",
 				e.Time.Format(eventTimeFormat),
-				core.Green(e.Tag),
-				core.Bold(ap.ESSID()),
-				core.Dim(core.Yellow(rssi)),
-				core.Green(ap.BSSID()),
-				core.Dim(vend))
+				tui.Green(e.Tag),
+				tui.Bold(ap.ESSID()),
+				tui.Dim(tui.Yellow(rssi)),
+				tui.Green(ap.BSSID()),
+				tui.Dim(vend))
 		} else if e.Tag == "wifi.ap.lost" {
 			fmt.Fprintf(s.output, "[%s] [%s] wifi access point %s (%s) lost.\n",
 				e.Time.Format(eventTimeFormat),
-				core.Green(e.Tag),
-				core.Red(ap.ESSID()),
+				tui.Green(e.Tag),
+				tui.Red(ap.ESSID()),
 				ap.BSSID())
 		} else {
 			fmt.Fprintf(s.output, "[%s] [%s] %s\n",
 				e.Time.Format(eventTimeFormat),
-				core.Green(e.Tag),
+				tui.Green(e.Tag),
 				ap.String())
 		}
 	} else if e.Tag == "wifi.client.probe" {
@@ -69,11 +70,11 @@ func (s *EventsStream) viewWiFiEvent(e session.Event) {
 
 		fmt.Fprintf(s.output, "[%s] [%s] station %s%s is probing for SSID %s%s\n",
 			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
+			tui.Green(e.Tag),
 			probe.FromAddr.String(),
-			core.Dim(desc),
-			core.Bold(probe.SSID),
-			core.Yellow(rssi))
+			tui.Dim(desc),
+			tui.Bold(probe.SSID),
+			tui.Yellow(rssi))
 	}
 }
 
@@ -95,21 +96,21 @@ func (s *EventsStream) viewendpointEvent(e session.Event) {
 	if e.Tag == "endpoint.new" {
 		fmt.Fprintf(s.output, "[%s] [%s] endpoint %s%s detected as %s%s.\n",
 			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
-			core.Bold(t.IpAddress),
-			core.Dim(name),
-			core.Green(t.HwAddress),
-			core.Dim(vend))
+			tui.Green(e.Tag),
+			tui.Bold(t.IpAddress),
+			tui.Dim(name),
+			tui.Green(t.HwAddress),
+			tui.Dim(vend))
 	} else if e.Tag == "endpoint.lost" {
 		fmt.Fprintf(s.output, "[%s] [%s] endpoint %s%s lost.\n",
 			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
-			core.Red(t.IpAddress),
-			core.Dim(vend))
+			tui.Green(e.Tag),
+			tui.Red(t.IpAddress),
+			tui.Dim(vend))
 	} else {
 		fmt.Fprintf(s.output, "[%s] [%s] %s\n",
 			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
+			tui.Green(e.Tag),
 			t.String())
 	}
 }
@@ -117,7 +118,7 @@ func (s *EventsStream) viewendpointEvent(e session.Event) {
 func (s *EventsStream) viewModuleEvent(e session.Event) {
 	fmt.Fprintf(s.output, "[%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
-		core.Green(e.Tag),
+		tui.Green(e.Tag),
 		e.Data)
 }
 
@@ -127,7 +128,7 @@ func (s *EventsStream) viewSnifferEvent(e session.Event) {
 	} else {
 		fmt.Fprintf(s.output, "[%s] [%s] %s\n",
 			e.Time.Format(eventTimeFormat),
-			core.Green(e.Tag),
+			tui.Green(e.Tag),
 			e.Data.(SnifferEvent).Message)
 	}
 }
@@ -136,9 +137,9 @@ func (s *EventsStream) viewSynScanEvent(e session.Event) {
 	se := e.Data.(SynScanEvent)
 	fmt.Fprintf(s.output, "[%s] [%s] found open port %d for %s\n",
 		e.Time.Format(eventTimeFormat),
-		core.Green(e.Tag),
+		tui.Green(e.Tag),
 		se.Port,
-		core.Bold(se.Address))
+		tui.Bold(se.Address))
 }
 
 func (s *EventsStream) viewUpdateEvent(e session.Event) {
@@ -146,8 +147,8 @@ func (s *EventsStream) viewUpdateEvent(e session.Event) {
 
 	fmt.Fprintf(s.output, "[%s] [%s] an update to version %s is available at %s\n",
 		e.Time.Format(eventTimeFormat),
-		core.Bold(core.Yellow(e.Tag)),
-		core.Bold(*update.TagName),
+		tui.Bold(tui.Yellow(e.Tag)),
+		tui.Bold(*update.TagName),
 		*update.HTMLURL)
 }
 
@@ -169,7 +170,7 @@ func (s *EventsStream) View(e session.Event, refresh bool) {
 	} else if e.Tag == "update.available" {
 		s.viewUpdateEvent(e)
 	} else {
-		fmt.Fprintf(s.output, "[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), core.Green(e.Tag), e)
+		fmt.Fprintf(s.output, "[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), tui.Green(e.Tag), e)
 	}
 
 	if refresh && s.output == os.Stdout {

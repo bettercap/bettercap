@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 
 	"github.com/elazarl/goproxy"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 func (p *HTTPProxy) fixRequestHeaders(req *http.Request) {
@@ -20,7 +21,7 @@ func (p *HTTPProxy) fixRequestHeaders(req *http.Request) {
 }
 
 func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-	log.Debug("(%s) < %s %s %s%s", core.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
+	log.Debug("(%s) < %s %s %s%s", tui.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
 
 	p.fixRequestHeaders(req)
 
@@ -99,11 +100,11 @@ func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) (error, 
 		return err, nil
 	} else if html := string(raw); strings.Contains(html, "</head>") {
 		log.Info("(%s) > injecting javascript (%d bytes) into %s (%d bytes) for %s",
-			core.Green(p.Name),
+			tui.Green(p.Name),
 			len(p.jsHook),
-			core.Yellow(res.Request.Host+res.Request.URL.Path),
+			tui.Yellow(res.Request.Host+res.Request.URL.Path),
 			len(raw),
-			core.Bold(strings.Split(res.Request.RemoteAddr, ":")[0]))
+			tui.Bold(strings.Split(res.Request.RemoteAddr, ":")[0]))
 
 		html = strings.Replace(html, "</head>", p.jsHook, -1)
 		newResp := goproxy.NewResponse(res.Request, cType, res.StatusCode, html)
@@ -125,7 +126,7 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 		return nil
 	}
 
-	log.Debug("(%s) > %s %s %s%s", core.Green(p.Name), res.Request.RemoteAddr, res.Request.Method, res.Request.Host, res.Request.URL.Path)
+	log.Debug("(%s) > %s %s %s%s", tui.Green(p.Name), res.Request.RemoteAddr, res.Request.Method, res.Request.Host, res.Request.URL.Path)
 
 	p.fixResponseHeaders(res)
 

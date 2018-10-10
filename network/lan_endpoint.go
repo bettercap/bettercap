@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/tui"
 )
 
 type OnHostResolvedCallback func(e *Endpoint)
@@ -152,7 +152,7 @@ func (t *Endpoint) String() string {
 	} else if t.Hostname == "" {
 		return fmt.Sprintf("%s%s ( %s )", ipPart, t.HwAddress, t.Vendor)
 	}
-	return fmt.Sprintf("%s%s ( %s ) - %s", ipPart, t.HwAddress, t.Vendor, core.Bold(t.Hostname))
+	return fmt.Sprintf("%s%s ( %s ) - %s", ipPart, t.HwAddress, t.Vendor, tui.Bold(t.Hostname))
 }
 
 func (t *Endpoint) OnMeta(meta map[string]string) {

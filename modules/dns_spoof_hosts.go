@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
-
 	"github.com/gobwas/glob"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 var hostsSplitter = regexp.MustCompile(`\s+`)
@@ -57,7 +57,7 @@ func HostsFromFile(filename string) (err error, entries []HostEntry) {
 	scanner := bufio.NewScanner(input)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
-		line := core.Trim(scanner.Text())
+		line := str.Trim(scanner.Text())
 		if line == "" || line[0] == '#' {
 			continue
 		}

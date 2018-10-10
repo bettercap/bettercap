@@ -5,11 +5,12 @@ import (
 	"net"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 var errNoRecon = errors.New("Module wifi.ap requires module wifi.recon to be activated.")
@@ -44,12 +45,12 @@ func (w *WiFiModule) startAp() error {
 			w.apRunning = false
 		}()
 
-		enc := core.Yellow("WPA2")
+		enc := tui.Yellow("WPA2")
 		if !w.apConfig.Encryption {
-			enc = core.Green("Open")
+			enc = tui.Green("Open")
 		}
 		log.Info("Sending beacons as SSID %s (%s) on channel %d (%s).",
-			core.Bold(w.apConfig.SSID),
+			tui.Bold(w.apConfig.SSID),
 			w.apConfig.BSSID.String(),
 			w.apConfig.Channel,
 			enc)

@@ -14,6 +14,8 @@ import (
 	"github.com/bettercap/bettercap/network"
 
 	"github.com/bettercap/readline"
+	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
 )
 
 func (s *Session) generalHelp() {
@@ -29,10 +31,10 @@ func (s *Session) generalHelp() {
 	pad := "%" + strconv.Itoa(maxLen) + "s"
 
 	for _, h := range s.CoreHandlers {
-		fmt.Printf("  "+core.Yellow(pad)+" : %s\n", h.Name, h.Description)
+		fmt.Printf("  "+tui.Yellow(pad)+" : %s\n", h.Name, h.Description)
 	}
 
-	fmt.Println(core.Bold("\nModules\n"))
+	fmt.Println(tui.Bold("\nModules\n"))
 
 	maxLen = 0
 	for _, m := range s.Modules {
@@ -46,11 +48,11 @@ func (s *Session) generalHelp() {
 	for _, m := range s.Modules {
 		status := ""
 		if m.Running() {
-			status = core.Green("running")
+			status = tui.Green("running")
 		} else {
-			status = core.Red("not running")
+			status = tui.Red("not running")
 		}
-		fmt.Printf("  "+core.Yellow(pad)+" > %s\n", m.Name(), status)
+		fmt.Printf("  "+tui.Yellow(pad)+" > %s\n", m.Name(), status)
 	}
 
 	fmt.Println()
@@ -65,11 +67,11 @@ func (s *Session) moduleHelp(filter string) error {
 	fmt.Println()
 	status := ""
 	if m.Running() {
-		status = core.Green("running")
+		status = tui.Green("running")
 	} else {
-		status = core.Red("not running")
+		status = tui.Red("not running")
 	}
-	fmt.Printf("%s (%s): %s\n\n", core.Yellow(m.Name()), status, core.Dim(m.Description()))
+	fmt.Printf("%s (%s): %s\n\n", tui.Yellow(m.Name()), status, tui.Dim(m.Description()))
 
 	maxLen := 0
 	handlers := m.Handlers()
@@ -114,7 +116,7 @@ func (s *Session) moduleHelp(filter string) error {
 func (s *Session) helpHandler(args []string, sess *Session) error {
 	filter := ""
 	if len(args) == 2 {
-		filter = core.Trim(args[1])
+		filter = str.Trim(args[1])
 	}
 
 	if filter == "" {
@@ -134,13 +136,13 @@ func (s *Session) activeHandler(args []string, sess *Session) error {
 			continue
 		}
 
-		fmt.Printf("%s (%s)\n", core.Bold(m.Name()), core.Dim(m.Description()))
+		fmt.Printf("%s (%s)\n", tui.Bold(m.Name()), tui.Dim(m.Description()))
 		params := m.Parameters()
 		if len(params) > 0 {
 			fmt.Println()
 			for _, p := range params {
 				_, val := s.Env.Get(p.Name)
-				fmt.Printf("  %s : %s\n", core.Yellow(p.Name), val)
+				fmt.Printf("  %s : %s\n", tui.Yellow(p.Name), val)
 			}
 		}
 
@@ -237,7 +239,7 @@ func (s *Session) readHandler(args []string, sess *Session) error {
 	fmt.Printf("%s ", prompt)
 
 	value, _ := reader.ReadString('\n')
-	value = core.Trim(value)
+	value = str.Trim(value)
 	if value == "\"\"" {
 		value = ""
 	}
@@ -271,7 +273,7 @@ func (s *Session) shHandler(args []string, sess *Session) error {
 
 func (s *Session) aliasHandler(args []string, sess *Session) error {
 	mac := args[0]
-	alias := core.Trim(args[1])
+	alias := str.Trim(args[1])
 
 	if s.Lan.SetAliasFor(mac, alias) {
 		return nil
@@ -291,7 +293,7 @@ func (s *Session) registerCoreHandlers() {
 		"List available commands or show module specific help if no module name is provided.",
 		s.helpHandler),
 		readline.PcItem("help", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = core.Trim(prefix[4:])
+			prefix = str.Trim(prefix[4:])
 			modNames := []string{""}
 			for _, m := range s.Modules {
 				if prefix == "" || strings.HasPrefix(m.Name(), prefix) {
@@ -324,7 +326,7 @@ func (s *Session) registerCoreHandlers() {
 		"Get the value of variable NAME, use * alone for all, or NAME* as a wildcard.",
 		s.getHandler),
 		readline.PcItem("get", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = core.Trim(prefix[3:])
+			prefix = str.Trim(prefix[3:])
 			varNames := []string{""}
 			for key := range s.Env.Data {
 				if prefix == "" || strings.HasPrefix(key, prefix) {
@@ -339,7 +341,7 @@ func (s *Session) registerCoreHandlers() {
 		"Set the VALUE of variable NAME.",
 		s.setHandler),
 		readline.PcItem("set", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = core.Trim(prefix[3:])
+			prefix = str.Trim(prefix[3:])
 			varNames := []string{""}
 			for key := range s.Env.Data {
 				if prefix == "" || strings.HasPrefix(key, prefix) {
@@ -366,7 +368,7 @@ func (s *Session) registerCoreHandlers() {
 		"Load and run this caplet in the current session.",
 		s.includeHandler),
 		readline.PcItem("include", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = core.Trim(prefix[8:])
+			prefix = str.Trim(prefix[8:])
 			if prefix == "" {
 				prefix = "."
 			}
@@ -386,7 +388,7 @@ func (s *Session) registerCoreHandlers() {
 		"Assign an alias to a given endpoint given its MAC address.",
 		s.aliasHandler),
 		readline.PcItem("alias", readline.PcItemDynamic(func(prefix string) []string {
-			prefix = core.Trim(prefix[5:])
+			prefix = str.Trim(prefix[5:])
 			macs := []string{""}
 			s.Lan.EachHost(func(mac string, e *network.Endpoint) {
 				if prefix == "" || strings.HasPrefix(mac, prefix) {

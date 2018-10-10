@@ -80,6 +80,7 @@ const (
 	IPProtocolICMPv6          IPProtocol = 58
 	IPProtocolNoNextHeader    IPProtocol = 59
 	IPProtocolIPv6Destination IPProtocol = 60
+	IPProtocolOSPF            IPProtocol = 89
 	IPProtocolIPIP            IPProtocol = 94
 	IPProtocolEtherIP         IPProtocol = 97
 	IPProtocolVRRP            IPProtocol = 112
@@ -218,12 +219,17 @@ func (d Dot11Type) MainType() Dot11Type {
 	return d & dot11TypeMask
 }
 
+func (d Dot11Type) QOS() bool {
+	return d&dot11QOSMask == Dot11TypeDataQOSData
+}
+
 const (
 	Dot11TypeMgmt     Dot11Type = 0x00
 	Dot11TypeCtrl     Dot11Type = 0x01
 	Dot11TypeData     Dot11Type = 0x02
 	Dot11TypeReserved Dot11Type = 0x03
 	dot11TypeMask               = 0x03
+	dot11QOSMask                = 0x23
 
 	// The following are type/subtype conglomerations.
 
@@ -271,107 +277,6 @@ const (
 	Dot11TypeDataQOSCFAckPollNoData Dot11Type = 0x3e
 )
 
-var (
-	// Each of the following arrays contains mappings of how to handle enum
-	// values for various enum types in gopacket/layers.
-	//
-	// So, EthernetTypeMetadata[2] contains information on how to handle EthernetType
-	// 2, including which name to give it and which decoder to use to decode
-	// packet data of that type.  These arrays are filled by default with all of the
-	// protocols gopacket/layers knows how to handle, but users of the library can
-	// add new decoders or override existing ones.  For example, if you write a better
-	// TCP decoder, you can override IPProtocolMetadata[IPProtocolTCP].DecodeWith
-	// with your new decoder, and all gopacket/layers decoding will use your new
-	// decoder whenever they encounter that IPProtocol.
-	EthernetTypeMetadata     [65536]EnumMetadata
-	IPProtocolMetadata       [256]EnumMetadata
-	SCTPChunkTypeMetadata    [256]EnumMetadata
-	PPPTypeMetadata          [65536]EnumMetadata
-	PPPoECodeMetadata        [256]EnumMetadata
-	LinkTypeMetadata         [256]EnumMetadata
-	FDDIFrameControlMetadata [256]EnumMetadata
-	EAPOLTypeMetadata        [256]EnumMetadata
-	ProtocolFamilyMetadata   [256]EnumMetadata
-	Dot11TypeMetadata        [256]EnumMetadata
-	USBTypeMetadata          [256]EnumMetadata
-)
-
-func (a EthernetType) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return EthernetTypeMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a EthernetType) String() string {
-	return EthernetTypeMetadata[a].Name
-}
-func (a EthernetType) LayerType() gopacket.LayerType {
-	return EthernetTypeMetadata[a].LayerType
-}
-func (a IPProtocol) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return IPProtocolMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a IPProtocol) String() string {
-	return IPProtocolMetadata[a].Name
-}
-func (a IPProtocol) LayerType() gopacket.LayerType {
-	return IPProtocolMetadata[a].LayerType
-}
-func (a SCTPChunkType) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return SCTPChunkTypeMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a SCTPChunkType) String() string {
-	return SCTPChunkTypeMetadata[a].Name
-}
-func (a PPPType) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return PPPTypeMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a PPPType) String() string {
-	return PPPTypeMetadata[a].Name
-}
-func (a LinkType) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return LinkTypeMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a LinkType) String() string {
-	return LinkTypeMetadata[a].Name
-}
-func (a PPPoECode) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return PPPoECodeMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a PPPoECode) String() string {
-	return PPPoECodeMetadata[a].Name
-}
-func (a FDDIFrameControl) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return FDDIFrameControlMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a FDDIFrameControl) String() string {
-	return FDDIFrameControlMetadata[a].Name
-}
-func (a EAPOLType) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return EAPOLTypeMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a EAPOLType) String() string {
-	return EAPOLTypeMetadata[a].Name
-}
-func (a EAPOLType) LayerType() gopacket.LayerType {
-	return EAPOLTypeMetadata[a].LayerType
-}
-func (a ProtocolFamily) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return ProtocolFamilyMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a ProtocolFamily) String() string {
-	return ProtocolFamilyMetadata[a].Name
-}
-func (a ProtocolFamily) LayerType() gopacket.LayerType {
-	return ProtocolFamilyMetadata[a].LayerType
-}
-func (a Dot11Type) Decode(data []byte, p gopacket.PacketBuilder) error {
-	return Dot11TypeMetadata[a].DecodeWith.Decode(data, p)
-}
-func (a Dot11Type) String() string {
-	return Dot11TypeMetadata[a].Name
-}
-func (a Dot11Type) LayerType() gopacket.LayerType {
-	return Dot11TypeMetadata[a].LayerType
-}
-
 // Decode a raw v4 or v6 IP packet.
 func decodeIPv4or6(data []byte, p gopacket.PacketBuilder) error {
 	version := data[0] >> 4
@@ -384,53 +289,22 @@ func decodeIPv4or6(data []byte, p gopacket.PacketBuilder) error {
 	return fmt.Errorf("Invalid IP packet version %v", version)
 }
 
-func init() {
-	// Here we link up all enumerations with their respective names and decoders.
-	for i := 0; i < 65536; i++ {
-		EthernetTypeMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode ethernet type %d", i)),
-			Name:       fmt.Sprintf("UnknownEthernetType(%d)", i),
-		}
-		PPPTypeMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode PPP type %d", i)),
-			Name:       fmt.Sprintf("UnknownPPPType(%d)", i),
-		}
-	}
-	for i := 0; i < 256; i++ {
-		IPProtocolMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode IP protocol %d", i)),
-			Name:       fmt.Sprintf("UnknownIPProtocol(%d)", i),
-		}
-		SCTPChunkTypeMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode SCTP chunk type %d", i)),
-			Name:       fmt.Sprintf("UnknownSCTPChunkType(%d)", i),
-		}
-		PPPoECodeMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode PPPoE code %d", i)),
-			Name:       fmt.Sprintf("UnknownPPPoECode(%d)", i),
-		}
-		LinkTypeMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode link type %d", i)),
-			Name:       fmt.Sprintf("UnknownLinkType(%d)", i),
-		}
-		FDDIFrameControlMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode FDDI frame control %d", i)),
-			Name:       fmt.Sprintf("UnknownFDDIFrameControl(%d)", i),
-		}
-		EAPOLTypeMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode EAPOL type %d", i)),
-			Name:       fmt.Sprintf("UnknownEAPOLType(%d)", i),
-		}
-		ProtocolFamilyMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode protocol family %d", i)),
-			Name:       fmt.Sprintf("UnknownProtocolFamily(%d)", i),
-		}
-		Dot11TypeMetadata[i] = EnumMetadata{
-			DecodeWith: errorFunc(fmt.Sprintf("Unable to decode Dot11 type %d", i)),
-			Name:       fmt.Sprintf("UnknownDot11Type(%d)", i),
-		}
-	}
+func initActualTypeData() {
+	// Each of the XXXTypeMetadata arrays contains mappings of how to handle enum
+	// values for various enum types in gopacket/layers.
+	// These arrays are actually created by gen2.go and stored in
+	// enums_generated.go.
+	//
+	// So, EthernetTypeMetadata[2] contains information on how to handle EthernetType
+	// 2, including which name to give it and which decoder to use to decode
+	// packet data of that type.  These arrays are filled by default with all of the
+	// protocols gopacket/layers knows how to handle, but users of the library can
+	// add new decoders or override existing ones.  For example, if you write a better
+	// TCP decoder, you can override IPProtocolMetadata[IPProtocolTCP].DecodeWith
+	// with your new decoder, and all gopacket/layers decoding will use your new
+	// decoder whenever they encounter that IPProtocol.
 
+	// Here we link up all enumerations with their respective names and decoders.
 	EthernetTypeMetadata[EthernetTypeLLC] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeLLC), Name: "LLC", LayerType: LayerTypeLLC}
 	EthernetTypeMetadata[EthernetTypeIPv4] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeIPv4), Name: "IPv4", LayerType: LayerTypeIPv4}
 	EthernetTypeMetadata[EthernetTypeIPv6] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeIPv6), Name: "IPv6", LayerType: LayerTypeIPv6}
@@ -463,6 +337,7 @@ func init() {
 	IPProtocolMetadata[IPProtocolIPv6Routing] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeIPv6Routing), Name: "IPv6Routing", LayerType: LayerTypeIPv6Routing}
 	IPProtocolMetadata[IPProtocolIPv6Fragment] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeIPv6Fragment), Name: "IPv6Fragment", LayerType: LayerTypeIPv6Fragment}
 	IPProtocolMetadata[IPProtocolIPv6Destination] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeIPv6Destination), Name: "IPv6Destination", LayerType: LayerTypeIPv6Destination}
+	IPProtocolMetadata[IPProtocolOSPF] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeOSPF), Name: "OSPF", LayerType: LayerTypeOSPF}
 	IPProtocolMetadata[IPProtocolAH] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeIPSecAH), Name: "IPSecAH", LayerType: LayerTypeIPSecAH}
 	IPProtocolMetadata[IPProtocolESP] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeIPSecESP), Name: "IPSecESP", LayerType: LayerTypeIPSecESP}
 	IPProtocolMetadata[IPProtocolUDPLite] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeUDPLite), Name: "UDPLite", LayerType: LayerTypeUDPLite}
@@ -509,6 +384,7 @@ func init() {
 	FDDIFrameControlMetadata[FDDIFrameControlLLC] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeLLC), Name: "LLC"}
 
 	EAPOLTypeMetadata[EAPOLTypeEAP] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeEAP), Name: "EAP", LayerType: LayerTypeEAP}
+	EAPOLTypeMetadata[EAPOLTypeKey] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeEAPOLKey), Name: "EAPOLKey", LayerType: LayerTypeEAPOLKey}
 
 	ProtocolFamilyMetadata[ProtocolFamilyIPv4] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeIPv4), Name: "IPv4", LayerType: LayerTypeIPv4}
 	ProtocolFamilyMetadata[ProtocolFamilyIPv6BSD] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeIPv6), Name: "IPv6", LayerType: LayerTypeIPv6}
@@ -556,7 +432,7 @@ func init() {
 	Dot11TypeMetadata[Dot11TypeDataQOSCFPollNoData] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeDot11DataQOSCFPollNoData), Name: "DataQOSCFPollNoData", LayerType: LayerTypeDot11DataQOSCFPollNoData}
 	Dot11TypeMetadata[Dot11TypeDataQOSCFAckPollNoData] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeDot11DataQOSCFAckPollNoData), Name: "DataQOSCFAckPollNoData", LayerType: LayerTypeDot11DataQOSCFAckPollNoData}
 
-	USBTypeMetadata[USBTransportTypeInterrupt] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeUSBInterrupt), Name: "Interrupt", LayerType: LayerTypeUSBInterrupt}
-	USBTypeMetadata[USBTransportTypeControl] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeUSBControl), Name: "Control", LayerType: LayerTypeUSBControl}
-	USBTypeMetadata[USBTransportTypeBulk] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeUSBBulk), Name: "Bulk", LayerType: LayerTypeUSBBulk}
+	USBTransportTypeMetadata[USBTransportTypeInterrupt] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeUSBInterrupt), Name: "Interrupt", LayerType: LayerTypeUSBInterrupt}
+	USBTransportTypeMetadata[USBTransportTypeControl] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeUSBControl), Name: "Control", LayerType: LayerTypeUSBControl}
+	USBTransportTypeMetadata[USBTransportTypeBulk] = EnumMetadata{DecodeWith: gopacket.DecodeFunc(decodeUSBBulk), Name: "Bulk", LayerType: LayerTypeUSBBulk}
 }

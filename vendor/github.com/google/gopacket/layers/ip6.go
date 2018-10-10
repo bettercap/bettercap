@@ -240,6 +240,8 @@ func (ip6 *IPv6) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error 
 			return errors.New("IPv6 has jumbo length and IPv6 length is not 0")
 		} else if !jumbo && ip6.Length == 0 {
 			return errors.New("IPv6 length 0, but HopByHop header does not have jumbogram option")
+		} else {
+			ip6.Payload = ip6.Payload[ip6.hbh.ActualLength:]
 		}
 	}
 

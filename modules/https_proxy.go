@@ -1,10 +1,11 @@
 package modules
 
 import (
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 	"github.com/bettercap/bettercap/tls"
+
+	"github.com/evilsocket/islazy/fs"
 )
 
 type HttpsProxy struct {
@@ -107,11 +108,11 @@ func (p *HttpsProxy) Configure() error {
 		return err
 	} else if err, certFile = p.StringParam("https.proxy.certificate"); err != nil {
 		return err
-	} else if certFile, err = core.ExpandPath(certFile); err != nil {
+	} else if certFile, err = fs.Expand(certFile); err != nil {
 		return err
 	} else if err, keyFile = p.StringParam("https.proxy.key"); err != nil {
 		return err
-	} else if keyFile, err = core.ExpandPath(keyFile); err != nil {
+	} else if keyFile, err = fs.Expand(keyFile); err != nil {
 		return err
 	} else if err, scriptPath = p.StringParam("https.proxy.script"); err != nil {
 		return err
@@ -119,7 +120,7 @@ func (p *HttpsProxy) Configure() error {
 		return err
 	}
 
-	if !core.Exists(certFile) || !core.Exists(keyFile) {
+	if !fs.Exists(certFile) || !fs.Exists(keyFile) {
 		err, cfg := tls.CertConfigFromModule("https.proxy", p.SessionModule)
 		if err != nil {
 			return err

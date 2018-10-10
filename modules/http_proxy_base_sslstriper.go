@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
@@ -18,6 +17,8 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 var (
@@ -66,7 +67,7 @@ func (s *SSLStripper) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp 
 		who = t.String()
 	}
 
-	log.Debug("[%s] Sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(who))
+	log.Debug("[%s] Sending spoofed DNS reply for %s %s to %s.", tui.Green("dns"), tui.Red(domain), tui.Dim(redir), tui.Bold(who))
 
 	var err error
 	var src, dst net.IP
@@ -245,7 +246,7 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 	// handle stripped domains
 	original := s.hosts.Unstrip(req.Host)
 	if original != nil {
-		log.Info("[%s] Replacing host %s with %s in request from %s", core.Green("sslstrip"), core.Bold(req.Host), core.Yellow(original.Hostname), req.RemoteAddr)
+		log.Info("[%s] Replacing host %s with %s in request from %s", tui.Green("sslstrip"), tui.Bold(req.Host), tui.Yellow(original.Hostname), req.RemoteAddr)
 		req.Host = original.Hostname
 		req.URL.Host = original.Hostname
 		req.Header.Set("Host", original.Hostname)
@@ -254,7 +255,7 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 	if !s.cookies.IsClean(req) {
 		// check if we need to redirect the user in order
 		// to make unknown session cookies expire
-		log.Info("[%s] Sending expired cookies for %s to %s", core.Green("sslstrip"), core.Yellow(req.Host), req.RemoteAddr)
+		log.Info("[%s] Sending expired cookies for %s to %s", tui.Green("sslstrip"), tui.Yellow(req.Host), req.RemoteAddr)
 		s.cookies.Track(req)
 		redir = s.cookies.Expire(req)
 	}
@@ -267,7 +268,7 @@ func (s *SSLStripper) isMaxRedirs(hostname string) bool {
 	if nredirs, found := s.redirs[hostname]; found {
 		// reached the threshold?
 		if nredirs >= maxRedirs {
-			log.Warning("[%s] Hit max redirections for %s, serving HTTPS.", core.Green("sslstrip"), hostname)
+			log.Warning("[%s] Hit max redirections for %s, serving HTTPS.", tui.Green("sslstrip"), hostname)
 			// reset
 			delete(s.redirs, hostname)
 			return true
@@ -299,7 +300,7 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			// are we getting redirected from http to https?
 			if orig.Scheme == "http" && location.Scheme == "https" {
 
-				log.Info("[%s] Got redirection from HTTPS to HTTP: %s -> %s", core.Green("sslstrip"), core.Yellow("http://"+origHost), core.Bold("https://"+newHost))
+				log.Info("[%s] Got redirection from HTTPS to HTTP: %s -> %s", tui.Green("sslstrip"), tui.Yellow("http://"+origHost), tui.Bold("https://"+newHost))
 
 				// if we still did not reach max redirections, strip the URL down to
 				// an alternative HTTP version
@@ -342,11 +343,11 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			if nurls == 1 {
 				plural = ""
 			}
-			log.Info("[%s] Stripping %d SSL link%s from %s", core.Green("sslstrip"), nurls, plural, core.Bold(res.Request.Host))
+			log.Info("[%s] Stripping %d SSL link%s from %s", tui.Green("sslstrip"), nurls, plural, tui.Bold(res.Request.Host))
 		}
 
 		for url, stripped := range urls {
-			log.Debug("Stripping url %s to %s", core.Bold(url), core.Yellow(stripped))
+			log.Debug("Stripping url %s to %s", tui.Bold(url), tui.Yellow(stripped))
 
 			body = strings.Replace(body, url, stripped, -1)
 

@@ -7,7 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
 )
 
 type Module interface {
@@ -66,7 +67,7 @@ func (m SessionModule) ListParam(name string) (err error, values []string) {
 	} else {
 		parts := strings.Split(list, ",")
 		for _, part := range parts {
-			part = core.Trim(part)
+			part = str.Trim(part)
 			if part != "" {
 				values = append(values, part)
 			}
@@ -169,7 +170,7 @@ func (m *SessionModule) SetRunning(running bool, cb func()) error {
 			case <-done:
 				return nil
 			case <-time.After(10 * time.Second):
-				fmt.Printf("%s: Stopping module %s timed out.\n", core.Yellow(core.Bold("WARNING")), m.Name)
+				fmt.Printf("%s: Stopping module %s timed out.\n", tui.Yellow(tui.Bold("WARNING")), m.Name)
 			}
 		}
 	}

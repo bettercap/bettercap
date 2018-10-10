@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
-
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 
 	"github.com/dustin/go-humanize"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 type HTTPRequest struct {
@@ -126,10 +126,10 @@ func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 			req.Host,
 			toSerializableRequest(req),
 			"%s %s %s %s%s",
-			core.W(core.BG_RED+core.FG_BLACK, "http"),
+			tui.Wrap(tui.BACKRED+tui.FOREBLACK, "http"),
 			vIP(ip.SrcIP),
-			core.W(core.BG_LBLUE+core.FG_BLACK, req.Method),
-			core.Yellow(req.Host),
+			tui.Wrap(tui.BACKLIGHTBLUE+tui.FOREBLACK, req.Method),
+			tui.Yellow(req.Host),
 			vURL(req.URL.String()),
 		).Push()
 
@@ -143,13 +143,13 @@ func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 			ip.DstIP.String(),
 			sres,
 			"%s %s:%d %s -> %s (%s %s)",
-			core.W(core.BG_RED+core.FG_BLACK, "http"),
+			tui.Wrap(tui.BACKRED+tui.FOREBLACK, "http"),
 			vIP(ip.SrcIP),
 			tcp.SrcPort,
-			core.Bold(res.Status),
+			tui.Bold(res.Status),
 			vIP(ip.DstIP),
-			core.Dim(humanize.Bytes(uint64(len(sres.Body)))),
-			core.Yellow(sres.ContentType),
+			tui.Dim(humanize.Bytes(uint64(len(sres.Body)))),
+			tui.Yellow(sres.ContentType),
 		).Push()
 
 		return true

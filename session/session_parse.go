@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/str"
 )
 
 func ParseCommands(line string) []string {
@@ -62,7 +62,7 @@ func ParseCommands(line string) []string {
 
 	cmds := make([]string, 0)
 	for _, cmd := range args {
-		cmd = core.Trim(cmd)
+		cmd = str.Trim(cmd)
 		if cmd != "" || (len(cmd) > 0 && cmd[0] != '#') {
 			cmds = append(cmds, cmd)
 		}

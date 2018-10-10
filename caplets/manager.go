@@ -9,7 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/str"
 )
 
 var (
@@ -62,7 +63,7 @@ func Load(name string) (error, *Caplet) {
 	}
 
 	for _, filename := range names {
-		if core.Exists(filename) {
+		if fs.Exists(filename) {
 			cap := &Caplet{
 				Path: filename,
 				Code: make([]string, 0),
@@ -77,7 +78,7 @@ func Load(name string) (error, *Caplet) {
 			scanner := bufio.NewScanner(input)
 			scanner.Split(bufio.ScanLines)
 			for scanner.Scan() {
-				line := core.Trim(scanner.Text())
+				line := str.Trim(scanner.Text())
 				if line == "" || line[0] == '#' {
 					continue
 				}

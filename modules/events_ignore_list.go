@@ -6,8 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 var (
@@ -32,7 +33,7 @@ func NewIgnoreList() *IgnoreList {
 }
 
 func (l *IgnoreList) checkExpression(expr string) (string, error) {
-	expr = core.Trim(expr)
+	expr = str.Trim(expr)
 	if expr == "" {
 		return "", ErrEmptyExpression
 	}

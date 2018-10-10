@@ -72,6 +72,10 @@ func (vx *VXLAN) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.Serialize
 		return err
 	}
 
+	// PrependBytes does not guarantee that bytes are zeroed.  Setting flags via OR requires that they start off at zero
+	bytes[0] = 0
+	bytes[1] = 0
+
 	if vx.ValidIDFlag {
 		bytes[0] |= 0x08
 	}

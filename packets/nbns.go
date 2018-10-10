@@ -1,7 +1,7 @@
 package packets
 
 import (
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/str"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -28,7 +28,7 @@ func NBNSGetMeta(pkt gopacket.Packet) map[string]string {
 	if ludp := pkt.Layer(layers.LayerTypeUDP); ludp != nil {
 		if udp := ludp.(*layers.UDP); udp != nil && udp.SrcPort == NBNSPort && len(udp.Payload) >= NBNSMinRespSize {
 			return map[string]string{
-				"nbns:hostname": core.Trim(string(udp.Payload[57:72])),
+				"nbns:hostname": str.Trim(string(udp.Payload[57:72])),
 			}
 		}
 	}

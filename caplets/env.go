@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/str"
 )
 
 const (
@@ -26,8 +26,8 @@ var (
 )
 
 func init() {
-	for _, path := range core.SepSplit(core.Trim(os.Getenv(EnvVarName)), ":") {
-		if path = core.Trim(path); len(path) > 0 {
+	for _, path := range str.SplitBy(str.Trim(os.Getenv(EnvVarName)), ":") {
+		if path = str.Trim(path); len(path) > 0 {
 			LoadPaths = append(LoadPaths, path)
 		}
 	}

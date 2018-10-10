@@ -6,7 +6,6 @@ import (
 	"net"
 	"sync"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
@@ -14,6 +13,8 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 type DNSSpoofer struct {
@@ -120,7 +121,7 @@ func (s *DNSSpoofer) Configure() error {
 	}
 
 	for _, entry := range s.Hosts {
-		log.Info("[%s] %s -> %s", core.Green("dns.spoof"), entry.Host, entry.Address)
+		log.Info("[%s] %s -> %s", tui.Green("dns.spoof"), entry.Host, entry.Address)
 	}
 
 	if !s.Session.Firewall.IsForwardingEnabled() {
@@ -139,7 +140,7 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 		who = t.String()
 	}
 
-	log.Info("[%s] sending spoofed DNS reply for %s %s to %s.", core.Green("dns"), core.Red(domain), core.Dim(redir), core.Bold(who))
+	log.Info("[%s] sending spoofed DNS reply for %s %s to %s.", tui.Green("dns"), tui.Red(domain), tui.Dim(redir), tui.Bold(who))
 
 	var err error
 	var src, dst net.IP

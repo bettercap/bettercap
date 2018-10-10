@@ -3,18 +3,20 @@ package modules
 import (
 	"fmt"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
 )
 
 func upnpParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 	if data := packets.UPNPGetMeta(pkt); data != nil && len(data) > 0 {
 		s := ""
 		for name, value := range data {
-			s += fmt.Sprintf("%s:%s ", core.Blue(name), core.Yellow(value))
+			s += fmt.Sprintf("%s:%s ", tui.Blue(name), tui.Yellow(value))
 		}
 
 		NewSnifferEvent(
@@ -24,10 +26,10 @@ func upnpParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 			ip.DstIP.String(),
 			nil,
 			"%s %s -> %s : %s",
-			core.W(core.BG_RED+core.FG_BLACK, "upnp"),
+			tui.Wrap(tui.BACKRED+tui.FOREBLACK, "upnp"),
 			vIP(ip.SrcIP),
 			vIP(ip.DstIP),
-			core.Trim(s),
+			str.Trim(s),
 		).Push()
 
 		return true

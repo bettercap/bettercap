@@ -22,6 +22,11 @@ import (
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/adrianmo/go-nmea"
+
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/log"
+	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
 )
 
 const (
@@ -108,7 +113,10 @@ func New() (*Session, error) {
 		return nil, err
 	}
 
-	core.InitSwag(*s.Options.NoColors)
+	if *s.Options.NoColors || !tui.Effects() {
+		tui.Disable()
+		log.NoEffects = true
+	}
 
 	if *s.Options.CpuProfile != "" {
 		if f, err := os.Create(*s.Options.CpuProfile); err != nil {
@@ -169,7 +177,7 @@ func (s *Session) Close() {
 	s.Firewall.Restore()
 
 	if *s.Options.EnvFile != "" {
-		envFile, _ := core.ExpandPath(*s.Options.EnvFile)
+		envFile, _ := fs.Expand(*s.Options.EnvFile)
 		if err := s.Env.Save(envFile); err != nil {
 			fmt.Printf("error while storing the environment to %s: %s", envFile, err)
 		}
@@ -215,7 +223,7 @@ func (s *Session) Start() error {
 	}
 
 	if s.Gateway, err = network.FindGateway(s.Interface); err != nil {
-		s.Events.Log(core.WARNING, "%s", err.Error())
+		s.Events.Log(log.WARNING, "%s", err.Error())
 	}
 
 	if s.Gateway == nil || s.Gateway.IpAddress == s.Interface.IpAddress {
@@ -305,13 +313,13 @@ func (s *Session) RunCaplet(filename string) error {
 }
 
 func parseCapletCommand(line string) (is bool, caplet *caplets.Caplet, argv []string) {
-	file := core.Trim(line)
+	file := str.Trim(line)
 	parts := strings.Split(file, " ")
 	argc := len(parts)
 	argv = make([]string, 0)
 	// check for any arguments
 	if argc > 1 {
-		file = core.Trim(parts[0])
+		file = str.Trim(parts[0])
 		if argc >= 2 {
 			argv = parts[1:]
 		}
@@ -325,7 +333,7 @@ func parseCapletCommand(line string) (is bool, caplet *caplets.Caplet, argv []st
 }
 
 func (s *Session) Run(line string) error {
-	line = core.TrimRight(line)
+	line = str.TrimRight(line)
 	// remove extra spaces after the first command
 	// so that 'arp.spoof      on' is normalized
 	// to 'arp.spoof on' (fixes #178)
@@ -365,5 +373,5 @@ func (s *Session) Run(line string) error {
 		return nil
 	}
 
-	return fmt.Errorf("unknown or invalid syntax \"%s%s%s\", type %shelp%s for the help menu.", core.BOLD, line, core.RESET, core.BOLD, core.RESET)
+	return fmt.Errorf("unknown or invalid syntax \"%s%s%s\", type %shelp%s for the help menu.", tui.BOLD, line, tui.RESET, tui.BOLD, tui.RESET)
 }

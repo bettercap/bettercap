@@ -8,10 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/str"
 )
 
-var fileName, _ = core.ExpandPath("~/bettercap.aliases")
+var fileName, _ = fs.Expand("~/bettercap.aliases")
 
 type Aliases struct {
 	sync.Mutex
@@ -24,7 +25,7 @@ func LoadAliases() (err error, aliases *Aliases) {
 		data: make(map[string]string),
 	}
 
-	if core.Exists(fileName) {
+	if fs.Exists(fileName) {
 		var file *os.File
 
 		file, err = os.Open(fileName)
@@ -37,8 +38,8 @@ func LoadAliases() (err error, aliases *Aliases) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			parts := strings.SplitN(line, " ", 2)
-			mac := core.Trim(parts[0])
-			alias := core.Trim(parts[1])
+			mac := str.Trim(parts[0])
+			alias := str.Trim(parts[1])
 			aliases.data[mac] = alias
 		}
 	}

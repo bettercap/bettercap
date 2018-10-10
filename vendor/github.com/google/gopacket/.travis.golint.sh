@@ -3,7 +3,7 @@
 cd "$(dirname $0)"
 
 go get github.com/golang/lint/golint
-DIRS=". tcpassembly tcpassembly/tcpreader ip4defrag reassembly macs pcapgo pcap afpacket pfring routing"
+DIRS=". tcpassembly tcpassembly/tcpreader ip4defrag reassembly macs pcapgo pcap afpacket pfring routing defrag/lcmdefrag"
 # Add subdirectories here as we clean up golint on each.
 for subdir in $DIRS; do
   pushd $subdir
@@ -17,8 +17,11 @@ for subdir in $DIRS; do
 done
 
 pushd layers
-for file in $(cat .linted); do
-  if golint $file | grep .; then
+for file in *.go; do
+  if cat .lint_blacklist | grep -q $file; then
+    echo "Skipping lint of $file due to .lint_blacklist"
+  elif golint $file | grep .; then
+    echo "Lint error in file $file"
     exit 1
   fi
 done

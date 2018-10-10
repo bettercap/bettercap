@@ -244,7 +244,12 @@ func (tcp *TCP) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	tcp.Window = binary.BigEndian.Uint16(data[14:16])
 	tcp.Checksum = binary.BigEndian.Uint16(data[16:18])
 	tcp.Urgent = binary.BigEndian.Uint16(data[18:20])
-	tcp.Options = tcp.opts[:0]
+	if tcp.Options == nil {
+		// Pre-allocate to avoid allocating a slice.
+		tcp.Options = tcp.opts[:0]
+	} else {
+		tcp.Options = tcp.Options[:0]
+	}
 	if tcp.DataOffset < 5 {
 		return fmt.Errorf("Invalid TCP data offset %d < 5", tcp.DataOffset)
 	}
@@ -260,10 +265,6 @@ func (tcp *TCP) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	// From here on, data points just to the header options.
 	data = data[20:dataStart]
 	for len(data) > 0 {
-		if tcp.Options == nil {
-			// Pre-allocate to avoid allocating a slice.
-			tcp.Options = tcp.opts[:0]
-		}
 		tcp.Options = append(tcp.Options, TCPOption{OptionType: TCPOptionKind(data[0])})
 		opt := &tcp.Options[len(tcp.Options)-1]
 		switch opt.OptionType {

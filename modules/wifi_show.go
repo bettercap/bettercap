@@ -7,10 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/network"
 
 	"github.com/dustin/go-humanize"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 func (w *WiFiModule) isApSelected() bool {
@@ -25,22 +26,22 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 	bssid := station.HwAddress
 	if sinceStarted > (justJoinedTimeInterval*2) && sinceFirstSeen <= justJoinedTimeInterval {
 		// if endpoint was first seen in the last 10 seconds
-		bssid = core.Bold(bssid)
+		bssid = tui.Bold(bssid)
 	}
 
 	seen := station.LastSeen.Format("15:04:05")
 	sinceLastSeen := time.Since(station.LastSeen)
 	if sinceStarted > aliveTimeInterval && sinceLastSeen <= aliveTimeInterval {
 		// if endpoint seen in the last 10 seconds
-		seen = core.Bold(seen)
+		seen = tui.Bold(seen)
 	} else if sinceLastSeen > presentTimeInterval {
 		// if endpoint not  seen in the last 60 seconds
-		seen = core.Dim(seen)
+		seen = tui.Dim(seen)
 	}
 
 	ssid := station.ESSID()
 	if ssid == "<hidden>" {
-		ssid = core.Dim(ssid)
+		ssid = tui.Dim(ssid)
 	}
 
 	encryption := station.Encryption
@@ -48,9 +49,9 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		encryption = fmt.Sprintf("%s (%s, %s)", station.Encryption, station.Cipher, station.Authentication)
 	}
 	if encryption == "OPEN" || encryption == "" {
-		encryption = core.Green("OPEN")
-		ssid = core.Green(ssid)
-		bssid = core.Green(bssid)
+		encryption = tui.Green("OPEN")
+		ssid = tui.Green(ssid)
+		bssid = tui.Green(bssid)
 	}
 	sent := ""
 	if station.Sent > 0 {
@@ -154,7 +155,7 @@ func (w *WiFiModule) Show(by string) error {
 	}
 
 	if nrows > 0 {
-		core.AsTable(os.Stdout, columns, rows)
+		tui.Table(os.Stdout, columns, rows)
 	}
 
 	w.Session.Refresh()

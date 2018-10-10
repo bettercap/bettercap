@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/bettercap/bettercap/caplets"
-	"github.com/bettercap/bettercap/core"
 
 	"github.com/bettercap/readline"
+
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/log"
 )
 
 func containsCapitals(s string) bool {
@@ -66,7 +68,7 @@ func (s *Session) setupReadline() (err error) {
 
 	history := ""
 	if !*s.Options.NoHistory {
-		history, _ = core.ExpandPath(HistoryFile)
+		history, _ = fs.Expand(HistoryFile)
 	}
 
 	cfg := readline.Config{
@@ -113,7 +115,7 @@ func (s *Session) setupSignals() {
 	go func() {
 		<-c
 		fmt.Println()
-		s.Events.Log(core.WARNING, "Got SIGTERM")
+		s.Events.Log(log.WARNING, "Got SIGTERM")
 		s.Close()
 		os.Exit(0)
 	}()

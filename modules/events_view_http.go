@@ -10,8 +10,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 var (
@@ -67,20 +68,20 @@ func (s *EventsStream) dumpForm(body []byte) string {
 				value = parts[1]
 			}
 
-			form = append(form, fmt.Sprintf("%s=%s", core.Green(name), core.Bold(core.Red(value))))
+			form = append(form, fmt.Sprintf("%s=%s", tui.Green(name), tui.Bold(tui.Red(value))))
 		} else {
 			value, err := url.QueryUnescape(v)
 			if err != nil {
 				value = v
 			}
-			form = append(form, fmt.Sprintf("%s", core.Bold(core.Red(value))))
+			form = append(form, fmt.Sprintf("%s", tui.Bold(tui.Red(value))))
 		}
 	}
 	return "\n" + strings.Join(form, "&") + "\n"
 }
 
 func (s *EventsStream) dumpText(body []byte) string {
-	return "\n" + core.Bold(core.Red(string(body))) + "\n"
+	return "\n" + tui.Bold(tui.Red(string(body))) + "\n"
 }
 
 func (s *EventsStream) dumpGZIP(body []byte) string {
@@ -105,7 +106,7 @@ func (s *EventsStream) dumpJSON(body []byte) string {
 		pretty = string(buf.Bytes())
 	}
 
-	return "\n" + reJsonKey.ReplaceAllString(pretty, core.W(core.GREEN, `$1:`)) + "\n"
+	return "\n" + reJsonKey.ReplaceAllString(pretty, tui.Green(`$1:`)) + "\n"
 }
 
 func (s *EventsStream) dumpXML(body []byte) string {
@@ -123,15 +124,15 @@ func (s *EventsStream) viewHttpRequest(e session.Event) {
 
 	fmt.Fprintf(s.output, "[%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
-		core.Green(e.Tag),
+		tui.Green(e.Tag),
 		se.Message)
 
 	if s.shouldDumpHttpRequest(req) {
-		dump := fmt.Sprintf("%s %s %s\n", core.Bold(req.Method), req.URL, core.Dim(req.Proto))
-		dump += fmt.Sprintf("%s: %s\n", core.Blue("Host"), core.Yellow(req.Host))
+		dump := fmt.Sprintf("%s %s %s\n", tui.Bold(req.Method), req.URL, tui.Dim(req.Proto))
+		dump += fmt.Sprintf("%s: %s\n", tui.Blue("Host"), tui.Yellow(req.Host))
 		for name, values := range req.Headers {
 			for _, value := range values {
-				dump += fmt.Sprintf("%s: %s\n", core.Blue(name), core.Yellow(value))
+				dump += fmt.Sprintf("%s: %s\n", tui.Blue(name), tui.Yellow(value))
 			}
 		}
 
@@ -161,14 +162,14 @@ func (s *EventsStream) viewHttpResponse(e session.Event) {
 
 	fmt.Fprintf(s.output, "[%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
-		core.Green(e.Tag),
+		tui.Green(e.Tag),
 		se.Message)
 
 	if s.shouldDumpHttpResponse(res) {
-		dump := fmt.Sprintf("%s %s\n", core.Dim(res.Protocol), res.Status)
+		dump := fmt.Sprintf("%s %s\n", tui.Dim(res.Protocol), res.Status)
 		for name, values := range res.Headers {
 			for _, value := range values {
-				dump += fmt.Sprintf("%s: %s\n", core.Blue(name), core.Yellow(value))
+				dump += fmt.Sprintf("%s: %s\n", tui.Blue(name), tui.Yellow(value))
 			}
 		}
 
