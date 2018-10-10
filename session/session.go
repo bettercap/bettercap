@@ -95,27 +95,27 @@ type Session struct {
 }
 
 func New() (*Session, error) {
-	var err error
+	opts, err := core.ParseOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	if *opts.NoColors || !tui.Effects() {
+		tui.Disable()
+		log.NoEffects = true
+	}
 
 	s := &Session{
-		Prompt: NewPrompt(),
-		Env:    nil,
-		Active: false,
-		Queue:  nil,
+		Prompt:  NewPrompt(),
+		Options: opts,
+		Env:     nil,
+		Active:  false,
+		Queue:   nil,
 
 		CoreHandlers:   make([]CommandHandler, 0),
 		Modules:        make([]Module, 0),
 		Events:         nil,
 		UnkCmdCallback: nil,
-	}
-
-	if s.Options, err = core.ParseOptions(); err != nil {
-		return nil, err
-	}
-
-	if *s.Options.NoColors || !tui.Effects() {
-		tui.Disable()
-		log.NoEffects = true
 	}
 
 	if *s.Options.CpuProfile != "" {

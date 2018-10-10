@@ -32,8 +32,8 @@ func NewEvent(tag string, data interface{}) Event {
 
 func (e Event) Label() string {
 	m := e.Data.(LogMessage)
-	label := log.LevelNames[m.Level]
-	color := log.LevelColors[m.Level]
+	label := log.LevelName(m.Level)
+	color := log.LevelColor(m.Level)
 	return color + label + tui.RESET
 }
 

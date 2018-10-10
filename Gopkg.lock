@@ -60,7 +60,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:09a1322d2fc6f021b23d389c045479cf4fe94fca0f504c61bb0ca2c67e244506"
+  digest = "1:32d8e0c62dc075d198abf73428828689f4e9473cadb8ef270be45fb78ae8648b"
   name = "github.com/evilsocket/islazy"
   packages = [
     "fs",
@@ -70,7 +70,7 @@
     "zip",
   ]
   pruneopts = "UT"
-  revision = "acbee79ddc39664d9a6ef5b2c4306dd470a58b2b"
+  revision = "fd12757cd7fd9e544ea374582c7015587d9ac534"
 
 [[projects]]
   branch = "master"

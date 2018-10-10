@@ -42,3 +42,16 @@ var (
 		FATAL:     tui.FOREWHITE + tui.BACKRED + tui.BOLD,
 	}
 )
+
+// LevelName returns the name of a verbosity level.
+func LevelName(v Verbosity) string {
+	return LevelNames[v]
+}
+
+// LevelColor returns the color of a verbosity level or "" if effects are disabled.
+func LevelColor(v Verbosity) string {
+	if NoEffects {
+		return ""
+	}
+	return LevelColors[v]
+}

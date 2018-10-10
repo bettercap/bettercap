@@ -15,24 +15,7 @@ const (
 )
 
 var (
-	// these are here because if colors are disabled,
-	// we need the updated tui.* variables
-	effects = map[string]string{
-		"{bold}":  tui.BOLD,
-		"{dim}":   tui.DIM,
-		"{r}":     tui.RED,
-		"{g}":     tui.GREEN,
-		"{b}":     tui.BLUE,
-		"{y}":     tui.YELLOW,
-		"{fb}":    tui.FOREBLACK,
-		"{fw}":    tui.FOREWHITE,
-		"{bdg}":   tui.BACKDARKGRAY,
-		"{br}":    tui.BACKRED,
-		"{bg}":    tui.BACKGREEN,
-		"{by}":    tui.BACKYELLOW,
-		"{blb}":   tui.BACKLIGHTBLUE, // Ziggy this is for you <3
-		"{reset}": tui.RESET,
-	}
+	effects         = map[string]string{}
 	PromptCallbacks = map[string]func(s *Session) string{
 		"{cidr}": func(s *Session) string {
 			return s.Interface.CIDR()
@@ -62,6 +45,24 @@ type Prompt struct {
 }
 
 func NewPrompt() Prompt {
+	// these are here because if colors are disabled,
+	// we need the updated tui.* variables
+	effects = map[string]string{
+		"{bold}":  tui.BOLD,
+		"{dim}":   tui.DIM,
+		"{r}":     tui.RED,
+		"{g}":     tui.GREEN,
+		"{b}":     tui.BLUE,
+		"{y}":     tui.YELLOW,
+		"{fb}":    tui.FOREBLACK,
+		"{fw}":    tui.FOREWHITE,
+		"{bdg}":   tui.BACKDARKGRAY,
+		"{br}":    tui.BACKRED,
+		"{bg}":    tui.BACKGREEN,
+		"{by}":    tui.BACKYELLOW,
+		"{blb}":   tui.BACKLIGHTBLUE, // Ziggy this is for you <3
+		"{reset}": tui.RESET,
+	}
 	return Prompt{}
 }
 
