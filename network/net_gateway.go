@@ -13,6 +13,7 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 
 	output, err := core.Exec(IPv4RouteCmd, IPv4RouteCmdOpts)
 	if err != nil {
+		Debug("FindGateway(%s): core.Exec failed with %s", err)
 		return nil, err
 	}
 
@@ -42,5 +43,6 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 		}
 	}
 
+	Debug("FindGateway(%s): nothing found :/", iface.Name())
 	return nil, ErrNoGateway
 }
