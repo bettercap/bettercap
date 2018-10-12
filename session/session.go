@@ -209,6 +209,10 @@ func (s *Session) Register(mod Module) error {
 func (s *Session) Start() error {
 	var err error
 
+	network.Debug = func(format string, args ...interface{}) {
+		s.Events.Log(log.DEBUG, format, args...)
+	}
+
 	// make sure modules are always sorted by name
 	sort.Slice(s.Modules, func(i, j int) bool {
 		return s.Modules[i].Name() < s.Modules[j].Name()
