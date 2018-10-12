@@ -59,7 +59,6 @@
   revision = "f58a169a71a51037728990b2d3597a14f56b525b"
 
 [[projects]]
-  branch = "master"
   digest = "1:32d8e0c62dc075d198abf73428828689f4e9473cadb8ef270be45fb78ae8648b"
   name = "github.com/evilsocket/islazy"
   packages = [
@@ -70,7 +69,8 @@
     "zip",
   ]
   pruneopts = "UT"
-  revision = "fd12757cd7fd9e544ea374582c7015587d9ac534"
+  revision = "72e580f7bbdfb45d1332e06653248bc609bf0d50"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -252,19 +252,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ed32e5b8c2cb13ea42eaca9f9dda1233ee78e9e5aa9a9839afd7911c52f121fa"
+  digest = "1:b45576bdf553b4c64ff798345b3256e49a157f8b480d29c8c0a89f09119d6c5a"
   name = "golang.org/x/net"
   packages = ["bpf"]
   pruneopts = "UT"
-  revision = "146acd28ed5894421fb5aac80ca93bc1b1f46f87"
+  revision = "49bb7cea24b1df9410e1712aa6433dae904ff66a"
 
 [[projects]]
   branch = "master"
-  digest = "1:c2789211d4035eb0843b85958ecf7cb4a5ea91c2d4decee652c94ce898e433cb"
+  digest = "1:0a40b0bdd57a93e741d8557465be3a2edeec408e9b6399586ad65bbe8e355796"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "4497e2df6f9e69048a54498c7affbbec3294ad47"
+  revision = "fa43e7bc11baaae89f3f902b2b4d832b68234844"
 
 [[projects]]
   digest = "1:9935525a8c49b8434a0b0a54e1980e94a6fae73aaff45c5d33ba8dff69de123e"

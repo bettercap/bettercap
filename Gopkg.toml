@@ -55,7 +55,7 @@
 
 [[constraint]]
   name = "github.com/google/gopacket"
-  version = "1.1.14"
+  version = "1.1.15"
 
 [[constraint]]
   name = "github.com/gorilla/mux"
