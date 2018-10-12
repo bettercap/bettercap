@@ -106,7 +106,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:eebcd2c096c6e4dada58e468e794146753d035fed7150cc0e2ff79ef28650709"
+  digest = "1:65e00adfb37f64ce3c24f139bc73db70bfe45224ebaf88250eff4038e32ac9cf"
   name = "github.com/google/gopacket"
   packages = [
     ".",
@@ -115,8 +115,7 @@
     "pcapgo",
   ]
   pruneopts = "UT"
-  revision = "a6b099ece4680a8bdea84fa78166d0712108a95c"
-  version = "v1.1.15"
+  revision = "d67ddb98d5a1b7c79a8977ec2d552e1db45eda86"
 
 [[projects]]
   digest = "1:c79fb010be38a59d657c48c6ba1d003a8aa651fa56b579d959d74573b7dff8e1"

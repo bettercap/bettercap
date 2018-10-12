@@ -27,6 +27,12 @@ sctp.go
 sflow.go
 tcp.go
 tcpip.go
+tls.go
+tls_alert.go
+tls_appdata.go
+tls_cipherspec.go
+tls_hanshake.go
+tls_test.go
 udp.go
 udplite.go
 usb.go

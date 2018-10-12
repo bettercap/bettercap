@@ -188,7 +188,7 @@ func decodeDHCPv6(data []byte, p gopacket.PacketBuilder) error {
 }
 
 // DHCPv6StatusCode represents a DHCP status code - RFC-3315
-type DHCPv6StatusCode byte
+type DHCPv6StatusCode uint16
 
 // Constants for the DHCPv6StatusCode.
 const (

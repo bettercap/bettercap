@@ -154,6 +154,10 @@ const bpfInstructionBufferSize = 8 * MaxBpfInstructions
 //
 // Handles are already pcap_activate'd
 type Handle struct {
+	// stop is set to a non-zero value by Handle.Close to signal to
+	// getNextBufPtrLocked to stop trying to read packets
+	// This must be the first entry to ensure alignment for sync.atomic
+	stop uint64
 	// cptr is the handle for the actual pcap C object.
 	cptr        *C.pcap_t
 	timeout     time.Duration
@@ -161,9 +165,6 @@ type Handle struct {
 	deviceIndex int
 	mu          sync.Mutex
 	closeMu     sync.Mutex
-	// stop is set to a non-zero value by Handle.Close to signal to
-	// getNextBufPtrLocked to stop trying to read packets
-	stop uint64
 
 	// Since pointers to these objects are passed into a C function, if
 	// they're declared locally then the Go compiler thinks they may have
