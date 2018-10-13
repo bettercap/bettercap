@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/bettercap/bettercap/core"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 func FindGateway(iface *Endpoint) (*Endpoint, error) {
@@ -21,7 +23,7 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 
 	ifName := iface.Name()
 	for _, line := range strings.Split(output, "\n") {
-		if strings.Contains(line, ifName) {
+		if line = str.Trim(line); strings.Contains(line, ifName) {
 			m := IPv4RouteParser.FindStringSubmatch(line)
 			if len(m) == IPv4RouteTokens {
 				Debug("FindGateway(%s) line '%s' matched with %v", iface.Name(), line, m)
