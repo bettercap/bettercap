@@ -50,7 +50,7 @@ godep:
 	@go get -u github.com/golang/dep/...
 
 golint:
-	@go get github.com/golang/lint/golint
+	@go get -u golang.org/x/lint/golint
 
 gomegacheck:
 	@go get honnef.co/go/tools/cmd/megacheck
