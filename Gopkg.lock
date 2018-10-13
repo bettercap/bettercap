@@ -59,9 +59,10 @@
   revision = "f58a169a71a51037728990b2d3597a14f56b525b"
 
 [[projects]]
-  digest = "1:a029ce916ee511044c6b7fc41133249a15e8d3c16219274666205efd6431e9cd"
+  digest = "1:5533d679fd9129a0af86235a01837db24bd66bf368d9a03aaf577a54d3d1e098"
   name = "github.com/evilsocket/islazy"
   packages = [
+    "data",
     "fs",
     "log",
     "plugin",
@@ -70,8 +71,8 @@
     "zip",
   ]
   pruneopts = "UT"
-  revision = "db3058040a83dba4e35a8931a3e1287c0b802869"
-  version = "v1.6.0"
+  revision = "ba851ad172f4be37fcaab106c8c9ebe42e3fa4ac"
+  version = "v1.7.0"
 
 [[projects]]
   branch = "master"
@@ -287,6 +288,7 @@
     "github.com/chifflier/nfqueue-go/nfqueue",
     "github.com/dustin/go-humanize",
     "github.com/elazarl/goproxy",
+    "github.com/evilsocket/islazy/data",
     "github.com/evilsocket/islazy/fs",
     "github.com/evilsocket/islazy/log",
     "github.com/evilsocket/islazy/plugin",

@@ -2,10 +2,12 @@ package network
 
 import (
 	"encoding/json"
-	"fmt"
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/evilsocket/islazy/data"
+	"github.com/evilsocket/islazy/fs"
 )
 
 const LANDefaultttl = 10
@@ -14,13 +16,15 @@ const LANAliasesFile = "~/bettercap.aliases"
 type EndpointNewCallback func(e *Endpoint)
 type EndpointLostCallback func(e *Endpoint)
 
+var aliasesFileName, _ = fs.Expand(LANAliasesFile)
+
 type LAN struct {
 	sync.Mutex
 	hosts   map[string]*Endpoint
 	iface   *Endpoint
 	gateway *Endpoint
 	ttl     map[string]uint
-	aliases *Aliases
+	aliases *data.UnsortedKV
 	newCb   EndpointNewCallback
 	lostCb  EndpointLostCallback
 }
@@ -30,9 +34,9 @@ type lanJSON struct {
 }
 
 func NewLAN(iface, gateway *Endpoint, newcb EndpointNewCallback, lostcb EndpointLostCallback) *LAN {
-	err, aliases := LoadAliases()
+	aliases, err := data.NewUnsortedKV(aliasesFileName, data.FlushOnEdit)
 	if err != nil {
-		fmt.Printf("%s\n", err)
+		panic(err)
 	}
 
 	return &LAN{
@@ -105,7 +109,7 @@ func (lan *LAN) List() (list []*Endpoint) {
 	return
 }
 
-func (lan *LAN) Aliases() *Aliases {
+func (lan *LAN) Aliases() *data.UnsortedKV {
 	return lan.aliases
 }
 
@@ -197,7 +201,7 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 		return t
 	}
 
-	e := NewEndpointWithAlias(ip, mac, lan.aliases.Get(mac))
+	e := NewEndpointWithAlias(ip, mac, lan.aliases.GetOr(mac, ""))
 
 	lan.hosts[mac] = e
 	lan.ttl[mac] = LANDefaultttl
@@ -208,5 +212,5 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 }
 
 func (lan *LAN) GetAlias(mac string) string {
-	return lan.aliases.Get(mac)
+	return lan.aliases.GetOr(mac, "")
 }

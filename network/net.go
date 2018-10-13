@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/evilsocket/islazy/data"
 	"github.com/evilsocket/islazy/str"
 
 	"github.com/malfunkt/iprange"
@@ -67,7 +68,7 @@ func NormalizeMac(mac string) string {
 	return strings.ToLower(strings.Join(parts, ":"))
 }
 
-func ParseTargets(targets string, aliasMap *Aliases) (ips []net.IP, macs []net.HardwareAddr, err error) {
+func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs []net.HardwareAddr, err error) {
 	ips = make([]net.IP, 0)
 	macs = make([]net.HardwareAddr, 0)
 
@@ -90,7 +91,7 @@ func ParseTargets(targets string, aliasMap *Aliases) (ips []net.IP, macs []net.H
 
 	// check and resolve aliases
 	for _, alias := range aliasParser.FindAllString(targets, -1) {
-		if mac, found := aliasMap.Find(alias); found {
+		if mac, found := aliasMap.Get(alias); found {
 			mac = NormalizeMac(mac)
 			hw, err := net.ParseMAC(mac)
 			if err != nil {
