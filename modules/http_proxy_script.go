@@ -96,6 +96,5 @@ func (s *HttpProxyScript) OnCommand(cmd string) bool {
 			return v
 		}
 	}
-
 	return false
 }
