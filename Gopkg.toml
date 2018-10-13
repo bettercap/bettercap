@@ -23,7 +23,9 @@
 #   non-go = false
 #   go-tests = true
 #   unused-packages = true
-
+[[constraint]]
+  name = "github.com/evilsocket/islazy"
+  version = "1.6.0"
 
 [[constraint]]
   branch = "master"

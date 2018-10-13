@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"io/ioutil"
 	"net"
 	"strings"
 
@@ -9,97 +8,62 @@ import (
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/robertkrimen/otto"
+
+	"github.com/evilsocket/islazy/plugin"
 )
 
 type TcpProxyScript struct {
-	*ProxyScript
-	onDataScript *otto.Script
+	*plugin.Plugin
+	doOnData bool
 }
 
-func LoadTcpProxyScriptSource(path, source string, sess *session.Session) (err error, s *TcpProxyScript) {
-	err, ps := LoadProxyScriptSource(path, source, sess)
+func LoadTcpProxyScript(path string, sess *session.Session) (err error, s *TcpProxyScript) {
+	log.Info("loading tcp proxy script %s ...", path)
+
+	plug, err := plugin.Load(path)
 	if err != nil {
 		return
 	}
 
-	s = &TcpProxyScript{
-		ProxyScript:  ps,
-		onDataScript: nil,
+	// define session pointer
+	if err = plug.Set("env", sess.Env.Data); err != nil {
+		log.Error("Error while defining environment: %+v", err)
+		return
 	}
 
-	if s.hasCallback("onData") {
-		s.onDataScript, err = s.VM.Compile("", "onData(from, to, data)")
-		if err != nil {
-			log.Error("Error while compiling onData callback: %s", err)
+	// run onLoad if defined
+	if plug.HasFunc("onLoad") {
+		if _, err = plug.Call("onLoad"); err != nil {
+			log.Error("Error while executing onLoad callback: %s", "\nTraceback:\n  "+err.(*otto.Error).String())
 			return
 		}
 	}
 
-	return
-}
-
-func LoadTcpProxyScript(path string, sess *session.Session) (err error, s *TcpProxyScript) {
-	log.Info("loading TCP proxy script %s ...", path)
-
-	raw, err := ioutil.ReadFile(path)
-	if err != nil {
-		return
-	}
-
-	return LoadTcpProxyScriptSource(path, string(raw), sess)
-}
-
-func (s *TcpProxyScript) doDefines(from, to net.Addr, data []byte) (err error) {
-	addrFrom := strings.Split(from.String(), ":")[0]
-	addrTo := strings.Split(to.String(), ":")[0]
-
-	if err = s.VM.Set("from", addrFrom); err != nil {
-		log.Error("Error while defining from: %s", err)
-		return
-	} else if err = s.VM.Set("to", addrTo); err != nil {
-		log.Error("Error while defining to: %s", err)
-		return
-	} else if err = s.VM.Set("data", data); err != nil {
-		log.Error("Error while defining data: %s", err)
-		return
+	s = &TcpProxyScript{
+		Plugin:   plug,
+		doOnData: plug.HasFunc("onData"),
 	}
 	return
 }
 
 func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte) []byte {
-	if s.onDataScript != nil {
+	if s.doOnData {
 		s.Lock()
 		defer s.Unlock()
 
-		err := s.doDefines(from, to, data)
-		if err != nil {
-			log.Error("Error while running bootstrap definitions: %s", err)
-			return nil
-		}
+		addrFrom := strings.Split(from.String(), ":")[0]
+		addrTo := strings.Split(to.String(), ":")[0]
 
-		ret, err := s.VM.Run(s.onDataScript)
-		if err != nil {
+		if ret, err := s.Call("onData", addrFrom, addrTo, data); err != nil {
 			log.Error("Error while executing onData callback: %s", err)
 			return nil
-		}
-
-		// do we have any return value to override the buffer with?
-		if !ret.IsNull() && !ret.IsUndefined() {
-			exported, err := ret.Export()
-			if err != nil {
-				log.Error("Error while exporting results: %s", err)
-				return nil
-			}
-
-			array, ok := exported.([]byte)
+		} else if ret != nil {
+			array, ok := ret.([]byte)
 			if !ok {
-				log.Error("Error while casting exported value to array of byte: value = %s", exported)
-				return nil
+				log.Error("Error while casting exported value to array of byte: value = %+v", ret)
 			}
-
 			return array
 		}
 	}
-
 	return nil
 }

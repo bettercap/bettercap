@@ -59,18 +59,19 @@
   revision = "f58a169a71a51037728990b2d3597a14f56b525b"
 
 [[projects]]
-  digest = "1:32d8e0c62dc075d198abf73428828689f4e9473cadb8ef270be45fb78ae8648b"
+  digest = "1:a029ce916ee511044c6b7fc41133249a15e8d3c16219274666205efd6431e9cd"
   name = "github.com/evilsocket/islazy"
   packages = [
     "fs",
     "log",
+    "plugin",
     "str",
     "tui",
     "zip",
   ]
   pruneopts = "UT"
-  revision = "72e580f7bbdfb45d1332e06653248bc609bf0d50"
-  version = "v1.4.0"
+  revision = "db3058040a83dba4e35a8931a3e1287c0b802869"
+  version = "v1.6.0"
 
 [[projects]]
   branch = "master"
@@ -288,6 +289,7 @@
     "github.com/elazarl/goproxy",
     "github.com/evilsocket/islazy/fs",
     "github.com/evilsocket/islazy/log",
+    "github.com/evilsocket/islazy/plugin",
     "github.com/evilsocket/islazy/str",
     "github.com/evilsocket/islazy/tui",
     "github.com/evilsocket/islazy/zip",
