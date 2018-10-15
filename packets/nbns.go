@@ -1,6 +1,8 @@
 package packets
 
 import (
+	"strconv"
+
 	"github.com/evilsocket/islazy/str"
 
 	"github.com/google/gopacket"
@@ -27,8 +29,11 @@ var (
 func NBNSGetMeta(pkt gopacket.Packet) map[string]string {
 	if ludp := pkt.Layer(layers.LayerTypeUDP); ludp != nil {
 		if udp := ludp.(*layers.UDP); udp != nil && udp.SrcPort == NBNSPort && len(udp.Payload) >= NBNSMinRespSize {
-			return map[string]string{
-				"nbns:hostname": str.Trim(string(udp.Payload[57:72])),
+			hostname := str.Trim(string(udp.Payload[57:72]))
+			if strconv.IsPrint(rune(hostname[0])) {
+				return map[string]string{
+					"nbns:hostname": hostname,
+				}
 			}
 		}
 	}
