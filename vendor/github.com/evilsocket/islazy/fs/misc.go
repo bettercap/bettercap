@@ -5,6 +5,11 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"sync"
+)
+
+var (
+	cwdLock = sync.Mutex{}
 )
 
 // Expand will expand a path with ~ to a full path of the current user.
@@ -22,4 +27,29 @@ func Exists(path string) bool {
 		return false
 	}
 	return true
+}
+
+// Chdir changes the process current working directory to the specified
+// one, executes the callback and then restores the original working directory.
+func Chdir(path string, cb func() error) error {
+	cwdLock.Lock()
+	defer cwdLock.Unlock()
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	// make sure that whatever happens we restore the original
+	// working directory of the process
+	defer func() {
+		if err := os.Chdir(cwd); err != nil {
+			panic(err)
+		}
+	}()
+	// change folder
+	if err := os.Chdir(path); err != nil {
+		return err
+	}
+	// run the callback once inside the folder
+	return cb()
 }

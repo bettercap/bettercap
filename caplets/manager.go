@@ -1,7 +1,6 @@
 package caplets
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/evilsocket/islazy/fs"
-	"github.com/evilsocket/islazy/str"
 )
 
 var (
@@ -68,24 +66,19 @@ func Load(name string) (error, *Caplet) {
 				Path: filename,
 				Code: make([]string, 0),
 			}
-
-			input, err := os.Open(filename)
-			if err != nil {
-				return fmt.Errorf("error reading caplet %s: %v", filename, err), nil
-			}
-			defer input.Close()
-
-			scanner := bufio.NewScanner(input)
-			scanner.Split(bufio.ScanLines)
-			for scanner.Scan() {
-				line := str.Trim(scanner.Text())
-				if line == "" || line[0] == '#' {
-					continue
-				}
-				cap.Code = append(cap.Code, line)
-			}
-
 			cache[name] = cap
+
+			if reader, err := fs.LineReader(filename); err != nil {
+				return fmt.Errorf("error reading caplet %s: %v", filename, err), nil
+			} else {
+				for line := range reader {
+					if line == "" || line[0] == '#' {
+						continue
+					}
+					cap.Code = append(cap.Code, line)
+				}
+			}
+
 			return nil, cap
 		}
 	}

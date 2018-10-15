@@ -25,7 +25,7 @@
 #   unused-packages = true
 [[constraint]]
   name = "github.com/evilsocket/islazy"
-  version = "1.7.0"
+  version = "1.8.0"
 
 [[constraint]]
   branch = "master"

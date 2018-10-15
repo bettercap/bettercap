@@ -3,6 +3,7 @@ package data
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -41,6 +42,32 @@ func NewUnsortedKV(fileName string, flushPolicy FlushPolicy) (*UnsortedKV, error
 	}
 
 	return ukv, nil
+}
+
+// NewDiskUnsortedKV returns an UnsortedKV that flushed data on disk
+// every time it gets updated.
+func NewDiskUnsortedKV(fileName string) (*UnsortedKV, error) {
+	return NewUnsortedKV(fileName, FlushOnEdit)
+}
+
+// NewDiskUnsortedKVReader returns an UnsortedKV from disk as a reader
+// but it doesn't flush any modifications on disk.
+func NewDiskUnsortedKVReader(fileName string) (*UnsortedKV, error) {
+	return NewUnsortedKV(fileName, FlushNone)
+}
+
+// NewMemUnsortedKV returns an UnsortedKV that only lives in
+// memory and never persists on disk.
+func NewMemUnsortedKV() (*UnsortedKV, error) {
+	return NewUnsortedKV("", FlushNone)
+}
+
+// MarshalJSON is used to serialize the UnsortedKV data structure to
+// JSON correctly.
+func (u *UnsortedKV) MarshalJSON() ([]byte, error) {
+	u.Lock()
+	defer u.Unlock()
+	return json.Marshal(u.m)
 }
 
 // Has return true if name exists in the store.
@@ -131,4 +158,11 @@ func (u *UnsortedKV) Each(cb func(k, v string) bool) {
 			return
 		}
 	}
+}
+
+// Empty returns bool if the store is empty.
+func (u *UnsortedKV) Empty() bool {
+	u.Lock()
+	defer u.Unlock()
+	return len(u.m) == 0
 }
