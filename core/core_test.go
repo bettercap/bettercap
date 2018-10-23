@@ -185,13 +185,17 @@ func TestCoreExec(t *testing.T) {
 		gotStdout := Trim(buf.String())
 		if gotOut != u.out {
 			t.Fatalf("expected output '%s', got '%s'", u.out, gotOut)
-		} else if u.err == "" && gotErr != nil {
+		}
+		if u.err == "" && gotErr != nil {
 			t.Fatalf("expected no error, got '%s'", gotErr)
-		} else if u.err != "" && gotErr == nil {
+		}
+		if u.err != "" && gotErr == nil {
 			t.Fatalf("expected error '%s', got none", u.err)
-		} else if u.err != "" && gotErr != nil && gotErr.Error() != u.err {
+		}
+		if u.err != "" && gotErr != nil && gotErr.Error() != u.err {
 			t.Fatalf("expected error '%s', got '%s'", u.err, gotErr)
-		} else if gotStdout != "" {
+		}
+		if gotStdout != "" {
 			t.Fatalf("expected empty stdout, got '%s'", gotStdout)
 		}
 	}

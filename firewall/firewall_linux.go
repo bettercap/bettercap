@@ -53,11 +53,11 @@ func (f LinuxFirewall) enableFeature(filename string, enable bool) error {
 
 func (f LinuxFirewall) IsForwardingEnabled() bool {
 
-	if out, err := ioutil.ReadFile(IPV4ForwardingFile); err != nil {
+	out, err := ioutil.ReadFile(IPV4ForwardingFile)
+	if err != nil {
 		return false
-	} else {
-		return str.Trim(string(out)) == "1"
 	}
+	return str.Trim(string(out)) == "1"
 }
 
 func (f LinuxFirewall) EnableForwarding(enabled bool) error {
@@ -111,7 +111,8 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 		// accept all
 		if _, err := core.Exec("iptables", []string{"-P", "FORWARD", "ACCEPT"}); err != nil {
 			return err
-		} else if _, err := core.Exec("iptables", cmdLine); err != nil {
+		}
+		if _, err := core.Exec("iptables", cmdLine); err != nil {
 			return err
 		}
 	} else {
