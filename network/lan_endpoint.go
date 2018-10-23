@@ -162,10 +162,10 @@ func (t *Endpoint) OnMeta(meta map[string]string) {
 	for k, v := range meta {
 		// simple heuristics to get the longest candidate name
 		if len(v) > len(host) {
-			if strings.HasSuffix(k, ":hostname"){
+			if strings.HasSuffix(k, ":hostname") {
 				host = v
 			}
-			if k == "mdns:md"{
+			if k == "mdns:md" {
 				host = v
 			}
 		}

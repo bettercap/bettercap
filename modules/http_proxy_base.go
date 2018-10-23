@@ -122,7 +122,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 		data, err := ioutil.ReadFile(jsToInject)
 		if err != nil {
 			return err
-		} 
+		}
 		jsToInject = string(data)
 	}
 

@@ -84,7 +84,7 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 			recvd,
 			seen,
 		}, include
-	} 
+	}
 	// this is ugly, but necessary in order to have this
 	// method handle both access point and clients
 	// transparently

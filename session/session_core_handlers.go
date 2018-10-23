@@ -162,7 +162,7 @@ func (s *Session) exitHandler(args []string, sess *Session) error {
 }
 
 func (s *Session) sleepHandler(args []string, sess *Session) error {
-	secs, err := strconv.Atoi(args[0]);
+	secs, err := strconv.Atoi(args[0])
 	if err == nil {
 		time.Sleep(time.Duration(secs) * time.Second)
 	}

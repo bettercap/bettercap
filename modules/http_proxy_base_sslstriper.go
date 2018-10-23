@@ -273,7 +273,7 @@ func (s *SSLStripper) isMaxRedirs(hostname string) bool {
 			delete(s.redirs, hostname)
 			return true
 		}
-			// increment
+		// increment
 		s.redirs[hostname]++
 	} else {
 		// start tracking redirections

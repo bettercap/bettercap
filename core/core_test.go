@@ -2,11 +2,11 @@ package core
 
 import (
 	"bytes"
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/str"
 	"io"
 	"os"
 	"testing"
-	"github.com/evilsocket/islazy/str"
-	"github.com/evilsocket/islazy/fs"
 )
 
 func hasInt(a []int, v int) bool {

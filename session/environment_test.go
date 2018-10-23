@@ -22,7 +22,7 @@ func setup(t testing.TB, envFile bool, envFileData bool) {
 	teardown(t)
 
 	if envFile {
-		fp, err := os.OpenFile(testEnvFile, os.O_RDONLY|os.O_CREATE, 0666);
+		fp, err := os.OpenFile(testEnvFile, os.O_RDONLY|os.O_CREATE, 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -34,7 +34,7 @@ func setup(t testing.TB, envFile bool, envFileData bool) {
 		if err != nil {
 			panic(err)
 		}
-		err = ioutil.WriteFile(testEnvFile, raw, 0755);
+		err = ioutil.WriteFile(testEnvFile, raw, 0755)
 		if err != nil {
 			panic(err)
 		}
@@ -94,7 +94,7 @@ func TestSessionEnvironmentWithDataFile(t *testing.T) {
 	}
 	if len(env.Data) != len(testEnvData) {
 		t.Fatalf("expected %d, found %d", len(testEnvData), len(env.Data))
-	} 
+	}
 	if !reflect.DeepEqual(env.Data, testEnvData) {
 		t.Fatalf("unexpected contents: %v", env.Data)
 	}
@@ -147,12 +147,12 @@ func TestSessionEnvironmentHas(t *testing.T) {
 	env, err := NewEnvironment(testEnvFile)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
-	} 
+	}
 	if len(env.Data) != len(testEnvData) {
 		t.Fatalf("expected %d, found %d", len(testEnvData), len(env.Data))
 	}
 	t.Log("expected environment")
-			
+
 	for k := range testEnvData {
 		if !env.Has(k) {
 			t.Fatalf("could not find key '%s'", k)
@@ -213,7 +213,7 @@ func TestSessionEnvironmentSetWithCallback(t *testing.T) {
 	old = env.Set("people", "shitagain")
 	if old != "ok" {
 		t.Fatalf("unexpected old value: %s", old)
-	} 
+	}
 	if !cbCalled {
 		t.Fatal("callback has not been called")
 	}
@@ -237,7 +237,7 @@ func TestSessionEnvironmentGet(t *testing.T) {
 		t.Fatalf("expected %d, found %d", len(testEnvData), len(env.Data))
 	}
 	t.Log("expected environment")
-			
+
 	for k, v := range testEnvData {
 		found, vv := env.Get(k)
 		if !found {
@@ -276,10 +276,10 @@ func TestSessionEnvironmentGetInt(t *testing.T) {
 	}
 
 	env.Data["num"] = "1234"
-	err, i := env.GetInt("num");
+	err, i := env.GetInt("num")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
-	} 
+	}
 	if i != 1234 {
 		t.Fatalf("unexpected integer: %d", i)
 	}

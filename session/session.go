@@ -119,7 +119,7 @@ func New() (*Session, error) {
 	}
 
 	if *s.Options.CpuProfile != "" {
-		f, err := os.Create(*s.Options.CpuProfile);
+		f, err := os.Create(*s.Options.CpuProfile)
 		if err != nil {
 			return nil, err
 		}

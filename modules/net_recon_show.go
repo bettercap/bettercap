@@ -122,11 +122,11 @@ func (d *Discovery) Show(by string, expr string) (err error) {
 	}
 
 	switch by {
-	case "seen" :
+	case "seen":
 		sort.Sort(BySeenSorter(targets))
-	case "sent" :
+	case "sent":
 		sort.Sort(BySentSorter(targets))
-	case "rcvd" :
+	case "rcvd":
 		sort.Sort(ByRcvdSorter(targets))
 	default:
 		sort.Sort(ByAddressSorter(targets))
