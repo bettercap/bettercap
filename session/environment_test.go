@@ -49,24 +49,29 @@ func teardown(t testing.TB) {
 
 func TestSessionEnvironmentWithoutFile(t *testing.T) {
 	env, err := NewEnvironment("")
+	if env == nil {
+		t.Fatal("expected valid environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(env.Data) != 0 {
 		t.Fatalf("expected empty environment, found %d elements", len(env.Data))
 	}
-	t.Log("expected valid environment")
+	
 }
 
 func TestSessionEnvironmentWithInvalidFile(t *testing.T) {
 	env, err := NewEnvironment("/idontexist")
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(env.Data) != 0 {
 		t.Fatalf("expected empty environment, found %d elements", len(env.Data))
 	}
-	t.Log("expected valid environment")
 }
 
 func TestSessionEnvironmentWithEmptyFile(t *testing.T) {
@@ -74,14 +79,15 @@ func TestSessionEnvironmentWithEmptyFile(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(env.Data) != 0 {
 		t.Fatalf("expected empty environment, found %d elements", len(env.Data))
 	}
-
-	t.Log("expected environment")
 }
 
 func TestSessionEnvironmentWithDataFile(t *testing.T) {
@@ -89,6 +95,9 @@ func TestSessionEnvironmentWithDataFile(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatalf("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -98,7 +107,6 @@ func TestSessionEnvironmentWithDataFile(t *testing.T) {
 	if !reflect.DeepEqual(env.Data, testEnvData) {
 		t.Fatalf("unexpected contents: %v", env.Data)
 	}
-	t.Log("expected environment")
 }
 
 func TestSessionEnvironmentSaveWithError(t *testing.T) {
@@ -106,13 +114,15 @@ func TestSessionEnvironmentSaveWithError(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if err = env.Save("/lulz/nope"); err == nil {
 		t.Fatal("expected error")
 	}
-	t.Log("expected environment")
 }
 
 func TestSessionEnvironmentSave(t *testing.T) {
@@ -120,10 +130,12 @@ func TestSessionEnvironmentSave(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	t.Log("expected environment")
 
 	env.Data["new"] = "value"
 	if err = env.Save(testEnvFile); err != nil {
@@ -131,13 +143,15 @@ func TestSessionEnvironmentSave(t *testing.T) {
 	}
 
 	env, err = NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !reflect.DeepEqual(env.Data, map[string]string{"new": "value"}) {
 		t.Fatalf("unexpected contents: %v", env.Data)
 	}
-	t.Log("expected environment")
 }
 
 func TestSessionEnvironmentHas(t *testing.T) {
@@ -145,13 +159,15 @@ func TestSessionEnvironmentHas(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(env.Data) != len(testEnvData) {
 		t.Fatalf("expected %d, found %d", len(testEnvData), len(env.Data))
 	}
-	t.Log("expected environment")
 
 	for k := range testEnvData {
 		if !env.Has(k) {
@@ -171,6 +187,9 @@ func TestSessionEnvironmentSet(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -188,7 +207,6 @@ func TestSessionEnvironmentSet(t *testing.T) {
 	if env.Data["newkey"] != "nk" {
 		t.Fatalf("unexpected new value: %s", env.Data["newkey"])
 	}
-	t.Log("expected environment")
 }
 
 func TestSessionEnvironmentSetWithCallback(t *testing.T) {
@@ -196,10 +214,12 @@ func TestSessionEnvironmentSetWithCallback(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	t.Log("expected environment")
 
 	cbCalled := false
 	old := env.WithCallback("people", "ok", func(newValue string) {
@@ -230,13 +250,15 @@ func TestSessionEnvironmentGet(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(env.Data) != len(testEnvData) {
 		t.Fatalf("expected %d, found %d", len(testEnvData), len(env.Data))
 	}
-	t.Log("expected environment")
 
 	for k, v := range testEnvData {
 		found, vv := env.Get(k)
@@ -261,13 +283,15 @@ func TestSessionEnvironmentGetInt(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(env.Data) != len(testEnvData) {
 		t.Fatalf("expected %d, found %d", len(testEnvData), len(env.Data))
 	}
-	t.Log("expected environment")
 
 	for k := range testEnvData {
 		if err, _ := env.GetInt(k); err == nil {
@@ -290,6 +314,9 @@ func TestSessionEnvironmentSorted(t *testing.T) {
 	defer teardown(t)
 
 	env, err := NewEnvironment(testEnvFile)
+	if env == nil {
+		t.Fatal("expected environment")
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -299,5 +326,4 @@ func TestSessionEnvironmentSorted(t *testing.T) {
 	if sorted := env.Sorted(); !reflect.DeepEqual(sorted, testEnvSorted) {
 		t.Fatalf("unexpected sorted keys: %v", sorted)
 	}
-	t.Log("expected environment")
 }
