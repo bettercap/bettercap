@@ -50,7 +50,8 @@ func SetInterfaceChannel(iface string, channel int) error {
 	out, err := core.Exec("iwconfig", []string{iface, "channel", fmt.Sprintf("%d", channel)})
 	if err != nil {
 		return err
-	} else if out != "" {
+	}
+	if out != "" {
 		return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
 	}
 
@@ -63,7 +64,8 @@ func processSupportedFrequencies(output string, err error) ([]int, error) {
 	freqs := make([]int, 0)
 	if err != nil {
 		return freqs, err
-	} else if output != "" {
+	}
+	if output != "" {
 		scanner := bufio.NewScanner(strings.NewReader(output))
 		for scanner.Scan() {
 			line := scanner.Text()

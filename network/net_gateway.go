@@ -31,15 +31,14 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 					if gateway == iface.IpAddress {
 						Debug("gateway is the interface")
 						return iface, nil
-					} else {
-						// we have the address, now we need its mac
-						mac, err := ArpLookup(ifName, gateway, false)
-						if err != nil {
-							return nil, err
-						}
-						Debug("gateway is %s[%s]", gateway, mac)
-						return NewEndpoint(gateway, mac), nil
 					}
+					// we have the address, now we need its mac
+					mac, err := ArpLookup(ifName, gateway, false)
+					if err != nil {
+						return nil, err
+					}
+					Debug("gateway is %s[%s]", gateway, mac)
+					return NewEndpoint(gateway, mac), nil
 				})
 			}
 		}

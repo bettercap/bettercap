@@ -233,9 +233,8 @@ func (q *Queue) Send(raw []byte) error {
 	if err := q.handle.WritePacketData(raw); err != nil {
 		q.TrackError()
 		return err
-	} else {
-		q.TrackSent(uint64(len(raw)))
 	}
+	q.TrackSent(uint64(len(raw)))
 
 	return nil
 }
