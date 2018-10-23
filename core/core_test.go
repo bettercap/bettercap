@@ -4,50 +4,10 @@ import (
 	"bytes"
 	"io"
 	"os"
-	"os/user"
-	"path/filepath"
 	"testing"
+	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/fs"
 )
-
-func TestCoreTrim(t *testing.T) {
-	var units = []struct {
-		from string
-		to   string
-	}{
-		{"\t   ", ""},
-		{"   ", ""},
-		{" hello world", "hello world"},
-		{"hello world ", "hello world"},
-		{" hello world\t", "hello world"},
-	}
-
-	for _, u := range units {
-		got := Trim(u.from)
-		if got != u.to {
-			t.Fatalf("expected '%s', got '%s'", u.to, got)
-		}
-	}
-}
-
-func TestCoreTrimRight(t *testing.T) {
-	var units = []struct {
-		from string
-		to   string
-	}{
-		{"\t   ", ""},
-		{"   ", ""},
-		{" hello world", " hello world"},
-		{"hello world ", "hello world"},
-		{" hello world\t", " hello world"},
-	}
-
-	for _, u := range units {
-		got := TrimRight(u.from)
-		if got != u.to {
-			t.Fatalf("expected '%s', got '%s'", u.to, got)
-		}
-	}
-}
 
 func hasInt(a []int, v int) bool {
 	for _, n := range a {
@@ -132,30 +92,6 @@ func sameStrings(a []string, b []string) bool {
 	return true
 }
 
-func TestCoreSepSplitAndCommaSplit(t *testing.T) {
-	var units = []struct {
-		from string
-		to   []string
-	}{
-		{"foo", []string{"foo"}},
-		{"foo#bar", []string{"foo#bar"}},
-		{"foo,bar", []string{"foo", "bar"}},
-		{"foo,bar,", []string{"foo", "bar"}},
-		{"foo,bar,", []string{"foo", "bar"}},
-		{"foo,,bar,", []string{"foo", "bar"}},
-		{"foo,,bar,,,,", []string{"foo", "bar"}},
-		{"foo,bar@wut,.ok", []string{"foo", "bar@wut", ".ok"}},
-	}
-
-	for _, u := range units {
-		if got := SepSplit(u.from, ","); !sameStrings(got, u.to) {
-			t.Fatalf("expected '%v', got '%v'", u.to, got)
-		} else if got = CommaSplit(u.from); !sameStrings(got, u.to) {
-			t.Fatalf("expected '%v', got '%v'", u.to, got)
-		}
-	}
-}
-
 func TestCoreExec(t *testing.T) {
 	var units = []struct {
 		exec   string
@@ -182,7 +118,7 @@ func TestCoreExec(t *testing.T) {
 		io.Copy(&buf, r)
 		os.Stdout = oldStdout
 
-		gotStdout := Trim(buf.String())
+		gotStdout := str.Trim(buf.String())
 		if gotOut != u.out {
 			t.Fatalf("expected output '%s', got '%s'", u.out, gotOut)
 		}
@@ -212,7 +148,7 @@ func TestCoreExec(t *testing.T) {
 		io.Copy(&buf, r)
 		os.Stdout = oldStdout
 
-		gotStdout := Trim(buf.String())
+		gotStdout := str.Trim(buf.String())
 		if gotOut != u.out {
 			t.Fatalf("expected output '%s', got '%s'", u.out, gotOut)
 		} else if u.err == "" && gotErr != nil {
@@ -240,38 +176,9 @@ func TestCoreExists(t *testing.T) {
 	}
 
 	for _, u := range units {
-		got := Exists(u.what)
+		got := fs.Exists(u.what)
 		if got != u.exists {
 			t.Fatalf("expected '%v', got '%v'", u.exists, got)
-		}
-	}
-}
-
-func TestCoreExpandPath(t *testing.T) {
-	base, _ := filepath.Abs(".")
-	usr, _ := user.Current()
-
-	var units = []struct {
-		from string
-		to   string
-		err  string
-	}{
-		{"", "", ""},
-		{"/lulz", "/lulz", ""},
-		{".", base, ""},
-		{"~", usr.HomeDir, ""},
-	}
-
-	for _, u := range units {
-		gotPath, gotErr := ExpandPath(u.from)
-		if gotPath != u.to {
-			t.Fatalf("expected path '%s', got '%s'", u.to, gotPath)
-		} else if u.err == "" && gotErr != nil {
-			t.Fatalf("expected no error, got '%v'", gotErr)
-		} else if u.err != "" && gotErr == nil {
-			t.Fatalf("expected error '%s', got none", u.err)
-		} else if u.err != "" && gotErr != nil && gotErr.Error() != u.err {
-			t.Fatalf("expected error '%s', got '%s'", u.err, gotErr.Error())
 		}
 	}
 }
