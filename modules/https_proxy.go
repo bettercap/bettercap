@@ -98,25 +98,35 @@ func (p *HttpsProxy) Configure() error {
 
 	if p.Running() {
 		return session.ErrAlreadyStarted
-	} else if err, address = p.StringParam("https.proxy.address"); err != nil {
+	}
+	if err, address = p.StringParam("https.proxy.address"); err != nil {
 		return err
-	} else if err, proxyPort = p.IntParam("https.proxy.port"); err != nil {
+	}
+	if err, proxyPort = p.IntParam("https.proxy.port"); err != nil {
 		return err
-	} else if err, httpPort = p.IntParam("https.port"); err != nil {
+	}
+	if err, httpPort = p.IntParam("https.port"); err != nil {
 		return err
-	} else if err, stripSSL = p.BoolParam("https.proxy.sslstrip"); err != nil {
+	}
+	if err, stripSSL = p.BoolParam("https.proxy.sslstrip"); err != nil {
 		return err
-	} else if err, certFile = p.StringParam("https.proxy.certificate"); err != nil {
+	}
+	if err, certFile = p.StringParam("https.proxy.certificate"); err != nil {
 		return err
-	} else if certFile, err = fs.Expand(certFile); err != nil {
+	}
+	if certFile, err = fs.Expand(certFile); err != nil {
 		return err
-	} else if err, keyFile = p.StringParam("https.proxy.key"); err != nil {
+	}
+	if err, keyFile = p.StringParam("https.proxy.key"); err != nil {
 		return err
-	} else if keyFile, err = fs.Expand(keyFile); err != nil {
+	}
+	if keyFile, err = fs.Expand(keyFile); err != nil {
 		return err
-	} else if err, scriptPath = p.StringParam("https.proxy.script"); err != nil {
+	}
+	if err, scriptPath = p.StringParam("https.proxy.script"); err != nil {
 		return err
-	} else if err, jsToInject = p.StringParam("https.proxy.injectjs"); err != nil {
+	}
+	if err, jsToInject = p.StringParam("https.proxy.injectjs"); err != nil {
 		return err
 	}
 

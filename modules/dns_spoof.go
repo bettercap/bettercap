@@ -89,17 +89,23 @@ func (s *DNSSpoofer) Configure() error {
 
 	if s.Running() {
 		return session.ErrAlreadyStarted
-	} else if s.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+	}
+	if s.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
 		return err
-	} else if err = s.Handle.SetBPFFilter("udp"); err != nil {
+	}
+	if err = s.Handle.SetBPFFilter("udp"); err != nil {
 		return err
-	} else if err, s.All = s.BoolParam("dns.spoof.all"); err != nil {
+	}
+	if err, s.All = s.BoolParam("dns.spoof.all"); err != nil {
 		return err
-	} else if err, address = s.IPParam("dns.spoof.address"); err != nil {
+	}
+	if err, address = s.IPParam("dns.spoof.address"); err != nil {
 		return err
-	} else if err, domains = s.ListParam("dns.spoof.domains"); err != nil {
+	}
+	if err, domains = s.ListParam("dns.spoof.domains"); err != nil {
 		return err
-	} else if err, hostsFile = s.StringParam("dns.spoof.hosts"); err != nil {
+	}
+	if err, hostsFile = s.StringParam("dns.spoof.hosts"); err != nil {
 		return err
 	}
 

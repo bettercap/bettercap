@@ -19,11 +19,10 @@ func cleanESSID(essid string) string {
 	res := ""
 
 	for _, c := range essid {
-		if strconv.IsPrint(c) {
-			res += string(c)
-		} else {
+		if !strconv.IsPrint(c) {
 			break
 		}
+		res += string(c)
 	}
 	return res
 }

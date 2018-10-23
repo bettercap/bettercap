@@ -17,11 +17,14 @@ func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 
 	if sniParser(ip, pkt, tcp) {
 		return
-	} else if ntlmParser(ip, pkt, tcp) {
+	}
+	if ntlmParser(ip, pkt, tcp) {
 		return
-	} else if httpParser(ip, pkt, tcp) {
+	}
+	if httpParser(ip, pkt, tcp) {
 		return
-	} else if verbose {
+	}
+	if verbose {
 		NewSnifferEvent(
 			pkt.Metadata().Timestamp,
 			"tcp",
@@ -46,13 +49,17 @@ func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 
 	if dnsParser(ip, pkt, udp) {
 		return
-	} else if mdnsParser(ip, pkt, udp) {
+	}
+	if mdnsParser(ip, pkt, udp) {
 		return
-	} else if krb5Parser(ip, pkt, udp) {
+	}
+	if krb5Parser(ip, pkt, udp) {
 		return
-	} else if upnpParser(ip, pkt, udp) {
+	}
+	if upnpParser(ip, pkt, udp) {
 		return
-	} else if verbose {
+	}
+	if verbose {
 		NewSnifferEvent(
 			pkt.Metadata().Timestamp,
 			"udp",
@@ -118,7 +125,8 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 			unkParser(ip, pkt, verbose)
 		}
 		return true
-	} else if ok, radiotap, dot11 := packets.Dot11Parse(pkt); ok {
+	}
+	if ok, radiotap, dot11 := packets.Dot11Parse(pkt); ok {
 		// are we sniffing in monitor mode?
 		dot11Parser(radiotap, dot11, pkt, verbose)
 		return true

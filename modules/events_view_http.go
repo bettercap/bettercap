@@ -40,11 +40,14 @@ func (s *EventsStream) shouldDumpHttpRequest(req HTTPRequest) bool {
 func (s *EventsStream) shouldDumpHttpResponse(res HTTPResponse) bool {
 	if s.dumpHttpResp {
 		return true
-	} else if strings.Contains(res.ContentType, "text/plain") {
+	}
+	if strings.Contains(res.ContentType, "text/plain") {
 		return true
-	} else if strings.Contains(res.ContentType, "application/json") {
+	}
+	if strings.Contains(res.ContentType, "application/json") {
 		return true
-	} else if strings.Contains(res.ContentType, "text/xml") {
+	}
+	if strings.Contains(res.ContentType, "text/xml") {
 		return true
 	}
 	// search for interesting headers
@@ -90,7 +93,8 @@ func (s *EventsStream) dumpGZIP(body []byte) string {
 	reader, err := gzip.NewReader(buffer)
 	if err != nil {
 		return s.dumpRaw(body)
-	} else if _, err = uncompressed.ReadFrom(reader); err != nil {
+	}
+	if _, err = uncompressed.ReadFrom(reader); err != nil {
 		return s.dumpRaw(body)
 	}
 	return s.dumpRaw(uncompressed.Bytes())

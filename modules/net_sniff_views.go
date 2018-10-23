@@ -13,7 +13,8 @@ import (
 func vIP(ip net.IP) string {
 	if session.I.Interface.IP.Equal(ip) {
 		return tui.Dim("local")
-	} else if session.I.Gateway.IP.Equal(ip) {
+	}
+	if session.I.Gateway.IP.Equal(ip) {
 		return "gateway"
 	}
 

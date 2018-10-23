@@ -51,7 +51,8 @@ func (api *RestAPI) checkAuth(r *http.Request) bool {
 		// timing attack my ass
 		if subtle.ConstantTimeCompare([]byte(user), []byte(api.username)) != 1 {
 			return false
-		} else if subtle.ConstantTimeCompare([]byte(pass), []byte(api.password)) != 1 {
+		}
+		if subtle.ConstantTimeCompare([]byte(pass), []byte(api.password)) != 1 {
 			return false
 		}
 	}
@@ -184,10 +185,12 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 	if !api.checkAuth(r) {
 		setAuthFailed(w, r)
 		return
-	} else if r.Method == "POST" {
+	}
+	if r.Method == "POST" {
 		api.runSessionCommand(w, r)
 		return
-	} else if r.Method != "GET" {
+	}
+	if r.Method != "GET" {
 		http.Error(w, "Bad Request", 400)
 		return
 	}

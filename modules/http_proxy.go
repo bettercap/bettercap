@@ -80,17 +80,23 @@ func (p *HttpProxy) Configure() error {
 
 	if p.Running() {
 		return session.ErrAlreadyStarted
-	} else if err, address = p.StringParam("http.proxy.address"); err != nil {
+	}
+	if err, address = p.StringParam("http.proxy.address"); err != nil {
 		return err
-	} else if err, proxyPort = p.IntParam("http.proxy.port"); err != nil {
+	}
+	if err, proxyPort = p.IntParam("http.proxy.port"); err != nil {
 		return err
-	} else if err, httpPort = p.IntParam("http.port"); err != nil {
+	}
+	if err, httpPort = p.IntParam("http.port"); err != nil {
 		return err
-	} else if err, scriptPath = p.StringParam("http.proxy.script"); err != nil {
+	}
+	if err, scriptPath = p.StringParam("http.proxy.script"); err != nil {
 		return err
-	} else if err, stripSSL = p.BoolParam("http.proxy.sslstrip"); err != nil {
+	}
+	if err, stripSSL = p.BoolParam("http.proxy.sslstrip"); err != nil {
 		return err
-	} else if err, jsToInject = p.StringParam("http.proxy.injectjs"); err != nil {
+	}
+	if err, jsToInject = p.StringParam("http.proxy.injectjs"); err != nil {
 		return err
 	}
 

@@ -135,17 +135,21 @@ func (pp *PacketProxy) Configure() (err error) {
 
 	if err, pp.queueNum = pp.IntParam("packet.proxy.queue.num"); err != nil {
 		return
-	} else if err, pp.chainName = pp.StringParam("packet.proxy.chain"); err != nil {
+	}
+	if err, pp.chainName = pp.StringParam("packet.proxy.chain"); err != nil {
 		return
-	} else if err, pp.rule = pp.StringParam("packet.proxy.rule"); err != nil {
+	}
+	if err, pp.rule = pp.StringParam("packet.proxy.rule"); err != nil {
 		return
-	} else if err, pp.pluginPath = pp.StringParam("packet.proxy.plugin"); err != nil {
+	}
+	if err, pp.pluginPath = pp.StringParam("packet.proxy.plugin"); err != nil {
 		return
 	}
 
 	if pp.pluginPath == "" {
 		return fmt.Errorf("The parameter %s can not be empty.", tui.Bold("packet.proxy.plugin"))
-	} else if !fs.Exists(pp.pluginPath) {
+	}
+	if !fs.Exists(pp.pluginPath) {
 		return fmt.Errorf("%s does not exist.", pp.pluginPath)
 	}
 
@@ -156,26 +160,34 @@ func (pp *PacketProxy) Configure() (err error) {
 
 	if pp.plugin, err = plugin.Open(pp.pluginPath); err != nil {
 		return
-	} else if sym, err = pp.plugin.Lookup("OnPacket"); err != nil {
+	}
+	if sym, err = pp.plugin.Lookup("OnPacket"); err != nil {
 		return
-	} else if pp.queueCb, ok = sym.(func(*nfqueue.Payload) int); !ok {
+	}
+	if pp.queueCb, ok = sym.(func(*nfqueue.Payload) int); !ok {
 		return fmt.Errorf("Symbol OnPacket is not a valid callback function.")
 	}
 
 	pp.queue = new(nfqueue.Queue)
 	if err = pp.queue.SetCallback(dummyCallback); err != nil {
 		return
-	} else if err = pp.queue.Init(); err != nil {
+	}
+	if err = pp.queue.Init(); err != nil {
 		return
-	} else if err = pp.queue.Unbind(syscall.AF_INET); err != nil {
+	}
+	if err = pp.queue.Unbind(syscall.AF_INET); err != nil {
 		return
-	} else if err = pp.queue.Bind(syscall.AF_INET); err != nil {
+	}
+	if err = pp.queue.Bind(syscall.AF_INET); err != nil {
 		return
-	} else if err = pp.queue.CreateQueue(pp.queueNum); err != nil {
+	}
+	if err = pp.queue.CreateQueue(pp.queueNum); err != nil {
 		return
-	} else if err = pp.queue.SetMode(nfqueue.NFQNL_COPY_PACKET); err != nil {
+	}
+	if err = pp.queue.SetMode(nfqueue.NFQNL_COPY_PACKET); err != nil {
 		return
-	} else if err = pp.runRule(true); err != nil {
+	}
+	if err = pp.runRule(true); err != nil {
 		return
 	}
 

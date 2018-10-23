@@ -43,7 +43,8 @@ func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*
 		// the request has been changed by the script
 		p.logRequestAction(req, jsreq)
 		return jsreq.ToRequest(), nil
-	} else if jsres != nil {
+	}
+	if jsres != nil {
 		// a fake response has been returned by the script
 		p.logResponseAction(req, jsres)
 		return req, jsres.ToResponse(req)
@@ -98,7 +99,8 @@ func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) (error, 
 	raw, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return err, nil
-	} else if html := string(raw); strings.Contains(html, "</head>") {
+	}
+	if html := string(raw); strings.Contains(html, "</head>") {
 		log.Info("(%s) > injecting javascript (%d bytes) into %s (%d bytes) for %s",
 			tui.Green(p.Name),
 			len(p.jsHook),

@@ -58,10 +58,12 @@ func (s *HttpProxyScript) OnRequest(original *http.Request) (jsreq *JSRequest, j
 		if _, err := s.Call("onRequest", jsreq, jsres); err != nil {
 			log.Error("%s", err)
 			return nil, nil
-		} else if jsreq.WasModified() {
+		}
+		if jsreq.WasModified() {
 			jsreq.UpdateHash()
 			return jsreq, nil
-		} else if jsres.WasModified() {
+		}
+		if jsres.WasModified() {
 			jsres.UpdateHash()
 			return nil, jsres
 		}
@@ -89,10 +91,13 @@ func (s *HttpProxyScript) OnResponse(res *http.Response) (jsreq *JSRequest, jsre
 
 func (s *HttpProxyScript) OnCommand(cmd string) bool {
 	if s.doOnCommand {
-		if ret, err := s.Call("onCommand", cmd); err != nil {
+		ret, err := s.Call("onCommand", cmd)
+		if err != nil {
 			log.Error("Error while executing onCommand callback: %+v", err)
 			return false
-		} else if v, ok := ret.(bool); ok {
+		}
+		v, ok := ret.(bool)
+		if ok {
 			return v
 		}
 	}

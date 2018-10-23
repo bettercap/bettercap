@@ -68,7 +68,8 @@ func (mc *MacChanger) Configure() (err error) {
 
 	if err, mc.iface = mc.StringParam("mac.changer.iface"); err != nil {
 		return err
-	} else if err, changeTo = mc.StringParam("mac.changer.address"); err != nil {
+	}
+	if err, changeTo = mc.StringParam("mac.changer.address"); err != nil {
 		return err
 	}
 
@@ -105,9 +106,11 @@ func (mc *MacChanger) setMac(mac net.HardwareAddr) error {
 func (mc *MacChanger) Start() error {
 	if mc.Running() {
 		return session.ErrAlreadyStarted
-	} else if err := mc.Configure(); err != nil {
+	}
+	if err := mc.Configure(); err != nil {
 		return err
-	} else if err := mc.setMac(mc.fakeMac); err != nil {
+	}
+	if err := mc.setMac(mc.fakeMac); err != nil {
 		return err
 	}
 

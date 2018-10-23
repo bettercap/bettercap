@@ -43,7 +43,8 @@ func (d *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
 	if err != nil {
 		log.Warning("Connected to %s but with error: %s", p.ID(), err)
 		return
-	} else if d.currDevice == nil {
+	}
+	if d.currDevice == nil {
 		// timed out
 		log.Warning("Connected to %s but after the timeout :(", p.ID())
 		return

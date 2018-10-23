@@ -119,11 +119,11 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	if strings.HasPrefix(jsToInject, "http://") || strings.HasPrefix(jsToInject, "https://") {
 		p.jsHook = fmt.Sprintf("<script src=\"%s\" type=\"text/javascript\"></script></head>", jsToInject)
 	} else if fs.Exists(jsToInject) {
-		if data, err := ioutil.ReadFile(jsToInject); err != nil {
+		data, err := ioutil.ReadFile(jsToInject)
+		if err != nil {
 			return err
-		} else {
-			jsToInject = string(data)
-		}
+		} 
+		jsToInject = string(data)
 	}
 
 	if p.jsHook == "" && jsToInject != "" {
@@ -134,11 +134,11 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	}
 
 	if scriptPath != "" {
-		if err, p.Script = LoadHttpProxyScript(scriptPath, p.sess); err != nil {
+		err, p.Script = LoadHttpProxyScript(scriptPath, p.sess)
+		if err != nil {
 			return err
-		} else {
-			log.Debug("Proxy script %s loaded.", scriptPath)
 		}
+		log.Debug("Proxy script %s loaded.", scriptPath)
 	}
 
 	p.Server = &http.Server{
