@@ -46,11 +46,9 @@ func (s *Session) generalHelp() {
 	pad = "%" + strconv.Itoa(maxLen) + "s"
 
 	for _, m := range s.Modules {
-		status := ""
+		status := tui.Red("not running")
 		if m.Running() {
 			status = tui.Green("running")
-		} else {
-			status = tui.Red("not running")
 		}
 		fmt.Printf("  "+tui.Yellow(pad)+" > %s\n", m.Name(), status)
 	}
@@ -65,12 +63,11 @@ func (s *Session) moduleHelp(filter string) error {
 	}
 
 	fmt.Println()
-	status := ""
+	status := tui.Red("not running")
 	if m.Running() {
 		status = tui.Green("running")
-	} else {
-		status = tui.Red("not running")
 	}
+
 	fmt.Printf("%s (%s): %s\n\n", tui.Yellow(m.Name()), status, tui.Dim(m.Description()))
 
 	maxLen := 0
@@ -165,12 +162,11 @@ func (s *Session) exitHandler(args []string, sess *Session) error {
 }
 
 func (s *Session) sleepHandler(args []string, sess *Session) error {
-	if secs, err := strconv.Atoi(args[0]); err == nil {
+	secs, err := strconv.Atoi(args[0]);
+	if err == nil {
 		time.Sleep(time.Duration(secs) * time.Second)
-		return nil
-	} else {
-		return err
 	}
+	return err
 }
 
 func (s *Session) getHandler(args []string, sess *Session) error {
@@ -277,9 +273,8 @@ func (s *Session) aliasHandler(args []string, sess *Session) error {
 
 	if s.Lan.SetAliasFor(mac, alias) {
 		return nil
-	} else {
-		return fmt.Errorf("Could not find endpoint %s", mac)
 	}
+	return fmt.Errorf("Could not find endpoint %s", mac)
 }
 
 func (s *Session) addHandler(h CommandHandler, c *readline.PrefixCompleter) {

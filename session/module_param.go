@@ -64,18 +64,19 @@ func (p ModuleParam) Validate(value string) (error, interface{}) {
 		}
 	}
 
-	if p.Type == STRING {
+	switch p.Type {
+	case STRING:
 		return nil, value
-	} else if p.Type == BOOL {
+	case BOOL:
 		lvalue := strings.ToLower(value)
 		if lvalue == "true" {
 			return nil, true
-		} else if lvalue == "false" {
-			return nil, false
-		} else {
-			return fmt.Errorf("Can't typecast '%s' to boolean.", value), nil
 		}
-	} else if p.Type == INT {
+		if lvalue == "false" {
+			return nil, false
+		}
+		return fmt.Errorf("Can't typecast '%s' to boolean.", value), nil
+	case INT:
 		i, err := strconv.Atoi(value)
 		return err, i
 	}
@@ -90,13 +91,14 @@ const ParamRandomMAC = "<random mac>"
 
 func (p ModuleParam) Get(s *Session) (error, interface{}) {
 	_, v := s.Env.Get(p.Name)
-	if v == ParamIfaceName {
+	switch v {
+	case ParamIfaceName:
 		v = s.Interface.Name()
-	} else if v == ParamIfaceAddress {
+	case ParamIfaceAddress:
 		v = s.Interface.IpAddress
-	} else if v == ParamSubnet {
+	case ParamSubnet:
 		v = s.Interface.CIDR()
-	} else if v == ParamRandomMAC {
+	case ParamRandomMAC:
 		hw := make([]byte, 6)
 		rand.Read(hw)
 		v = net.HardwareAddr(hw).String()

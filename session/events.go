@@ -118,7 +118,8 @@ func (p *EventPool) Add(tag string, data interface{}) {
 func (p *EventPool) Log(level log.Verbosity, format string, args ...interface{}) {
 	if level == log.DEBUG && !p.debug {
 		return
-	} else if level < log.ERROR && p.silent {
+	}
+	if level < log.ERROR && p.silent {
 		return
 	}
 
