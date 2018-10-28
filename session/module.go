@@ -61,59 +61,60 @@ func (m *SessionModule) Param(name string) *ModuleParam {
 
 func (m SessionModule) ListParam(name string) (err error, values []string) {
 	values = make([]string, 0)
-	err, list := m.StringParam(name)
-	if err != nil {
+	list := ""
+	if err, list = m.StringParam(name); err != nil {
 		return
-	}
-
-	parts := strings.Split(list, ",")
-	for _, part := range parts {
-		part = str.Trim(part)
-		if part != "" {
-			values = append(values, part)
+	} else {
+		parts := strings.Split(list, ",")
+		for _, part := range parts {
+			part = str.Trim(part)
+			if part != "" {
+				values = append(values, part)
+			}
 		}
 	}
 	return
 }
 
 func (m SessionModule) StringParam(name string) (error, string) {
-	p, found := m.params[name]
-	if found {
-		err, v := p.Get(m.Session)
-		if err != nil {
+	if p, found := m.params[name]; found {
+		if err, v := p.Get(m.Session); err != nil {
 			return err, ""
+		} else {
+			return nil, v.(string)
 		}
-		return nil, v.(string)
+	} else {
+		return fmt.Errorf("Parameter %s does not exist.", name), ""
 	}
-	return fmt.Errorf("Parameter %s does not exist.", name), ""
 }
 
 func (m SessionModule) IPParam(name string) (error, net.IP) {
-	err, v := m.StringParam(name)
-	if err != nil {
+	if err, v := m.StringParam(name); err != nil {
 		return err, nil
+	} else {
+		return nil, net.ParseIP(v)
 	}
-	return nil, net.ParseIP(v)
 }
 
 func (m SessionModule) IntParam(name string) (error, int) {
-	p, found := m.params[name]
-	if found {
-		err, v := p.Get(m.Session)
-		if err != nil {
+	if p, found := m.params[name]; found {
+		if err, v := p.Get(m.Session); err != nil {
 			return err, 0
+		} else {
+			return nil, v.(int)
 		}
-		return nil, v.(int)
+
+	} else {
+		return fmt.Errorf("Parameter %s does not exist.", name), 0
 	}
-	return fmt.Errorf("Parameter %s does not exist.", name), 0
 }
 
 func (m SessionModule) BoolParam(name string) (error, bool) {
-	err, v := m.params[name].Get(m.Session)
-	if err != nil {
+	if err, v := m.params[name].Get(m.Session); err != nil {
 		return err, false
+	} else {
+		return nil, v.(bool)
 	}
-	return nil, v.(bool)
 }
 
 func (m *SessionModule) AddHandler(h ModuleHandler) {
@@ -136,8 +137,9 @@ func (m *SessionModule) SetRunning(running bool, cb func()) error {
 	if running == m.Running() {
 		if m.Started {
 			return ErrAlreadyStarted
+		} else {
+			return ErrAlreadyStopped
 		}
-		return ErrAlreadyStopped
 	}
 
 	m.StatusLock.Lock()

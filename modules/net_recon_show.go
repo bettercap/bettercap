@@ -88,8 +88,7 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 
 	if !withMeta {
 		return [][]string{row}
-	}
-	if e.Meta.Empty() {
+	} else if e.Meta.Empty() {
 		return [][]string{append(row, tui.Dim("-"))}
 	}
 
@@ -121,14 +120,13 @@ func (d *Discovery) Show(by string, expr string) (err error) {
 		targets = d.Session.Lan.List()
 	}
 
-	switch by {
-	case "seen":
+	if by == "seen" {
 		sort.Sort(BySeenSorter(targets))
-	case "sent":
+	} else if by == "sent" {
 		sort.Sort(BySentSorter(targets))
-	case "rcvd":
+	} else if by == "rcvd" {
 		sort.Sort(ByRcvdSorter(targets))
-	default:
+	} else {
 		sort.Sort(ByAddressSorter(targets))
 	}
 
@@ -141,11 +139,9 @@ func (d *Discovery) Show(by string, expr string) (err error) {
 	}
 
 	hasMeta := false
-	err, showMeta := d.BoolParam("net.show.meta")
-	if err != nil {
+	if err, showMeta := d.BoolParam("net.show.meta"); err != nil {
 		return err
-	}
-	if showMeta {
+	} else if showMeta {
 		for _, t := range targets {
 			if !t.Meta.Empty() {
 				hasMeta = true

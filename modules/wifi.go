@@ -72,9 +72,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			bssid, err := net.ParseMAC(args[0])
 			if err != nil {
 				return err
-			}
-			ap, found := w.Session.WiFi.Get(bssid.String())
-			if found {
+			} else if ap, found := w.Session.WiFi.Get(bssid.String()); found {
 				w.ap = ap
 				w.stickChan = ap.Channel()
 				return nil
@@ -106,8 +104,9 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		func(args []string) error {
 			if err := w.parseApConfig(); err != nil {
 				return err
+			} else {
+				return w.startAp()
 			}
-			return w.startAp()
 		}))
 
 	w.AddParam(session.NewStringParameter("wifi.ap.ssid",
@@ -151,11 +150,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				}
 			} else {
 				// No channels setted, retrieve frequencies supported by the card
-				frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name())
-				if err != nil {
+				if frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
 					return err
+				} else {
+					newfrequencies = frequencies
 				}
-				newfrequencies = frequencies
 			}
 
 			w.frequencies = newfrequencies
@@ -212,22 +211,18 @@ func (w *WiFiModule) Configure() error {
 
 		if err = ihandle.SetRFMon(true); err != nil {
 			return fmt.Errorf("Error while setting interface %s in monitor mode: %s", tui.Bold(w.Session.Interface.Name()), err)
-		}
-		if err = ihandle.SetSnapLen(65536); err != nil {
+		} else if err = ihandle.SetSnapLen(65536); err != nil {
 			return err
-		}
-		if err = ihandle.SetTimeout(pcap.BlockForever); err != nil {
+		} else if err = ihandle.SetTimeout(pcap.BlockForever); err != nil {
 			return err
-		}
-		if w.handle, err = ihandle.Activate(); err != nil {
+		} else if w.handle, err = ihandle.Activate(); err != nil {
 			return err
 		}
 	}
 
 	if err, w.skipBroken = w.BoolParam("wifi.skip-broken"); err != nil {
 		return err
-	}
-	if err, hopPeriod = w.IntParam("wifi.hop.period"); err != nil {
+	} else if err, hopPeriod = w.IntParam("wifi.hop.period"); err != nil {
 		return err
 	}
 
@@ -300,8 +295,7 @@ func (w *WiFiModule) Start() error {
 		for packet := range w.pktSourceChan {
 			if !w.Running() {
 				break
-			}
-			if packet == nil {
+			} else if packet == nil {
 				continue
 			}
 

@@ -119,11 +119,9 @@ func New() (*Session, error) {
 	}
 
 	if *s.Options.CpuProfile != "" {
-		f, err := os.Create(*s.Options.CpuProfile)
-		if err != nil {
+		if f, err := os.Create(*s.Options.CpuProfile); err != nil {
 			return nil, err
-		}
-		if err := pprof.StartCPUProfile(f); err != nil {
+		} else if err := pprof.StartCPUProfile(f); err != nil {
 			return nil, err
 		}
 	}
@@ -279,11 +277,9 @@ func (s *Session) Start() error {
 func (s *Session) Skip(ip net.IP) bool {
 	if ip.IsLoopback() {
 		return true
-	}
-	if ip.Equal(s.Interface.IP) {
+	} else if ip.Equal(s.Interface.IP) {
 		return true
-	}
-	if ip.Equal(s.Gateway.IP) {
+	} else if ip.Equal(s.Gateway.IP) {
 		return true
 	}
 	return false
@@ -328,7 +324,9 @@ func parseCapletCommand(line string) (is bool, caplet *caplets.Caplet, argv []st
 	// check for any arguments
 	if argc > 1 {
 		file = str.Trim(parts[0])
-		argv = parts[1:]
+		if argc >= 2 {
+			argv = parts[1:]
+		}
 	}
 
 	if err, cap := caplets.Load(file); err == nil {

@@ -84,29 +84,30 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 			recvd,
 			seen,
 		}, include
-	}
-	// this is ugly, but necessary in order to have this
-	// method handle both access point and clients
-	// transparently
-	clients := ""
-	if ap, found := w.Session.WiFi.Get(station.HwAddress); found {
-		if ap.NumClients() > 0 {
-			clients = strconv.Itoa(ap.NumClients())
+	} else {
+		// this is ugly, but necessary in order to have this
+		// method handle both access point and clients
+		// transparently
+		clients := ""
+		if ap, found := w.Session.WiFi.Get(station.HwAddress); found {
+			if ap.NumClients() > 0 {
+				clients = strconv.Itoa(ap.NumClients())
+			}
 		}
-	}
 
-	return []string{
-		fmt.Sprintf("%d dBm", station.RSSI),
-		bssid,
-		ssid,
-		/* station.Vendor, */
-		encryption,
-		strconv.Itoa(station.Channel()),
-		clients,
-		sent,
-		recvd,
-		seen,
-	}, include
+		return []string{
+			fmt.Sprintf("%d dBm", station.RSSI),
+			bssid,
+			ssid,
+			/* station.Vendor, */
+			encryption,
+			strconv.Itoa(station.Channel()),
+			clients,
+			sent,
+			recvd,
+			seen,
+		}, include
+	}
 }
 
 func (w *WiFiModule) Show(by string) error {
@@ -122,14 +123,14 @@ func (w *WiFiModule) Show(by string) error {
 	} else {
 		stations = w.Session.WiFi.Stations()
 	}
-	switch by {
-	case "seen":
+
+	if by == "seen" {
 		sort.Sort(ByWiFiSeenSorter(stations))
-	case "essid":
+	} else if by == "essid" {
 		sort.Sort(ByEssidSorter(stations))
-	case "channel":
+	} else if by == "channel" {
 		sort.Sort(ByChannelSorter(stations))
-	default:
+	} else {
 		sort.Sort(ByRSSISorter(stations))
 	}
 

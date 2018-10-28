@@ -82,23 +82,17 @@ func (p *AnyProxy) Configure() error {
 
 	if p.Running() {
 		return session.ErrAlreadyStarted
-	}
-	if err, iface = p.StringParam("any.proxy.iface"); err != nil {
+	} else if err, iface = p.StringParam("any.proxy.iface"); err != nil {
 		return err
-	}
-	if err, protocol = p.StringParam("any.proxy.protocol"); err != nil {
+	} else if err, protocol = p.StringParam("any.proxy.protocol"); err != nil {
 		return err
-	}
-	if err, srcPort = p.IntParam("any.proxy.src_port"); err != nil {
+	} else if err, srcPort = p.IntParam("any.proxy.src_port"); err != nil {
 		return err
-	}
-	if err, dstPort = p.IntParam("any.proxy.dst_port"); err != nil {
+	} else if err, dstPort = p.IntParam("any.proxy.dst_port"); err != nil {
 		return err
-	}
-	if err, srcAddress = p.StringParam("any.proxy.src_address"); err != nil {
+	} else if err, srcAddress = p.StringParam("any.proxy.src_address"); err != nil {
 		return err
-	}
-	if err, dstAddress = p.StringParam("any.proxy.dst_address"); err != nil {
+	} else if err, dstAddress = p.StringParam("any.proxy.dst_address"); err != nil {
 		return err
 	}
 

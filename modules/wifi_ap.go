@@ -19,17 +19,13 @@ func (w *WiFiModule) parseApConfig() (err error) {
 	var bssid string
 	if err, w.apConfig.SSID = w.StringParam("wifi.ap.ssid"); err != nil {
 		return
-	}
-	if err, bssid = w.StringParam("wifi.ap.bssid"); err != nil {
+	} else if err, bssid = w.StringParam("wifi.ap.bssid"); err != nil {
 		return
-	}
-	if w.apConfig.BSSID, err = net.ParseMAC(network.NormalizeMac(bssid)); err != nil {
+	} else if w.apConfig.BSSID, err = net.ParseMAC(network.NormalizeMac(bssid)); err != nil {
 		return
-	}
-	if err, w.apConfig.Channel = w.IntParam("wifi.ap.channel"); err != nil {
+	} else if err, w.apConfig.Channel = w.IntParam("wifi.ap.channel"); err != nil {
 		return
-	}
-	if err, w.apConfig.Encryption = w.BoolParam("wifi.ap.encryption"); err != nil {
+	} else if err, w.apConfig.Encryption = w.BoolParam("wifi.ap.encryption"); err != nil {
 		return
 	}
 	return
@@ -39,8 +35,7 @@ func (w *WiFiModule) startAp() error {
 	// we need channel hopping and packet injection for this
 	if !w.Running() {
 		return errNoRecon
-	}
-	if w.apRunning {
+	} else if w.apRunning {
 		return session.ErrAlreadyStarted
 	}
 

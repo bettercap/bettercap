@@ -65,12 +65,10 @@ func (j *JSResponse) WasModified() bool {
 	if j.bodyRead {
 		// body was read
 		return true
-	}
-	if j.bodyClear {
+	} else if j.bodyClear {
 		// body was cleared manually
 		return true
-	}
-	if j.Body != "" {
+	} else if j.Body != "" {
 		// body was not read but just set
 		return true
 	}

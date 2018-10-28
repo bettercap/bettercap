@@ -46,15 +46,11 @@ func TestSessionCommandHandler(t *testing.T) {
 			shouldNotParse := "simple123"
 			shouldParse := "simple 123"
 
-			parsed, _ := c.Parse(shouldNotParse)
-			if parsed {
+			if parsed, _ := c.Parse(shouldNotParse); parsed {
 				t.Fatalf("should not parse '%s'", shouldNotParse)
-			}
-			parsed, parts := c.Parse(shouldParse)
-			if !parsed {
+			} else if parsed, parts := c.Parse(shouldParse); !parsed {
 				t.Fatalf("should parse '%s'", shouldParse)
-			}
-			if !sameStrings(parts, u.parsed) {
+			} else if !sameStrings(parts, u.parsed) {
 				t.Fatalf("expected '%v', got '%v'", u.parsed, parts)
 			}
 		}

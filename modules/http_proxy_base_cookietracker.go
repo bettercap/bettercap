@@ -24,12 +24,12 @@ func NewCookieTracker() *CookieTracker {
 }
 
 func (t *CookieTracker) domainOf(req *http.Request) string {
-	parsed, err := tld.Parse(req.Host)
-	if err != nil {
+	if parsed, err := tld.Parse(req.Host); err != nil {
 		log.Warning("Could not parse host %s: %s", req.Host, err)
 		return req.Host
+	} else {
+		return fmt.Sprintf("%s.%s", parsed.Domain, parsed.TLD)
 	}
-	return fmt.Sprintf("%s.%s", parsed.Domain, parsed.TLD)
 }
 
 func (t *CookieTracker) keyOf(req *http.Request) string {

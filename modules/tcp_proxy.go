@@ -97,38 +97,27 @@ func (p *TcpProxy) Configure() error {
 
 	if p.Running() {
 		return session.ErrAlreadyStarted
-	}
-	if err, address = p.StringParam("tcp.address"); err != nil {
+	} else if err, address = p.StringParam("tcp.address"); err != nil {
 		return err
-	}
-	if err, proxyAddress = p.StringParam("tcp.proxy.address"); err != nil {
+	} else if err, proxyAddress = p.StringParam("tcp.proxy.address"); err != nil {
 		return err
-	}
-	if err, proxyPort = p.IntParam("tcp.proxy.port"); err != nil {
+	} else if err, proxyPort = p.IntParam("tcp.proxy.port"); err != nil {
 		return err
-	}
-	if err, port = p.IntParam("tcp.port"); err != nil {
+	} else if err, port = p.IntParam("tcp.port"); err != nil {
 		return err
-	}
-	if err, tunnelAddress = p.StringParam("tcp.tunnel.address"); err != nil {
+	} else if err, tunnelAddress = p.StringParam("tcp.tunnel.address"); err != nil {
 		return err
-	}
-	if err, tunnelPort = p.IntParam("tcp.tunnel.port"); err != nil {
+	} else if err, tunnelPort = p.IntParam("tcp.tunnel.port"); err != nil {
 		return err
-	}
-	if err, scriptPath = p.StringParam("tcp.proxy.script"); err != nil {
+	} else if err, scriptPath = p.StringParam("tcp.proxy.script"); err != nil {
 		return err
-	}
-	if p.localAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", proxyAddress, proxyPort)); err != nil {
+	} else if p.localAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", proxyAddress, proxyPort)); err != nil {
 		return err
-	}
-	if p.remoteAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
+	} else if p.remoteAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
 		return err
-	}
-	if p.tunnelAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", tunnelAddress, tunnelPort)); err != nil {
+	} else if p.tunnelAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", tunnelAddress, tunnelPort)); err != nil {
 		return err
-	}
-	if p.listener, err = net.ListenTCP("tcp", p.localAddr); err != nil {
+	} else if p.listener, err = net.ListenTCP("tcp", p.localAddr); err != nil {
 		return err
 	}
 

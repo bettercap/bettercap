@@ -112,11 +112,11 @@ func (env *Environment) Get(name string) (bool, string) {
 
 func (env *Environment) GetInt(name string) (error, int) {
 	if found, value := env.Get(name); found {
-		i, err := strconv.Atoi(value)
-		if err != nil {
+		if i, err := strconv.Atoi(value); err == nil {
+			return nil, i
+		} else {
 			return err, 0
 		}
-		return nil, i
 	}
 
 	return fmt.Errorf("Not found."), 0

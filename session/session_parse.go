@@ -74,11 +74,11 @@ func ParseCommands(line string) []string {
 func (s *Session) parseEnvTokens(str string) (string, error) {
 	for _, m := range reEnvVarCapture.FindAllString(str, -1) {
 		varName := strings.Trim(strings.Replace(m, "env.", "", -1), "{}")
-		found, value := s.Env.Get(varName)
-		if !found {
+		if found, value := s.Env.Get(varName); found {
+			str = strings.Replace(str, m, value, -1)
+		} else {
 			return "", fmt.Errorf("variable '%s' is not defined", varName)
 		}
-		str = strings.Replace(str, m, value, -1)
 	}
 	return str, nil
 }

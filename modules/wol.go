@@ -31,21 +31,21 @@ func NewWOL(s *session.Session) *WOL {
 	w.AddHandler(session.NewModuleHandler("wol.eth MAC", "wol.eth(\\s.+)?",
 		"Send a WOL as a raw ethernet packet of type 0x0847 (if no MAC is specified, ff:ff:ff:ff:ff:ff will be used).",
 		func(args []string) error {
-			mac, err := parseMAC(args)
-			if err != nil {
+			if mac, err := parseMAC(args); err != nil {
 				return err
+			} else {
+				return w.wolETH(mac)
 			}
-			return w.wolETH(mac)
 		}))
 
 	w.AddHandler(session.NewModuleHandler("wol.udp MAC", "wol.udp(\\s.+)?",
 		"Send a WOL as an IPv4 broadcast packet to UDP port 9 (if no MAC is specified, ff:ff:ff:ff:ff:ff will be used).",
 		func(args []string) error {
-			mac, err := parseMAC(args)
-			if err != nil {
+			if mac, err := parseMAC(args); err != nil {
 				return err
+			} else {
+				return w.wolUDP(mac)
 			}
-			return w.wolUDP(mac)
 		}))
 
 	return w
@@ -58,8 +58,9 @@ func parseMAC(args []string) (string, error) {
 		if tmp != "" {
 			if !reMAC.MatchString(tmp) {
 				return "", fmt.Errorf("%s is not a valid MAC address.", tmp)
+			} else {
+				mac = tmp
 			}
-			mac = tmp
 		}
 	}
 

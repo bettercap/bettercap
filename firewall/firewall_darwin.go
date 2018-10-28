@@ -43,11 +43,11 @@ func Make(iface *network.Endpoint) FirewallManager {
 func (f PfFirewall) sysCtlRead(param string) (string, error) {
 	if out, err := core.ExecSilent("sysctl", []string{param}); err != nil {
 		return "", err
-	}
-	if m := sysCtlParser.FindStringSubmatch(out); len(m) == 3 && m[1] == param {
+	} else if m := sysCtlParser.FindStringSubmatch(out); len(m) == 3 && m[1] == param {
 		return m[2], nil
+	} else {
+		return "", fmt.Errorf("Unexpected sysctl output: %s", out)
 	}
-	return "", fmt.Errorf("Unexpected sysctl output: %s", out)
 }
 
 func (f PfFirewall) sysCtlWrite(param string, value string) (string, error) {
@@ -60,11 +60,11 @@ func (f PfFirewall) sysCtlWrite(param string, value string) (string, error) {
 	// make sure we actually wrote the value
 	if out, err := f.sysCtlRead(param); err != nil {
 		return "", err
-	}
-	if out != value {
+	} else if out != value {
 		return "", fmt.Errorf("Expected value for '%s' is %s, found %s", param, value, out)
+	} else {
+		return out, nil
 	}
-	return out, nil
 }
 
 func (f PfFirewall) IsForwardingEnabled() bool {
@@ -87,8 +87,9 @@ func (f PfFirewall) enableParam(param string, enabled bool) error {
 
 	if _, err := f.sysCtlWrite(param, value); err != nil {
 		return err
+	} else {
+		return nil
 	}
-	return nil
 }
 
 func (f PfFirewall) EnableForwarding(enabled bool) error {

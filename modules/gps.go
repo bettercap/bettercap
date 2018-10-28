@@ -74,11 +74,9 @@ func (gps *GPS) Author() string {
 func (gps *GPS) Configure() (err error) {
 	if gps.Running() {
 		return session.ErrAlreadyStarted
-	}
-	if err, gps.serialPort = gps.StringParam("gps.device"); err != nil {
+	} else if err, gps.serialPort = gps.StringParam("gps.device"); err != nil {
 		return err
-	}
-	if err, gps.baudRate = gps.IntParam("gps.baudrate"); err != nil {
+	} else if err, gps.baudRate = gps.IntParam("gps.baudrate"); err != nil {
 		return err
 	}
 

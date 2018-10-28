@@ -112,8 +112,7 @@ func (s *Sniffer) Configure() error {
 
 	if s.Running() {
 		return session.ErrAlreadyStarted
-	}
-	if err, s.Ctx = s.GetContext(); err != nil {
+	} else if err, s.Ctx = s.GetContext(); err != nil {
 		if s.Ctx != nil {
 			s.Ctx.Close()
 			s.Ctx = nil

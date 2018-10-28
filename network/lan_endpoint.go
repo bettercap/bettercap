@@ -147,11 +147,9 @@ func (t *Endpoint) String() string {
 
 	if t.HwAddress == "" {
 		return t.IpAddress
-	}
-	if t.Vendor == "" {
+	} else if t.Vendor == "" {
 		return fmt.Sprintf("%s%s", ipPart, t.HwAddress)
-	}
-	if t.Hostname == "" {
+	} else if t.Hostname == "" {
 		return fmt.Sprintf("%s%s ( %s )", ipPart, t.HwAddress, t.Vendor)
 	}
 	return fmt.Sprintf("%s%s ( %s ) - %s", ipPart, t.HwAddress, t.Vendor, tui.Bold(t.Hostname))
@@ -161,13 +159,10 @@ func (t *Endpoint) OnMeta(meta map[string]string) {
 	host := ""
 	for k, v := range meta {
 		// simple heuristics to get the longest candidate name
-		if len(v) > len(host) {
-			if strings.HasSuffix(k, ":hostname") {
-				host = v
-			}
-			if k == "mdns:md" {
-				host = v
-			}
+		if strings.HasSuffix(k, ":hostname") && len(v) > len(host) {
+			host = v
+		} else if k == "mdns:md" && len(v) > len(host) {
+			host = v
 		}
 		t.Meta.Set(k, v)
 	}

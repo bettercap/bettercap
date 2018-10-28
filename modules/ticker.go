@@ -61,11 +61,9 @@ func (t *Ticker) Configure() error {
 
 	if t.Running() {
 		return session.ErrAlreadyStarted
-	}
-	if err, commands = t.StringParam("ticker.commands"); err != nil {
+	} else if err, commands = t.StringParam("ticker.commands"); err != nil {
 		return err
-	}
-	if err, period = t.IntParam("ticker.period"); err != nil {
+	} else if err, period = t.IntParam("ticker.period"); err != nil {
 		return err
 	}
 

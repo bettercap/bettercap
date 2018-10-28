@@ -82,23 +82,17 @@ func (mysql *MySQLServer) Configure() error {
 
 	if mysql.Running() {
 		return session.ErrAlreadyStarted
-	}
-	if err, mysql.infile = mysql.StringParam("mysql.server.infile"); err != nil {
+	} else if err, mysql.infile = mysql.StringParam("mysql.server.infile"); err != nil {
 		return err
-	}
-	if err, mysql.outfile = mysql.StringParam("mysql.server.outfile"); err != nil {
+	} else if err, mysql.outfile = mysql.StringParam("mysql.server.outfile"); err != nil {
 		return err
-	}
-	if err, address = mysql.StringParam("mysql.server.address"); err != nil {
+	} else if err, address = mysql.StringParam("mysql.server.address"); err != nil {
 		return err
-	}
-	if err, port = mysql.IntParam("mysql.server.port"); err != nil {
+	} else if err, port = mysql.IntParam("mysql.server.port"); err != nil {
 		return err
-	}
-	if mysql.address, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
+	} else if mysql.address, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
 		return err
-	}
-	if mysql.listener, err = net.ListenTCP("tcp", mysql.address); err != nil {
+	} else if mysql.listener, err = net.ListenTCP("tcp", mysql.address); err != nil {
 		return err
 	}
 	return nil
@@ -147,16 +141,13 @@ func (mysql *MySQLServer) Start() error {
 				if _, err := conn.Write(packets.MySQLFirstResponseOK); err != nil {
 					log.Warning("[%s] error while writing server first response ok: %s", tui.Green("mysql.server"), err)
 					continue
-				}
-				if _, err := reader.Read(readBuffer); err != nil {
+				} else if _, err := reader.Read(readBuffer); err != nil {
 					log.Warning("[%s] error while reading client message: %s", tui.Green("mysql.server"), err)
 					continue
-				}
-				if _, err := conn.Write(packets.MySQLGetFile(mysql.infile)); err != nil {
+				} else if _, err := conn.Write(packets.MySQLGetFile(mysql.infile)); err != nil {
 					log.Warning("[%s] error while writing server get file request: %s", tui.Green("mysql.server"), err)
 					continue
-				}
-				if read, err = reader.Read(readBuffer); err != nil {
+				} else if read, err = reader.Read(readBuffer); err != nil {
 					log.Warning("[%s] error while readind buffer: %s", tui.Green("mysql.server"), err)
 					continue
 				}

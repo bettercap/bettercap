@@ -82,20 +82,17 @@ func (p *Prober) Configure() error {
 	var err error
 	if err, p.throttle = p.IntParam("net.probe.throttle"); err != nil {
 		return err
-	}
-	if err, p.probes.NBNS = p.BoolParam("net.probe.nbns"); err != nil {
+	} else if err, p.probes.NBNS = p.BoolParam("net.probe.nbns"); err != nil {
 		return err
-	}
-	if err, p.probes.MDNS = p.BoolParam("net.probe.mdns"); err != nil {
+	} else if err, p.probes.MDNS = p.BoolParam("net.probe.mdns"); err != nil {
 		return err
-	}
-	if err, p.probes.UPNP = p.BoolParam("net.probe.upnp"); err != nil {
+	} else if err, p.probes.UPNP = p.BoolParam("net.probe.upnp"); err != nil {
 		return err
-	}
-	if err, p.probes.WSD = p.BoolParam("net.probe.wsd"); err != nil {
+	} else if err, p.probes.WSD = p.BoolParam("net.probe.wsd"); err != nil {
 		return err
+	} else {
+		log.Debug("Throttling packets of %d ms.", p.throttle)
 	}
-	log.Debug("Throttling packets of %d ms.", p.throttle)
 	return nil
 }
 
@@ -139,12 +136,10 @@ func (p *Prober) Start() error {
 			for _, ip := range addresses {
 				if !p.Running() {
 					return
-				}
-				if p.Session.Skip(ip) {
+				} else if p.Session.Skip(ip) {
 					log.Debug("skipping address %s from probing.", ip)
 					continue
-				}
-				if p.probes.NBNS {
+				} else if p.probes.NBNS {
 					p.sendProbeNBNS(from, from_hw, ip)
 				}
 				time.Sleep(throttle)

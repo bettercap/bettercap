@@ -128,35 +128,25 @@ func (api *RestAPI) Configure() error {
 
 	if api.Running() {
 		return session.ErrAlreadyStarted
-	}
-	if err, ip = api.StringParam("api.rest.address"); err != nil {
+	} else if err, ip = api.StringParam("api.rest.address"); err != nil {
 		return err
-	}
-	if err, port = api.IntParam("api.rest.port"); err != nil {
+	} else if err, port = api.IntParam("api.rest.port"); err != nil {
 		return err
-	}
-	if err, api.allowOrigin = api.StringParam("api.rest.alloworigin"); err != nil {
+	} else if err, api.allowOrigin = api.StringParam("api.rest.alloworigin"); err != nil {
 		return err
-	}
-	if err, api.certFile = api.StringParam("api.rest.certificate"); err != nil {
+	} else if err, api.certFile = api.StringParam("api.rest.certificate"); err != nil {
 		return err
-	}
-	if api.certFile, err = fs.Expand(api.certFile); err != nil {
+	} else if api.certFile, err = fs.Expand(api.certFile); err != nil {
 		return err
-	}
-	if err, api.keyFile = api.StringParam("api.rest.key"); err != nil {
+	} else if err, api.keyFile = api.StringParam("api.rest.key"); err != nil {
 		return err
-	}
-	if api.keyFile, err = fs.Expand(api.keyFile); err != nil {
+	} else if api.keyFile, err = fs.Expand(api.keyFile); err != nil {
 		return err
-	}
-	if err, api.username = api.StringParam("api.rest.username"); err != nil {
+	} else if err, api.username = api.StringParam("api.rest.username"); err != nil {
 		return err
-	}
-	if err, api.password = api.StringParam("api.rest.password"); err != nil {
+	} else if err, api.password = api.StringParam("api.rest.password"); err != nil {
 		return err
-	}
-	if err, api.useWebsocket = api.BoolParam("api.rest.websocket"); err != nil {
+	} else if err, api.useWebsocket = api.BoolParam("api.rest.websocket"); err != nil {
 		return err
 	}
 

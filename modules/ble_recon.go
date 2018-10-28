@@ -184,8 +184,7 @@ func (d *BLERecon) enumAllTheThings(mac string) error {
 	dev, found := d.Session.BLE.Get(mac)
 	if !found || dev == nil {
 		return fmt.Errorf("BLE device with address %s not found.", mac)
-	}
-	if d.Running() {
+	} else if d.Running() {
 		d.gattDevice.StopScanning()
 	}
 

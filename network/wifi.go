@@ -10,11 +10,9 @@ import (
 func Dot11Freq2Chan(freq int) int {
 	if freq <= 2472 {
 		return ((freq - 2412) / 5) + 1
-	}
-	if freq == 2484 {
+	} else if freq == 2484 {
 		return 14
-	}
-	if freq >= 5035 && freq <= 5865 {
+	} else if freq >= 5035 && freq <= 5865 {
 		return ((freq - 5035) / 5) + 7
 	}
 	return 0
@@ -23,11 +21,9 @@ func Dot11Freq2Chan(freq int) int {
 func Dot11Chan2Freq(channel int) int {
 	if channel <= 13 {
 		return ((channel - 1) * 5) + 2412
-	}
-	if channel == 14 {
+	} else if channel == 14 {
 		return 2484
-	}
-	if channel <= 173 {
+	} else if channel <= 173 {
 		return ((channel - 7) * 5) + 5035
 	}
 

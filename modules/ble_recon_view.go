@@ -117,8 +117,9 @@ func parseRawData(raw []byte) string {
 			return fmt.Sprintf("%x", raw)
 		} else if b == 0 {
 			break
+		} else {
+			s += fmt.Sprintf("%c", b)
 		}
-		s += fmt.Sprintf("%c", b)
 	}
 
 	return tui.Yellow(s)

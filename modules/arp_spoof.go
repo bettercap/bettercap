@@ -92,17 +92,13 @@ func (p *ArpSpoofer) Configure() error {
 
 	if err, p.internal = p.BoolParam("arp.spoof.internal"); err != nil {
 		return err
-	}
-	if err, targets = p.StringParam("arp.spoof.targets"); err != nil {
+	} else if err, targets = p.StringParam("arp.spoof.targets"); err != nil {
 		return err
-	}
-	if err, whitelist = p.StringParam("arp.spoof.whitelist"); err != nil {
+	} else if err, whitelist = p.StringParam("arp.spoof.whitelist"); err != nil {
 		return err
-	}
-	if p.addresses, p.macs, err = network.ParseTargets(targets, p.Session.Lan.Aliases()); err != nil {
+	} else if p.addresses, p.macs, err = network.ParseTargets(targets, p.Session.Lan.Aliases()); err != nil {
 		return err
-	}
-	if p.wAddresses, p.wMacs, err = network.ParseTargets(whitelist, p.Session.Lan.Aliases()); err != nil {
+	} else if p.wAddresses, p.wMacs, err = network.ParseTargets(whitelist, p.Session.Lan.Aliases()); err != nil {
 		return err
 	}
 
@@ -240,12 +236,10 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 	for ip, mac := range targets {
 		if check_running && !p.Running() {
 			return
-		}
-		if p.isWhitelisted(ip, mac) {
+		} else if p.isWhitelisted(ip, mac) {
 			log.Debug("%s (%s) is whitelisted, skipping from spoofing loop.", ip, mac)
 			continue
-		}
-		if saddr.String() == ip {
+		} else if saddr.String() == ip {
 			continue
 		}
 
