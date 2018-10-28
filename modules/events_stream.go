@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/bettercap/bettercap/log"
@@ -14,9 +15,20 @@ import (
 	"github.com/evilsocket/islazy/tui"
 )
 
+type rotation struct {
+	sync.Mutex
+	Enabled  bool
+	Compress bool
+	Format   string
+	How      string
+	Period   int
+}
+
 type EventsStream struct {
 	session.SessionModule
+	outputName    string
 	output        *os.File
+	rotation      rotation
 	ignoreList    *IgnoreList
 	waitFor       string
 	waitChan      chan *session.Event
@@ -117,6 +129,28 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		"",
 		"If not empty, events will be written to this file instead of the standard output."))
 
+	stream.AddParam(session.NewBoolParameter("events.stream.output.rotate",
+		"true",
+		"If true will enable log rotation."))
+
+	stream.AddParam(session.NewBoolParameter("events.stream.output.rotate.compress",
+		"true",
+		"If true will enable log rotation compression."))
+
+	stream.AddParam(session.NewStringParameter("events.stream.output.rotate.how",
+		"size",
+		"(size|time)",
+		"Rotate by 'size' or 'time'."))
+
+	stream.AddParam(session.NewStringParameter("events.stream.output.rotate.format",
+		"2006-01-02 15:04:05",
+		"",
+		"Datetime format to use for log rotation file names."))
+
+	stream.AddParam(session.NewIntParameter("events.stream.output.rotate.when",
+		"10485760",
+		"File size or time duration in seconds for log rotation."))
+
 	stream.AddParam(session.NewBoolParameter("events.stream.http.request.dump",
 		"false",
 		"If true all HTTP requests will be dumped."))
@@ -146,10 +180,24 @@ func (s *EventsStream) Configure() (err error) {
 	if err, output = s.StringParam("events.stream.output"); err == nil {
 		if output == "" {
 			s.output = os.Stdout
-		} else if output, err = fs.Expand(output); err == nil {
-			s.output, err = os.OpenFile(output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		} else if s.outputName, err = fs.Expand(output); err == nil {
+			s.output, err = os.OpenFile(s.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		}
-	} else if err, s.dumpHttpReqs = s.BoolParam("events.stream.http.request.dump"); err != nil {
+	}
+
+	if err, s.rotation.Enabled = s.BoolParam("events.stream.output.rotate"); err != nil {
+		return err
+	} else if err, s.rotation.Compress = s.BoolParam("events.stream.output.rotate.compress"); err != nil {
+		return err
+	} else if err, s.rotation.Format = s.StringParam("events.stream.output.rotate.format"); err != nil {
+		return err
+	} else if err, s.rotation.How = s.StringParam("events.stream.output.rotate.how"); err != nil {
+		return err
+	} else if err, s.rotation.Period = s.IntParam("events.stream.output.rotate.when"); err != nil {
+		return err
+	}
+
+	if err, s.dumpHttpReqs = s.BoolParam("events.stream.http.request.dump"); err != nil {
 		return err
 	} else if err, s.dumpHttpResp = s.BoolParam("events.stream.http.response.dump"); err != nil {
 		return err

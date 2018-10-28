@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
@@ -11,6 +12,7 @@ import (
 	"github.com/google/go-github/github"
 
 	"github.com/evilsocket/islazy/tui"
+	"github.com/evilsocket/islazy/zip"
 )
 
 const eventTimeFormat = "15:04:05"
@@ -152,6 +154,53 @@ func (s *EventsStream) viewUpdateEvent(e session.Event) {
 		*update.HTMLURL)
 }
 
+func (s *EventsStream) doRotation() {
+	if s.output == os.Stdout {
+		return
+	} else if !s.rotation.Enabled {
+		return
+	}
+
+	s.rotation.Lock()
+	defer s.rotation.Unlock()
+
+	doRotate := false
+	if info, err := s.output.Stat(); err == nil {
+		if s.rotation.How == "size" {
+			doRotate = info.Size() >= int64(s.rotation.Period)
+		} else if s.rotation.How == "time" {
+			doRotate = info.ModTime().Unix()%int64(s.rotation.Period) == 0
+		}
+	}
+
+	if doRotate {
+		var err error
+
+		name := fmt.Sprintf("%s-%s", s.outputName, time.Now().Format(s.rotation.Format))
+
+		if err := s.output.Close(); err != nil {
+			fmt.Printf("could not close log for rotation: %s\n", err)
+			return
+		}
+
+		if err := os.Rename(s.outputName, name); err != nil {
+			fmt.Printf("could not rename %s to %s: %s\n", s.outputName, name, err)
+		} else if s.rotation.Compress {
+			zipName := fmt.Sprintf("%s.zip", name)
+			if err = zip.Files(zipName, []string{name}); err != nil {
+				fmt.Printf("error creating %s: %s", zipName, err)
+			} else if err = os.Remove(name); err != nil {
+				fmt.Printf("error deleting %s: %s", name, err)
+			}
+		}
+
+		s.output, err = os.OpenFile(s.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			fmt.Printf("could not open %s: %s", s.outputName, err)
+		}
+	}
+}
+
 func (s *EventsStream) View(e session.Event, refresh bool) {
 	if e.Tag == "sys.log" {
 		s.viewLogEvent(e)
@@ -176,4 +225,6 @@ func (s *EventsStream) View(e session.Event, refresh bool) {
 	if refresh && s.output == os.Stdout {
 		s.Session.Refresh()
 	}
+
+	s.doRotation()
 }
