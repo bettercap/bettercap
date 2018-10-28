@@ -18,6 +18,7 @@ const (
 	STRING ParamType = iota
 	BOOL             = iota
 	INT              = iota
+	FLOAT            = iota
 )
 
 type ModuleParam struct {
@@ -57,6 +58,10 @@ func NewIntParameter(name string, def_value string, desc string) *ModuleParam {
 	return NewModuleParameter(name, def_value, INT, "^[\\d]+$", desc)
 }
 
+func NewDecimalParameter(name string, def_value string, desc string) *ModuleParam {
+	return NewModuleParameter(name, def_value, FLOAT, "^[\\d]+(\\.\\d+)?$", desc)
+}
+
 func (p ModuleParam) Validate(value string) (error, interface{}) {
 	if p.Validator != nil {
 		if !p.Validator.MatchString(value) {
@@ -77,6 +82,9 @@ func (p ModuleParam) Validate(value string) (error, interface{}) {
 		}
 	} else if p.Type == INT {
 		i, err := strconv.Atoi(value)
+		return err, i
+	} else if p.Type == FLOAT {
+		i, err := strconv.ParseFloat(value, 64)
 		return err, i
 	}
 

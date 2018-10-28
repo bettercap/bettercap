@@ -21,7 +21,7 @@ type rotation struct {
 	Compress bool
 	Format   string
 	How      string
-	Period   int
+	Period   float64
 }
 
 type EventsStream struct {
@@ -147,9 +147,9 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		"",
 		"Datetime format to use for log rotation file names."))
 
-	stream.AddParam(session.NewIntParameter("events.stream.output.rotate.when",
-		"10485760",
-		"File size or time duration in seconds for log rotation."))
+	stream.AddParam(session.NewDecimalParameter("events.stream.output.rotate.when",
+		"10",
+		"File size (in MB) or time duration (in seconds) for log rotation."))
 
 	stream.AddParam(session.NewBoolParameter("events.stream.http.request.dump",
 		"false",
@@ -193,7 +193,7 @@ func (s *EventsStream) Configure() (err error) {
 		return err
 	} else if err, s.rotation.How = s.StringParam("events.stream.output.rotate.how"); err != nil {
 		return err
-	} else if err, s.rotation.Period = s.IntParam("events.stream.output.rotate.when"); err != nil {
+	} else if err, s.rotation.Period = s.DecParam("events.stream.output.rotate.when"); err != nil {
 		return err
 	}
 
