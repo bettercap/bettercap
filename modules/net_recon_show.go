@@ -119,14 +119,14 @@ func (d *Discovery) Show(by string, expr string) (err error) {
 	} else {
 		targets = d.Session.Lan.List()
 	}
-
-	if by == "seen" {
+	switch by {
+	case "seen":
 		sort.Sort(BySeenSorter(targets))
-	} else if by == "sent" {
+	case "sent":
 		sort.Sort(BySentSorter(targets))
-	} else if by == "rcvd" {
+	case "rcvd":
 		sort.Sort(ByRcvdSorter(targets))
-	} else {
+	default:
 		sort.Sort(ByAddressSorter(targets))
 	}
 

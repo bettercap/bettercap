@@ -123,14 +123,14 @@ func (w *WiFiModule) Show(by string) error {
 	} else {
 		stations = w.Session.WiFi.Stations()
 	}
-
-	if by == "seen" {
+	switch by {
+	case "seen":
 		sort.Sort(ByWiFiSeenSorter(stations))
-	} else if by == "essid" {
+	case "essid":
 		sort.Sort(ByEssidSorter(stations))
-	} else if by == "channel" {
+	case "channel":
 		sort.Sort(ByChannelSorter(stations))
-	} else {
+	default:
 		sort.Sort(ByRSSISorter(stations))
 	}
 
