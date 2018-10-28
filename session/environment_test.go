@@ -263,6 +263,10 @@ func TestSessionEnvironmentGetInt(t *testing.T) {
 	} else if i != 1234 {
 		t.Fatalf("unexpected integer: %d", i)
 	}
+
+	if err, _ := env.GetInt("unknownint"); err == nil {
+		t.Fatalf("expected error (unknown key): %v", err)
+	}
 }
 
 func TestSessionEnvironmentSorted(t *testing.T) {
