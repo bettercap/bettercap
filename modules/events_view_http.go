@@ -28,7 +28,7 @@ func (s *EventsStream) shouldDumpHttpRequest(req HTTPRequest) bool {
 		return true
 	}
 	// search for interesting headers and cookies
-	for name, _ := range req.Headers {
+	for name := range req.Headers {
 		headerName := strings.ToLower(name)
 		if strings.Contains(headerName, "auth") || strings.Contains(headerName, "token") {
 			return true
@@ -48,7 +48,7 @@ func (s *EventsStream) shouldDumpHttpResponse(res HTTPResponse) bool {
 		return true
 	}
 	// search for interesting headers
-	for name, _ := range res.Headers {
+	for name := range res.Headers {
 		headerName := strings.ToLower(name)
 		if strings.Contains(headerName, "auth") || strings.Contains(headerName, "token") || strings.Contains(headerName, "cookie") {
 			return true

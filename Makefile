@@ -3,7 +3,7 @@ PACKAGES=core firewall log modules network packets session tls
 
 all: deps build
 
-deps: godep golint gomegacheck
+deps: godep golint gofmt gomegacheck
 	@dep ensure
 
 build: resources
@@ -54,3 +54,6 @@ golint:
 
 gomegacheck:
 	@go get honnef.co/go/tools/cmd/megacheck
+
+gofmt:
+	gofmt -s -w $(PACKAGES)

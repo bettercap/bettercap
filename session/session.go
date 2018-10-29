@@ -324,9 +324,7 @@ func parseCapletCommand(line string) (is bool, caplet *caplets.Caplet, argv []st
 	// check for any arguments
 	if argc > 1 {
 		file = str.Trim(parts[0])
-		if argc >= 2 {
-			argv = parts[1:]
-		}
+		argv = parts[1:]
 	}
 
 	if err, cap := caplets.Load(file); err == nil {

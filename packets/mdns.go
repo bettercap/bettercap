@@ -84,7 +84,7 @@ func NewMDNSProbe(from net.IP, from_hw net.HardwareAddr) (error, []byte) {
 		RD:     true,
 		OpCode: layers.DNSOpCodeQuery,
 		Questions: []layers.DNSQuestion{
-			layers.DNSQuestion{
+			{
 				Name:  []byte("_services._dns-sd._udp.local"),
 				Type:  layers.DNSTypePTR,
 				Class: layers.DNSClassIN,
