@@ -167,7 +167,7 @@ func (s *EventsStream) doRotation() {
 	doRotate := false
 	if info, err := s.output.Stat(); err == nil {
 		if s.rotation.How == "size" {
-			doRotate = info.Size() >= int64(s.rotation.Period)
+			doRotate = float64(info.Size()) >= float64(s.rotation.Period*1024*1024)
 		} else if s.rotation.How == "time" {
 			doRotate = info.ModTime().Unix()%int64(s.rotation.Period) == 0
 		}
