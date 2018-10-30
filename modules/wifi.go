@@ -235,6 +235,8 @@ func (w *WiFiModule) Configure() error {
 				return err
 			}
 
+			log.Debug("wifi supported frequencies: %v", w.frequencies)
+
 			// we need to start somewhere, this is just to check if
 			// this OS supports switching channel programmatically.
 			if err = network.SetInterfaceChannel(w.Session.Interface.Name(), 1); err != nil {

@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"strconv"
 
 	"github.com/bettercap/bettercap/core"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 const airPortPath = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
@@ -14,6 +17,7 @@ var IPv4RouteParser = regexp.MustCompile(`^([a-z]+)+\s+(\d+\.+\d+.\d.+\d)+\s+([a
 var IPv4RouteTokens = 7
 var IPv4RouteCmd = "netstat"
 var IPv4RouteCmdOpts = []string{"-n", "-r"}
+var WiFiChannelParser = regexp.MustCompile(`(?m)^.*Supported Channels: (.*)$`)
 
 func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (*Endpoint, error)) (*Endpoint, error) {
 	ifname2 := tokens[6]
@@ -37,8 +41,24 @@ func SetInterfaceChannel(iface string, channel int) error {
 	return err
 }
 
-//! TODO Get the list of the available frequencies supported by the network card
-func GetSupportedFrequencies(iface string) ([]int, error) {
-	freqs := []int{2412, 2417, 2422, 2427, 2432, 2437, 2442, 2447, 2452, 2457, 2462, 2467, 2472, 2484}
+func getFrequenciesFromChannels(output string) ([]int, error) {
+	freqs := make([]int, 0)
+	if output != "" {
+		if matches := WiFiChannelParser.FindStringSubmatch(output); len(matches) == 2 {
+			for _, channel := range str.Comma(matches[1]) {
+				if channel, err := strconv.Atoi(channel); err == nil {
+					freqs = append(freqs, Dot11Chan2Freq(channel))
+				}
+			}
+		}
+	}
 	return freqs, nil
+}
+
+func GetSupportedFrequencies(iface string) ([]int, error) {
+	out, err := core.Exec("system_profiler", []string{"SPAirPortDataType"})
+	if err != nil {
+		return nil, err
+	}
+	return getFrequenciesFromChannels(out)
 }
