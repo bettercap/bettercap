@@ -109,7 +109,6 @@ func (m SessionModule) IntParam(name string) (error, int) {
 	}
 }
 
-
 func (m SessionModule) DecParam(name string) (error, float64) {
 	if p, found := m.params[name]; found {
 		if err, v := p.Get(m.Session); err != nil {

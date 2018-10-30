@@ -14,6 +14,9 @@ var (
 
 // Expand will expand a path with ~ to a full path of the current user.
 func Expand(path string) (string, error) {
+	if path == "" {
+		return path, nil
+	}
 	usr, err := user.Current()
 	if err != nil {
 		return "", err
