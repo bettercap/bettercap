@@ -110,8 +110,6 @@ func (p ModuleParam) Get(s *Session) (error, interface{}) {
 		hw := make([]byte, 6)
 		rand.Read(hw)
 		v = net.HardwareAddr(hw).String()
-	default:
-		return fmt.Errorf("Uknown value for v"), nil
 	}
 
 	return p.Validate(v)
