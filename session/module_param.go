@@ -84,7 +84,7 @@ func (p ModuleParam) Validate(value string) (error, interface{}) {
 	case INT:
 		i, err := strconv.Atoi(value)
 		return err, i
-	} else if p.Type == FLOAT {
+	case FLOAT:
 		i, err := strconv.ParseFloat(value, 64)
 		return err, i
 	}
