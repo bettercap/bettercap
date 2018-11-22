@@ -2,6 +2,7 @@ package network
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -36,7 +37,7 @@ type lanJSON struct {
 func NewLAN(iface, gateway *Endpoint, newcb EndpointNewCallback, lostcb EndpointLostCallback) *LAN {
 	aliases, err := data.NewUnsortedKV(aliasesFileName, data.FlushOnEdit)
 	if err != nil {
-		panic(err)
+		fmt.Printf("error loading %s: %s", aliasesFileName, err)
 	}
 
 	return &LAN{
