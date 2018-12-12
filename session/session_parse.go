@@ -15,6 +15,7 @@ func ParseCommands(line string) []string {
 	doubleQuoted := false
 	finish := false
 
+	line = strings.Replace(line, `""`, `"<empty>"`, -1)
 	for _, c := range line {
 		switch c {
 		case ';':
@@ -50,6 +51,7 @@ func ParseCommands(line string) []string {
 		}
 
 		if finish {
+			buf = strings.Replace(buf, `<empty>`, `""`, -1)
 			args = append(args, buf)
 			finish = false
 			buf = ""
@@ -57,6 +59,7 @@ func ParseCommands(line string) []string {
 	}
 
 	if len(buf) > 0 {
+		buf = strings.Replace(buf, `<empty>`, `""`, -1)
 		args = append(args, buf)
 	}
 
