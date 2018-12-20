@@ -1,0 +1,37 @@
+name: bettercap
+version: '1.0'
+summary: 802.11, BLE and Ethernet networks reconnaissance and MITM attacks tool.
+description: |
+  The Swiss Army knife for 802.11, BLE and Ethernet networks reconnaissance and MITM attacks.
+grade: stable
+confinement: strict
+base: core18
+parts:
+  bettercap:
+    plugin: go
+    source: https://github.com/bettercap/bettercap.git
+    go-importpath: github.com/bettercap/bettercap
+    build-packages:
+      - build-essential
+      - libpcap-dev
+      - libnetfilter-queue-dev
+    stage-packages:
+      - libpcap0.8
+      - libnfnetlink0
+      - libnetfilter-queue1
+apps:
+  bettercap:
+    command: bin/bettercap
+    plugs:
+      - home
+      - network
+      - network-bind
+      - network-control
+      - network-observe
+      - netlink-connector
+      - netlink-audit
+      - bluetooth-control
+      - firewall-control
+      - x11
+
+      
