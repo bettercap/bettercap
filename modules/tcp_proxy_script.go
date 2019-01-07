@@ -48,9 +48,6 @@ func LoadTcpProxyScript(path string, sess *session.Session) (err error, s *TcpPr
 
 func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte) []byte {
 	if s.doOnData {
-		s.Lock()
-		defer s.Unlock()
-
 		addrFrom := strings.Split(from.String(), ":")[0]
 		addrTo := strings.Split(to.String(), ":")[0]
 
