@@ -103,6 +103,7 @@ func (s *DNSSpoofer) Configure() error {
 		return err
 	}
 
+	s.Hosts = Hosts{}
 	for _, domain := range domains {
 		s.Hosts = append(s.Hosts, NewHostEntry(domain, address))
 	}
