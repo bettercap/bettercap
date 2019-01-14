@@ -300,11 +300,11 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			// are we getting redirected from http to https?
 			if orig.Scheme == "http" && location.Scheme == "https" {
 
-				log.Info("[%s] Got redirection from HTTPS to HTTP: %s -> %s", tui.Green("sslstrip"), tui.Yellow("http://"+origHost), tui.Bold("https://"+newHost))
+				log.Info("[%s] Got redirection from HTTP to HTTPS: %s -> %s", tui.Green("sslstrip"), tui.Yellow("http://"+origHost), tui.Bold("https://"+newHost))
 
 				// if we still did not reach max redirections, strip the URL down to
 				// an alternative HTTP version
-				if s.isMaxRedirs(origHost) {
+				if !s.isMaxRedirs(origHost) {
 					strippedURL := s.processURL(newURL)
 					u, _ := url.Parse(strippedURL)
 					hostStripped := u.Hostname()
