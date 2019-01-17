@@ -240,14 +240,10 @@ func (s *EventsStream) Start() error {
 func (s *EventsStream) Show(limit int) error {
 	events := s.Session.Events.Sorted()
 	num := len(events)
-	from := 0
-
-	if limit > 0 && num > limit {
-		from = num - limit
-	}
 
 	selected := []session.Event{}
-	for _, e := range events[from:] {
+	for i := range events {
+		e := events[num-1-i]
 		if !s.ignoreList.Ignored(e) {
 			selected = append(selected, e)
 			if len(selected) == limit {
