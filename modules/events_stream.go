@@ -252,10 +252,10 @@ func (s *EventsStream) Show(limit int) error {
 		}
 	}
 
-	if len(selected) > 0 {
+	if numSelected := len(selected); numSelected > 0 {
 		fmt.Println()
-		for _, e := range selected {
-			s.View(e, false)
+		for i := range selected {
+			s.View(selected[numSelected-1-i], false)
 		}
 		s.Session.Refresh()
 	}
