@@ -246,14 +246,21 @@ func (s *EventsStream) Show(limit int) error {
 		from = num - limit
 	}
 
-	selected := events[from:num]
+	selected := []session.Event{}
+	for _, e := range events[from:] {
+		if !s.ignoreList.Ignored(e) {
+			selected = append(selected, e)
+			if len(selected) == limit {
+				break
+			}
+		}
+	}
+
 	if len(selected) > 0 {
 		fmt.Println()
-
 		for _, e := range selected {
 			s.View(e, false)
 		}
-
 		s.Session.Refresh()
 	}
 
