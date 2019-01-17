@@ -261,6 +261,10 @@ const (
 	POLLWRNORM = C.POLLWRNORM
 )
 
+// Signal Sets
+
+type Sigset_t C.sigset_t
+
 // Uname
 
 type Utsname C.struct_utsname

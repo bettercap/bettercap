@@ -7,7 +7,6 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 	"unsafe"
 
@@ -44,12 +43,12 @@ type packetConn struct {
 // socket is an interface which enables swapping out socket syscalls for
 // testing.
 type socket interface {
-	Bind(syscall.Sockaddr) error
+	Bind(unix.Sockaddr) error
 	Close() error
 	FD() int
 	GetSockopt(level, name int, v unsafe.Pointer, l uintptr) error
-	Recvfrom([]byte, int) (int, syscall.Sockaddr, error)
-	Sendto([]byte, int, syscall.Sockaddr) error
+	Recvfrom([]byte, int) (int, unix.Sockaddr, error)
+	Sendto([]byte, int, unix.Sockaddr) error
 	SetSockopt(level, name int, v unsafe.Pointer, l uint32) error
 	SetTimeout(time.Duration) error
 }
@@ -61,13 +60,13 @@ func listenPacket(ifi *net.Interface, proto uint16, cfg Config) (*packetConn, er
 	pbe := htons(proto)
 
 	// Enabling overriding the socket type via config.
-	typ := syscall.SOCK_RAW
+	typ := unix.SOCK_RAW
 	if cfg.LinuxSockDGRAM {
-		typ = syscall.SOCK_DGRAM
+		typ = unix.SOCK_DGRAM
 	}
 
 	// Open a packet socket using specified socket and protocol types.
-	sock, err := syscall.Socket(syscall.AF_PACKET, typ, int(pbe))
+	sock, err := unix.Socket(unix.AF_PACKET, typ, int(pbe))
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +91,7 @@ func newPacketConn(ifi *net.Interface, s socket, pbe uint16) (*packetConn, error
 	// packet(7):
 	//   Only the sll_protocol and the sll_ifindex address fields are used for
 	//   purposes of binding.
-	err := s.Bind(&syscall.SockaddrLinklayer{
+	err := s.Bind(&unix.SockaddrLinklayer{
 		Protocol: pbe,
 		Ifindex:  ifi.Index,
 	})
@@ -114,9 +113,9 @@ func (p *packetConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	p.timeoutMu.Unlock()
 
 	var (
-		// Information returned by syscall.Recvfrom.
+		// Information returned by unix.Recvfrom.
 		n    int
-		addr syscall.Sockaddr
+		addr unix.Sockaddr
 		err  error
 
 		// Timeout for a single loop iteration.
@@ -144,7 +143,7 @@ func (p *packetConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		switch err {
 		case nil:
 			// Got data, break this loop shortly.
-		case syscall.EAGAIN:
+		case unix.EAGAIN:
 			// Hit a timeout, keep looping.
 			continue
 		default:
@@ -157,9 +156,9 @@ func (p *packetConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	}
 
 	// Retrieve hardware address and other information from addr.
-	sa, ok := addr.(*syscall.SockaddrLinklayer)
+	sa, ok := addr.(*unix.SockaddrLinklayer)
 	if !ok || sa.Halen < 6 {
-		return n, nil, syscall.EINVAL
+		return n, nil, unix.EINVAL
 	}
 
 	// Use length specified to convert byte array into a hardware address slice.
@@ -181,7 +180,7 @@ func (p *packetConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	// Ensure correct Addr type.
 	a, ok := addr.(*Addr)
 	if !ok || a.HardwareAddr == nil || len(a.HardwareAddr) < 6 {
-		return 0, syscall.EINVAL
+		return 0, unix.EINVAL
 	}
 
 	// Convert hardware address back to byte array form.
@@ -193,8 +192,8 @@ func (p *packetConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	//   When you send packets it is enough to specify sll_family, sll_addr,
 	//   sll_halen, sll_ifindex, and sll_protocol. The other fields should
 	//   be 0.
-	// In this case, sll_family is taken care of automatically by syscall.
-	err := p.s.Sendto(b, 0, &syscall.SockaddrLinklayer{
+	// In this case, sll_family is taken care of automatically by unix.
+	err := p.s.Sendto(b, 0, &unix.SockaddrLinklayer{
 		Ifindex:  p.ifi.Index,
 		Halen:    uint8(len(a.HardwareAddr)),
 		Addr:     baddr,
@@ -235,14 +234,14 @@ func (p *packetConn) SetWriteDeadline(t time.Time) error {
 
 // SetBPF attaches an assembled BPF program to a raw net.PacketConn.
 func (p *packetConn) SetBPF(filter []bpf.RawInstruction) error {
-	prog := syscall.SockFprog{
+	prog := unix.SockFprog{
 		Len:    uint16(len(filter)),
-		Filter: (*syscall.SockFilter)(unsafe.Pointer(&filter[0])),
+		Filter: (*unix.SockFilter)(unsafe.Pointer(&filter[0])),
 	}
 
 	err := p.s.SetSockopt(
-		syscall.SOL_SOCKET,
-		syscall.SO_ATTACH_FILTER,
+		unix.SOL_SOCKET,
+		unix.SO_ATTACH_FILTER,
 		unsafe.Pointer(&prog),
 		uint32(unsafe.Sizeof(prog)),
 	)
@@ -309,26 +308,26 @@ type sysSocket struct {
 
 // Method implementations simply invoke the syscall of the same name, but pass
 // the file descriptor stored in the sysSocket as the socket to use.
-func (s *sysSocket) Bind(sa syscall.Sockaddr) error { return syscall.Bind(s.fd, sa) }
-func (s *sysSocket) Close() error                   { return syscall.Close(s.fd) }
-func (s *sysSocket) FD() int                        { return s.fd }
+func (s *sysSocket) Bind(sa unix.Sockaddr) error { return unix.Bind(s.fd, sa) }
+func (s *sysSocket) Close() error                { return unix.Close(s.fd) }
+func (s *sysSocket) FD() int                     { return s.fd }
 func (s *sysSocket) GetSockopt(level, name int, v unsafe.Pointer, l uintptr) error {
-	_, _, err := syscall.Syscall6(syscall.SYS_GETSOCKOPT, uintptr(s.fd), uintptr(level), uintptr(name), uintptr(v), uintptr(unsafe.Pointer(&l)), 0)
+	_, _, err := unix.Syscall6(unix.SYS_GETSOCKOPT, uintptr(s.fd), uintptr(level), uintptr(name), uintptr(v), uintptr(unsafe.Pointer(&l)), 0)
 	if err != 0 {
-		return syscall.Errno(err)
+		return unix.Errno(err)
 	}
 	return nil
 }
-func (s *sysSocket) Recvfrom(p []byte, flags int) (int, syscall.Sockaddr, error) {
-	return syscall.Recvfrom(s.fd, p, flags)
+func (s *sysSocket) Recvfrom(p []byte, flags int) (int, unix.Sockaddr, error) {
+	return unix.Recvfrom(s.fd, p, flags)
 }
-func (s *sysSocket) Sendto(p []byte, flags int, to syscall.Sockaddr) error {
-	return syscall.Sendto(s.fd, p, flags, to)
+func (s *sysSocket) Sendto(p []byte, flags int, to unix.Sockaddr) error {
+	return unix.Sendto(s.fd, p, flags, to)
 }
 func (s *sysSocket) SetSockopt(level, name int, v unsafe.Pointer, l uint32) error {
-	_, _, err := syscall.Syscall6(syscall.SYS_SETSOCKOPT, uintptr(s.fd), uintptr(level), uintptr(name), uintptr(v), uintptr(l), 0)
+	_, _, err := unix.Syscall6(unix.SYS_SETSOCKOPT, uintptr(s.fd), uintptr(level), uintptr(name), uintptr(v), uintptr(l), 0)
 	if err != 0 {
-		return syscall.Errno(err)
+		return unix.Errno(err)
 	}
 	return nil
 }
@@ -337,5 +336,5 @@ func (s *sysSocket) SetTimeout(timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
-	return syscall.SetsockoptTimeval(s.fd, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, tv)
+	return unix.SetsockoptTimeval(s.fd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, tv)
 }

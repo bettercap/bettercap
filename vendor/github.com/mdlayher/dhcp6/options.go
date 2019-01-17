@@ -110,9 +110,6 @@ func (o *Options) UnmarshalBinary(p []byte) error {
 		// n bytes: data
 		code := OptionCode(buf.Read16())
 		length := buf.Read16()
-		if length == 0 {
-			continue
-		}
 
 		// N bytes: option data
 		data := buf.Consume(int(length))

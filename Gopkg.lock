@@ -11,7 +11,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d8ad15f83381fd0e1f6b75c55a3fa3c7070628dbf120a96725183d30dbb0cec9"
+  digest = "1:3bcf2d2ba964956de427fd779902ad115e564ce1d21033a01e97d8cb0947da40"
   name = "github.com/bettercap/gatt"
   packages = [
     ".",
@@ -24,7 +24,7 @@
     "xpc",
   ]
   pruneopts = "UT"
-  revision = "66e7446993acb3de936b3f487e5933522ed16923"
+  revision = "7650429b6f92880240174d048f14d0762ca4dfcd"
 
 [[projects]]
   digest = "1:b95738a1e6ace058b5b8544303c0871fc01d224ef0d672f778f696265d0f2917"
@@ -52,11 +52,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7dc5d77e0d21759f0ba62f928f15519c961eee6a4ada94558d94094ccd792faa"
+  digest = "1:f77360df85b686035d0bff3b3988b29eb7ce415328e37e82cc5ec8439822911c"
   name = "github.com/elazarl/goproxy"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f58a169a71a51037728990b2d3597a14f56b525b"
+  revision = "2ce16c963a8ac5bd6af851d4877e38701346983f"
 
 [[projects]]
   digest = "1:495dc25bbfe6025e945e3efe885801fc1aefc33d835cac453c0e36a35693d839"
@@ -71,8 +71,8 @@
     "zip",
   ]
   pruneopts = "UT"
-  revision = "3d8400c74f9dbc626d913e0575cda05d914bea57"
-  version = "v1.9.1"
+  revision = "05aa0b30334a79a11bc2072179722d6de727490e"
+  version = "v1.9.2"
 
 [[projects]]
   branch = "master"
@@ -185,7 +185,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a55df695568f48d84d2b5c3d250871bb9f74d9950c201190b6615a4f94727e3c"
+  digest = "1:0e2c7e1de0daaa759dac2b7feb90fdc944f1d23a6e0c8c20502cb635bcd2aaba"
   name = "github.com/mdlayher/dhcp6"
   packages = [
     ".",
@@ -193,15 +193,15 @@
     "internal/buffer",
   ]
   pruneopts = "UT"
-  revision = "e26af0688e455a82b14ebdbecf43f87ead3c4624"
+  revision = "775147d26a880f77f6e06d1a28fbeb2ec4fec013"
 
 [[projects]]
   branch = "master"
-  digest = "1:6569c2877d56f921a8a459d182af16b700c0e588c94b9938aef0d15d13d596db"
+  digest = "1:450f3a64f7a76d3f229ff33a30f0a889629dde46b0f82ece7c53404528316665"
   name = "github.com/mdlayher/raw"
   packages = ["."]
   pruneopts = "UT"
-  revision = "67a536258490ec29bca6d465b51dea32c0db3623"
+  revision = "fa5ef3332ca961deab5782da07b1616fea8a9dd8"
 
 [[projects]]
   branch = "master"
@@ -220,12 +220,12 @@
   version = "v1"
 
 [[projects]]
-  digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
+  digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
   name = "github.com/pkg/errors"
   packages = ["."]
   pruneopts = "UT"
-  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
-  version = "v0.8.0"
+  revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
+  version = "v0.8.1"
 
 [[projects]]
   branch = "master"
@@ -257,15 +257,15 @@
   name = "golang.org/x/net"
   packages = ["bpf"]
   pruneopts = "UT"
-  revision = "49bb7cea24b1df9410e1712aa6433dae904ff66a"
+  revision = "915654e7eabcea33ae277abbecf52f0d8b7a9fdc"
 
 [[projects]]
   branch = "master"
-  digest = "1:0a40b0bdd57a93e741d8557465be3a2edeec408e9b6399586ad65bbe8e355796"
+  digest = "1:f6f6d9d6f80c9e32acc0f4f3b904e0b9f5b18a7757c2ef941121bd79a10e7bdf"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "fa43e7bc11baaae89f3f902b2b4d832b68234844"
+  revision = "11f53e03133963fb11ae0588e08b5e0b85be8be5"
 
 [[projects]]
   digest = "1:9935525a8c49b8434a0b0a54e1980e94a6fae73aaff45c5d33ba8dff69de123e"
