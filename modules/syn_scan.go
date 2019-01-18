@@ -51,6 +51,15 @@ func NewSynScanner(s *session.Session) *SynScanner {
 		"1",
 		"Period in seconds for the scanning progress reporting."))
 
+	ss.AddHandler(session.NewModuleHandler("syn.scan stop", "syn\\.scan (stop|off)",
+		"Stop the current syn scanning session.",
+		func(args []string) error {
+			if !ss.Running() {
+				return fmt.Errorf("no syn.scan is running")
+			}
+			return ss.Stop()
+		}))
+
 	ss.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE [START-PORT] [END-PORT]", "syn.scan ([^\\s]+) ?(\\d+)?([\\s\\d]*)?",
 		"Perform a syn port scanning against an IP address within the provided ports range.",
 		func(args []string) error {
@@ -161,6 +170,14 @@ func (s *SynScanner) showProgress() error {
 	return nil
 }
 
+func (s *SynScanner) Stop() error {
+	log.Info("[%s] stopping ...", tui.Green("syn.scan"))
+	return s.SetRunning(false, func() {
+		s.waitGroup.Wait()
+		s.showProgress()
+	})
+}
+
 func (s *SynScanner) synScan() error {
 	s.SetRunning(true, func() {
 		defer s.SetRunning(false, nil)
@@ -238,10 +255,4 @@ func (s *SynScanner) synScan() error {
 	})
 
 	return nil
-}
-
-func (s *SynScanner) Stop() error {
-	return s.SetRunning(false, func() {
-		s.waitGroup.Wait()
-	})
 }
