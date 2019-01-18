@@ -223,7 +223,7 @@ func (s *SynScanner) synScan() error {
 			if !s.Running() {
 				break
 			}
-			mac, err := findMAC(s.Session, address, true)
+			mac, err := s.Session.FindMAC(address, true)
 			if err != nil {
 				atomic.AddUint64(&s.stats.doneProbes, s.stats.numPorts)
 				log.Debug("Could not get MAC for %s: %s", address.String(), err)

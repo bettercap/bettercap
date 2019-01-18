@@ -162,7 +162,7 @@ func (p *ArpSpoofer) unSpoof() error {
 		neighbours := list.Expand()
 		for _, address := range neighbours {
 			if !p.Session.Skip(address) {
-				if realMAC, err := findMAC(p.Session, address, false); err == nil {
+				if realMAC, err := p.Session.FindMAC(address, false); err == nil {
 					p.sendArp(address, realMAC, false, false)
 				}
 			}
@@ -209,7 +209,7 @@ func (p *ArpSpoofer) sendArp(saddr net.IP, smac net.HardwareAddr, check_running 
 		}
 
 		// do we have this ip mac address?
-		hw, err := findMAC(p.Session, ip, probe)
+		hw, err := p.Session.FindMAC(ip, probe)
 		if err != nil {
 			log.Debug("Could not find hardware address for %s, retrying in one second.", ip.String())
 			continue
