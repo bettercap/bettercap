@@ -90,6 +90,9 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	}
 
 	if len(toDeauth) == 0 {
+		if isBcast {
+			return nil
+		}
 		return fmt.Errorf("%s is an unknown BSSID, is in the deauth skip list, or doesn't have detected clients.", to.String())
 	}
 
