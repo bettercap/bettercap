@@ -44,43 +44,51 @@ func NewSynScanner(s *session.Session) *SynScanner {
 		func(args []string) error {
 			if ss.Running() {
 				return fmt.Errorf("A scan is already running, wait for it to end before starting a new one.")
+			} else if err := ss.parseTargets(args[0]); err != nil {
+				return err
+			} else if err = ss.parsePorts(args); err != nil {
+				return err
 			}
-
-			list, err := iprange.Parse(args[0])
-			if err != nil {
-				return fmt.Errorf("Error while parsing IP range '%s': %s", args[0], err)
-			}
-
-			argc := len(args)
-			ss.addresses = list.Expand()
-			ss.startPort = 1
-			ss.endPort = 65535
-
-			if argc > 1 && str.Trim(args[1]) != "" {
-				if ss.startPort, err = strconv.Atoi(str.Trim(args[1])); err != nil {
-					return fmt.Errorf("Invalid START-PORT: %s", err)
-				}
-
-				if ss.startPort > 65535 {
-					ss.startPort = 65535
-				}
-				ss.endPort = ss.startPort
-			}
-
-			if argc > 2 && str.Trim(args[2]) != "" {
-				if ss.endPort, err = strconv.Atoi(str.Trim(args[2])); err != nil {
-					return fmt.Errorf("Invalid END-PORT: %s", err)
-				}
-			}
-
-			if ss.endPort < ss.startPort {
-				return fmt.Errorf("END-PORT is greater than START-PORT")
-			}
-
 			return ss.synScan()
 		}))
 
 	return ss
+}
+
+func (s *SynScanner) parseTargets(arg string) error {
+	if list, err := iprange.Parse(arg); err != nil {
+		return fmt.Errorf("error while parsing IP range '%s': %s", arg, err)
+	} else {
+		s.addresses = list.Expand()
+	}
+	return nil
+}
+
+func (s *SynScanner) parsePorts(args []string) (err error) {
+	argc := len(args)
+	s.startPort = 1
+	s.endPort = 65535
+
+	if argc > 1 && str.Trim(args[1]) != "" {
+		if s.startPort, err = strconv.Atoi(str.Trim(args[1])); err != nil {
+			return fmt.Errorf("invalid start port %s: %s", args[1], err)
+		} else if s.startPort > 65535 {
+			s.startPort = 65535
+		}
+		s.endPort = s.startPort
+	}
+
+	if argc > 2 && str.Trim(args[2]) != "" {
+		if s.endPort, err = strconv.Atoi(str.Trim(args[2])); err != nil {
+			return fmt.Errorf("invalid end port %s: %s", args[2], err)
+		}
+	}
+
+	if s.endPort < s.startPort {
+		return fmt.Errorf("end port %d is greater than start port %d", s.endPort, s.startPort)
+	}
+
+	return
 }
 
 func (s *SynScanner) Name() string {
