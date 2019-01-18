@@ -33,6 +33,7 @@ type WiFiModule struct {
 	skipBroken          bool
 	pktSourceChan       chan gopacket.Packet
 	pktSourceChanClosed bool
+	deauthSkip          []net.HardwareAddr
 	apRunning           bool
 	apConfig            packets.Dot11ApConfig
 	writes              *sync.WaitGroup
@@ -49,6 +50,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		ap:            nil,
 		skipBroken:    true,
 		apRunning:     false,
+		deauthSkip:    []net.HardwareAddr{},
 		writes:        &sync.WaitGroup{},
 		reads:         &sync.WaitGroup{},
 		chanLock:      &sync.Mutex{},
@@ -98,6 +100,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			}
 			return w.startDeauth(bssid)
 		}))
+
+	w.AddParam(session.NewStringParameter("wifi.deauth.skip",
+		"",
+		"",
+		"Comma separated list of BSSID to skip while sending deauth packets."))
 
 	w.AddHandler(session.NewModuleHandler("wifi.ap", "",
 		"Inject fake management beacons in order to create a rogue access point.",

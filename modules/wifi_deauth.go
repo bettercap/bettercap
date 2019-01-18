@@ -41,7 +41,25 @@ func (w *WiFiModule) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAd
 	}
 }
 
+func (w *WiFiModule) skipDeauth(to net.HardwareAddr) bool {
+	for _, mac := range w.deauthSkip {
+		if bytes.Equal(to, mac) {
+			return true
+		}
+	}
+	return false
+}
+
 func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
+	// parse skip list
+	if err, deauthSkip := w.StringParam("wifi.deauth.skip"); err != nil {
+		return err
+	} else if macs, err := network.ParseMACs(deauthSkip); err != nil {
+		return err
+	} else {
+		w.deauthSkip = macs
+	}
+
 	// if not already running, temporarily enable the pcap handle
 	// for packet injection
 	if !w.Running() {
@@ -62,7 +80,11 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 		isAP := bytes.Equal(ap.HW, to)
 		for _, client := range ap.Clients() {
 			if isBcast || isAP || bytes.Equal(client.HW, to) {
-				toDeauth = append(toDeauth, flow{Ap: ap, Client: client})
+				if !w.skipDeauth(ap.HW) && !w.skipDeauth(client.HW) {
+					toDeauth = append(toDeauth, flow{Ap: ap, Client: client})
+				} else {
+					log.Debug("skipping ap:%v client:%v because skip list %v", ap, client, w.deauthSkip)
+				}
 			}
 		}
 	}

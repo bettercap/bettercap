@@ -68,6 +68,26 @@ func NormalizeMac(mac string) string {
 	return strings.ToLower(strings.Join(parts, ":"))
 }
 
+func ParseMACs(targets string) (macs []net.HardwareAddr, err error) {
+	macs = make([]net.HardwareAddr, 0)
+	if targets = str.Trim(targets); targets == "" {
+		return
+	}
+
+	for _, mac := range macParser.FindAllString(targets, -1) {
+		mac = NormalizeMac(mac)
+		hw, err := net.ParseMAC(mac)
+		if err != nil {
+			return nil, fmt.Errorf("Error while parsing MAC '%s': %s", mac, err)
+		}
+
+		macs = append(macs, hw)
+		targets = strings.Replace(targets, mac, "", -1)
+	}
+
+	return
+}
+
 func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs []net.HardwareAddr, err error) {
 	ips = make([]net.IP, 0)
 	macs = make([]net.HardwareAddr, 0)
