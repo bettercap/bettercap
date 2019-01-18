@@ -51,9 +51,6 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 		defer w.handle.Close()
 	}
 
-	w.writes.Add(1)
-	defer w.writes.Done()
-
 	type flow struct {
 		Ap     *network.AccessPoint
 		Client *network.Station
@@ -71,27 +68,32 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	}
 
 	if len(toDeauth) == 0 {
-		return fmt.Errorf("%s is an unknown BSSID or doesn't have detected clients.", to.String())
+		return fmt.Errorf("%s is an unknown BSSID, is in the deauth skip list, or doesn't have detected clients.", to.String())
 	}
 
-	// since we need to change the wifi adapter channel for each
-	// deauth packet, let's sort by channel so we do the minimum
-	// amount of hops possible
-	sort.Slice(toDeauth, func(i, j int) bool {
-		return toDeauth[i].Ap.Channel() < toDeauth[j].Ap.Channel()
-	})
+	go func() {
+		w.writes.Add(1)
+		defer w.writes.Done()
 
-	// send the deauth frames
-	for _, deauth := range toDeauth {
-		client := deauth.Client
-		ap := deauth.Ap
-		if w.Running() {
-			log.Info("deauthing client %s from AP %s (channel %d)", client.String(), ap.ESSID(), ap.Channel())
-			w.onChannel(ap.Channel(), func() {
-				w.sendDeauthPacket(ap.HW, client.HW)
-			})
+		// since we need to change the wifi adapter channel for each
+		// deauth packet, let's sort by channel so we do the minimum
+		// amount of hops possible
+		sort.Slice(toDeauth, func(i, j int) bool {
+			return toDeauth[i].Ap.Channel() < toDeauth[j].Ap.Channel()
+		})
+
+		// send the deauth frames
+		for _, deauth := range toDeauth {
+			client := deauth.Client
+			ap := deauth.Ap
+			if w.Running() {
+				log.Info("deauthing client %s from AP %s (channel %d)", client.String(), ap.ESSID(), ap.Channel())
+				w.onChannel(ap.Channel(), func() {
+					w.sendDeauthPacket(ap.HW, client.HW)
+				})
+			}
 		}
-	}
+	}()
 
 	return nil
 }
