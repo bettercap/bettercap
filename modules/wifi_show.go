@@ -159,7 +159,9 @@ func (w *WiFiModule) Show(by string) error {
 	}
 
 	w.Session.Queue.Stats.RLock()
-	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
+	fmt.Printf("\n%s (ch. %d) / %s %s / %s %s / %d pkts / %d errs\n\n",
+		w.Session.Interface.Name(),
+		network.GetInterfaceChannel(w.Session.Interface.Name()),
 		tui.Red("↑"),
 		humanize.Bytes(w.Session.Queue.Stats.Sent),
 		tui.Green("↓"),

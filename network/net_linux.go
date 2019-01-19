@@ -38,6 +38,16 @@ func getInterfaceName(iface net.Interface) string {
 	return iface.Name
 }
 
+func GetInterfaceChannel(iface string) int {
+	currChannelLock.Lock()
+	defer currChannelLock.Unlock()
+
+	if curr, found := currChannels[iface]; found {
+		return curr
+	}
+	return 0
+}
+
 func SetInterfaceChannel(iface string, channel int) error {
 	currChannelLock.Lock()
 	defer currChannelLock.Unlock()
