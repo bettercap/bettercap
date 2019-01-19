@@ -158,6 +158,16 @@ func (w *WiFiModule) Show(by string) error {
 		tui.Table(os.Stdout, columns, rows)
 	}
 
+	w.Session.Queue.Stats.RLock()
+	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
+		tui.Red("↑"),
+		humanize.Bytes(w.Session.Queue.Stats.Sent),
+		tui.Green("↓"),
+		humanize.Bytes(w.Session.Queue.Stats.Received),
+		w.Session.Queue.Stats.PktReceived,
+		w.Session.Queue.Stats.Errors)
+	w.Session.Queue.Stats.RUnlock()
+
 	w.Session.Refresh()
 
 	return nil
