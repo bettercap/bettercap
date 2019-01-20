@@ -37,8 +37,19 @@ func getInterfaceName(iface net.Interface) string {
 }
 
 func SetInterfaceChannel(iface string, channel int) error {
+	curr := GetInterfaceChannel(iface)
+	// the interface is already on this channel
+	if curr == channel {
+		return nil
+	}
+
 	_, err := core.Exec(airPortPath, []string{iface, fmt.Sprintf("-c%d", channel)})
-	return err
+	if err != nil {
+		return err
+	}
+
+	SetInterfaceCurrentChannel(iface, channel)
+	return nil
 }
 
 func getFrequenciesFromChannels(output string) ([]int, error) {

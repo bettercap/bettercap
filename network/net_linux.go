@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/bettercap/bettercap/core"
 )
@@ -18,9 +17,6 @@ var IPv4RouteTokens = 4
 var IPv4RouteCmd = "ip"
 var IPv4RouteCmdOpts = []string{"route"}
 var WiFiFreqParser = regexp.MustCompile(`^\s+Channel.([0-9]+)\s+:\s+([0-9\.]+)\s+GHz.*$`)
-
-var currChannels = make(map[string]int)
-var currChannelLock = sync.Mutex{}
 
 func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (*Endpoint, error)) (*Endpoint, error) {
 	ifname2 := tokens[3]
@@ -38,22 +34,10 @@ func getInterfaceName(iface net.Interface) string {
 	return iface.Name
 }
 
-func GetInterfaceChannel(iface string) int {
-	currChannelLock.Lock()
-	defer currChannelLock.Unlock()
-
-	if curr, found := currChannels[iface]; found {
-		return curr
-	}
-	return 0
-}
-
 func SetInterfaceChannel(iface string, channel int) error {
-	currChannelLock.Lock()
-	defer currChannelLock.Unlock()
-
+	curr := GetInterfaceChannel(iface)
 	// the interface is already on this channel
-	if curr, found := currChannels[iface]; found && curr == channel {
+	if curr == channel {
 		return nil
 	}
 
@@ -64,8 +48,7 @@ func SetInterfaceChannel(iface string, channel int) error {
 		return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
 	}
 
-	currChannels[iface] = channel
-
+	SetInterfaceCurrentChannel(iface, channel)
 	return nil
 }
 
