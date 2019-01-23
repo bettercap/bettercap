@@ -226,8 +226,6 @@ func (s *EventsStream) Start() error {
 
 				if !s.ignoreList.Ignored(e) {
 					s.View(e, true)
-				} else {
-					log.Debug("skipping ignored event %v", e)
 				}
 
 			case <-s.quit:
