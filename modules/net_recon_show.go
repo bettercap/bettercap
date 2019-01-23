@@ -110,16 +110,44 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	return rows
 }
 
-func (d *Discovery) Show(by string, expr string) (err error) {
-	var targets []*network.Endpoint
-	if expr != "" {
-		if targets, err = network.ParseEndpoints(expr, d.Session.Lan); err != nil {
-			return err
+func (d *Discovery) doFilter(target *network.Endpoint) bool {
+	if d.selector.Expression == nil {
+		return true
+	}
+	return d.selector.Expression.MatchString(target.IpAddress) ||
+		d.selector.Expression.MatchString(target.Ip6Address) ||
+		d.selector.Expression.MatchString(target.HwAddress) ||
+		d.selector.Expression.MatchString(target.Hostname) ||
+		d.selector.Expression.MatchString(target.Alias) ||
+		d.selector.Expression.MatchString(target.Vendor)
+}
+
+func (d *Discovery) doSelection(arg string) (err error, targets []*network.Endpoint) {
+	if err = d.selector.Update(); err != nil {
+		return
+	}
+
+	if arg != "" {
+		if targets, err = network.ParseEndpoints(arg, d.Session.Lan); err != nil {
+			return
 		}
 	} else {
 		targets = d.Session.Lan.List()
 	}
-	switch by {
+
+	filtered := []*network.Endpoint{}
+	for _, target := range targets {
+		if d.doFilter(target) {
+			filtered = append(filtered, target)
+		}
+	}
+	targets = filtered
+
+	switch d.selector.SortBy {
+	case "ip":
+		sort.Sort(ByIpSorter(targets))
+	case "mac":
+		sort.Sort(ByMacSorter(targets))
 	case "seen":
 		sort.Sort(BySeenSorter(targets))
 	case "sent":
@@ -128,6 +156,33 @@ func (d *Discovery) Show(by string, expr string) (err error) {
 		sort.Sort(ByRcvdSorter(targets))
 	default:
 		sort.Sort(ByAddressSorter(targets))
+	}
+
+	// default is asc
+	if d.selector.Sort == "desc" {
+		// from https://github.com/golang/go/wiki/SliceTricks
+		for i := len(targets)/2 - 1; i >= 0; i-- {
+			opp := len(targets) - 1 - i
+			targets[i], targets[opp] = targets[opp], targets[i]
+		}
+	}
+
+	if d.selector.Limit > 0 {
+		limit := d.selector.Limit
+		max := len(targets)
+		if limit > max {
+			limit = max
+		}
+		targets = targets[0:limit]
+	}
+
+	return
+}
+
+func (d *Discovery) Show(arg string) (err error) {
+	var targets []*network.Endpoint
+	if err, targets = d.doSelection(arg); err != nil {
+		return
 	}
 
 	pad := 1

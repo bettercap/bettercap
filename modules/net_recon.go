@@ -10,6 +10,7 @@ import (
 
 type Discovery struct {
 	session.SessionModule
+	selector *ViewSelector
 }
 
 func NewDiscovery(s *session.Session) *Discovery {
@@ -36,32 +37,16 @@ func NewDiscovery(s *session.Session) *Discovery {
 	d.AddHandler(session.NewModuleHandler("net.show", "",
 		"Show cache hosts list (default sorting by ip).",
 		func(args []string) error {
-			return d.Show("address", "")
-		}))
-
-	d.AddHandler(session.NewModuleHandler("net.show by seen", "",
-		"Show cache hosts list (sort by last seen).",
-		func(args []string) error {
-			return d.Show("seen", "")
-		}))
-
-	d.AddHandler(session.NewModuleHandler("net.show by sent", "",
-		"Show cache hosts list (sort by sent packets).",
-		func(args []string) error {
-			return d.Show("sent", "")
-		}))
-
-	d.AddHandler(session.NewModuleHandler("net.show by rcvd", "",
-		"Show cache hosts list (sort by received packets).",
-		func(args []string) error {
-			return d.Show("rcvd", "")
+			return d.Show("")
 		}))
 
 	d.AddHandler(session.NewModuleHandler("net.show ADDRESS1, ADDRESS2", `net.show (.+)`,
 		"Show information about a specific list of addresses (by IP or MAC).",
 		func(args []string) error {
-			return d.Show("address", args[0])
+			return d.Show(args[0])
 		}))
+
+	d.selector = ViewSelectorFor(&d.SessionModule, "net.show", []string{"ip", "mac", "seen", "sent", "rcvd"}, "")
 
 	return d
 }
