@@ -110,28 +110,86 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 	}
 }
 
-func (w *WiFiModule) Show(by string) error {
-	var stations []*network.Station
+func (w *WiFiModule) doFilter(station *network.Station) bool {
+	if w.selector.Expression == nil {
+		return true
+	}
+	return w.selector.Expression.MatchString(station.BSSID()) ||
+		w.selector.Expression.MatchString(station.ESSID()) ||
+		w.selector.Expression.MatchString(station.Alias) ||
+		w.selector.Expression.MatchString(station.Vendor) ||
+		w.selector.Expression.MatchString(station.Encryption)
+}
+
+func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
+	if err = w.selector.Update(); err != nil {
+		return
+	}
 
 	apSelected := w.isApSelected()
 	if apSelected {
 		if ap, found := w.Session.WiFi.Get(w.ap.HwAddress); found {
 			stations = ap.Clients()
 		} else {
-			return fmt.Errorf("Could not find station %s", w.ap.HwAddress)
+			err = fmt.Errorf("Could not find station %s", w.ap.HwAddress)
+			return
 		}
 	} else {
 		stations = w.Session.WiFi.Stations()
 	}
-	switch by {
+
+	filtered := []*network.Station{}
+	for _, station := range stations {
+		if w.doFilter(station) {
+			filtered = append(filtered, station)
+		}
+	}
+	stations = filtered
+
+	// "encryption"}, "rssi"
+	switch w.selector.SortBy {
 	case "seen":
 		sort.Sort(ByWiFiSeenSorter(stations))
 	case "essid":
 		sort.Sort(ByEssidSorter(stations))
+	case "bssid":
+		sort.Sort(ByBssidSorter(stations))
 	case "channel":
 		sort.Sort(ByChannelSorter(stations))
+	case "sent":
+		sort.Sort(ByWiFiSentSorter(stations))
+	case "rcvd":
+		sort.Sort(ByWiFiRcvdSorter(stations))
+	case "rssi":
 	default:
 		sort.Sort(ByRSSISorter(stations))
+	}
+
+	// default is asc
+	if w.selector.Sort == "desc" {
+		// from https://github.com/golang/go/wiki/SliceTricks
+		for i := len(stations)/2 - 1; i >= 0; i-- {
+			opp := len(stations) - 1 - i
+			stations[i], stations[opp] = stations[opp], stations[i]
+		}
+	}
+
+	if w.selector.Limit > 0 {
+		limit := w.selector.Limit
+		max := len(stations)
+		if limit > max {
+			limit = max
+		}
+		stations = stations[0:limit]
+	}
+
+	return
+}
+
+func (w *WiFiModule) Show() (err error) {
+	var stations []*network.Station
+	if err, stations = w.doSelection(); err != nil {
+		return
 	}
 
 	rows := make([][]string, 0)
@@ -143,7 +201,7 @@ func (w *WiFiModule) Show(by string) error {
 	nrows := len(rows)
 
 	columns := []string{"RSSI", "BSSID", "SSID" /* "Vendor", */, "Encryption", "Channel", "Clients", "Sent", "Recvd", "Last Seen"}
-	if apSelected {
+	if w.isApSelected() {
 		// these are clients
 		columns = []string{"RSSI", "MAC" /* "Vendor", */, "Channel", "Sent", "Received", "Last Seen"}
 

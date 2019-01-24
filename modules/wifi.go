@@ -40,6 +40,7 @@ type WiFiModule struct {
 	writes              *sync.WaitGroup
 	reads               *sync.WaitGroup
 	chanLock            *sync.Mutex
+	selector            *ViewSelector
 }
 
 func NewWiFiModule(s *session.Session) *WiFiModule {
@@ -143,8 +144,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	w.AddHandler(session.NewModuleHandler("wifi.show", "",
 		"Show current wireless stations list (default sorting by essid).",
 		func(args []string) error {
-			return w.Show("rssi")
+			return w.Show()
 		}))
+
+	w.selector = ViewSelectorFor(&w.SessionModule, "wifi.show",
+		[]string{"rssi", "bssid", "essid", "channel", "encryption", "seen", "sent", "rcvd"}, "rssi")
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
 		"WiFi channels (comma separated) or 'clear' for channel hopping.",
