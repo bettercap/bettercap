@@ -179,6 +179,36 @@ func (d *Discovery) doSelection(arg string) (err error, targets []*network.Endpo
 	return
 }
 
+func (d *Discovery) colNames(hasMeta bool) []string {
+	colNames := []string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Last Seen"}
+	if hasMeta {
+		colNames = append(colNames, "Meta")
+	}
+
+	dir := tui.Blue("▾")
+	if d.selector.Sort == "asc" {
+		dir = tui.Blue("▴")
+	}
+
+	if d.selector.SortBy == "" {
+		d.selector.SortBy = "ip"
+	}
+	switch d.selector.SortBy {
+	case "mac":
+		colNames[1] += " " + dir
+	case "sent":
+		colNames[4] += " " + dir
+	case "rcvd":
+		colNames[5] += " " + dir
+	case "seen":
+		colNames[6] += " " + dir
+	case "ip":
+		colNames[0] += " " + dir
+	}
+
+	return colNames
+}
+
 func (d *Discovery) Show(arg string) (err error) {
 	var targets []*network.Endpoint
 	if err, targets = d.doSelection(arg); err != nil {
@@ -205,12 +235,8 @@ func (d *Discovery) Show(arg string) (err error) {
 		}
 	}
 
-	padCols := []string{"", "", "", "", "", "", ""}
-	colNames := []string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Last Seen"}
-	if hasMeta {
-		padCols = append(padCols, "")
-		colNames = append(colNames, "Meta")
-	}
+	colNames := d.colNames(hasMeta)
+	padCols := make([]string, len(colNames))
 
 	rows := make([][]string, 0)
 	for i, t := range targets {

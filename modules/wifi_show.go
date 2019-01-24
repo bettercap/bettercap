@@ -189,6 +189,61 @@ func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
 	return
 }
 
+func (w *WiFiModule) colDecorate(colNames []string, name string, dir string) {
+	for i, c := range colNames {
+		if c == name {
+			colNames[i] += " " + dir
+			break
+		}
+	}
+}
+
+func (w *WiFiModule) colNames(nrows int) []string {
+	columns := []string(nil)
+
+	if !w.isApSelected() {
+		columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "Channel", "Clients", "Sent", "Recvd", "Last Seen"}
+	} else if nrows > 0 {
+		columns = []string{"RSSI", "MAC", "Channel", "Sent", "Received", "Last Seen"}
+		fmt.Printf("\n%s clients:\n", w.ap.HwAddress)
+	} else {
+		fmt.Printf("\nNo authenticated clients detected for %s.\n", w.ap.HwAddress)
+	}
+
+	if columns != nil {
+		dir := tui.Blue("▾")
+		if w.selector.Sort == "asc" {
+			dir = tui.Blue("▴")
+		}
+
+		if w.selector.SortBy == "" {
+			w.selector.SortBy = "rssi"
+		}
+		switch w.selector.SortBy {
+		case "seen":
+			w.colDecorate(columns, "Last Seen", dir)
+		case "essid":
+			w.colDecorate(columns, "SSID", dir)
+		case "bssid":
+			w.colDecorate(columns, "BSSID", dir)
+		case "channel":
+			w.colDecorate(columns, "Channel", dir)
+		case "clients":
+			w.colDecorate(columns, "Clients", dir)
+		case "encryption":
+			w.colDecorate(columns, "Encryption", dir)
+		case "sent":
+			w.colDecorate(columns, "Sent", dir)
+		case "rcvd":
+			w.colDecorate(columns, "Recvd", dir)
+		case "rssi":
+			w.colDecorate(columns, "RSSI", dir)
+		}
+	}
+
+	return columns
+}
+
 func (w *WiFiModule) Show() (err error) {
 	var stations []*network.Station
 	if err, stations = w.doSelection(); err != nil {
@@ -202,21 +257,8 @@ func (w *WiFiModule) Show() (err error) {
 		}
 	}
 	nrows := len(rows)
-
-	columns := []string{"RSSI", "BSSID", "SSID" /* "Vendor", */, "Encryption", "Channel", "Clients", "Sent", "Recvd", "Last Seen"}
-	if w.isApSelected() {
-		// these are clients
-		columns = []string{"RSSI", "MAC" /* "Vendor", */, "Channel", "Sent", "Received", "Last Seen"}
-
-		if nrows == 0 {
-			fmt.Printf("\nNo authenticated clients detected for %s.\n", w.ap.HwAddress)
-		} else {
-			fmt.Printf("\n%s clients:\n", w.ap.HwAddress)
-		}
-	}
-
 	if nrows > 0 {
-		tui.Table(os.Stdout, columns, rows)
+		tui.Table(os.Stdout, w.colNames(nrows), rows)
 	}
 
 	w.Session.Queue.Stats.RLock()
