@@ -146,7 +146,6 @@ func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
 	}
 	stations = filtered
 
-	// "encryption"}, "rssi"
 	switch w.selector.SortBy {
 	case "seen":
 		sort.Sort(ByWiFiSeenSorter(stations))
@@ -156,6 +155,10 @@ func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
 		sort.Sort(ByBssidSorter(stations))
 	case "channel":
 		sort.Sort(ByChannelSorter(stations))
+	case "clients":
+		sort.Sort(ByClientsSorter(stations))
+	case "encryption":
+		sort.Sort(ByEncryptionSorter(stations))
 	case "sent":
 		sort.Sort(ByWiFiSentSorter(stations))
 	case "rcvd":
