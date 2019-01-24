@@ -46,7 +46,7 @@ func NewDiscovery(s *session.Session) *Discovery {
 			return d.Show(args[0])
 		}))
 
-	d.selector = ViewSelectorFor(&d.SessionModule, "net.show", []string{"ip", "mac", "seen", "sent", "rcvd"}, "")
+	d.selector = ViewSelectorFor(&d.SessionModule, "net.show", []string{"ip", "mac", "seen", "sent", "rcvd"}, "ip asc")
 
 	return d
 }

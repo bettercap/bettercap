@@ -146,7 +146,7 @@ func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
 	}
 	stations = filtered
 
-	switch w.selector.SortBy {
+	switch w.selector.SortField {
 	case "seen":
 		sort.Sort(ByWiFiSeenSorter(stations))
 	case "essid":
@@ -211,33 +211,25 @@ func (w *WiFiModule) colNames(nrows int) []string {
 	}
 
 	if columns != nil {
-		dir := tui.Blue("▾")
-		if w.selector.Sort == "asc" {
-			dir = tui.Blue("▴")
-		}
-
-		if w.selector.SortBy == "" {
-			w.selector.SortBy = "rssi"
-		}
-		switch w.selector.SortBy {
+		switch w.selector.SortField {
 		case "seen":
-			w.colDecorate(columns, "Last Seen", dir)
+			w.colDecorate(columns, "Last Seen", w.selector.SortSymbol)
 		case "essid":
-			w.colDecorate(columns, "SSID", dir)
+			w.colDecorate(columns, "SSID", w.selector.SortSymbol)
 		case "bssid":
-			w.colDecorate(columns, "BSSID", dir)
+			w.colDecorate(columns, "BSSID", w.selector.SortSymbol)
 		case "channel":
-			w.colDecorate(columns, "Channel", dir)
+			w.colDecorate(columns, "Channel", w.selector.SortSymbol)
 		case "clients":
-			w.colDecorate(columns, "Clients", dir)
+			w.colDecorate(columns, "Clients", w.selector.SortSymbol)
 		case "encryption":
-			w.colDecorate(columns, "Encryption", dir)
+			w.colDecorate(columns, "Encryption", w.selector.SortSymbol)
 		case "sent":
-			w.colDecorate(columns, "Sent", dir)
+			w.colDecorate(columns, "Sent", w.selector.SortSymbol)
 		case "rcvd":
-			w.colDecorate(columns, "Recvd", dir)
+			w.colDecorate(columns, "Recvd", w.selector.SortSymbol)
 		case "rssi":
-			w.colDecorate(columns, "RSSI", dir)
+			w.colDecorate(columns, "RSSI", w.selector.SortSymbol)
 		}
 	}
 

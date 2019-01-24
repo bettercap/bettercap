@@ -2,10 +2,13 @@ package modules
 
 import (
 	"fmt"
+
 	"regexp"
 	"strings"
 
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 type ViewSelector struct {
@@ -16,46 +19,44 @@ type ViewSelector struct {
 	filterPrev string
 	Expression *regexp.Regexp
 
-	SortBy     string
-	sortBys    map[string]bool
-	sortByName string
-
-	Sort     string
-	sortName string
+	SortField  string
+	Sort       string
+	SortSymbol string
+	sortFields map[string]bool
+	sortName   string
+	sortParser string
+	sortParse  *regexp.Regexp
 
 	Limit     int
 	limitName string
 }
 
-func ViewSelectorFor(m *session.SessionModule, prefix string, sortBys []string, defSortBy string) *ViewSelector {
+func ViewSelectorFor(m *session.SessionModule, prefix string, sortFields []string, defExpression string) *ViewSelector {
+	parser := "(" + strings.Join(sortFields, "|") + ") (desc|asc)"
 	s := &ViewSelector{
 		owner:      m,
 		filterName: prefix + ".filter",
-		filterPrev: "",
-		sortByName: prefix + ".sort_by",
-		sortBys:    make(map[string]bool),
 		sortName:   prefix + ".sort",
+		sortParser: parser,
+		sortParse:  regexp.MustCompile(parser),
 		limitName:  prefix + ".limit",
-
-		SortBy:     defSortBy,
-		Sort:       "asc",
-		Limit:      0,
-		Filter:     "",
-		Expression: nil,
-	}
-
-	for _, sb := range sortBys {
-		s.sortBys[sb] = true
 	}
 
 	m.AddParam(session.NewStringParameter(s.filterName, "", "", "Defines a regular expression filter for "+prefix))
-	m.AddParam(session.NewStringParameter(s.sortByName, defSortBy, "", "Defines sorting field for "+prefix+", available: "+strings.Join(sortBys, ", ")))
-	m.AddParam(session.NewStringParameter(s.sortName, "asc", "", "Defines sorting direction for "+prefix))
+	m.AddParam(session.NewStringParameter(
+		s.sortName,
+		defExpression,
+		s.sortParser,
+		"Defines sorting field ("+strings.Join(sortFields, ", ")+") and direction (asc or desc) for "+prefix))
+
 	m.AddParam(session.NewIntParameter(s.limitName, "0", "Defines limit for "+prefix))
+
+	s.parseSorting()
+
 	return s
 }
 
-func (s *ViewSelector) Update() (err error) {
+func (s *ViewSelector) parseFilter() (err error) {
 	if err, s.Filter = s.owner.StringParam(s.filterName); err != nil {
 		return
 	}
@@ -70,24 +71,37 @@ func (s *ViewSelector) Update() (err error) {
 		s.Expression = nil
 	}
 	s.filterPrev = s.Filter
+	return
+}
 
-	if err, s.SortBy = s.owner.StringParam(s.sortByName); err != nil {
-		return
-	} else if s.SortBy != "" {
-		if _, found := s.sortBys[s.SortBy]; !found {
-			return fmt.Errorf("'%s' is not valid for %s", s.SortBy, s.sortByName)
-		}
-	}
-
-	if err, s.Sort = s.owner.StringParam(s.sortName); err != nil {
-		return
-	} else if s.Sort != "asc" && s.Sort != "desc" {
-		return fmt.Errorf("'%s' is not valid for %s", s.Sort, s.sortName)
-	}
-
-	if err, s.Limit = s.owner.IntParam(s.limitName); err != nil {
+func (s *ViewSelector) parseSorting() (err error) {
+	expr := ""
+	if err, expr = s.owner.StringParam(s.sortName); err != nil {
 		return
 	}
 
+	tokens := s.sortParse.FindAllStringSubmatch(expr, -1)
+	if tokens == nil {
+		return fmt.Errorf("expression '%s' doesn't parse", expr)
+	}
+
+	s.SortField = tokens[0][1]
+	s.Sort = tokens[0][2]
+	s.SortSymbol = tui.Blue("▾")
+	if s.Sort == "asc" {
+		s.SortSymbol = tui.Blue("▴")
+	}
+
+	return
+}
+
+func (s *ViewSelector) Update() (err error) {
+	if err = s.parseFilter(); err != nil {
+		return
+	} else if err = s.parseSorting(); err != nil {
+		return
+	} else if err, s.Limit = s.owner.IntParam(s.limitName); err != nil {
+		return
+	}
 	return
 }

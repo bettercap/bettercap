@@ -148,7 +148,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		}))
 
 	w.selector = ViewSelectorFor(&w.SessionModule, "wifi.show",
-		[]string{"rssi", "bssid", "essid", "channel", "encryption", "clients", "seen", "sent", "rcvd"}, "rssi")
+		[]string{"rssi", "bssid", "essid", "channel", "encryption", "clients", "seen", "sent", "rcvd"}, "rssi asc")
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
 		"WiFi channels (comma separated) or 'clear' for channel hopping.",

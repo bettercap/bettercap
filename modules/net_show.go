@@ -143,7 +143,7 @@ func (d *Discovery) doSelection(arg string) (err error, targets []*network.Endpo
 	}
 	targets = filtered
 
-	switch d.selector.SortBy {
+	switch d.selector.SortField {
 	case "ip":
 		sort.Sort(ByIpSorter(targets))
 	case "mac":
@@ -185,25 +185,17 @@ func (d *Discovery) colNames(hasMeta bool) []string {
 		colNames = append(colNames, "Meta")
 	}
 
-	dir := tui.Blue("▾")
-	if d.selector.Sort == "asc" {
-		dir = tui.Blue("▴")
-	}
-
-	if d.selector.SortBy == "" {
-		d.selector.SortBy = "ip"
-	}
-	switch d.selector.SortBy {
+	switch d.selector.SortField {
 	case "mac":
-		colNames[1] += " " + dir
+		colNames[1] += " " + d.selector.SortSymbol
 	case "sent":
-		colNames[4] += " " + dir
+		colNames[4] += " " + d.selector.SortSymbol
 	case "rcvd":
-		colNames[5] += " " + dir
+		colNames[5] += " " + d.selector.SortSymbol
 	case "seen":
-		colNames[6] += " " + dir
+		colNames[6] += " " + d.selector.SortSymbol
 	case "ip":
-		colNames[0] += " " + dir
+		colNames[0] += " " + d.selector.SortSymbol
 	}
 
 	return colNames
