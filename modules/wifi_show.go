@@ -164,6 +164,7 @@ func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
 	case "rcvd":
 		sort.Sort(ByWiFiRcvdSorter(stations))
 	case "rssi":
+		sort.Sort(ByRSSISorter(stations))
 	default:
 		sort.Sort(ByRSSISorter(stations))
 	}
