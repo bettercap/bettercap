@@ -56,8 +56,12 @@ func Load(name string) (error, *Caplet) {
 		name += Suffix
 	}
 
-	for _, path := range LoadPaths {
-		names = append(names, filepath.Join(path, name))
+	if name[0] != '/' {
+		for _, path := range LoadPaths {
+			names = append(names, filepath.Join(path, name))
+		}
+	} else {
+		names = append(names, name)
 	}
 
 	for _, filename := range names {
