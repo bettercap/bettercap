@@ -284,7 +284,9 @@ func (w *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
 
 	if ok, bssid, info := packets.Dot11ParseWPS(packet, dot11); ok {
 		if station, found := w.Session.WiFi.Get(bssid.String()); found {
-			station.WPS = info
+			for name, value := range info {
+				station.WPS[name] = value
+			}
 		}
 	}
 }

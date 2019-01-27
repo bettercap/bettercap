@@ -34,6 +34,7 @@ func NewStation(essid, bssid string, frequency int, rssi int8) *Station {
 		Endpoint:  NewEndpointNoResolve(MonitorModeAddress, bssid, cleanESSID(essid), 0),
 		Frequency: frequency,
 		RSSI:      rssi,
+		WPS:       make(map[string]string),
 	}
 }
 
