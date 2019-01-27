@@ -43,7 +43,12 @@ var (
 			"0000": "Pin",
 			"0004": "PushButton",
 		}},
-		0x103B: wpsAttr{Name: "Response Type"},
+		0x103B: wpsAttr{Name: "Response Type", Desc: map[string]string{
+			"00": "Enrollee Info",
+			"01": "Enrollee",
+			"02": "Registrar",
+			"03": "AP",
+		}},
 		0x1047: wpsAttr{Name: "UUID-E"},
 		0x1021: wpsAttr{Name: "Manufacturer", Type: wpsStr},
 		0x1023: wpsAttr{Name: "Model Name", Type: wpsStr},
