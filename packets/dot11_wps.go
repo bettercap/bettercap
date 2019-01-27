@@ -53,7 +53,7 @@ var (
 		0x1011: wpsAttr{Name: "Device Name", Type: wpsStr},
 		0x1053: wpsAttr{Name: "Selected Registrar Config Methods", Func: dot11ParseWPSConfigMethods},
 		0x1008: wpsAttr{Name: "Config Methods", Func: dot11ParseWPSConfigMethods},
-		0x103C: wpsAttr{Name: "RF Bands"},
+		0x103C: wpsAttr{Name: "RF Bands", Func: dott11ParseWPSBands},
 		0x1045: wpsAttr{Name: "SSID", Type: wpsStr},
 		0x102D: wpsAttr{Name: "OS Version", Type: wpsStr},
 		0x1049: wpsAttr{Name: "Vendor Extension"},
@@ -70,7 +70,31 @@ var (
 		0x0080: "Push Button",
 		0x0100: "Keypad",
 	}
+
+	wpsBands = map[uint8]string{
+		0x01: "2.4Ghz",
+		0x02: "5.0Ghz",
+	}
 )
+
+func dott11ParseWPSBands(data []byte) string {
+	if len(data) == 1 {
+		mask := uint8(data[0])
+		bands := []string{}
+
+		for bit, band := range wpsBands {
+			if mask&bit != 0 {
+				bands = append(bands, band)
+			}
+		}
+
+		if len(bands) > 0 {
+			return strings.Join(bands, ", ")
+		}
+	}
+
+	return hex.EncodeToString(data)
+}
 
 func dot11ParseWPSConfigMethods(data []byte) string {
 	if len(data) == 2 {
