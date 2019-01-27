@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -21,6 +22,7 @@ const (
 type wpsAttr struct {
 	Name string
 	Type wpsAttrType
+	Func func([]byte) string
 	Desc map[string]string
 }
 
@@ -41,17 +43,6 @@ var (
 			"0000": "Pin",
 			"0004": "PushButton",
 		}},
-		0x1053: wpsAttr{Name: "Selected Registrar Config Methods", Desc: map[string]string{
-			"0001": "USB",
-			"0002": "Ethernet",
-			"0004": "Label",
-			"0008": "Display",
-			"0010": "External NFC",
-			"0020": "Internal NFC",
-			"0040": "NFC Interface",
-			"0080": "Push Button",
-			"0100": "Keypad",
-		}},
 		0x103B: wpsAttr{Name: "Response Type"},
 		0x1047: wpsAttr{Name: "UUID-E"},
 		0x1021: wpsAttr{Name: "Manufacturer", Type: wpsStr},
@@ -60,13 +51,45 @@ var (
 		0x1042: wpsAttr{Name: "Serial Number", Type: wpsStr},
 		0x1054: wpsAttr{Name: "Primary Device Type"},
 		0x1011: wpsAttr{Name: "Device Name", Type: wpsStr},
-		0x1008: wpsAttr{Name: "Config Methods"},
+		0x1053: wpsAttr{Name: "Selected Registrar Config Methods", Func: dot11ParseWPSConfigMethods},
+		0x1008: wpsAttr{Name: "Config Methods", Func: dot11ParseWPSConfigMethods},
 		0x103C: wpsAttr{Name: "RF Bands"},
 		0x1045: wpsAttr{Name: "SSID", Type: wpsStr},
 		0x102D: wpsAttr{Name: "OS Version", Type: wpsStr},
 		0x1049: wpsAttr{Name: "Vendor Extension"},
 	}
+
+	wpsConfigs = map[uint16]string{
+		0x0001: "USB",
+		0x0002: "Ethernet",
+		0x0004: "Label",
+		0x0008: "Display",
+		0x0010: "External NFC",
+		0x0020: "Internal NFC",
+		0x0040: "NFC Interface",
+		0x0080: "Push Button",
+		0x0100: "Keypad",
+	}
 )
+
+func dot11ParseWPSConfigMethods(data []byte) string {
+	if len(data) == 2 {
+		mask := binary.BigEndian.Uint16(data)
+		configs := []string{}
+
+		for bit, conf := range wpsConfigs {
+			if mask&bit != 0 {
+				configs = append(configs, conf)
+			}
+		}
+
+		if len(configs) > 0 {
+			return strings.Join(configs, ", ")
+		}
+	}
+
+	return hex.EncodeToString(data)
+}
 
 func dot11ParseWPSData(data []byte) (ok bool, info map[string]string) {
 	info = map[string]string{}
@@ -91,6 +114,10 @@ func dot11ParseWPSData(data []byte) (ok bool, info map[string]string) {
 				if desc, found := attr.Desc[val]; found {
 					val = desc
 				}
+			}
+
+			if attr.Func != nil {
+				val = attr.Func(tagData)
 			}
 
 			info[attr.Name] = val
