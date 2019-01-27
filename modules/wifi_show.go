@@ -296,18 +296,18 @@ func (w *WiFiModule) Show() (err error) {
 }
 
 func (w *WiFiModule) ShowWPS(bssid string) (err error) {
-	toShow := []*network.AccessPoint{}
+	toShow := []*network.Station{}
 
 	if bssid == network.BroadcastMac {
 		for _, station := range w.Session.WiFi.List() {
 			if station.HasWPS() {
-				toShow = append(toShow, station)
+				toShow = append(toShow, station.Station)
 			}
 		}
 	} else {
 		if station, found := w.Session.WiFi.Get(bssid); found {
 			if station.HasWPS() {
-				toShow = append(toShow, station)
+				toShow = append(toShow, station.Station)
 			}
 		}
 	}
@@ -316,6 +316,7 @@ func (w *WiFiModule) ShowWPS(bssid string) (err error) {
 		return fmt.Errorf("no WPS enabled access points matched the criteria")
 	}
 
+	sort.Sort(ByBssidSorter(toShow))
 	for _, station := range toShow {
 		ssid := station.ESSID()
 		if ssid == "<hidden>" {
@@ -324,8 +325,14 @@ func (w *WiFiModule) ShowWPS(bssid string) (err error) {
 
 		fmt.Println()
 		fmt.Printf("* %s (%s ch:%d):\n", tui.Bold(ssid), tui.Dim(station.BSSID()), station.Channel())
-		for name, value := range station.WPS {
-			fmt.Printf("  %s: %s\n", name, tui.Yellow(value))
+		keys := []string{}
+		for name, _ := range station.WPS {
+			keys = append(keys, name)
+		}
+		sort.Strings(keys)
+
+		for _, name := range keys {
+			fmt.Printf("  %s: %s\n", name, tui.Yellow(station.WPS[name]))
 		}
 	}
 
