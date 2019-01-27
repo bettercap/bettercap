@@ -78,7 +78,6 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		return []string{
 			fmt.Sprintf("%d dBm", station.RSSI),
 			bssid,
-			/* station.Vendor, */
 			strconv.Itoa(station.Channel()),
 			sent,
 			recvd,
@@ -95,12 +94,29 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 			}
 		}
 
+		wps := ""
+		if station.HasWPS() {
+			if ver, found := station.WPS["Version"]; found {
+				wps = ver
+			} else {
+				wps = "✔"
+			}
+
+			if state, found := station.WPS["State"]; found {
+				if state == "Not Configured" {
+					wps += " (not configured)"
+				}
+			}
+
+			wps = tui.Dim(tui.Yellow(wps))
+		}
+
 		return []string{
 			fmt.Sprintf("%d dBm", station.RSSI),
 			bssid,
 			ssid,
-			/* station.Vendor, */
 			encryption,
+			wps,
 			strconv.Itoa(station.Channel()),
 			clients,
 			sent,
@@ -199,13 +215,17 @@ func (w *WiFiModule) colDecorate(colNames []string, name string, dir string) {
 	}
 }
 
-func (w *WiFiModule) colNames(nrows int) []string {
+func (w *WiFiModule) colNames(nrows int, withWPS bool) []string {
 	columns := []string(nil)
 
 	if !w.isApSelected() {
-		columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "Channel", "Clients", "Sent", "Recvd", "Last Seen"}
+		if withWPS {
+			columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "WPS", "Ch", "Clients", "Sent", "Recvd", "Last Seen"}
+		} else {
+			columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "Ch", "Clients", "Sent", "Recvd", "Last Seen"}
+		}
 	} else if nrows > 0 {
-		columns = []string{"RSSI", "MAC", "Channel", "Sent", "Received", "Last Seen"}
+		columns = []string{"RSSI", "MAC", "Ch", "Sent", "Received", "Last Seen"}
 		fmt.Printf("\n%s clients:\n", w.ap.HwAddress)
 	} else {
 		fmt.Printf("\nNo authenticated clients detected for %s.\n", w.ap.HwAddress)
@@ -220,7 +240,7 @@ func (w *WiFiModule) colNames(nrows int) []string {
 		case "bssid":
 			w.colDecorate(columns, "BSSID", w.selector.SortSymbol)
 		case "channel":
-			w.colDecorate(columns, "Channel", w.selector.SortSymbol)
+			w.colDecorate(columns, "Ch", w.selector.SortSymbol)
 		case "clients":
 			w.colDecorate(columns, "Clients", w.selector.SortSymbol)
 		case "encryption":
@@ -243,15 +263,19 @@ func (w *WiFiModule) Show() (err error) {
 		return
 	}
 
+	hasWPS := false
 	rows := make([][]string, 0)
 	for _, s := range stations {
 		if row, include := w.getRow(s); include {
+			if len(s.WPS) > 0 {
+				hasWPS = true
+			}
 			rows = append(rows, row)
 		}
 	}
 	nrows := len(rows)
 	if nrows > 0 {
-		tui.Table(os.Stdout, w.colNames(nrows), rows)
+		tui.Table(os.Stdout, w.colNames(nrows, hasWPS), rows)
 	}
 
 	w.Session.Queue.Stats.RLock()
@@ -267,6 +291,45 @@ func (w *WiFiModule) Show() (err error) {
 	w.Session.Queue.Stats.RUnlock()
 
 	w.Session.Refresh()
+
+	return nil
+}
+
+func (w *WiFiModule) ShowWPS(bssid string) (err error) {
+	toShow := []*network.AccessPoint{}
+
+	if bssid == network.BroadcastMac {
+		for _, station := range w.Session.WiFi.List() {
+			if station.HasWPS() {
+				toShow = append(toShow, station)
+			}
+		}
+	} else {
+		if station, found := w.Session.WiFi.Get(bssid); found {
+			if station.HasWPS() {
+				toShow = append(toShow, station)
+			}
+		}
+	}
+
+	if len(toShow) == 0 {
+		return fmt.Errorf("no WPS enabled access points matched the criteria")
+	}
+
+	for _, station := range toShow {
+		ssid := station.ESSID()
+		if ssid == "<hidden>" {
+			ssid = tui.Dim(ssid)
+		}
+
+		fmt.Println()
+		fmt.Printf("* %s (%s ch:%d):\n", tui.Bold(ssid), tui.Dim(station.BSSID()), station.Channel())
+		for name, value := range station.WPS {
+			fmt.Printf("  %s: %s\n", name, tui.Yellow(value))
+		}
+	}
+
+	fmt.Println()
 
 	return nil
 }

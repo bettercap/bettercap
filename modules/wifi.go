@@ -141,6 +141,12 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"true",
 		"If true, the fake access point will use WPA2, otherwise it'll result as an open AP."))
 
+	w.AddHandler(session.NewModuleHandler("wifi.show.wps BSSID", "wifi.show.wps ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
+		"Show WPS information about a given station.",
+		func(args []string) error {
+			return w.ShowWPS(args[0])
+		}))
+
 	w.AddHandler(session.NewModuleHandler("wifi.show", "",
 		"Show current wireless stations list (default sorting by essid).",
 		func(args []string) error {
@@ -266,6 +272,23 @@ func (w *WiFiModule) Configure() error {
 	return nil
 }
 
+func (w *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
+	if ok, enc, cipher, auth := packets.Dot11ParseEncryption(packet, dot11); ok {
+		bssid := dot11.Address3.String()
+		if station, found := w.Session.WiFi.Get(bssid); found {
+			station.Encryption = enc
+			station.Cipher = cipher
+			station.Authentication = auth
+		}
+	}
+
+	if ok, bssid, info := packets.Dot11ParseWPS(packet, dot11); ok {
+		if station, found := w.Session.WiFi.Get(bssid.String()); found {
+			station.WPS = info
+		}
+	}
+}
+
 func (w *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	// collect stats from data frames
 	if dot11.Type.MainType() == layers.Dot11TypeData {
@@ -279,15 +302,6 @@ func (w *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 		src := dot11.Address2.String()
 		if station, found := w.Session.WiFi.Get(src); found {
 			station.Sent += bytes
-		}
-	}
-
-	if ok, enc, cipher, auth := packets.Dot11ParseEncryption(packet, dot11); ok {
-		bssid := dot11.Address3.String()
-		if station, found := w.Session.WiFi.Get(bssid); found {
-			station.Encryption = enc
-			station.Cipher = cipher
-			station.Authentication = auth
 		}
 	}
 }
@@ -331,6 +345,7 @@ func (w *WiFiModule) Start() error {
 				w.discoverProbes(radiotap, dot11, packet)
 				w.discoverAccessPoints(radiotap, dot11, packet)
 				w.discoverClients(radiotap, dot11, packet)
+				w.updateInfo(dot11, packet)
 				w.updateStats(dot11, packet)
 			}
 		}

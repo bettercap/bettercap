@@ -6,13 +6,14 @@ import (
 
 type Station struct {
 	*Endpoint
-	Frequency      int    `json:"frequency"`
-	RSSI           int8   `json:"rssi"`
-	Sent           uint64 `json:"sent"`
-	Received       uint64 `json:"received"`
-	Encryption     string `json:"encryption"`
-	Cipher         string `json:"cipher"`
-	Authentication string `json:"authentication"`
+	Frequency      int               `json:"frequency"`
+	RSSI           int8              `json:"rssi"`
+	Sent           uint64            `json:"sent"`
+	Received       uint64            `json:"received"`
+	Encryption     string            `json:"encryption"`
+	Cipher         string            `json:"cipher"`
+	Authentication string            `json:"authentication"`
+	WPS            map[string]string `json:"wps"`
 }
 
 func cleanESSID(essid string) string {
@@ -46,4 +47,8 @@ func (s *Station) ESSID() string {
 
 func (s *Station) Channel() int {
 	return Dot11Freq2Chan(s.Frequency)
+}
+
+func (s *Station) HasWPS() bool {
+	return len(s.WPS) > 0
 }
