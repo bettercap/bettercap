@@ -37,7 +37,10 @@ var (
 		}},
 		0x1057: wpsAttr{Name: "AP Setup Locked"},
 		0x1041: wpsAttr{Name: "Selected Registrar"},
-		0x1012: wpsAttr{Name: "Device Password ID"},
+		0x1012: wpsAttr{Name: "Device Password ID", Desc: map[string]string{
+			"0000": "Pin",
+			"0004": "PushButton",
+		}},
 		0x1053: wpsAttr{Name: "Selected Registrar Config Methods", Desc: map[string]string{
 			"0001": "USB",
 			"0002": "Ethernet",
