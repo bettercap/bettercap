@@ -17,10 +17,10 @@ var mutators = []func(byte) byte{
 		return byte(rand.Intn(256) & 0xff)
 	},
 	func(b byte) byte {
-		return byte(b << uint(rand.Intn(5)))
+		return byte(b << uint(rand.Intn(9)))
 	},
 	func(b byte) byte {
-		return byte(b >> uint(rand.Intn(5)))
+		return byte(b >> uint(rand.Intn(9)))
 	},
 }
 
