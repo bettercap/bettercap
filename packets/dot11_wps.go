@@ -26,6 +26,11 @@ type wpsAttr struct {
 	Desc map[string]string
 }
 
+type wpsDevType struct {
+	Category string
+	Subcats  map[uint16]string
+}
+
 var (
 	wpsSignatureBytes = []byte{0x00, 0x50, 0xf2, 0x04}
 	wfaExtensionBytes = []byte{0x00, 0x37, 0x2a}
@@ -35,6 +40,52 @@ var (
 		"11": "1.1",
 		"20": "2.0",
 	}
+
+	wpsDeviceTypes = map[uint16]wpsDevType{
+		0x0001: wpsDevType{"Computer", map[uint16]string{
+			0x0001: "PC",
+			0x0002: "Server",
+			0x0003: "Media Center",
+		}},
+		0x0002: wpsDevType{"Input Device", map[uint16]string{}},
+		0x0003: wpsDevType{"Printers, Scanners, Faxes and Copiers", map[uint16]string{
+			0x0001: "Printer",
+			0x0002: "Scanner",
+		}},
+		0x0004: wpsDevType{"Camera", map[uint16]string{
+			0x0001: "Digital Still Camera",
+		}},
+		0x0005: wpsDevType{"Storage", map[uint16]string{
+			0x0001: "NAS",
+		}},
+		0x0006: wpsDevType{"Network Infra", map[uint16]string{
+			0x0001: "AP",
+			0x0002: "Router",
+			0x0003: "Switch",
+		}},
+
+		0x0007: wpsDevType{"Display", map[uint16]string{
+			0x0001: "TV",
+			0x0002: "Electronic Picture Frame",
+			0x0003: "Projector",
+		}},
+
+		0x0008: wpsDevType{"Multimedia Device", map[uint16]string{
+			0x0001: "DAR",
+			0x0002: "PVR",
+			0x0003: "MCX",
+		}},
+
+		0x0009: wpsDevType{"Gaming Device", map[uint16]string{
+			0x0001: "XBox",
+			0x0002: "XBox360",
+			0x0003: "Playstation",
+		}},
+		0x000F: wpsDevType{"Telephone", map[uint16]string{
+			0x0001: "Windows Mobile",
+		}},
+	}
+
 	wpsAttributes = map[uint16]wpsAttr{
 		0x104A: wpsAttr{Name: "Version", Desc: wpsVersionDesc},
 		0x1044: wpsAttr{Name: "State", Desc: map[string]string{
@@ -51,7 +102,13 @@ var (
 			"02": "Registrar",
 			"03": "AP",
 		}},
+
+		0x1054: wpsAttr{Name: "Primary Device Type", Func: dot11ParseWPSDeviceType},
 		0x1049: wpsAttr{Name: "Vendor Extension", Func: dot11ParseWPSVendorExtension},
+		0x1053: wpsAttr{Name: "Selected Registrar Config Methods", Func: dot11ParseWPSConfigMethods},
+		0x1008: wpsAttr{Name: "Config Methods", Func: dot11ParseWPSConfigMethods},
+		0x103C: wpsAttr{Name: "RF Bands", Func: dott11ParseWPSBands},
+
 		0x1057: wpsAttr{Name: "AP Setup Locked"},
 		0x1041: wpsAttr{Name: "Selected Registrar"},
 		0x1047: wpsAttr{Name: "UUID-E"},
@@ -59,11 +116,7 @@ var (
 		0x1023: wpsAttr{Name: "Model Name", Type: wpsStr},
 		0x1024: wpsAttr{Name: "Model Number", Type: wpsStr},
 		0x1042: wpsAttr{Name: "Serial Number", Type: wpsStr},
-		0x1054: wpsAttr{Name: "Primary Device Type"},
 		0x1011: wpsAttr{Name: "Device Name", Type: wpsStr},
-		0x1053: wpsAttr{Name: "Selected Registrar Config Methods", Func: dot11ParseWPSConfigMethods},
-		0x1008: wpsAttr{Name: "Config Methods", Func: dot11ParseWPSConfigMethods},
-		0x103C: wpsAttr{Name: "RF Bands", Func: dott11ParseWPSBands},
 		0x1045: wpsAttr{Name: "SSID", Type: wpsStr},
 		0x102D: wpsAttr{Name: "OS Version", Type: wpsStr},
 	}
@@ -133,10 +186,27 @@ func dot11ParseWPSVendorExtension(data []byte, info *map[string]string) string {
 			if idByte == wpsVersion2ID {
 				verByte := fmt.Sprintf("%x", data[offset+2])
 				(*info)["Version"] = wpsVersionDesc[verByte]
+				data = data[offset+3:]
 				break
 			}
 			offset += int(sizeByte) + 2
 		}
+	}
+	return hex.EncodeToString(data)
+}
+
+func dot11ParseWPSDeviceType(data []byte, info *map[string]string) string {
+	if len(data) == 8 {
+		catId := binary.BigEndian.Uint16(data[0:2])
+		oui := data[2:6]
+		subCatId := binary.BigEndian.Uint16(data[6:8])
+		if cat, found := wpsDeviceTypes[catId]; found {
+			if sub, found := cat.Subcats[subCatId]; found {
+				return fmt.Sprintf("%s (oui:%x)", sub, oui)
+			}
+			return fmt.Sprintf("%s (oui:%x)", cat.Category, oui)
+		}
+		return fmt.Sprintf("cat:%x sub:%x oui:%x %x", catId, subCatId, oui, data)
 	}
 	return hex.EncodeToString(data)
 }
@@ -188,7 +258,9 @@ func dot11ParseWPSTag(id uint16, size uint16, data []byte, info *map[string]stri
 		val = hex.EncodeToString(data)
 	}
 
-	(*info)[name] = val
+	if val != "" {
+		(*info)[name] = val
+	}
 }
 
 func dot11ParseWPSData(data []byte) (ok bool, info map[string]string) {
