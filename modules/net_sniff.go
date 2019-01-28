@@ -15,6 +15,12 @@ type Sniffer struct {
 	Stats         *SnifferStats
 	Ctx           *SnifferContext
 	pktSourceChan chan gopacket.Packet
+
+	fuzzActive bool
+	fuzzSilent bool
+	fuzzLayers []string
+	fuzzRate   float64
+	fuzzRatio  float64
 }
 
 func NewSniffer(s *session.Session) *Sniffer {
@@ -74,6 +80,35 @@ func NewSniffer(s *session.Session) *Sniffer {
 		func(args []string) error {
 			return sniff.Stop()
 		}))
+
+	sniff.AddHandler(session.NewModuleHandler("net.fuzz on", "",
+		"Enable fuzzing for every sniffed packet containing the sapecified layers.",
+		func(args []string) error {
+			return sniff.StartFuzzing()
+		}))
+
+	sniff.AddHandler(session.NewModuleHandler("net.fuzz off", "",
+		"Disable fuzzing",
+		func(args []string) error {
+			return sniff.StopFuzzing()
+		}))
+
+	sniff.AddParam(session.NewStringParameter("net.fuzz.layers",
+		"Payload",
+		"",
+		"Types of layer to fuzz."))
+
+	sniff.AddParam(session.NewDecimalParameter("net.fuzz.rate",
+		"1.0",
+		"Rate in the [0.0,1.0] interval of packets to fuzz."))
+
+	sniff.AddParam(session.NewDecimalParameter("net.fuzz.ratio",
+		"0.4",
+		"Rate in the [0.0,1.0] interval of bytes to fuzz for each packet."))
+
+	sniff.AddParam(session.NewBoolParameter("net.fuzz.silent",
+		"false",
+		"If true it will not report fuzzed packets."))
 
 	return sniff
 }
@@ -147,6 +182,10 @@ func (s *Sniffer) Start() error {
 			isLocal := s.isLocalPacket(packet)
 			if isLocal {
 				s.Stats.NumLocal++
+			}
+
+			if s.fuzzActive {
+				s.doFuzzing(packet)
 			}
 
 			if s.Ctx.DumpLocal || !isLocal {
