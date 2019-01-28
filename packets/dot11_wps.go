@@ -22,7 +22,7 @@ const (
 type wpsAttr struct {
 	Name string
 	Type wpsAttrType
-	Func func([]byte) string
+	Func func([]byte, *map[string]string) string
 	Desc map[string]string
 }
 
@@ -30,12 +30,13 @@ var (
 	wpsSignatureBytes = []byte{0x00, 0x50, 0xf2, 0x04}
 	wfaExtensionBytes = []byte{0x00, 0x37, 0x2a}
 	wpsVersion2ID     = uint8(0x00)
-
+	wpsVersionDesc    = map[string]string{
+		"10": "1.0",
+		"11": "1.1",
+		"20": "2.0",
+	}
 	wpsAttributes = map[uint16]wpsAttr{
-		0x104A: wpsAttr{Name: "Version", Desc: map[string]string{
-			"10": "1.0",
-			"11": "1.1",
-		}},
+		0x104A: wpsAttr{Name: "Version", Desc: wpsVersionDesc},
 		0x1044: wpsAttr{Name: "State", Desc: map[string]string{
 			"01": "Not Configured",
 			"02": "Configured",
@@ -85,7 +86,7 @@ var (
 	}
 )
 
-func dott11ParseWPSBands(data []byte) string {
+func dott11ParseWPSBands(data []byte, info *map[string]string) string {
 	if len(data) == 1 {
 		mask := uint8(data[0])
 		bands := []string{}
@@ -104,7 +105,7 @@ func dott11ParseWPSBands(data []byte) string {
 	return hex.EncodeToString(data)
 }
 
-func dot11ParseWPSConfigMethods(data []byte) string {
+func dot11ParseWPSConfigMethods(data []byte, info *map[string]string) string {
 	if len(data) == 2 {
 		mask := binary.BigEndian.Uint16(data)
 		configs := []string{}
@@ -123,14 +124,16 @@ func dot11ParseWPSConfigMethods(data []byte) string {
 	return hex.EncodeToString(data)
 }
 
-func dot11ParseWPSVendorExtension(data []byte) string {
+func dot11ParseWPSVendorExtension(data []byte, info *map[string]string) string {
 	if len(data) > 3 && bytes.Equal(data[0:3], wfaExtensionBytes) {
 		size := len(data)
 		for offset := 3; offset < size; {
 			idByte := uint8(data[offset])
 			sizeByte := uint8(data[offset+1])
 			if idByte == wpsVersion2ID {
-				return fmt.Sprintf("version2=0x%x", data[offset+2])
+				verByte := fmt.Sprintf("%x", data[offset+2])
+				(*info)["Version"] = wpsVersionDesc[verByte]
+				break
 			}
 			offset += int(sizeByte) + 2
 		}
@@ -178,7 +181,7 @@ func dot11ParseWPSTag(id uint16, size uint16, data []byte, info *map[string]stri
 		}
 
 		if attr.Func != nil {
-			val = attr.Func(data)
+			val = attr.Func(data, info)
 		}
 	} else {
 		name = fmt.Sprintf("0x%X", id)
