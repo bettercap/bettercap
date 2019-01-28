@@ -60,11 +60,11 @@ func (s *Sniffer) doFuzzing(pkt gopacket.Packet) {
 	}
 
 	if bytesChanged > 0 {
+		logFn := log.Info
 		if s.fuzzSilent {
-			log.Debug("[%s] changed %d bytes in %d layers.", tui.Green("net.fuzz"), bytesChanged, layersChanged)
-		} else {
-			log.Info("[%s] changed %d bytes in %d layers.", tui.Green("net.fuzz"), bytesChanged, layersChanged)
+			logFn = log.Debug
 		}
+		logFn("[%s] changed %d bytes in %d layers.", tui.Green("net.fuzz"), bytesChanged, layersChanged)
 		if err := s.Session.Queue.Send(pkt.Data()); err != nil {
 			log.Error("error sending fuzzed packet: %s", err)
 		}
