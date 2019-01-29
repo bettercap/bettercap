@@ -236,7 +236,13 @@ func (w *WiFiModule) Configure() error {
 			return fmt.Errorf("Error while setting interface %s in monitor mode: %s", tui.Bold(w.Session.Interface.Name()), err)
 		} else if err = ihandle.SetSnapLen(65536); err != nil {
 			return err
-		} else if err = ihandle.SetTimeout(pcap.BlockForever); err != nil {
+		}
+		/*
+		 * We don't want to pcap.BlockForever otherwise pcap_close(handle)
+		 * could hang waiting for a timeout to expire ...
+		 */
+		readTimeout := 500 * time.Millisecond
+		if err = ihandle.SetTimeout(readTimeout); err != nil {
 			return err
 		} else if w.handle, err = ihandle.Activate(); err != nil {
 			return err

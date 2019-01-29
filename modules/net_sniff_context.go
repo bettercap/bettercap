@@ -3,6 +3,7 @@ package modules
 import (
 	"os"
 	"regexp"
+	"time"
 
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
@@ -36,7 +37,12 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 	}
 
 	if ctx.Source == "" {
-		if ctx.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+		/*
+		 * We don't want to pcap.BlockForever otherwise pcap_close(handle)
+		 * could hang waiting for a timeout to expire ...
+		 */
+		readTimeout := 500 * time.Millisecond
+		if ctx.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, readTimeout); err != nil {
 			return err, ctx
 		}
 	} else {
@@ -117,12 +123,16 @@ func (c *SnifferContext) Log(sess *session.Session) {
 
 func (c *SnifferContext) Close() {
 	if c.Handle != nil {
+		log.Debug("closing handle")
 		c.Handle.Close()
+		log.Debug("handle closed")
 		c.Handle = nil
 	}
 
 	if c.OutputFile != nil {
+		log.Debug("closing output")
 		c.OutputFile.Close()
+		log.Debug("output closed")
 		c.OutputFile = nil
 	}
 }

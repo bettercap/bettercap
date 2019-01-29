@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/gopacket"
@@ -170,6 +171,7 @@ func (s *Sniffer) Start() error {
 		s.pktSourceChan = src.Packets()
 		for packet := range s.pktSourceChan {
 			if !s.Running() {
+				log.Debug("end pkt loop (pkt=%v filter='%s')", packet, s.Ctx.Filter)
 				break
 			}
 
@@ -209,9 +211,14 @@ func (s *Sniffer) Start() error {
 
 func (s *Sniffer) Stop() error {
 	return s.SetRunning(false, func() {
+		log.Debug("stopping sniffer")
 		if s.pktSourceChan != nil {
+			log.Debug("sending nil")
 			s.pktSourceChan <- nil
+			log.Debug("nil sent")
 		}
+		log.Debug("closing ctx")
 		s.Ctx.Close()
+		log.Debug("ctx closed")
 	})
 }
