@@ -1,10 +1,9 @@
 package modules
 
 import (
-	"strings"
-
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"strings"
 
 	"github.com/evilsocket/islazy/tui"
 )
@@ -20,17 +19,31 @@ func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 	}
 
 	m := make(map[string][]string)
-	for _, a := range dns.Answers {
-		if a.IP == nil {
-			continue
-		}
+	answers := [][]layers.DNSResourceRecord{
+		dns.Answers,
+		dns.Authorities,
+		dns.Additionals,
+	}
 
-		hostname := string(a.Name)
-		if _, found := m[hostname]; !found {
-			m[hostname] = make([]string, 0)
-		}
+	for _, list := range answers {
+		for _, a := range list {
+			if a.IP == nil {
+				continue
+			}
 
-		m[hostname] = append(m[hostname], vIP(a.IP))
+			hostname := string(a.Name)
+			if _, found := m[hostname]; !found {
+				m[hostname] = make([]string, 0)
+			}
+
+			m[hostname] = append(m[hostname], vIP(a.IP))
+		}
+	}
+
+	if len(m) == 0 && dns.ResponseCode != layers.DNSResponseCodeNoErr {
+		for _, a := range dns.Questions {
+			m[string(a.Name)] = []string{tui.Red(dns.ResponseCode.String())}
+		}
 	}
 
 	for hostname, ips := range m {
