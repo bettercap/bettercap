@@ -14,6 +14,7 @@ var tcpParsers = []func(*layers.IPv4, gopacket.Packet, *layers.TCP) bool{
 	ntlmParser,
 	httpParser,
 	ftpParser,
+	teamViewerParser,
 }
 
 func onTCP(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
