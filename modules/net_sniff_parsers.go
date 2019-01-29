@@ -21,6 +21,8 @@ func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 		return
 	} else if httpParser(ip, pkt, tcp) {
 		return
+	} else if ftpParser(ip, pkt, tcp) {
+		return
 	} else if verbose {
 		NewSnifferEvent(
 			pkt.Metadata().Timestamp,
