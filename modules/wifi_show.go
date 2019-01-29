@@ -215,15 +215,11 @@ func (w *WiFiModule) colDecorate(colNames []string, name string, dir string) {
 	}
 }
 
-func (w *WiFiModule) colNames(nrows int, withWPS bool) []string {
+func (w *WiFiModule) colNames(nrows int) []string {
 	columns := []string(nil)
 
 	if !w.isApSelected() {
-		if withWPS {
-			columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "WPS", "Ch", "Clients", "Sent", "Recvd", "Last Seen"}
-		} else {
-			columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "Ch", "Clients", "Sent", "Recvd", "Last Seen"}
-		}
+		columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "WPS", "Ch", "Clients", "Sent", "Recvd", "Last Seen"}
 	} else if nrows > 0 {
 		columns = []string{"RSSI", "MAC", "Ch", "Sent", "Received", "Last Seen"}
 		fmt.Printf("\n%s clients:\n", w.ap.HwAddress)
@@ -263,19 +259,15 @@ func (w *WiFiModule) Show() (err error) {
 		return
 	}
 
-	hasWPS := false
 	rows := make([][]string, 0)
 	for _, s := range stations {
 		if row, include := w.getRow(s); include {
-			if len(s.WPS) > 0 {
-				hasWPS = true
-			}
 			rows = append(rows, row)
 		}
 	}
 	nrows := len(rows)
 	if nrows > 0 {
-		tui.Table(os.Stdout, w.colNames(nrows, hasWPS), rows)
+		tui.Table(os.Stdout, w.colNames(nrows), rows)
 	}
 
 	w.Session.Queue.Stats.RLock()
