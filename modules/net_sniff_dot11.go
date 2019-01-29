@@ -5,7 +5,7 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-func dot11Parser(radiotap *layers.RadioTap, dot11 *layers.Dot11, pkt gopacket.Packet, verbose bool) {
+func onDOT11(radiotap *layers.RadioTap, dot11 *layers.Dot11, pkt gopacket.Packet, verbose bool) {
 	NewSnifferEvent(
 		pkt.Metadata().Timestamp,
 		"802.11",

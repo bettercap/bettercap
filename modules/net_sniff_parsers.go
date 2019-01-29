@@ -12,69 +12,7 @@ import (
 	"github.com/evilsocket/islazy/tui"
 )
 
-func tcpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
-	tcp := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
-
-	if sniParser(ip, pkt, tcp) {
-		return
-	} else if ntlmParser(ip, pkt, tcp) {
-		return
-	} else if httpParser(ip, pkt, tcp) {
-		return
-	} else if ftpParser(ip, pkt, tcp) {
-		return
-	} else if verbose {
-		NewSnifferEvent(
-			pkt.Metadata().Timestamp,
-			"tcp",
-			fmt.Sprintf("%s:%s", ip.SrcIP, vPort(tcp.SrcPort)),
-			fmt.Sprintf("%s:%s", ip.DstIP, vPort(tcp.DstPort)),
-			SniffData{
-				"Size": len(ip.Payload),
-			},
-			"%s %s:%s > %s:%s %s",
-			tui.Wrap(tui.BACKLIGHTBLUE+tui.FOREBLACK, "tcp"),
-			vIP(ip.SrcIP),
-			vPort(tcp.SrcPort),
-			vIP(ip.DstIP),
-			vPort(tcp.DstPort),
-			tui.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
-		).Push()
-	}
-}
-
-func udpParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
-	udp := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
-
-	if dnsParser(ip, pkt, udp) {
-		return
-	} else if mdnsParser(ip, pkt, udp) {
-		return
-	} else if krb5Parser(ip, pkt, udp) {
-		return
-	} else if upnpParser(ip, pkt, udp) {
-		return
-	} else if verbose {
-		NewSnifferEvent(
-			pkt.Metadata().Timestamp,
-			"udp",
-			fmt.Sprintf("%s:%s", ip.SrcIP, vPort(udp.SrcPort)),
-			fmt.Sprintf("%s:%s", ip.DstIP, vPort(udp.DstPort)),
-			SniffData{
-				"Size": len(ip.Payload),
-			},
-			"%s %s:%s > %s:%s %s",
-			tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "udp"),
-			vIP(ip.SrcIP),
-			vPort(udp.SrcPort),
-			vIP(ip.DstIP),
-			vPort(udp.DstPort),
-			tui.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
-		).Push()
-	}
-}
-
-func unkParser(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
+func onUNK(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 	if verbose {
 		NewSnifferEvent(
 			pkt.Metadata().Timestamp,
@@ -113,16 +51,16 @@ func mainParser(pkt gopacket.Packet, verbose bool) bool {
 		}
 
 		if tlayer.LayerType() == layers.LayerTypeTCP {
-			tcpParser(ip, pkt, verbose)
+			onTCP(ip, pkt, verbose)
 		} else if tlayer.LayerType() == layers.LayerTypeUDP {
-			udpParser(ip, pkt, verbose)
+			onUDP(ip, pkt, verbose)
 		} else {
-			unkParser(ip, pkt, verbose)
+			onUNK(ip, pkt, verbose)
 		}
 		return true
 	} else if ok, radiotap, dot11 := packets.Dot11Parse(pkt); ok {
 		// are we sniffing in monitor mode?
-		dot11Parser(radiotap, dot11, pkt, verbose)
+		onDOT11(radiotap, dot11, pkt, verbose)
 		return true
 	}
 	return false
