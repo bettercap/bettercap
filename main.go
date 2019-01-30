@@ -93,14 +93,8 @@ func main() {
 	for sess.Active {
 		line, err := sess.ReadLine()
 		if err != nil {
-			if err == io.EOF {
-				continue
-			} else if err.Error() == "Interrupt" {
-				var ans string
-				fmt.Printf("Are you sure you want to quit this session? y/n ")
-				fmt.Scan(&ans)
-
-				if strings.ToLower(ans) == "y" {
+			if err == io.EOF || err.Error() == "Interrupt" {
+				if exitPrompt() {
 					sess.Run("exit")
 					os.Exit(0)
 				}
@@ -116,4 +110,12 @@ func main() {
 			}
 		}
 	}
+}
+
+func exitPrompt() bool {
+	var ans string
+	fmt.Printf("Are you sure you want to quit this session? y/n ")
+	fmt.Scan(&ans)
+
+	return strings.ToLower(ans) == "y"
 }
