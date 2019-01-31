@@ -63,12 +63,12 @@ func padded(s string, maxLen int, align alignment) string {
 // data.
 func Table(w io.Writer, columns []string, rows [][]string) {
 	for i, col := range columns {
-		columns[i] = fmt.Sprintf(" %s ", col)
+		columns[i] = fmt.Sprintf(" %s", col)
 	}
 
 	for i, row := range rows {
 		for j, cell := range row {
-			rows[i][j] = fmt.Sprintf(" %s ", cell)
+			rows[i][j] = fmt.Sprintf(" %s", cell)
 		}
 	}
 
