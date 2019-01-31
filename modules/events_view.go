@@ -104,10 +104,12 @@ func (s *EventsStream) viewendpointEvent(e session.Event) {
 			tui.Green(t.HwAddress),
 			tui.Dim(vend))
 	} else if e.Tag == "endpoint.lost" {
-		fmt.Fprintf(s.output, "[%s] [%s] endpoint %s%s lost.\n",
+		fmt.Fprintf(s.output, "[%s] [%s] endpoint %s%s %s%s lost.\n",
 			e.Time.Format(eventTimeFormat),
 			tui.Green(e.Tag),
 			tui.Red(t.IpAddress),
+			tui.Dim(name),
+			tui.Green(t.HwAddress),
 			tui.Dim(vend))
 	} else {
 		fmt.Fprintf(s.output, "[%s] [%s] %s\n",
