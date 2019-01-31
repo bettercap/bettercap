@@ -74,7 +74,7 @@ func (s *Session) setupReadline() (err error) {
 	cfg := readline.Config{
 		HistoryFile:     history,
 		InterruptPrompt: "^C",
-		EOFPrompt:       "exit",
+		EOFPrompt:       "^D",
 		AutoComplete:    readline.NewPrefixCompleter(prefixCompleters...),
 	}
 
