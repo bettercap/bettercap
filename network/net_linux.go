@@ -12,7 +12,7 @@ import (
 )
 
 // only matches gateway lines
-var IPv4RouteParser = regexp.MustCompile(`^(default|[0-9\.]+)\svia\s([0-9\.]+)\sdev\s(\w+)(?:\s.*|)$`)
+var IPv4RouteParser = regexp.MustCompile(`^(default|[0-9\.]+)\svia\s([0-9\.]+)\sdev\s([a-z0-9-]+)(?:\s.*|)$`)
 var IPv4RouteTokens = 4
 var IPv4RouteCmd = "ip"
 var IPv4RouteCmdOpts = []string{"route"}
