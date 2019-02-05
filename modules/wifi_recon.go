@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/tui"
 )
 
 var maxStationTTL = 5 * time.Minute
@@ -21,6 +23,13 @@ type WiFiProbe struct {
 	FromAlias  string
 	SSID       string
 	RSSI       int8
+}
+
+type WiFiHandshakeEvent struct {
+	File       string
+	NewPackets int
+	AP         net.HardwareAddr
+	Station    net.HardwareAddr
 }
 
 func (w *WiFiModule) stationPruner() {
@@ -120,4 +129,77 @@ func (w *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Do
 			ap.AddClient(dot11.Address2.String(), int(radiotap.ChannelFrequency), radiotap.DBMAntennaSignal)
 		}
 	})
+}
+
+func allZeros(s []byte) bool {
+	for _, v := range s {
+		if v != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+	if keyLayer := packet.Layer(layers.LayerTypeEAPOLKey); keyLayer != nil {
+		if key := keyLayer.(*layers.EAPOLKey); key.KeyType == layers.EAPOLKeyTypePairwise {
+			staMac := net.HardwareAddr{}
+			apMac := net.HardwareAddr{}
+			if dot11.Flags.FromDS() {
+				staMac = dot11.Address1
+				apMac = dot11.Address2
+			} else if dot11.Flags.ToDS() {
+				staMac = dot11.Address2
+				apMac = dot11.Address1
+			}
+
+			if station, found := w.Session.WiFi.GetClient(staMac.String()); found {
+				// ref. https://wlan1nde.wordpress.com/2014/10/27/4-way-handshake/
+				if !key.Install && key.KeyACK && !key.KeyMIC {
+					// [1] (ACK) AP is sending ANonce to the client
+					log.Debug("[%s] got frame 1/4 of the %s <-> %s handshake (anonce:%x)",
+						tui.Green("wifi"),
+						apMac,
+						staMac,
+						key.Nonce)
+					station.Handshake.AddFrame(0, packet)
+				} else if !key.Install && !key.KeyACK && key.KeyMIC && !allZeros(key.Nonce) {
+					// [2] (MIC) client is sending SNonce+MIC to the API
+					log.Debug("[%s] got frame 2/4 of the %s <-> %s handshake (snonce:%x mic:%x)",
+						tui.Green("wifi"),
+						apMac,
+						staMac,
+						key.Nonce,
+						key.MIC)
+					station.Handshake.AddFrame(1, packet)
+				} else if key.Install && key.KeyACK && key.KeyMIC {
+					// [3]: (INSTALL+ACK+MIC) AP informs the client that the PTK is installed
+					log.Debug("[%s] got frame 3/4 of the %s <-> %s handshake (mic:%x)",
+						tui.Green("wifi"),
+						apMac,
+						staMac,
+						key.MIC)
+					station.Handshake.AddFrame(2, packet)
+				}
+
+				numUnsaved := station.Handshake.NumUnsaved()
+				doSave := numUnsaved > 0
+				if doSave && w.shakesFile != "" {
+					log.Debug("saving handshake frames to %s", w.shakesFile)
+					if err := w.Session.WiFi.SaveHandshakesTo(w.shakesFile, w.handle.LinkType()); err != nil {
+						log.Error("error while saving handshake frames to %s: %s", w.shakesFile, err)
+					}
+				}
+
+				if doSave && station.Handshake.Complete() {
+					w.Session.Events.Add("wifi.client.handshake", WiFiHandshakeEvent{
+						File:       w.shakesFile,
+						NewPackets: numUnsaved,
+						AP:         apMac,
+						Station:    staMac,
+					})
+				}
+			}
+		}
+	}
 }

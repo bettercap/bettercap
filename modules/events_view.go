@@ -77,6 +77,19 @@ func (s *EventsStream) viewWiFiEvent(e session.Event) {
 			tui.Dim(desc),
 			tui.Bold(probe.SSID),
 			tui.Yellow(rssi))
+	} else if e.Tag == "wifi.client.handshake" {
+		hand := e.Data.(WiFiHandshakeEvent)
+		ss := "s"
+		if hand.NewPackets == 1 {
+			ss = ""
+		}
+		fmt.Fprintf(s.output, "[%s] [%s] captured a full handshake for station %s and AP %s (saved %d new packet%s to %s)\n",
+			e.Time.Format(eventTimeFormat),
+			tui.Green(e.Tag),
+			hand.Station.String(),
+			hand.AP.String(),
+			hand.NewPackets, ss,
+			hand.File)
 	}
 }
 

@@ -48,11 +48,20 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 	if len(station.Cipher) > 0 {
 		encryption = fmt.Sprintf("%s (%s, %s)", station.Encryption, station.Cipher, station.Authentication)
 	}
+
 	if encryption == "OPEN" || encryption == "" {
 		encryption = tui.Green("OPEN")
 		ssid = tui.Green(ssid)
 		bssid = tui.Green(bssid)
+	} else {
+		// this is ugly, but necessary in order to have this
+		// method handle both access point and clients
+		// transparently
+		if ap, found := w.Session.WiFi.Get(station.HwAddress); found && ap.HasHandshakes() {
+			encryption = tui.Red(encryption)
+		}
 	}
+
 	sent := ""
 	if station.Sent > 0 {
 		sent = humanize.Bytes(station.Sent)
@@ -318,7 +327,7 @@ func (w *WiFiModule) ShowWPS(bssid string) (err error) {
 		fmt.Println()
 		fmt.Printf("* %s (%s ch:%d):\n", tui.Bold(ssid), tui.Dim(station.BSSID()), station.Channel())
 		keys := []string{}
-		for name, _ := range station.WPS {
+		for name := range station.WPS {
 			keys = append(keys, name)
 		}
 		sort.Strings(keys)

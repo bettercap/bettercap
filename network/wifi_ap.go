@@ -96,3 +96,16 @@ func (ap *AccessPoint) Clients() (list []*Station) {
 	}
 	return
 }
+
+func (ap *AccessPoint) HasHandshakes() bool {
+	ap.Lock()
+	defer ap.Unlock()
+
+	for _, c := range ap.clients {
+		if c.Handshake.Complete() {
+			return true
+		}
+	}
+
+	return false
+}

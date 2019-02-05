@@ -2,9 +2,16 @@ package network
 
 import (
 	"encoding/json"
+	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcapgo"
+
+	"github.com/evilsocket/islazy/fs"
 )
 
 func Dot11Freq2Chan(freq int) int {
@@ -172,5 +179,39 @@ func (w *WiFi) GetClient(mac string) (*Station, bool) {
 
 func (w *WiFi) Clear() error {
 	w.aps = make(map[string]*AccessPoint)
+	return nil
+}
+
+func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error {
+	w.Lock()
+	defer w.Unlock()
+
+	doHead := !fs.Exists(fileName)
+
+	fp, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	writer := pcapgo.NewWriter(fp)
+
+	if doHead {
+		if err = writer.WriteFileHeader(65536, linkType); err != nil {
+			return err
+		}
+	}
+
+	for _, ap := range w.aps {
+		for _, station := range ap.Clients() {
+			station.Handshake.EachUnsavedPacket(func(pkt gopacket.Packet) {
+				err = writer.WritePacket(pkt.Metadata().CaptureInfo, pkt.Data())
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }

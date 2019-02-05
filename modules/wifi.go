@@ -17,6 +17,7 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 
+	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/tui"
 )
 
@@ -35,6 +36,7 @@ type WiFiModule struct {
 	pktSourceChanClosed bool
 	deauthSkip          []net.HardwareAddr
 	deauthSilent        bool
+	shakesFile          string
 	apRunning           bool
 	apConfig            packets.Dot11ApConfig
 	writes              *sync.WaitGroup
@@ -122,6 +124,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				return w.startAp()
 			}
 		}))
+
+	w.AddParam(session.NewStringParameter("wifi.handshakes.file",
+		"~/bettercap-wifi-handshakes.pcap",
+		"",
+		"File path of the pcap file to save handshakes to."))
 
 	w.AddParam(session.NewStringParameter("wifi.ap.ssid",
 		"FreeWiFi",
@@ -219,6 +226,14 @@ func (w *WiFiModule) Configure() error {
 
 	if err, w.source = w.StringParam("wifi.source.file"); err != nil {
 		return err
+	}
+
+	if err, w.shakesFile = w.StringParam("wifi.handshakes.file"); err != nil {
+		return err
+	} else if w.shakesFile != "" {
+		if w.shakesFile, err = fs.Expand(w.shakesFile); err != nil {
+			return err
+		}
 	}
 
 	if w.source != "" {
@@ -353,6 +368,7 @@ func (w *WiFiModule) Start() error {
 				w.discoverProbes(radiotap, dot11, packet)
 				w.discoverAccessPoints(radiotap, dot11, packet)
 				w.discoverClients(radiotap, dot11, packet)
+				w.discoverHandshakes(radiotap, dot11, packet)
 				w.updateInfo(dot11, packet)
 				w.updateStats(dot11, packet)
 			}

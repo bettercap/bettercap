@@ -37,83 +37,83 @@ var (
 	}
 
 	wpsDeviceTypes = map[uint16]wpsDevType{
-		0x0001: wpsDevType{"Computer", map[uint16]string{
+		0x0001: {"Computer", map[uint16]string{
 			0x0001: "PC",
 			0x0002: "Server",
 			0x0003: "Media Center",
 		}},
-		0x0002: wpsDevType{"Input Device", map[uint16]string{}},
-		0x0003: wpsDevType{"Printers, Scanners, Faxes and Copiers", map[uint16]string{
+		0x0002: {"Input Device", map[uint16]string{}},
+		0x0003: {"Printers, Scanners, Faxes and Copiers", map[uint16]string{
 			0x0001: "Printer",
 			0x0002: "Scanner",
 		}},
-		0x0004: wpsDevType{"Camera", map[uint16]string{
+		0x0004: {"Camera", map[uint16]string{
 			0x0001: "Digital Still Camera",
 		}},
-		0x0005: wpsDevType{"Storage", map[uint16]string{
+		0x0005: {"Storage", map[uint16]string{
 			0x0001: "NAS",
 		}},
-		0x0006: wpsDevType{"Network Infra", map[uint16]string{
+		0x0006: {"Network Infra", map[uint16]string{
 			0x0001: "AP",
 			0x0002: "Router",
 			0x0003: "Switch",
 		}},
 
-		0x0007: wpsDevType{"Display", map[uint16]string{
+		0x0007: {"Display", map[uint16]string{
 			0x0001: "TV",
 			0x0002: "Electronic Picture Frame",
 			0x0003: "Projector",
 		}},
 
-		0x0008: wpsDevType{"Multimedia Device", map[uint16]string{
+		0x0008: {"Multimedia Device", map[uint16]string{
 			0x0001: "DAR",
 			0x0002: "PVR",
 			0x0003: "MCX",
 		}},
 
-		0x0009: wpsDevType{"Gaming Device", map[uint16]string{
+		0x0009: {"Gaming Device", map[uint16]string{
 			0x0001: "XBox",
 			0x0002: "XBox360",
 			0x0003: "Playstation",
 		}},
-		0x000F: wpsDevType{"Telephone", map[uint16]string{
+		0x000F: {"Telephone", map[uint16]string{
 			0x0001: "Windows Mobile",
 		}},
 	}
 
 	wpsAttributes = map[uint16]wpsAttr{
-		0x104A: wpsAttr{Name: "Version", Desc: wpsVersionDesc},
-		0x1044: wpsAttr{Name: "State", Desc: map[string]string{
+		0x104A: {Name: "Version", Desc: wpsVersionDesc},
+		0x1044: {Name: "State", Desc: map[string]string{
 			"01": "Not Configured",
 			"02": "Configured",
 		}},
-		0x1012: wpsAttr{Name: "Device Password ID", Desc: map[string]string{
+		0x1012: {Name: "Device Password ID", Desc: map[string]string{
 			"0000": "Pin",
 			"0004": "PushButton",
 		}},
-		0x103B: wpsAttr{Name: "Response Type", Desc: map[string]string{
+		0x103B: {Name: "Response Type", Desc: map[string]string{
 			"00": "Enrollee Info",
 			"01": "Enrollee",
 			"02": "Registrar",
 			"03": "AP",
 		}},
 
-		0x1054: wpsAttr{Name: "Primary Device Type", Func: dot11ParseWPSDeviceType},
-		0x1049: wpsAttr{Name: "Vendor Extension", Func: dot11ParseWPSVendorExtension},
-		0x1053: wpsAttr{Name: "Selected Registrar Config Methods", Func: dot11ParseWPSConfigMethods},
-		0x1008: wpsAttr{Name: "Config Methods", Func: dot11ParseWPSConfigMethods},
-		0x103C: wpsAttr{Name: "RF Bands", Func: dott11ParseWPSBands},
+		0x1054: {Name: "Primary Device Type", Func: dot11ParseWPSDeviceType},
+		0x1049: {Name: "Vendor Extension", Func: dot11ParseWPSVendorExtension},
+		0x1053: {Name: "Selected Registrar Config Methods", Func: dot11ParseWPSConfigMethods},
+		0x1008: {Name: "Config Methods", Func: dot11ParseWPSConfigMethods},
+		0x103C: {Name: "RF Bands", Func: dott11ParseWPSBands},
 
-		0x1057: wpsAttr{Name: "AP Setup Locked"},
-		0x1041: wpsAttr{Name: "Selected Registrar"},
-		0x1047: wpsAttr{Name: "UUID-E"},
-		0x1021: wpsAttr{Name: "Manufacturer", Type: wpsStr},
-		0x1023: wpsAttr{Name: "Model Name", Type: wpsStr},
-		0x1024: wpsAttr{Name: "Model Number", Type: wpsStr},
-		0x1042: wpsAttr{Name: "Serial Number", Type: wpsStr},
-		0x1011: wpsAttr{Name: "Device Name", Type: wpsStr},
-		0x1045: wpsAttr{Name: "SSID", Type: wpsStr},
-		0x102D: wpsAttr{Name: "OS Version", Type: wpsStr},
+		0x1057: {Name: "AP Setup Locked"},
+		0x1041: {Name: "Selected Registrar"},
+		0x1047: {Name: "UUID-E"},
+		0x1021: {Name: "Manufacturer", Type: wpsStr},
+		0x1023: {Name: "Model Name", Type: wpsStr},
+		0x1024: {Name: "Model Number", Type: wpsStr},
+		0x1042: {Name: "Serial Number", Type: wpsStr},
+		0x1011: {Name: "Device Name", Type: wpsStr},
+		0x1045: {Name: "SSID", Type: wpsStr},
+		0x102D: {Name: "OS Version", Type: wpsStr},
 	}
 
 	wpsConfigs = map[uint16]string{
