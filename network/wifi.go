@@ -182,6 +182,22 @@ func (w *WiFi) Clear() error {
 	return nil
 }
 
+func (w *WiFi) NumHandshakes() int {
+	w.Lock()
+	defer w.Unlock()
+
+	sum := 0
+	for _, ap := range w.aps {
+		for _, station := range ap.Clients() {
+			if station.Handshake.Complete() {
+				sum++
+			}
+		}
+	}
+
+	return sum
+}
+
 func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error {
 	w.Lock()
 	defer w.Unlock()
