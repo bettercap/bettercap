@@ -227,7 +227,11 @@ func (s *Session) Start() error {
 	}
 
 	if s.Gateway, err = network.FindGateway(s.Interface); err != nil {
-		s.Events.Log(log.WARNING, "%s", err.Error())
+		level := log.WARNING
+		if s.Interface.IsMonitor() {
+			level = log.DEBUG
+		}
+		s.Events.Log(level, "%s", err.Error())
 	}
 
 	if s.Gateway == nil || s.Gateway.IpAddress == s.Interface.IpAddress {

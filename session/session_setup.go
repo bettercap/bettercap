@@ -131,7 +131,11 @@ func (s *Session) setupEnv() {
 	s.Env.Set("gateway.mac", s.Gateway.HwAddress)
 
 	if found, v := s.Env.Get(PromptVariable); !found || v == "" {
-		s.Env.Set(PromptVariable, DefaultPrompt)
+		if s.Interface.IsMonitor() {
+			s.Env.Set(PromptVariable, DefaultPromptMonitor)
+		} else {
+			s.Env.Set(PromptVariable, DefaultPrompt)
+		}
 	}
 
 	dbg := "false"

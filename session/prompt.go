@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	PromptVariable = "$"
-	DefaultPrompt  = "{by}{fw}{cidr} {fb}> {env.iface.ipv4} {reset} {bold}» {reset}"
+	PromptVariable       = "$"
+	DefaultPrompt        = "{by}{fw}{cidr} {fb}> {env.iface.ipv4} {reset} {bold}» {reset}"
+	DefaultPromptMonitor = "{by}{fb} {env.iface.name} {reset} {bold}» {reset}"
 )
 
 var (
