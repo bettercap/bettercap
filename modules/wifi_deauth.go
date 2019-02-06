@@ -136,7 +136,7 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 				}
 
 				if ap.IsOpen() && !w.doDeauthOpen() {
-					logger("skipping deauth for open network %s (wifi.deauth.open is false)", ap.ESSID())
+					log.Debug("skipping deauth for open network %s (wifi.deauth.open is false)", ap.ESSID())
 				} else {
 					logger("deauthing client %s from AP %s (channel:%d encryption:%s)", client.String(), ap.ESSID(), ap.Channel(), ap.Encryption)
 

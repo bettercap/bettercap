@@ -181,7 +181,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			freqs := []int{}
 
 			if args[0] != "clear" {
-				log.Info("setting hopping channels to %s", args[0])
+				log.Debug("setting hopping channels to %s", args[0])
 				for _, s := range str.Comma(args[0]) {
 					if ch, err := strconv.Atoi(s); err != nil {
 						return err
@@ -192,7 +192,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			}
 
 			if len(freqs) == 0 {
-				log.Info("resetting hopping channels")
+				log.Debug("resetting hopping channels")
 				if freqs, err = network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
 					return err
 				}
