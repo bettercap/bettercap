@@ -25,75 +25,7 @@ func (s *EventsStream) viewLogEvent(e session.Event) {
 		e.Data.(session.LogMessage).Message)
 }
 
-func (s *EventsStream) viewWiFiEvent(e session.Event) {
-	if strings.HasPrefix(e.Tag, "wifi.ap.") {
-		ap := e.Data.(*network.AccessPoint)
-		vend := ""
-		if ap.Vendor != "" {
-			vend = fmt.Sprintf(" (%s)", ap.Vendor)
-		}
-		rssi := ""
-		if ap.RSSI != 0 {
-			rssi = fmt.Sprintf(" (%d dBm)", ap.RSSI)
-		}
-
-		if e.Tag == "wifi.ap.new" {
-			fmt.Fprintf(s.output, "[%s] [%s] wifi access point %s%s detected as %s%s.\n",
-				e.Time.Format(eventTimeFormat),
-				tui.Green(e.Tag),
-				tui.Bold(ap.ESSID()),
-				tui.Dim(tui.Yellow(rssi)),
-				tui.Green(ap.BSSID()),
-				tui.Dim(vend))
-		} else if e.Tag == "wifi.ap.lost" {
-			fmt.Fprintf(s.output, "[%s] [%s] wifi access point %s (%s) lost.\n",
-				e.Time.Format(eventTimeFormat),
-				tui.Green(e.Tag),
-				tui.Red(ap.ESSID()),
-				ap.BSSID())
-		} else {
-			fmt.Fprintf(s.output, "[%s] [%s] %s\n",
-				e.Time.Format(eventTimeFormat),
-				tui.Green(e.Tag),
-				ap.String())
-		}
-	} else if e.Tag == "wifi.client.probe" {
-		probe := e.Data.(WiFiProbe)
-		desc := ""
-		if probe.FromAlias != "" {
-			desc = fmt.Sprintf(" (%s)", probe.FromAlias)
-		} else if probe.FromVendor != "" {
-			desc = fmt.Sprintf(" (%s)", probe.FromVendor)
-		}
-		rssi := ""
-		if probe.RSSI != 0 {
-			rssi = fmt.Sprintf(" (%d dBm)", probe.RSSI)
-		}
-
-		fmt.Fprintf(s.output, "[%s] [%s] station %s%s is probing for SSID %s%s\n",
-			e.Time.Format(eventTimeFormat),
-			tui.Green(e.Tag),
-			probe.FromAddr.String(),
-			tui.Dim(desc),
-			tui.Bold(probe.SSID),
-			tui.Yellow(rssi))
-	} else if e.Tag == "wifi.client.handshake" {
-		hand := e.Data.(WiFiHandshakeEvent)
-		ss := "s"
-		if hand.NewPackets == 1 {
-			ss = ""
-		}
-		fmt.Fprintf(s.output, "[%s] [%s] captured handshake for %s->%s (saved %d new packet%s to %s)\n",
-			e.Time.Format(eventTimeFormat),
-			tui.Green(e.Tag),
-			hand.Station.String(),
-			hand.AP.String(),
-			hand.NewPackets, ss,
-			hand.File)
-	}
-}
-
-func (s *EventsStream) viewendpointEvent(e session.Event) {
+func (s *EventsStream) viewEndpointEvent(e session.Event) {
 	t := e.Data.(*network.Endpoint)
 	vend := ""
 	name := ""
@@ -220,7 +152,7 @@ func (s *EventsStream) View(e session.Event, refresh bool) {
 	if e.Tag == "sys.log" {
 		s.viewLogEvent(e)
 	} else if strings.HasPrefix(e.Tag, "endpoint.") {
-		s.viewendpointEvent(e)
+		s.viewEndpointEvent(e)
 	} else if strings.HasPrefix(e.Tag, "wifi.") {
 		s.viewWiFiEvent(e)
 	} else if strings.HasPrefix(e.Tag, "ble.") {
