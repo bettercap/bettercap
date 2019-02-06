@@ -59,7 +59,7 @@ func (ap *AccessPoint) RemoveClient(mac string) {
 	}
 }
 
-func (ap *AccessPoint) AddClient(bssid string, frequency int, rssi int8) *Station {
+func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8) (*Station, bool) {
 	ap.Lock()
 	defer ap.Unlock()
 
@@ -71,13 +71,13 @@ func (ap *AccessPoint) AddClient(bssid string, frequency int, rssi int8) *Statio
 		s.RSSI = rssi
 		s.LastSeen = time.Now()
 
-		return s
+		return s, false
 	}
 
 	s := NewStation("", bssid, frequency, rssi)
 	ap.clients[bssid] = s
 
-	return s
+	return s, true
 }
 
 func (ap *AccessPoint) NumClients() int {

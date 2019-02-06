@@ -17,32 +17,17 @@ import (
 
 var maxStationTTL = 5 * time.Minute
 
-type WiFiProbe struct {
-	FromAddr   net.HardwareAddr
-	FromVendor string
-	FromAlias  string
-	SSID       string
-	RSSI       int8
-}
-
-type WiFiHandshakeEvent struct {
-	File       string
-	NewPackets int
-	AP         net.HardwareAddr
-	Station    net.HardwareAddr
-}
-
 func (w *WiFiModule) stationPruner() {
 	w.reads.Add(1)
 	defer w.reads.Done()
 
-	log.Debug("WiFi stations pruner started.")
+	log.Debug("wifi stations pruner started.")
 	for w.Running() {
 		// loop every AP
 		for _, ap := range w.Session.WiFi.List() {
 			sinceLastSeen := time.Since(ap.LastSeen)
 			if sinceLastSeen > maxStationTTL {
-				log.Debug("Station %s not seen in %s, removing.", ap.BSSID(), sinceLastSeen)
+				log.Debug("station %s not seen in %s, removing.", ap.BSSID(), sinceLastSeen)
 				w.Session.WiFi.Remove(ap.BSSID())
 				continue
 			}
@@ -50,8 +35,13 @@ func (w *WiFiModule) stationPruner() {
 			for _, c := range ap.Clients() {
 				sinceLastSeen := time.Since(c.LastSeen)
 				if sinceLastSeen > maxStationTTL {
-					log.Debug("Client %s of station %s not seen in %s, removing.", c.String(), ap.BSSID(), sinceLastSeen)
+					log.Debug("client %s of station %s not seen in %s, removing.", c.String(), ap.BSSID(), sinceLastSeen)
 					ap.RemoveClient(c.BSSID())
+
+					w.Session.Events.Add("wifi.client.lost", WiFiClientEvent{
+						AP:     ap,
+						Client: c,
+					})
 				}
 			}
 		}
@@ -117,7 +107,7 @@ func (w *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot
 		return
 	}
 
-	w.Session.Events.Add("wifi.client.probe", WiFiProbe{
+	w.Session.Events.Add("wifi.client.probe", WiFiProbeEvent{
 		FromAddr:   dot11.Address2,
 		FromVendor: network.ManufLookup(dot11.Address2.String()),
 		FromAlias:  w.Session.Lan.GetAlias(dot11.Address2.String()),
@@ -130,7 +120,16 @@ func (w *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Do
 	w.Session.WiFi.EachAccessPoint(func(bssid string, ap *network.AccessPoint) {
 		// packet going to this specific BSSID?
 		if packets.Dot11IsDataFor(dot11, ap.HW) {
-			ap.AddClient(dot11.Address2.String(), int(radiotap.ChannelFrequency), radiotap.DBMAntennaSignal)
+			bssid := dot11.Address2.String()
+			freq := int(radiotap.ChannelFrequency)
+			rssi := radiotap.DBMAntennaSignal
+
+			if station, isNew := ap.AddClientIfNew(bssid, freq, rssi); isNew {
+				w.Session.Events.Add("wifi.client.new", WiFiClientEvent{
+					AP:     ap,
+					Client: station,
+				})
+			}
 		}
 	})
 }

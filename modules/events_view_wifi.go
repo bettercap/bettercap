@@ -44,7 +44,7 @@ func (s *EventsStream) viewWiFiApEvent(e session.Event) {
 }
 
 func (s *EventsStream) viewWiFiClientProbeEvent(e session.Event) {
-	probe := e.Data.(WiFiProbe)
+	probe := e.Data.(WiFiProbeEvent)
 	desc := ""
 	if probe.FromAlias != "" {
 		desc = fmt.Sprintf(" (%s)", probe.FromAlias)
@@ -86,6 +86,25 @@ func (s *EventsStream) viewWiFiHandshakeEvent(e session.Event) {
 		hand.File)
 }
 
+func (s *EventsStream) viewWiFiClientEvent(e session.Event) {
+	ce := e.Data.(WiFiClientEvent)
+	if e.Tag == "wifi.client.new" {
+		fmt.Fprintf(s.output, "[%s] [%s] new wifi client %s detected for %s (%s)\n",
+			e.Time.Format(eventTimeFormat),
+			tui.Green(e.Tag),
+			ce.Client.BSSID(),
+			tui.Bold(ce.AP.ESSID()),
+			tui.Dim(ce.AP.BSSID()))
+	} else if e.Tag == "wifi.client.lost" {
+		fmt.Fprintf(s.output, "[%s] [%s] wifi client %s disconnected from %s (%s)\n",
+			e.Time.Format(eventTimeFormat),
+			tui.Green(e.Tag),
+			ce.Client.BSSID(),
+			tui.Bold(ce.AP.ESSID()),
+			tui.Dim(ce.AP.BSSID()))
+	}
+}
+
 func (s *EventsStream) viewWiFiEvent(e session.Event) {
 	if strings.HasPrefix(e.Tag, "wifi.ap.") {
 		s.viewWiFiApEvent(e)
@@ -93,5 +112,9 @@ func (s *EventsStream) viewWiFiEvent(e session.Event) {
 		s.viewWiFiClientProbeEvent(e)
 	} else if e.Tag == "wifi.client.handshake" {
 		s.viewWiFiHandshakeEvent(e)
+	} else if e.Tag == "wifi.client.new" || e.Tag == "wifi.client.lost" {
+		s.viewWiFiClientEvent(e)
+	} else {
+		fmt.Fprintf(s.output, "[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), tui.Green(e.Tag), e)
 	}
 }
