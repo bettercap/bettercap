@@ -8,6 +8,7 @@ import (
 type Handshake struct {
 	sync.Mutex
 
+	Beacon        gopacket.Packet
 	Challenges    []gopacket.Packet
 	Responses     []gopacket.Packet
 	Confirmations []gopacket.Packet
@@ -20,6 +21,16 @@ func NewHandshake() *Handshake {
 		Responses:     make([]gopacket.Packet, 0),
 		Confirmations: make([]gopacket.Packet, 0),
 		unsaved:       make([]gopacket.Packet, 0),
+	}
+}
+
+func (h *Handshake) SetBeacon(pkt gopacket.Packet) {
+	h.Lock()
+	defer h.Unlock()
+
+	if h.Beacon == nil {
+		h.Beacon = pkt
+		h.unsaved = append(h.unsaved, pkt)
 	}
 }
 

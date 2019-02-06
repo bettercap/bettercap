@@ -97,6 +97,15 @@ func (ap *AccessPoint) Clients() (list []*Station) {
 	return
 }
 
+func (ap *AccessPoint) EachClient(cb func(mac string, station *Station)) {
+	ap.Lock()
+	defer ap.Unlock()
+
+	for m, station := range ap.clients {
+		cb(m, station)
+	}
+}
+
 func (ap *AccessPoint) NumHandshakes() int {
 	ap.Lock()
 	defer ap.Unlock()

@@ -129,7 +129,7 @@ func isBogusMacESSID(essid string) bool {
 	return false
 }
 
-func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) *AccessPoint {
+func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) (*AccessPoint, bool) {
 	w.Lock()
 	defer w.Unlock()
 
@@ -141,7 +141,7 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) *AccessPoint
 		if !isBogusMacESSID(ssid) {
 			ap.Hostname = ssid
 		}
-		return ap
+		return ap, false
 	}
 
 	newAp := NewAccessPoint(ssid, mac, frequency, rssi)
@@ -151,7 +151,7 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) *AccessPoint
 		w.newCb(newAp)
 	}
 
-	return nil
+	return newAp, true
 }
 
 func (w *WiFi) Get(mac string) (*AccessPoint, bool) {

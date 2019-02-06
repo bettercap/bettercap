@@ -79,7 +79,11 @@ func (w *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *laye
 				frequency = int(radiotap.ChannelFrequency)
 			}
 
-			w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal)
+			if ap, isNew := w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal); !isNew {
+				ap.EachClient(func(mac string, station *network.Station) {
+					station.Handshake.SetBeacon(packet)
+				})
+			}
 		}
 	}
 }
