@@ -59,6 +59,15 @@ func (w *WiFiModule) isDeauthSilent() bool {
 	return w.deauthSilent
 }
 
+func (w *WiFiModule) doDeauthOpen() bool {
+	if err, is := w.BoolParam("wifi.deauth.open"); err != nil {
+		log.Warning("%v", err)
+	} else {
+		w.deauthOpen = is
+	}
+	return w.deauthOpen
+}
+
 func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	// parse skip list
 	if err, deauthSkip := w.StringParam("wifi.deauth.skip"); err != nil {
@@ -121,12 +130,17 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 			client := deauth.Client
 			ap := deauth.Ap
 			if w.Running() {
-				if !w.isDeauthSilent() {
-					log.Info("deauthing client %s from AP %s (channel %d)", client.String(), ap.ESSID(), ap.Channel())
+				if ap.IsOpen() && !w.doDeauthOpen() {
+					log.Debug("skipping deauth for open network %s", ap.ESSID())
+				} else {
+					if !w.isDeauthSilent() {
+						log.Info("deauthing client %s from AP %s (channel %d)", client.String(), ap.ESSID(), ap.Channel())
+					}
+
+					w.onChannel(ap.Channel(), func() {
+						w.sendDeauthPacket(ap.HW, client.HW)
+					})
 				}
-				w.onChannel(ap.Channel(), func() {
-					w.sendDeauthPacket(ap.HW, client.HW)
-				})
 			}
 		}
 	}()

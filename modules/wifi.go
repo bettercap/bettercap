@@ -36,6 +36,7 @@ type WiFiModule struct {
 	pktSourceChanClosed bool
 	deauthSkip          []net.HardwareAddr
 	deauthSilent        bool
+	deauthOpen          bool
 	shakesFile          string
 	apRunning           bool
 	apConfig            packets.Dot11ApConfig
@@ -114,6 +115,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	w.AddParam(session.NewBoolParameter("wifi.deauth.silent",
 		"false",
 		"If true, messages from wifi.deauth will be suppressed."))
+
+	w.AddParam(session.NewBoolParameter("wifi.deauth.open",
+		"true",
+		"Send wifi deauth packets to open networks."))
 
 	w.AddHandler(session.NewModuleHandler("wifi.ap", "",
 		"Inject fake management beacons in order to create a rogue access point.",

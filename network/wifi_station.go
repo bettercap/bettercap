@@ -55,3 +55,7 @@ func (s *Station) Channel() int {
 func (s *Station) HasWPS() bool {
 	return len(s.WPS) > 0
 }
+
+func (s *Station) IsOpen() bool {
+	return s.Encryption == ""
+}
