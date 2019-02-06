@@ -1,5 +1,5 @@
 name: bettercap
-version: '2.13.1'
+version: '2.14'
 summary: 802.11, BLE and Ethernet networks reconnaissance and MITM attacks tool.
 description: |
   The Swiss Army knife for 802.11, BLE and Ethernet networks reconnaissance and MITM attacks.
