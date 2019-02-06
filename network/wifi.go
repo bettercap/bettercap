@@ -220,11 +220,16 @@ func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error
 
 	for _, ap := range w.aps {
 		for _, station := range ap.Clients() {
-			station.Handshake.EachUnsavedPacket(func(pkt gopacket.Packet) {
-				err = writer.WritePacket(pkt.Metadata().CaptureInfo, pkt.Data())
-			})
-			if err != nil {
-				return err
+			if station.Handshake.Complete() {
+				err = nil
+				station.Handshake.EachUnsavedPacket(func(pkt gopacket.Packet) {
+					if err == nil {
+						err = writer.WritePacket(pkt.Metadata().CaptureInfo, pkt.Data())
+					}
+				})
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
