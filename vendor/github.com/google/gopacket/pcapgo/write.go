@@ -4,8 +4,6 @@
 // that can be found in the LICENSE file in the root of the source
 // tree.
 
-// Package pcapgo provides some native PCAP support, not requiring
-// C libpcap to be installed.
 package pcapgo
 
 import (

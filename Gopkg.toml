@@ -57,7 +57,7 @@
 
 [[constraint]]
   name = "github.com/google/gopacket"
-  revision = "d67ddb98d5a1b7c79a8977ec2d552e1db45eda86"
+  revision = "v1.1.16"
 
 [[constraint]]
   name = "github.com/gorilla/mux"

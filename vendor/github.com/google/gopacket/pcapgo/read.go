@@ -15,6 +15,7 @@ import (
 
 	"bufio"
 	"compress/gzip"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 )
@@ -40,6 +41,8 @@ type Reader struct {
 	linkType layers.LinkType
 	// reusable buffer
 	buf [16]byte
+	// buffer for ZeroCopyReadPacketData
+	packetBuf []byte
 }
 
 const magicNanoseconds = 0xA1B23C4D
@@ -121,10 +124,44 @@ func (r *Reader) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err err
 		return
 	}
 	if ci.CaptureLength > int(r.snaplen) {
-		err = fmt.Errorf("capture length exceeds snap length: %d > %d", 16+ci.CaptureLength, r.snaplen)
+		err = fmt.Errorf("capture length exceeds snap length: %d > %d", ci.CaptureLength, r.snaplen)
+		return
+	}
+	if ci.CaptureLength > ci.Length {
+		err = fmt.Errorf("capture length exceeds original packet length: %d > %d", ci.CaptureLength, ci.Length)
 		return
 	}
 	data = make([]byte, ci.CaptureLength)
+	_, err = io.ReadFull(r.r, data)
+	return data, ci, err
+}
+
+// ZeroCopyReadPacketData reads next packet from file. The data buffer is owned by the Reader,
+// and each call to ZeroCopyReadPacketData invalidates data returned by the previous one.
+//
+// It is not true zero copy, as data is still copied from the underlying reader. However,
+// this method avoids allocating heap memory for every packet.
+func (r *Reader) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
+	if ci, err = r.readPacketHeader(); err != nil {
+		return
+	}
+	if ci.CaptureLength > int(r.snaplen) {
+		err = fmt.Errorf("capture length exceeds snap length: %d > %d", ci.CaptureLength, r.snaplen)
+		return
+	}
+	if ci.CaptureLength > ci.Length {
+		err = fmt.Errorf("capture length exceeds original packet length: %d > %d", ci.CaptureLength, ci.Length)
+		return
+	}
+
+	if cap(r.packetBuf) < ci.CaptureLength {
+		snaplen := int(r.snaplen)
+		if snaplen < ci.CaptureLength {
+			snaplen = ci.CaptureLength
+		}
+		r.packetBuf = make([]byte, snaplen)
+	}
+	data = r.packetBuf[:ci.CaptureLength]
 	_, err = io.ReadFull(r.r, data)
 	return data, ci, err
 }
@@ -183,4 +220,12 @@ func (r *Reader) SetSnaplen(newSnaplen uint32) {
 // Reader formater
 func (r *Reader) String() string {
 	return fmt.Sprintf("PcapFile  maj: %x min: %x snaplen: %d linktype: %s", r.versionMajor, r.versionMinor, r.snaplen, r.linkType)
+}
+
+// Resolution returns the timestamp resolution of acquired timestamps before scaling to NanosecondTimestampResolution.
+func (r *Reader) Resolution() gopacket.TimestampResolution {
+	if r.nanoSecsFactor == 1 {
+		return gopacket.TimestampResolutionMicrosecond
+	}
+	return gopacket.TimestampResolutionNanosecond
 }

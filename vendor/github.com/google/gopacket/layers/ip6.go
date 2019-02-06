@@ -219,6 +219,10 @@ func (ipv6 *IPv6) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.Serializ
 
 // DecodeFromBytes implementation according to gopacket.DecodingLayer
 func (ipv6 *IPv6) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	if len(data) < 40 {
+		df.SetTruncated()
+		return fmt.Errorf("Invalid ip6 header. Length %d less than 40", len(data))
+	}
 	ipv6.Version = uint8(data[0]) >> 4
 	ipv6.TrafficClass = uint8((binary.BigEndian.Uint16(data[0:2]) >> 4) & 0x00FF)
 	ipv6.FlowLabel = binary.BigEndian.Uint32(data[0:4]) & 0x000FFFFF
@@ -403,10 +407,17 @@ type ipv6ExtensionBase struct {
 	ActualLength int
 }
 
-func decodeIPv6ExtensionBase(data []byte) (i ipv6ExtensionBase) {
+func decodeIPv6ExtensionBase(data []byte, df gopacket.DecodeFeedback) (i ipv6ExtensionBase, returnedErr error) {
+	if len(data) < 2 {
+		df.SetTruncated()
+		return ipv6ExtensionBase{}, fmt.Errorf("Invalid ip6-extension header. Length %d less than 2", len(data))
+	}
 	i.NextHeader = IPProtocol(data[0])
 	i.HeaderLength = data[1]
 	i.ActualLength = int(i.HeaderLength)*8 + 8
+	if len(data) < i.ActualLength {
+		return ipv6ExtensionBase{}, fmt.Errorf("Invalid ip6-extension header. Length %d less than specified length %d", len(data), i.ActualLength)
+	}
 	i.Contents = data[:i.ActualLength]
 	i.Payload = data[i.ActualLength:]
 	return
@@ -422,7 +433,10 @@ type IPv6ExtensionSkipper struct {
 
 // DecodeFromBytes implementation according to gopacket.DecodingLayer
 func (i *IPv6ExtensionSkipper) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	extension := decodeIPv6ExtensionBase(data)
+	extension, err := decodeIPv6ExtensionBase(data, df)
+	if err != nil {
+		return err
+	}
 	i.BaseLayer = BaseLayer{data[:extension.ActualLength], data[extension.ActualLength:]}
 	i.NextHeader = extension.NextHeader
 	return nil
@@ -485,7 +499,11 @@ func (i *IPv6HopByHop) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.Ser
 
 // DecodeFromBytes implementation according to gopacket.DecodingLayer
 func (i *IPv6HopByHop) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	i.ipv6ExtensionBase = decodeIPv6ExtensionBase(data)
+	var err error
+	i.ipv6ExtensionBase, err = decodeIPv6ExtensionBase(data, df)
+	if err != nil {
+		return err
+	}
 	offset := 2
 	for offset < i.ActualLength {
 		opt := decodeIPv6HeaderTLVOption(data[offset:])
@@ -534,8 +552,12 @@ type IPv6Routing struct {
 func (i *IPv6Routing) LayerType() gopacket.LayerType { return LayerTypeIPv6Routing }
 
 func decodeIPv6Routing(data []byte, p gopacket.PacketBuilder) error {
+	base, err := decodeIPv6ExtensionBase(data, p)
+	if err != nil {
+		return err
+	}
 	i := &IPv6Routing{
-		ipv6ExtensionBase: decodeIPv6ExtensionBase(data),
+		ipv6ExtensionBase: base,
 		RoutingType:       data[2],
 		SegmentsLeft:      data[3],
 		Reserved:          data[4:8],
@@ -573,6 +595,10 @@ type IPv6Fragment struct {
 func (i *IPv6Fragment) LayerType() gopacket.LayerType { return LayerTypeIPv6Fragment }
 
 func decodeIPv6Fragment(data []byte, p gopacket.PacketBuilder) error {
+	if len(data) < 8 {
+		p.SetTruncated()
+		return fmt.Errorf("Invalid ip6-fragment header. Length %d less than 8", len(data))
+	}
 	i := &IPv6Fragment{
 		BaseLayer:      BaseLayer{data[:8], data[8:]},
 		NextHeader:     IPProtocol(data[0]),
@@ -600,7 +626,11 @@ func (i *IPv6Destination) LayerType() gopacket.LayerType { return LayerTypeIPv6D
 
 // DecodeFromBytes implementation according to gopacket.DecodingLayer
 func (i *IPv6Destination) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	i.ipv6ExtensionBase = decodeIPv6ExtensionBase(data)
+	var err error
+	i.ipv6ExtensionBase, err = decodeIPv6ExtensionBase(data, df)
+	if err != nil {
+		return err
+	}
 	offset := 2
 	for offset < i.ActualLength {
 		opt := decodeIPv6HeaderTLVOption(data[offset:])

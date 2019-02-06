@@ -404,6 +404,7 @@ func (w *WiFiModule) Start() error {
 				w.updateStats(dot11, packet)
 			}
 		}
+
 		w.pktSourceChanClosed = true
 	})
 
@@ -418,10 +419,8 @@ func (w *WiFiModule) Stop() error {
 		if !w.pktSourceChanClosed {
 			w.pktSourceChan <- nil
 		}
+		w.reads.Wait()
 		// close the pcap handle to make the main for exit
 		w.handle.Close()
-		// close the pcap handle to make the main for exit
-		// wait for the loop to exit.
-		w.reads.Wait()
 	})
 }
