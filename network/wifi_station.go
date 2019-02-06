@@ -57,5 +57,5 @@ func (s *Station) HasWPS() bool {
 }
 
 func (s *Station) IsOpen() bool {
-	return s.Encryption == ""
+	return s.Encryption == "" || s.Encryption == "OPEN"
 }

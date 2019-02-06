@@ -130,12 +130,15 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 			client := deauth.Client
 			ap := deauth.Ap
 			if w.Running() {
+				logger := log.Info
+				if w.isDeauthSilent() {
+					logger = log.Debug
+				}
+
 				if ap.IsOpen() && !w.doDeauthOpen() {
-					log.Debug("skipping deauth for open network %s", ap.ESSID())
+					logger("skipping deauth for open network %s (wifi.deauth.open is false)", ap.ESSID())
 				} else {
-					if !w.isDeauthSilent() {
-						log.Info("deauthing client %s from AP %s (channel %d)", client.String(), ap.ESSID(), ap.Channel())
-					}
+					logger("deauthing client %s from AP %s (channel:%d encryption:%s)", client.String(), ap.ESSID(), ap.Channel(), ap.Encryption)
 
 					w.onChannel(ap.Channel(), func() {
 						w.sendDeauthPacket(ap.HW, client.HW)
