@@ -5,6 +5,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bettercap/bettercap/network"
@@ -262,6 +263,28 @@ func (w *WiFiModule) colNames(nrows int) []string {
 	return columns
 }
 
+func (w *WiFiModule) showStatusBar() {
+	w.Session.Queue.Stats.RLock()
+	defer w.Session.Queue.Stats.RUnlock()
+
+	parts := []string{
+		fmt.Sprintf("%s (ch. %d)", w.Session.Interface.Name(), network.GetInterfaceChannel(w.Session.Interface.Name())),
+		fmt.Sprintf("%s %s", tui.Red("↑"), humanize.Bytes(w.Session.Queue.Stats.Sent)),
+		fmt.Sprintf("%s %s", tui.Green("↓"), humanize.Bytes(w.Session.Queue.Stats.Received)),
+		fmt.Sprintf("%d pkts", w.Session.Queue.Stats.PktReceived),
+	}
+
+	if nErrors := w.Session.Queue.Stats.Errors; nErrors > 0 {
+		parts = append(parts, fmt.Sprintf("%d errs", nErrors))
+	}
+
+	if nHandshakes := w.Session.WiFi.NumHandshakes(); nHandshakes > 0 {
+		parts = append(parts, fmt.Sprintf("%d handshakes", nHandshakes))
+	}
+
+	fmt.Printf("\n%s\n\n", strings.Join(parts, " / "))
+}
+
 func (w *WiFiModule) Show() (err error) {
 	var stations []*network.Station
 	if err, stations = w.doSelection(); err != nil {
@@ -279,33 +302,7 @@ func (w *WiFiModule) Show() (err error) {
 		tui.Table(os.Stdout, w.colNames(nrows), rows)
 	}
 
-	numHandshakes := w.Session.WiFi.NumHandshakes()
-
-	w.Session.Queue.Stats.RLock()
-
-	if numHandshakes > 0 {
-		fmt.Printf("\n%s (ch. %d) / %s %s / %s %s / %d pkts / %d errs / %d handshakes\n\n",
-			w.Session.Interface.Name(),
-			network.GetInterfaceChannel(w.Session.Interface.Name()),
-			tui.Red("↑"),
-			humanize.Bytes(w.Session.Queue.Stats.Sent),
-			tui.Green("↓"),
-			humanize.Bytes(w.Session.Queue.Stats.Received),
-			w.Session.Queue.Stats.PktReceived,
-			w.Session.Queue.Stats.Errors,
-			numHandshakes)
-	} else {
-		fmt.Printf("\n%s (ch. %d) / %s %s / %s %s / %d pkts / %d errs\n\n",
-			w.Session.Interface.Name(),
-			network.GetInterfaceChannel(w.Session.Interface.Name()),
-			tui.Red("↑"),
-			humanize.Bytes(w.Session.Queue.Stats.Sent),
-			tui.Green("↓"),
-			humanize.Bytes(w.Session.Queue.Stats.Received),
-			w.Session.Queue.Stats.PktReceived,
-			w.Session.Queue.Stats.Errors)
-	}
-	w.Session.Queue.Stats.RUnlock()
+	w.showStatusBar()
 
 	w.Session.Refresh()
 
