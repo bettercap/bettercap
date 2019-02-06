@@ -156,9 +156,13 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"true",
 		"If true, the fake access point will use WPA2, otherwise it'll result as an open AP."))
 
-	w.AddHandler(session.NewModuleHandler("wifi.show.wps BSSID", "wifi.show.wps ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
-		"Show WPS information about a given station.",
+	w.AddHandler(session.NewModuleHandler("wifi.show.wps BSSID",
+		`wifi\.show\.wps ((?:[a-fA-F0-9:]{11,})|all|\*)`,
+		"Show WPS information about a given station (use 'all', '*' or a broadcast BSSID for all).",
 		func(args []string) error {
+			if args[0] == "all" || args[0] == "*" {
+				args[0] = "ff:ff:ff:ff:ff:ff"
+			}
 			return w.ShowWPS(args[0])
 		}))
 
