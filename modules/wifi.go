@@ -225,6 +225,12 @@ func (w WiFiModule) Author() string {
 	return "Gianluca Braga <matrix86@protonmail.com> && Simone Margaritelli <evilsocket@protonmail.com>>"
 }
 
+const (
+	// Ugly, but gopacket folks are not exporting pcap errors, so ...
+	// ref. https://github.com/google/gopacket/blob/96986c90e3e5c7e01deed713ff8058e357c0c047/pcap/pcap.go#L281
+	ErrIfaceNotUp = "Interface Not Up"
+)
+
 func (w *WiFiModule) Configure() error {
 	var hopPeriod int
 	var err error
@@ -241,31 +247,44 @@ func (w *WiFiModule) Configure() error {
 		}
 	}
 
+	ifName := w.Session.Interface.Name()
+
 	if w.source != "" {
 		if w.handle, err = pcap.OpenOffline(w.source); err != nil {
-			return err
+			return fmt.Errorf("error while opening file %s: %s", w.source, err)
 		}
 	} else {
-		ihandle, err := pcap.NewInactiveHandle(w.Session.Interface.Name())
-		if err != nil {
-			return err
-		}
-		defer ihandle.CleanUp()
+		for retry := 0; ; retry++ {
+			ihandle, err := pcap.NewInactiveHandle(ifName)
+			if err != nil {
+				return fmt.Errorf("error while opening interface %s: %s", ifName, err)
+			}
+			defer ihandle.CleanUp()
 
-		if err = ihandle.SetRFMon(true); err != nil {
-			return fmt.Errorf("Error while setting interface %s in monitor mode: %s", tui.Bold(w.Session.Interface.Name()), err)
-		} else if err = ihandle.SetSnapLen(65536); err != nil {
-			return err
-		}
-		/*
-		 * We don't want to pcap.BlockForever otherwise pcap_close(handle)
-		 * could hang waiting for a timeout to expire ...
-		 */
-		readTimeout := 500 * time.Millisecond
-		if err = ihandle.SetTimeout(readTimeout); err != nil {
-			return err
-		} else if w.handle, err = ihandle.Activate(); err != nil {
-			return err
+			if err = ihandle.SetRFMon(true); err != nil {
+				return fmt.Errorf("error while setting interface %s in monitor mode: %s", tui.Bold(ifName), err)
+			} else if err = ihandle.SetSnapLen(65536); err != nil {
+				return fmt.Errorf("error while settng span len: %s", err)
+			}
+			/*
+			 * We don't want to pcap.BlockForever otherwise pcap_close(handle)
+			 * could hang waiting for a timeout to expire ...
+			 */
+			readTimeout := 500 * time.Millisecond
+			if err = ihandle.SetTimeout(readTimeout); err != nil {
+				return fmt.Errorf("error while setting timeout: %s", err)
+			} else if w.handle, err = ihandle.Activate(); err != nil {
+				if retry == 0 && err.Error() == ErrIfaceNotUp {
+					log.Warning("interface %s is down, bringing it up ...", ifName)
+					if err := network.ActivateInterface(ifName); err != nil {
+						return err
+					}
+					continue
+				}
+				return fmt.Errorf("error while activating handle: %s", err)
+			}
+
+			break
 		}
 	}
 
@@ -280,16 +299,16 @@ func (w *WiFiModule) Configure() error {
 	if w.source == "" {
 		// No channels setted, retrieve frequencies supported by the card
 		if len(w.frequencies) == 0 {
-			if w.frequencies, err = network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
-				return err
+			if w.frequencies, err = network.GetSupportedFrequencies(ifName); err != nil {
+				return fmt.Errorf("error while getting supported frequencies of %s: %s", ifName, err)
 			}
 
 			log.Debug("wifi supported frequencies: %v", w.frequencies)
 
 			// we need to start somewhere, this is just to check if
 			// this OS supports switching channel programmatically.
-			if err = network.SetInterfaceChannel(w.Session.Interface.Name(), 1); err != nil {
-				return err
+			if err = network.SetInterfaceChannel(ifName, 1); err != nil {
+				return fmt.Errorf("error while initializing %s to channel 1: %s", ifName, err)
 			}
 			log.Info("WiFi recon active with channel hopping.")
 		}

@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/bettercap/bettercap/core"
+
 	"github.com/evilsocket/islazy/data"
 	"github.com/evilsocket/islazy/str"
 
@@ -255,4 +257,13 @@ func FindInterface(name string) (*Endpoint, error) {
 	}
 
 	return nil, ErrNoIfaces
+}
+
+func ActivateInterface(name string) error {
+	if out, err := core.Exec("ifconfig", []string{name, "up"}); err != nil {
+		return err
+	} else if out != "" {
+		return fmt.Errorf("unexpected output while activating interface %s: %s", name, out)
+	}
+	return nil
 }

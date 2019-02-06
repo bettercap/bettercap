@@ -26,6 +26,7 @@ func NewARPTo(from net.IP, from_hw net.HardwareAddr, to net.IP, to_hw net.Hardwa
 
 	return eth, arp
 }
+
 func NewARP(from net.IP, from_hw net.HardwareAddr, to net.IP, req uint16) (layers.Ethernet, layers.ARP) {
 	return NewARPTo(from, from_hw, to, []byte{0, 0, 0, 0, 0, 0}, req)
 }
