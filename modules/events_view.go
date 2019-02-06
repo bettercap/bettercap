@@ -83,7 +83,7 @@ func (s *EventsStream) viewWiFiEvent(e session.Event) {
 		if hand.NewPackets == 1 {
 			ss = ""
 		}
-		fmt.Fprintf(s.output, "[%s] [%s] captured a full handshake for station %s and AP %s (saved %d new packet%s to %s)\n",
+		fmt.Fprintf(s.output, "[%s] [%s] captured handshake for %s->%s (saved %d new packet%s to %s)\n",
 			e.Time.Format(eventTimeFormat),
 			tui.Green(e.Tag),
 			hand.Station.String(),
