@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/google/gopacket/pcap"
 
 	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 )
 
@@ -177,29 +177,28 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 	w.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
 		"WiFi channels (comma separated) or 'clear' for channel hopping.",
-		func(args []string) error {
-			newfrequencies := w.frequencies[:0]
+		func(args []string) (err error) {
+			freqs := []int{}
 
-			if len(args) > 0 && args[0] != "clear" {
-				channels := strings.Split(args[0], ",")
-				for _, c := range channels {
-					trimmed := strings.Trim(c, " ")
-					channel, err := strconv.Atoi(trimmed)
-					if err != nil {
+			if args[0] != "clear" {
+				log.Info("setting hopping channels to %s", args[0])
+				for _, s := range str.Comma(args[0]) {
+					if ch, err := strconv.Atoi(s); err != nil {
 						return err
+					} else {
+						freqs = append(freqs, network.Dot11Chan2Freq(ch))
 					}
-					newfrequencies = append(newfrequencies, network.Dot11Chan2Freq(channel))
-				}
-			} else {
-				// No channels setted, retrieve frequencies supported by the card
-				if frequencies, err := network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
-					return err
-				} else {
-					newfrequencies = frequencies
 				}
 			}
 
-			w.frequencies = newfrequencies
+			if len(freqs) == 0 {
+				log.Info("resetting hopping channels")
+				if freqs, err = network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
+					return err
+				}
+			}
+
+			w.frequencies = freqs
 
 			return nil
 		}))
