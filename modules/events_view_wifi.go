@@ -88,18 +88,21 @@ func (s *EventsStream) viewWiFiHandshakeEvent(e session.Event) {
 
 func (s *EventsStream) viewWiFiClientEvent(e session.Event) {
 	ce := e.Data.(WiFiClientEvent)
+
+	ce.Client.Alias = s.Session.Lan.GetAlias(ce.Client.BSSID())
+
 	if e.Tag == "wifi.client.new" {
-		fmt.Fprintf(s.output, "[%s] [%s] new wifi client %s detected for %s (%s)\n",
+		fmt.Fprintf(s.output, "[%s] [%s] new station %s detected for %s (%s)\n",
 			e.Time.Format(eventTimeFormat),
 			tui.Green(e.Tag),
-			ce.Client.BSSID(),
+			ce.Client.String(),
 			tui.Bold(ce.AP.ESSID()),
 			tui.Dim(ce.AP.BSSID()))
 	} else if e.Tag == "wifi.client.lost" {
-		fmt.Fprintf(s.output, "[%s] [%s] wifi client %s disconnected from %s (%s)\n",
+		fmt.Fprintf(s.output, "[%s] [%s] station %s disconnected from %s (%s)\n",
 			e.Time.Format(eventTimeFormat),
 			tui.Green(e.Tag),
-			ce.Client.BSSID(),
+			ce.Client.String(),
 			tui.Bold(ce.AP.ESSID()),
 			tui.Dim(ce.AP.BSSID()))
 	}

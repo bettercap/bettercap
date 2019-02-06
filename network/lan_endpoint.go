@@ -149,10 +149,16 @@ func (t *Endpoint) String() string {
 		return t.IpAddress
 	} else if t.Vendor == "" {
 		return fmt.Sprintf("%s%s", ipPart, t.HwAddress)
-	} else if t.Hostname == "" {
-		return fmt.Sprintf("%s%s ( %s )", ipPart, t.HwAddress, t.Vendor)
+	} else if t.Hostname == "" && t.Alias == "" {
+		return fmt.Sprintf("%s%s (%s)", ipPart, t.HwAddress, t.Vendor)
 	}
-	return fmt.Sprintf("%s%s ( %s ) - %s", ipPart, t.HwAddress, t.Vendor, tui.Bold(t.Hostname))
+
+	name := t.Hostname
+	if t.Alias != "" {
+		name = t.Alias
+	}
+
+	return fmt.Sprintf("%s%s (%s) - %s", ipPart, t.HwAddress, t.Vendor, tui.Bold(name))
 }
 
 func (t *Endpoint) OnMeta(meta map[string]string) {
