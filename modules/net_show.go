@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/bettercap/bettercap/network"
@@ -201,6 +202,23 @@ func (d *Discovery) colNames(hasMeta bool) []string {
 	return colNames
 }
 
+func (d *Discovery) showStatusBar() {
+	d.Session.Queue.Stats.RLock()
+	defer d.Session.Queue.Stats.RUnlock()
+
+	parts := []string{
+		fmt.Sprintf("%s %s", tui.Red("↑"), humanize.Bytes(d.Session.Queue.Stats.Sent)),
+		fmt.Sprintf("%s %s", tui.Green("↓"), humanize.Bytes(d.Session.Queue.Stats.Received)),
+		fmt.Sprintf("%d pkts", d.Session.Queue.Stats.PktReceived),
+	}
+
+	if nErrors := d.Session.Queue.Stats.Errors; nErrors > 0 {
+		parts = append(parts, fmt.Sprintf("%d errs", nErrors))
+	}
+
+	fmt.Printf("\n%s\n\n", strings.Join(parts, " / "))
+}
+
 func (d *Discovery) Show(arg string) (err error) {
 	var targets []*network.Endpoint
 	if err, targets = d.doSelection(arg); err != nil {
@@ -240,15 +258,7 @@ func (d *Discovery) Show(arg string) (err error) {
 
 	tui.Table(os.Stdout, colNames, rows)
 
-	d.Session.Queue.Stats.RLock()
-	fmt.Printf("\n%s %s / %s %s / %d pkts / %d errs\n\n",
-		tui.Red("↑"),
-		humanize.Bytes(d.Session.Queue.Stats.Sent),
-		tui.Green("↓"),
-		humanize.Bytes(d.Session.Queue.Stats.Received),
-		d.Session.Queue.Stats.PktReceived,
-		d.Session.Queue.Stats.Errors)
-	d.Session.Queue.Stats.RUnlock()
+	d.showStatusBar()
 
 	d.Session.Refresh()
 
