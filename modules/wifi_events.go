@@ -24,4 +24,5 @@ type WiFiHandshakeEvent struct {
 	NewPackets int
 	AP         net.HardwareAddr
 	Station    net.HardwareAddr
+	PMKID      []byte
 }

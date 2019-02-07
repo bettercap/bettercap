@@ -77,6 +77,10 @@ func (s *EventsStream) viewWiFiHandshakeEvent(e session.Event) {
 		what = fmt.Sprintf("%s handshake", ap.Encryption)
 	}
 
+	if hand.PMKID != nil {
+		what = fmt.Sprintf("PMKID (%x)", hand.PMKID)
+	}
+
 	fmt.Fprintf(s.output, "[%s] [%s] captured %s -> %s %s to %s\n",
 		e.Time.Format(eventTimeFormat),
 		tui.Green(e.Tag),

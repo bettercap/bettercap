@@ -1,8 +1,10 @@
 package network
 
 import (
-	"github.com/google/gopacket"
 	"sync"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 type Handshake struct {
@@ -32,6 +34,29 @@ func (h *Handshake) SetBeacon(pkt gopacket.Packet) {
 		h.Beacon = pkt
 		h.unsaved = append(h.unsaved, pkt)
 	}
+}
+
+func (h *Handshake) AddAndGetPMKID(pkt gopacket.Packet) []byte {
+	h.AddFrame(0, pkt)
+
+	prevWasKey := false
+	for _, layer := range pkt.Layers() {
+		if layer.LayerType() == layers.LayerTypeEAPOLKey {
+			prevWasKey = true
+			continue
+		}
+
+		if prevWasKey && layer.LayerType() == layers.LayerTypeDot11InformationElement {
+			info := layer.(*layers.Dot11InformationElement)
+			if info.ID == layers.Dot11InformationElementIDVendor && info.Length == 20 {
+				return info.Info
+			}
+		}
+
+		prevWasKey = false
+	}
+
+	return nil
 }
 
 func (h *Handshake) AddFrame(n int, pkt gopacket.Packet) {
