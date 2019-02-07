@@ -58,7 +58,7 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		// this is ugly, but necessary in order to have this
 		// method handle both access point and clients
 		// transparently
-		if ap, found := w.Session.WiFi.Get(station.HwAddress); found && ap.HasHandshakes() {
+		if ap, found := w.Session.WiFi.Get(station.HwAddress); found && (ap.HasHandshakes() || ap.HasPMKID()) {
 			encryption = tui.Red(encryption)
 		}
 	}

@@ -156,11 +156,25 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 				apMac = dot11.Address1
 			}
 
-			if station, found := w.Session.WiFi.GetClient(staMac.String()); found {
-				// ref. https://hashcat.net/forum/thread-7717.html
-				rawPMKID := []byte(nil)
+			ap, found := w.Session.WiFi.Get(apMac.String())
+			if !found {
+				log.Warning("could not find AP with BSSID %s", apMac.String())
+				return
+			}
 
-				// ref. https://wlan1nde.wordpress.com/2014/10/27/4-way-handshake/
+			station := (*network.Station)(nil)
+			staIsUs := bytes.Equal(staMac, w.Session.Interface.HW)
+			if staIsUs {
+				// add a fake station
+				station, _ = ap.AddClientIfNew(staMac.String(), ap.Frequency, ap.RSSI)
+				found = true
+			} else {
+				station, found = ap.Get(staMac.String())
+			}
+
+			// ref. https://wlan1nde.wordpress.com/2014/10/27/4-way-handshake/
+			if found {
+				rawPMKID := []byte(nil)
 				if !key.Install && key.KeyACK && !key.KeyMIC {
 					// [1] (ACK) AP is sending ANonce to the client
 					log.Debug("[%s] got frame 1/4 of the %s <-> %s handshake (anonce:%x)",
@@ -168,6 +182,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 						apMac,
 						staMac,
 						key.Nonce)
+					// ref. https://hashcat.net/forum/thread-7717.html
 					rawPMKID = station.Handshake.AddAndGetPMKID(packet)
 				} else if !key.Install && !key.KeyACK && key.KeyMIC && !allZeros(key.Nonce) {
 					// [2] (MIC) client is sending SNonce+MIC to the API
@@ -206,6 +221,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 						PMKID:      rawPMKID,
 					})
 				}
+
 			} else {
 				log.Warning("EAPOL captured for unknown station %s", staMac.String())
 			}

@@ -97,6 +97,77 @@ func NewDot11Deauth(a1 net.HardwareAddr, a2 net.HardwareAddr, a3 net.HardwareAdd
 	)
 }
 
+func NewDot11Auth(sta net.HardwareAddr, apBSSID net.HardwareAddr, seq uint16) (error, []byte) {
+	return Serialize(
+		&layers.RadioTap{},
+		&layers.Dot11{
+			Address1:       apBSSID,
+			Address2:       sta,
+			Address3:       apBSSID,
+			Type:           layers.Dot11TypeMgmtAuthentication,
+			SequenceNumber: seq,
+			FragmentNumber: 0,
+			DurationID:     0x013a,
+		},
+		&layers.Dot11MgmtAuthentication{
+			Algorithm: layers.Dot11AlgorithmOpen,
+			Sequence:  1,
+			Status:    layers.Dot11StatusSuccess,
+		},
+	)
+}
+
+func NewDot11AssociationRequest(sta net.HardwareAddr, apBSSID net.HardwareAddr, apESSID string, seq uint16) (error, []byte) {
+	return Serialize(
+		&layers.RadioTap{},
+		&layers.Dot11{
+			Address1:       apBSSID,
+			Address2:       sta,
+			Address3:       apBSSID,
+			Type:           layers.Dot11TypeMgmtAssociationReq,
+			SequenceNumber: seq,
+			FragmentNumber: 0,
+			DurationID:     0x013a,
+		},
+		// as seen on wireshark ...
+		&layers.Dot11MgmtAssociationReq{
+			CapabilityInfo: 0x0411,
+			ListenInterval: 3,
+		},
+		&layers.Dot11InformationElement{
+			ID:     layers.Dot11InformationElementIDSSID,
+			Length: uint8(len(apESSID) & 0xff),
+			Info:   []byte(apESSID),
+		},
+		&layers.Dot11InformationElement{
+			ID:     layers.Dot11InformationElementIDRates,
+			Length: 8,
+			Info:   []byte{0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c},
+		},
+		&layers.Dot11InformationElement{
+			ID:     layers.Dot11InformationElementIDESRates,
+			Length: 4,
+			Info:   []byte{0x0C, 0x12, 0x18, 0x60},
+		},
+		&layers.Dot11InformationElement{
+			ID:     layers.Dot11InformationElementIDRSNInfo,
+			Length: 20,
+			Info:   []byte{0x01, 0x00, 0x00, 0x0F, 0xAC, 0x04, 0x01, 0x00, 0x00, 0x0F, 0xAC, 0x04, 0x01, 0x00, 0x00, 0x0F, 0xAC, 0x02, 0x8C, 0x00},
+		},
+		&layers.Dot11InformationElement{
+			ID:     layers.Dot11InformationElementIDHTCapabilities,
+			Length: 26,
+			Info:   []byte{0x2C, 0x01, 0x03, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		},
+		&layers.Dot11InformationElement{
+			ID:     layers.Dot11InformationElementIDVendor,
+			Length: 7,
+			OUI:    []byte{0, 0x50, 0xf2, 0x02},
+			Info:   []byte{0, 0x01, 0},
+		},
+	)
+}
+
 func Dot11Parse(packet gopacket.Packet) (ok bool, radiotap *layers.RadioTap, dot11 *layers.Dot11) {
 	ok = false
 	radiotap = nil

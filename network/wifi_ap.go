@@ -124,3 +124,16 @@ func (ap *AccessPoint) NumHandshakes() int {
 func (ap *AccessPoint) HasHandshakes() bool {
 	return ap.NumHandshakes() > 0
 }
+
+func (ap *AccessPoint) HasPMKID() bool {
+	ap.Lock()
+	defer ap.Unlock()
+
+	for _, c := range ap.clients {
+		if c.Handshake.HasPMKID() {
+			return true
+		}
+	}
+
+	return false
+}

@@ -14,6 +14,7 @@ type Handshake struct {
 	Challenges    []gopacket.Packet
 	Responses     []gopacket.Packet
 	Confirmations []gopacket.Packet
+	hasPMKID      bool
 	unsaved       []gopacket.Packet
 }
 
@@ -49,6 +50,9 @@ func (h *Handshake) AddAndGetPMKID(pkt gopacket.Packet) []byte {
 		if prevWasKey && layer.LayerType() == layers.LayerTypeDot11InformationElement {
 			info := layer.(*layers.Dot11InformationElement)
 			if info.ID == layers.Dot11InformationElementIDVendor && info.Length == 20 {
+				h.Lock()
+				defer h.Unlock()
+				h.hasPMKID = true
 				return info.Info
 			}
 		}
@@ -84,6 +88,12 @@ func (h *Handshake) Complete() bool {
 	nConf := len(h.Confirmations)
 
 	return nChal > 0 && nResp > 0 && nConf > 0
+}
+
+func (h *Handshake) HasPMKID() bool {
+	h.Lock()
+	defer h.Unlock()
+	return h.hasPMKID
 }
 
 func (h *Handshake) NumUnsaved() int {

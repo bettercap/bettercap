@@ -37,6 +37,9 @@ type WiFiModule struct {
 	deauthSkip          []net.HardwareAddr
 	deauthSilent        bool
 	deauthOpen          bool
+	assocSkip           []net.HardwareAddr
+	assocSilent         bool
+	assocOpen           bool
 	shakesFile          string
 	apRunning           bool
 	apConfig            packets.Dot11ApConfig
@@ -57,6 +60,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		apRunning:     false,
 		deauthSkip:    []net.HardwareAddr{},
 		deauthSilent:  false,
+		deauthOpen:    false,
+		assocSkip:     []net.HardwareAddr{},
+		assocSilent:   false,
+		assocOpen:     false,
 		writes:        &sync.WaitGroup{},
 		reads:         &sync.WaitGroup{},
 		chanLock:      &sync.Mutex{},
@@ -122,6 +129,32 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	w.AddParam(session.NewBoolParameter("wifi.deauth.open",
 		"true",
 		"Send wifi deauth packets to open networks."))
+
+	w.AddHandler(session.NewModuleHandler("wifi.assoc BSSID", `wifi\.assoc ((?:[a-fA-F0-9:]{11,})|all|\*)`,
+		"Send an association request to the selected BSSID in order to receive a RSN PMKID key. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate for every access point.",
+		func(args []string) error {
+			if args[0] == "all" || args[0] == "*" {
+				args[0] = "ff:ff:ff:ff:ff:ff"
+			}
+			bssid, err := net.ParseMAC(args[0])
+			if err != nil {
+				return err
+			}
+			return w.startAssoc(bssid)
+		}))
+
+	w.AddParam(session.NewStringParameter("wifi.assoc.skip",
+		"",
+		"",
+		"Comma separated list of BSSID to skip while sending association requests."))
+
+	w.AddParam(session.NewBoolParameter("wifi.assoc.silent",
+		"false",
+		"If true, messages from wifi.assoc will be suppressed."))
+
+	w.AddParam(session.NewBoolParameter("wifi.assoc.open",
+		"false",
+		"Send association requests to open networks."))
 
 	w.AddHandler(session.NewModuleHandler("wifi.ap", "",
 		"Inject fake management beacons in order to create a rogue access point.",
@@ -228,7 +261,7 @@ func (w WiFiModule) Description() string {
 }
 
 func (w WiFiModule) Author() string {
-	return "Gianluca Braga <matrix86@protonmail.com> && Simone Margaritelli <evilsocket@protonmail.com>>"
+	return "Simone Margaritelli <evilsocket@protonmail.com> && Gianluca Braga <matrix86@protonmail.com>"
 }
 
 const (
