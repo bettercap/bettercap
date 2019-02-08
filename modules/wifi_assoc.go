@@ -14,19 +14,15 @@ import (
 func (w *WiFiModule) sendAssocPacket(ap *network.AccessPoint) {
 	if err, pkt := packets.NewDot11Auth(w.Session.Interface.HW, ap.HW, 1); err != nil {
 		log.Error("cloud not create auth packet: %s", err)
-		// continue
 	} else {
 		w.injectPacket(pkt)
 	}
 
-	// for seq := uint16(0); seq < 3 && w.Running(); seq++ {
 	if err, pkt := packets.NewDot11AssociationRequest(w.Session.Interface.HW, ap.HW, ap.ESSID(), 1); err != nil {
 		log.Error("cloud not create association request packet: %s", err)
-		// continue
 	} else {
 		w.injectPacket(pkt)
 	}
-	// }
 }
 
 func (w *WiFiModule) skipAssoc(to net.HardwareAddr) bool {
