@@ -229,9 +229,9 @@ func (w *WiFiModule) colNames(nrows int) []string {
 	columns := []string(nil)
 
 	if !w.isApSelected() {
-		columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "WPS", "Ch", "Clients", "Sent", "Recvd", "Last Seen"}
+		columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "WPS", "Ch", "Clients", "Sent", "Recvd", "Seen"}
 	} else if nrows > 0 {
-		columns = []string{"RSSI", "MAC", "Ch", "Sent", "Received", "Last Seen"}
+		columns = []string{"RSSI", "BSSID", "Ch", "Sent", "Recvd", "Seen"}
 		fmt.Printf("\n%s clients:\n", w.ap.HwAddress)
 	} else {
 		fmt.Printf("\nNo authenticated clients detected for %s.\n", w.ap.HwAddress)
@@ -240,7 +240,7 @@ func (w *WiFiModule) colNames(nrows int) []string {
 	if columns != nil {
 		switch w.selector.SortField {
 		case "seen":
-			w.colDecorate(columns, "Last Seen", w.selector.SortSymbol)
+			w.colDecorate(columns, "Seen", w.selector.SortSymbol)
 		case "essid":
 			w.colDecorate(columns, "SSID", w.selector.SortSymbol)
 		case "bssid":

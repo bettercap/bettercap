@@ -181,7 +181,7 @@ func (d *Discovery) doSelection(arg string) (err error, targets []*network.Endpo
 }
 
 func (d *Discovery) colNames(hasMeta bool) []string {
-	colNames := []string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Last Seen"}
+	colNames := []string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Seen"}
 	if hasMeta {
 		colNames = append(colNames, "Meta")
 	}
