@@ -78,7 +78,7 @@ func (s *EventsStream) viewWiFiHandshakeEvent(e session.Event) {
 	}
 
 	if hand.PMKID != nil {
-		what = fmt.Sprintf("PMKID (%x)", hand.PMKID)
+		what = "RSN PMKID"
 	}
 
 	fmt.Fprintf(s.output, "[%s] [%s] captured %s -> %s %s to %s\n",
