@@ -28,6 +28,7 @@ type WiFiModule struct {
 	source              string
 	channel             int
 	hopPeriod           time.Duration
+	hopChanges          chan bool
 	frequencies         []int
 	ap                  *network.AccessPoint
 	stickChan           int
@@ -55,6 +56,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		channel:       0,
 		stickChan:     0,
 		hopPeriod:     250 * time.Millisecond,
+		hopChanges:    make(chan bool),
 		ap:            nil,
 		skipBroken:    true,
 		apRunning:     false,
@@ -101,6 +103,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			w.ap = nil
 			w.stickChan = 0
 			w.frequencies, err = network.GetSupportedFrequencies(w.Session.Interface.Name())
+			w.hopChanges <- true
 			return err
 		}))
 
@@ -232,6 +235,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			}
 
 			w.frequencies = freqs
+			w.hopChanges <- true
 
 			return nil
 		}))

@@ -41,6 +41,8 @@ func (w *WiFiModule) channelHopper() {
 		}
 
 		frequencies := w.frequencies
+
+	loopCurrentChannels:
 		for _, frequency := range frequencies {
 			channel := network.Dot11Freq2Chan(frequency)
 			// stick to the access point channel as long as it's selected
@@ -57,9 +59,14 @@ func (w *WiFiModule) channelHopper() {
 			}
 			w.chanLock.Unlock()
 
-			time.Sleep(delay)
-			if !w.Running() {
-				return
+			select {
+			case _ = <-w.hopChanges:
+				log.Debug("hop changed")
+				break loopCurrentChannels
+			case <-time.After(delay):
+				if !w.Running() {
+					return
+				}
 			}
 		}
 	}
