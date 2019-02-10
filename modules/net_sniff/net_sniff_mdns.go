@@ -1,0 +1,65 @@
+package net_sniff
+
+import (
+	"strings"
+
+	"github.com/bettercap/bettercap/packets"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/tui"
+)
+
+func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
+	if udp.SrcPort == packets.MDNSPort && udp.DstPort == packets.MDNSPort {
+		dns := layers.DNS{}
+		if err := dns.DecodeFromBytes(udp.Payload, gopacket.NilDecodeFeedback); err == nil && dns.OpCode == layers.DNSOpCodeQuery {
+			for _, q := range dns.Questions {
+				NewSnifferEvent(
+					pkt.Metadata().Timestamp,
+					"mdns",
+					ip.SrcIP.String(),
+					ip.DstIP.String(),
+					nil,
+					"%s %s : %s query for %s",
+					tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "mdns"),
+					vIP(ip.SrcIP),
+					tui.Dim(q.Type.String()),
+					tui.Yellow(string(q.Name)),
+				).Push()
+			}
+
+			m := make(map[string][]string)
+			answers := append(dns.Answers, dns.Additionals...)
+			answers = append(answers, dns.Authorities...)
+			for _, answer := range answers {
+				if answer.Type == layers.DNSTypeA || answer.Type == layers.DNSTypeAAAA {
+					hostname := string(answer.Name)
+					if _, found := m[hostname]; !found {
+						m[hostname] = make([]string, 0)
+					}
+					m[hostname] = append(m[hostname], answer.IP.String())
+				}
+			}
+
+			for hostname, ips := range m {
+				NewSnifferEvent(
+					pkt.Metadata().Timestamp,
+					"mdns",
+					ip.SrcIP.String(),
+					ip.DstIP.String(),
+					nil,
+					"%s %s : %s is %s",
+					tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "mdns"),
+					vIP(ip.SrcIP),
+					tui.Yellow(hostname),
+					tui.Dim(strings.Join(ips, ", ")),
+				).Push()
+			}
+
+			return true
+		}
+	}
+	return false
+}
