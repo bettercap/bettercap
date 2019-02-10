@@ -31,7 +31,7 @@ func NewDiscovery(s *session.Session) *Discovery {
 		}))
 
 	d.AddParam(session.NewBoolParameter("net.show.meta",
-		"true",
+		"false",
 		"If true, the net.show command will show all metadata collected about each endpoint."))
 
 	d.AddHandler(session.NewModuleHandler("net.show", "",
@@ -44,6 +44,12 @@ func NewDiscovery(s *session.Session) *Discovery {
 		"Show information about a specific list of addresses (by IP or MAC).",
 		func(args []string) error {
 			return d.Show(args[0])
+		}))
+
+	d.AddHandler(session.NewModuleHandler("net.show.meta ADDRESS1, ADDRESS2", `net\.show\.meta (.+)`,
+		"Show meta information about a specific list of addresses (by IP or MAC).",
+		func(args []string) error {
+			return d.showMeta(args[0])
 		}))
 
 	d.selector = ViewSelectorFor(&d.SessionModule, "net.show", []string{"ip", "mac", "seen", "sent", "rcvd"}, "ip asc")

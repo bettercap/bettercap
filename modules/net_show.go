@@ -264,3 +264,47 @@ func (d *Discovery) Show(arg string) (err error) {
 
 	return nil
 }
+
+func (d *Discovery) showMeta(arg string) (err error) {
+	var targets []*network.Endpoint
+	if err, targets = d.doSelection(arg); err != nil {
+		return
+	}
+
+	colNames := []string{"Name", "Value"}
+	any := false
+
+	for _, t := range targets {
+		keys := []string{}
+
+		t.Meta.Each(func(name string, value interface{}) {
+			keys = append(keys, name)
+		})
+
+		if len(keys) > 0 {
+			sort.Strings(keys)
+			rows := [][]string{
+				[]string{
+					tui.Green("address"),
+					t.IP.String(),
+				},
+			}
+
+			for _, k := range keys {
+				rows = append(rows, []string{
+					tui.Green(k),
+					tui.Yellow(t.Meta.Get(k).(string)),
+				})
+			}
+
+			any = true
+			tui.Table(os.Stdout, colNames, rows)
+		}
+	}
+
+	if any {
+		d.Session.Refresh()
+	}
+
+	return nil
+}
