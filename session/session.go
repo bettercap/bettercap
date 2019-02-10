@@ -226,13 +226,16 @@ func (s *Session) Start() error {
 		return err
 	}
 
-	if s.Gateway, err = network.FindGateway(s.Interface); err != nil {
-		level := log.WARNING
-		if s.Interface.IsMonitor() {
-			level = log.DEBUG
-		}
-		s.Events.Log(level, "%s", err.Error())
-	}
+	if s.Gateway, err = network.GatewayProvidedByUser(s.Interface, *s.Options.Gateway); err != nil {
+			level := log.WARNING
+			if s.Interface.IsMonitor() {
+				level = log.DEBUG
+			}
+			s.Events.Log(level, "%s", err.Error())
+			if s.Gateway, err = network.FindGateway(s.Interface); err != nil {
+				s.Events.Log(level, "%s", err.Error())
+  		}
+  }
 
 	if s.Gateway == nil || s.Gateway.IpAddress == s.Interface.IpAddress {
 		s.Gateway = s.Interface
