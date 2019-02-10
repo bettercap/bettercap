@@ -1,14 +1,8 @@
-This was written for fun, please use
-
-http://golang.org/x/net/publicsuffix
-
-instead.
-
----
-
 # TLD Parser in Go
 
 The `tld` package has the same API ([see godoc](http://godoc.org/github.com/jpillora/go-tld)) as `net/url` except `tld.URL` contains extra fields: `Subdomain`, `Domain`, `TLD` and `Port`.
+
+_Note:_ This was written for fun, please use http://golang.org/x/net/publicsuffix instead.
 
 ### Install
 
@@ -18,7 +12,7 @@ go get github.com/jpillora/go-tld
 
 ### Usage
 
-``` go
+```go
 package main
 
 import (
@@ -28,20 +22,33 @@ import (
 )
 
 func main() {
-	u, _ := tld.Parse("http://a.very.complex-domain.co.uk:8080/foo/bar")
-
-	fmt.Printf("[ %s ] [ %s ] [ %s ] [ %s ] [ %s ]", u.Subdomain, u.Domain, u.TLD, u.Port, u.Path)
+	urls := []string{
+		"http://google.com",
+		"http://blog.google",
+		"https://www.medi-cal.ca.gov/",
+		"https://ato.gov.au",
+		"http://a.very.complex-domain.co.uk:8080/foo/bar",
+	}
+	for _, url := range urls {
+		u, _ := tld.Parse(url)
+		fmt.Printf("%50s = [ %s ] [ %s ] [ %s ] [ %s ] [ %s ]\n",
+			u, u.Subdomain, u.Domain, u.TLD, u.Port, u.Path)
+	}
 }
 ```
 
 ```
 $ go run main.go
-[ a.very ] [ complex-domain ] [ co.uk ] [ 8080 ] [ /foo/bar ]
+                                 http://google.com = [  ] [ google ] [ com ] [  ] [  ]
+                                http://blog.google = [  ] [ blog ] [ google ] [  ] [  ]
+                      https://www.medi-cal.ca.gov/ = [ www.medi-cal ] [ ca ] [ gov ] [  ] [ / ]
+                                https://ato.gov.au = [  ] [ ato ] [ gov.au ] [  ] [  ]
+   http://a.very.complex-domain.co.uk:8080/foo/bar = [ a.very ] [ complex-domain ] [ co.uk ] [ 8080 ] [ /foo/bar ]
 ```
 
 #### MIT License
 
-Copyright © 2015 Jaime Pillora &lt;dev@jpillora.com&gt;
+Copyright © 2019 Jaime Pillora &lt;dev@jpillora.com&gt;
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

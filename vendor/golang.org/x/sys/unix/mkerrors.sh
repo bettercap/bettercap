@@ -182,6 +182,7 @@ struct ltchars {
 #include <sys/signalfd.h>
 #include <sys/socket.h>
 #include <sys/xattr.h>
+#include <linux/errqueue.h>
 #include <linux/if.h>
 #include <linux/if_alg.h>
 #include <linux/if_arp.h>
@@ -258,16 +259,6 @@ struct ltchars {
 #define FS_KEY_DESC_PREFIX              "fscrypt:"
 #define FS_KEY_DESC_PREFIX_SIZE         8
 #define FS_MAX_KEY_SIZE                 64
-
-// XDP socket constants do not appear to be picked up otherwise.
-// Copied from samples/bpf/xdpsock_user.c.
-#ifndef SOL_XDP
-#define SOL_XDP 283
-#endif
-
-#ifndef AF_XDP
-#define AF_XDP 44
-#endif
 '
 
 includes_NetBSD='
@@ -481,6 +472,7 @@ ccflags="$@"
 		$2 ~ /^ALG_/ ||
 		$2 ~ /^FS_(POLICY_FLAGS|KEY_DESC|ENCRYPTION_MODE|[A-Z0-9_]+_KEY_SIZE|IOC_(GET|SET)_ENCRYPTION)/ ||
 		$2 ~ /^GRND_/ ||
+		$2 ~ /^RND/ ||
 		$2 ~ /^KEY_(SPEC|REQKEY_DEFL)_/ ||
 		$2 ~ /^KEYCTL_/ ||
 		$2 ~ /^PERF_EVENT_IOC_/ ||

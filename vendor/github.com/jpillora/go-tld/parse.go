@@ -1,6 +1,6 @@
 //go:generate sh generate.sh
 
-//The tld package has the same API as net/url except
+//Package tld has the same API as net/url except
 //tld.URL contains extra fields: Subdomain, Domain, TLD and Port.
 package tld
 
@@ -28,11 +28,9 @@ func Parse(s string) (*URL, error) {
 		return &URL{URL: url}, nil
 	}
 
+	dom, port := domainPort(url.Host)
 	//index of tld
 	tld := 0
-
-	dom, port := domainPort(url.Host)
-
 	i := 0
 	l := len(dom) - 1
 
@@ -47,7 +45,7 @@ func Parse(s string) (*URL, error) {
 		//for binary search debugging...
 		// log.Printf("[%d - %d - %d] %s == %s (%s)", lo, mid, hi, string(dom[l-i]), string(guess[i]), guess)
 
-		if i < len(guess) && guess[i] == dom[l-i] {
+		if i < len(guess) && i <= l && guess[i] == dom[l-i] {
 			//store partial match
 			if i > tld && guess[i] == '.' {
 				tld = i
@@ -59,7 +57,7 @@ func Parse(s string) (*URL, error) {
 				tld = i
 				break
 			}
-		} else if i >= len(guess) || guess[i] < dom[l-i] {
+		} else if i >= len(guess) || (i <= l && guess[i] < dom[l-i]) {
 			lo = mid
 			i = 0
 		} else {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 
+	"github.com/evilsocket/islazy/ops"
 	"github.com/evilsocket/islazy/tui"
 )
 
@@ -40,10 +41,7 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		seen = tui.Dim(seen)
 	}
 
-	ssid := station.ESSID()
-	if ssid == "<hidden>" {
-		ssid = tui.Dim(ssid)
-	}
+	ssid := ops.Ternary(station.ESSID() == "<hidden>", tui.Dim(station.ESSID()), station.ESSID()).(string)
 
 	encryption := station.Encryption
 	if len(station.Cipher) > 0 {
@@ -63,15 +61,8 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		}
 	}
 
-	sent := ""
-	if station.Sent > 0 {
-		sent = humanize.Bytes(station.Sent)
-	}
-
-	recvd := ""
-	if station.Received > 0 {
-		recvd = humanize.Bytes(station.Received)
-	}
+	sent := ops.Ternary(station.Sent > 0, humanize.Bytes(station.Sent), "").(string)
+	recvd := ops.Ternary(station.Received > 0, humanize.Bytes(station.Received), "").(string)
 
 	if w.source == "" {
 		for _, frequencies := range w.frequencies {
@@ -335,10 +326,7 @@ func (w *WiFiModule) ShowWPS(bssid string) (err error) {
 	colNames := []string{"Name", "Value"}
 
 	for _, station := range toShow {
-		ssid := station.ESSID()
-		if ssid == "<hidden>" {
-			ssid = tui.Dim(ssid)
-		}
+		ssid := ops.Ternary(station.ESSID() == "<hidden>", tui.Dim(station.ESSID()), station.ESSID()).(string)
 
 		rows := [][]string{
 			[]string{tui.Green("essid"), ssid},
