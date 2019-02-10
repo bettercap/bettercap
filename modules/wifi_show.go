@@ -331,14 +331,20 @@ func (w *WiFiModule) ShowWPS(bssid string) (err error) {
 	}
 
 	sort.Sort(ByBssidSorter(toShow))
+
+	colNames := []string{"Name", "Value"}
+
 	for _, station := range toShow {
 		ssid := station.ESSID()
 		if ssid == "<hidden>" {
 			ssid = tui.Dim(ssid)
 		}
 
-		fmt.Println()
-		fmt.Printf("* %s (%s ch:%d):\n", tui.Bold(ssid), tui.Dim(station.BSSID()), station.Channel())
+		rows := [][]string{
+			[]string{tui.Green("essid"), ssid},
+			[]string{tui.Green("bssid"), station.BSSID()},
+		}
+
 		keys := []string{}
 		for name := range station.WPS {
 			keys = append(keys, name)
@@ -346,11 +352,14 @@ func (w *WiFiModule) ShowWPS(bssid string) (err error) {
 		sort.Strings(keys)
 
 		for _, name := range keys {
-			fmt.Printf("  %s: %s\n", name, tui.Yellow(station.WPS[name]))
+			rows = append(rows, []string{
+				tui.Green(name),
+				tui.Yellow(station.WPS[name]),
+			})
 		}
-	}
 
-	fmt.Println()
+		tui.Table(os.Stdout, colNames, rows)
+	}
 
 	return nil
 }
