@@ -229,7 +229,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 					if ch, err := strconv.Atoi(s); err != nil {
 						return err
 					} else {
-						freqs = append(freqs, network.Dot11Chan2Freq(ch))
+						if f := network.Dot11Chan2Freq(ch); f == 0 {
+							return fmt.Errorf("%d is not a valid wifi channel.", ch)
+						} else {
+							freqs = append(freqs, f)
+						}
 					}
 				}
 			}
@@ -241,8 +245,13 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				}
 			}
 
+			log.Debug("new frequencies: %v", freqs)
 			w.frequencies = freqs
-			w.hopChanges <- true
+
+			// if wifi.recon is not running, this would block forever
+			if w.Running() {
+				w.hopChanges <- true
+			}
 
 			return nil
 		}))
