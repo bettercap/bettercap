@@ -136,7 +136,9 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) (*AccessPoin
 	mac = NormalizeMac(mac)
 	if ap, found := w.aps[mac]; found {
 		ap.LastSeen = time.Now()
-		ap.RSSI = rssi
+		if rssi != 0 {
+			ap.RSSI = rssi
+		}
 		// always get the cleanest one
 		if !isBogusMacESSID(ssid) {
 			ap.Hostname = ssid
