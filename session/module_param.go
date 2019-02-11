@@ -55,7 +55,7 @@ func NewBoolParameter(name string, def_value string, desc string) *ModuleParam {
 }
 
 func NewIntParameter(name string, def_value string, desc string) *ModuleParam {
-	return NewModuleParameter(name, def_value, INT, "^[\\d]+$", desc)
+	return NewModuleParameter(name, def_value, INT, `^[\-\+]?[\d]+$`, desc)
 }
 
 func NewDecimalParameter(name string, def_value string, desc string) *ModuleParam {
