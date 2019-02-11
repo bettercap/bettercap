@@ -35,31 +35,8 @@ func main() {
 
 	fmt.Printf("%s (type '%s' for a list of commands)\n\n", tui.Bold(appName), tui.Bold("help"))
 
-	sess.Register(modules.NewEventsStream(sess))
-	sess.Register(modules.NewTicker(sess))
-	sess.Register(modules.NewUpdateModule(sess))
-	sess.Register(modules.NewCapletsModule(sess))
-	sess.Register(modules.NewMacChanger(sess))
-	sess.Register(modules.NewProber(sess))
-	sess.Register(modules.NewDiscovery(sess))
-	sess.Register(modules.NewArpSpoofer(sess))
-	sess.Register(modules.NewDHCP6Spoofer(sess))
-	sess.Register(modules.NewDNSSpoofer(sess))
-	sess.Register(modules.NewSniffer(sess))
-	sess.Register(modules.NewPacketProxy(sess))
-	sess.Register(modules.NewAnyProxy(sess))
-	sess.Register(modules.NewTcpProxy(sess))
-	sess.Register(modules.NewHttpProxy(sess))
-	sess.Register(modules.NewHttpsProxy(sess))
-	sess.Register(modules.NewHttpServer(sess))
-	sess.Register(modules.NewHttpsServer(sess))
-	sess.Register(modules.NewRestAPI(sess))
-	sess.Register(modules.NewWOL(sess))
-	sess.Register(modules.NewWiFiModule(sess))
-	sess.Register(modules.NewBLERecon(sess))
-	sess.Register(modules.NewSynScanner(sess))
-	sess.Register(modules.NewGPS(sess))
-	sess.Register(modules.NewMySQLServer(sess))
+	// Load all modules
+	modules.LoadModules(sess)
 
 	if err = sess.Start(); err != nil {
 		log.Fatal("%s", err)
