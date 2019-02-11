@@ -22,11 +22,21 @@ func (w *WiFiModule) isApSelected() bool {
 }
 
 func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
-	include := false
-	sinceStarted := time.Since(w.Session.StartedAt)
-	sinceFirstSeen := time.Since(station.FirstSeen)
+	// ref. https://www.metageek.com/training/resources/understanding-rssi-2.html
+	rssi := fmt.Sprintf("%d dBm", station.RSSI)
+	if station.RSSI >= -67 {
+		rssi = tui.Green(rssi)
+	} else if station.RSSI >= -70 {
+		rssi = tui.Dim(tui.Green(rssi))
+	} else if station.RSSI >= -80 {
+		rssi = tui.Yellow(rssi)
+	} else {
+		rssi = tui.Dim(tui.Red(rssi))
+	}
 
 	bssid := station.HwAddress
+	sinceStarted := time.Since(w.Session.StartedAt)
+	sinceFirstSeen := time.Since(station.FirstSeen)
 	if sinceStarted > (discovery.JustJoinedTimeInterval*2) && sinceFirstSeen <= discovery.JustJoinedTimeInterval {
 		// if endpoint was first seen in the last 10 seconds
 		bssid = tui.Bold(bssid)
@@ -65,6 +75,7 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 	sent := ops.Ternary(station.Sent > 0, humanize.Bytes(station.Sent), "").(string)
 	recvd := ops.Ternary(station.Received > 0, humanize.Bytes(station.Received), "").(string)
 
+	include := false
 	if w.source == "" {
 		for _, frequencies := range w.frequencies {
 			if frequencies == station.Frequency {
@@ -76,9 +87,13 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		include = true
 	}
 
+	if int(station.RSSI) < w.minRSSI {
+		include = false
+	}
+
 	if w.isApSelected() {
 		return []string{
-			fmt.Sprintf("%d dBm", station.RSSI),
+			rssi,
 			bssid,
 			strconv.Itoa(station.Channel()),
 			sent,
@@ -114,7 +129,7 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		}
 
 		return []string{
-			fmt.Sprintf("%d dBm", station.RSSI),
+			rssi,
 			bssid,
 			ssid,
 			encryption,
