@@ -27,6 +27,7 @@ type WiFiModule struct {
 
 	handle              *pcap.Handle
 	source              string
+	minRSSI             int
 	channel             int
 	hopPeriod           time.Duration
 	hopChanges          chan bool
@@ -54,6 +55,7 @@ type WiFiModule struct {
 func NewWiFiModule(s *session.Session) *WiFiModule {
 	w := &WiFiModule{
 		SessionModule: session.NewSessionModule("wifi", s),
+		minRSSI:       -200,
 		channel:       0,
 		stickChan:     0,
 		hopPeriod:     250 * time.Millisecond,
@@ -107,6 +109,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			w.hopChanges <- true
 			return err
 		}))
+
+	w.AddParam(session.NewIntParameter("wifi.rssi.min",
+		"-200",
+		"Minimum WiFi signal strength in dBm."))
 
 	w.AddHandler(session.NewModuleHandler("wifi.deauth BSSID", `wifi\.deauth ((?:[a-fA-F0-9:]{11,})|all|\*)`,
 		"Start a 802.11 deauth attack, if an access point BSSID is provided, every client will be deauthenticated, otherwise only the selected client. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate every access point with at least one client and start a deauth attack for each one.",
@@ -291,6 +297,10 @@ func (w *WiFiModule) Configure() error {
 		}
 	}
 
+	if err, w.minRSSI = w.IntParam("wifi.rssi.min"); err != nil {
+		return err
+	}
+
 	ifName := w.Session.Interface.Name()
 
 	if w.source != "" {
@@ -354,7 +364,7 @@ func (w *WiFiModule) Configure() error {
 			if err = network.SetInterfaceChannel(ifName, 1); err != nil {
 				return fmt.Errorf("error while initializing %s to channel 1: %s", ifName, err)
 			}
-			log.Info("WiFi recon active with channel hopping.")
+			log.Info("wifi.recon started (min rssi: %d dBm)", w.minRSSI)
 		}
 	}
 

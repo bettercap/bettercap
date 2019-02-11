@@ -60,19 +60,23 @@ func (w *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *laye
 		}
 
 		if !network.IsZeroMac(from) && !network.IsBroadcastMac(from) {
-			var frequency int
-			bssid := from.String()
+			if int(radiotap.DBMAntennaSignal) >= w.minRSSI {
+				var frequency int
+				bssid := from.String()
 
-			if found, channel := packets.Dot11ParseDSSet(packet); found {
-				frequency = network.Dot11Chan2Freq(channel)
+				if found, channel := packets.Dot11ParseDSSet(packet); found {
+					frequency = network.Dot11Chan2Freq(channel)
+				} else {
+					frequency = int(radiotap.ChannelFrequency)
+				}
+
+				if ap, isNew := w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal); !isNew {
+					ap.EachClient(func(mac string, station *network.Station) {
+						station.Handshake.SetBeacon(packet)
+					})
+				}
 			} else {
-				frequency = int(radiotap.ChannelFrequency)
-			}
-
-			if ap, isNew := w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal); !isNew {
-				ap.EachClient(func(mac string, station *network.Station) {
-					station.Handshake.SetBeacon(packet)
-				})
+				log.Debug("skipping %s with %d dBm", from.String(), radiotap.DBMAntennaSignal)
 			}
 		}
 	}
