@@ -2,7 +2,6 @@ package any_proxy
 
 import (
 	"github.com/bettercap/bettercap/firewall"
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 )
 
@@ -97,7 +96,7 @@ func (p *AnyProxy) Configure() error {
 	}
 
 	if !p.Session.Firewall.IsForwardingEnabled() {
-		log.Info("Enabling forwarding.")
+		p.Info("Enabling forwarding.")
 		p.Session.Firewall.EnableForwarding(true)
 	}
 
@@ -115,7 +114,7 @@ func (p *AnyProxy) Configure() error {
 		return err
 	}
 
-	log.Info("Applied redirection %s", p.Redirection.String())
+	p.Info("Applied redirection %s", p.Redirection.String())
 
 	return nil
 }
@@ -130,7 +129,7 @@ func (p *AnyProxy) Start() error {
 
 func (p *AnyProxy) Stop() error {
 	if p.Redirection != nil {
-		log.Info("Disabling redirection %s", p.Redirection.String())
+		p.Info("Disabling redirection %s", p.Redirection.String())
 		if err := p.Session.Firewall.EnableRedirection(p.Redirection, false); err != nil {
 			return err
 		}

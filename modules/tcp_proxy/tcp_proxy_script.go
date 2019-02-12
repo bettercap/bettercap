@@ -27,14 +27,14 @@ func LoadTcpProxyScript(path string, sess *session.Session) (err error, s *TcpPr
 
 	// define session pointer
 	if err = plug.Set("env", sess.Env.Data); err != nil {
-		log.Error("Error while defining environment: %+v", err)
+		log.Error("error while defining environment: %+v", err)
 		return
 	}
 
 	// run onLoad if defined
 	if plug.HasFunc("onLoad") {
 		if _, err = plug.Call("onLoad"); err != nil {
-			log.Error("Error while executing onLoad callback: %s", "\nTraceback:\n  "+err.(*otto.Error).String())
+			log.Error("error while executing onLoad callback: %s", "\ntraceback:\n  "+err.(*otto.Error).String())
 			return
 		}
 	}
@@ -52,12 +52,12 @@ func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte) []byte {
 		addrTo := strings.Split(to.String(), ":")[0]
 
 		if ret, err := s.Call("onData", addrFrom, addrTo, data); err != nil {
-			log.Error("Error while executing onData callback: %s", err)
+			log.Error("error while executing onData callback: %s", err)
 			return nil
 		} else if ret != nil {
 			array, ok := ret.([]byte)
 			if !ok {
-				log.Error("Error while casting exported value to array of byte: value = %+v", ret)
+				log.Error("error while casting exported value to array of byte: value = %+v", ret)
 			}
 			return array
 		}

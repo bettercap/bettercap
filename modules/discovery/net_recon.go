@@ -4,7 +4,6 @@ import (
 	"github.com/bettercap/bettercap/modules/utils"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 )
@@ -105,7 +104,7 @@ func (d *Discovery) Start() error {
 		iface := d.Session.Interface.Name()
 		for d.Running() {
 			if table, err := network.ArpUpdate(iface); err != nil {
-				log.Error("%s", err)
+				d.Error("%s", err)
 			} else {
 				d.runDiff(table)
 			}

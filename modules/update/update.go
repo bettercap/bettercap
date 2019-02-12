@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/bettercap/bettercap/core"
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/go-github/github"
@@ -82,17 +81,17 @@ func (u *UpdateModule) Start() error {
 	return u.SetRunning(true, func() {
 		defer u.SetRunning(false, nil)
 
-		log.Info("checking latest stable release ...")
+		u.Info("checking latest stable release ...")
 
 		if releases, _, err := u.client.Repositories.ListReleases(context.Background(), "bettercap", "bettercap", nil); err == nil {
 			latest := releases[0]
 			if u.versionToNum(core.Version) < u.versionToNum(*latest.TagName) {
 				u.Session.Events.Add("update.available", latest)
 			} else {
-				log.Info("you are running %s which is the latest stable version.", tui.Bold(core.Version))
+				u.Info("you are running %s which is the latest stable version.", tui.Bold(core.Version))
 			}
 		} else {
-			log.Error("error while fetching latest release info from GitHub: %s", err)
+			u.Error("error while fetching latest release info from GitHub: %s", err)
 		}
 	})
 }

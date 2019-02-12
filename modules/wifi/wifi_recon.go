@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-
-	"github.com/evilsocket/islazy/tui"
 )
 
 var maxStationTTL = 5 * time.Minute
@@ -20,13 +17,13 @@ func (w *WiFiModule) stationPruner() {
 	w.reads.Add(1)
 	defer w.reads.Done()
 
-	log.Debug("wifi stations pruner started.")
+	w.Debug("wifi stations pruner started.")
 	for w.Running() {
 		// loop every AP
 		for _, ap := range w.Session.WiFi.List() {
 			sinceLastSeen := time.Since(ap.LastSeen)
 			if sinceLastSeen > maxStationTTL {
-				log.Debug("station %s not seen in %s, removing.", ap.BSSID(), sinceLastSeen)
+				w.Debug("station %s not seen in %s, removing.", ap.BSSID(), sinceLastSeen)
 				w.Session.WiFi.Remove(ap.BSSID())
 				continue
 			}
@@ -34,7 +31,7 @@ func (w *WiFiModule) stationPruner() {
 			for _, c := range ap.Clients() {
 				sinceLastSeen := time.Since(c.LastSeen)
 				if sinceLastSeen > maxStationTTL {
-					log.Debug("client %s of station %s not seen in %s, removing.", c.String(), ap.BSSID(), sinceLastSeen)
+					w.Debug("client %s of station %s not seen in %s, removing.", c.String(), ap.BSSID(), sinceLastSeen)
 					ap.RemoveClient(c.BSSID())
 
 					w.Session.Events.Add("wifi.client.lost", WiFiClientEvent{
@@ -75,7 +72,7 @@ func (w *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *laye
 					})
 				}
 			} else {
-				log.Debug("skipping %s with %d dBm", from.String(), radiotap.DBMAntennaSignal)
+				w.Debug("skipping %s with %d dBm", from.String(), radiotap.DBMAntennaSignal)
 			}
 		}
 	}
@@ -151,7 +148,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 		// first, locate the AP in our list by its BSSID
 		ap, found := w.Session.WiFi.Get(apMac.String())
 		if !found {
-			log.Warning("could not find AP with BSSID %s", apMac.String())
+			w.Warning("could not find AP with BSSID %s", apMac.String())
 			return
 		}
 
@@ -176,8 +173,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 				PMKID = "with PMKID"
 			}
 
-			log.Debug("[%s] got frame 1/4 of the %s <-> %s handshake (%s) (anonce:%x)",
-				tui.Green("wifi"),
+			w.Debug("got frame 1/4 of the %s <-> %s handshake (%s) (anonce:%x)",
 				apMac,
 				staMac,
 				PMKID,
@@ -186,8 +182,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 			// [2] (MIC) client is sending SNonce+MIC to the API
 			station.Handshake.AddFrame(1, packet)
 
-			log.Debug("[%s] got frame 2/4 of the %s <-> %s handshake (snonce:%x mic:%x)",
-				tui.Green("wifi"),
+			w.Debug("got frame 2/4 of the %s <-> %s handshake (snonce:%x mic:%x)",
 				apMac,
 				staMac,
 				key.Nonce,
@@ -196,8 +191,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 			// [3]: (INSTALL+ACK+MIC) AP informs the client that the PTK is installed
 			station.Handshake.AddFrame(2, packet)
 
-			log.Debug("[%s] got frame 3/4 of the %s <-> %s handshake (mic:%x)",
-				tui.Green("wifi"),
+			w.Debug("got frame 3/4 of the %s <-> %s handshake (mic:%x)",
 				apMac,
 				staMac,
 				key.MIC)
@@ -207,9 +201,9 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 		numUnsaved := station.Handshake.NumUnsaved()
 		doSave := numUnsaved > 0
 		if doSave && w.shakesFile != "" {
-			log.Debug("saving handshake frames to %s", w.shakesFile)
+			w.Debug("saving handshake frames to %s", w.shakesFile)
 			if err := w.Session.WiFi.SaveHandshakesTo(w.shakesFile, w.handle.LinkType()); err != nil {
-				log.Error("error while saving handshake frames to %s: %s", w.shakesFile, err)
+				w.Error("error while saving handshake frames to %s: %s", w.shakesFile, err)
 			}
 		}
 

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 
 	"github.com/bettercap/gatt"
@@ -153,7 +152,7 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 
 		chars, err := p.DiscoverCharacteristics(nil, svc)
 		if err != nil {
-			log.Error("Error while enumerating chars for service %s: %s", svc.UUID(), err)
+			d.Error("Error while enumerating chars for service %s: %s", svc.UUID(), err)
 			continue
 		}
 
@@ -172,14 +171,14 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 			if wantsToWrite && d.writeUUID.Equal(ch.UUID()) {
 				foundToWrite = true
 				if isWritable {
-					log.Info("Writing %d bytes to characteristics %s ...", len(d.writeData), d.writeUUID)
+					d.Info("Writing %d bytes to characteristics %s ...", len(d.writeData), d.writeUUID)
 				} else {
-					log.Warning("Attempt to write %d bytes to non writable characteristics %s ...", len(d.writeData), d.writeUUID)
+					d.Warning("Attempt to write %d bytes to non writable characteristics %s ...", len(d.writeData), d.writeUUID)
 				}
 
 				err := p.WriteCharacteristic(ch, d.writeData, !withResponse)
 				if err != nil {
-					log.Error("Error while writing: %s", err)
+					d.Error("Error while writing: %s", err)
 				}
 			}
 
@@ -205,7 +204,7 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 	}
 
 	if wantsToWrite && !foundToWrite {
-		log.Error("Writable characteristics %s not found.", d.writeUUID)
+		d.Error("Writable characteristics %s not found.", d.writeUUID)
 	} else {
 		tui.Table(os.Stdout, columns, rows)
 		d.Session.Refresh()

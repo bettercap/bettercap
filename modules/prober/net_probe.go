@@ -4,7 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
@@ -91,7 +90,7 @@ func (p *Prober) Configure() error {
 	} else if err, p.probes.WSD = p.BoolParam("net.probe.wsd"); err != nil {
 		return err
 	} else {
-		log.Debug("Throttling packets of %d ms.", p.throttle)
+		p.Debug("Throttling packets of %d ms.", p.throttle)
 	}
 	return nil
 }
@@ -106,13 +105,13 @@ func (p *Prober) Start() error {
 		defer p.waitGroup.Done()
 
 		if p.Session.Interface.IpAddress == network.MonitorModeAddress {
-			log.Info("Interface is in monitor mode, skipping net.probe")
+			p.Info("Interface is in monitor mode, skipping net.probe")
 			return
 		}
 
 		list, err := iprange.Parse(p.Session.Interface.CIDR())
 		if err != nil {
-			log.Fatal("%s", err)
+			p.Fatal("%s", err)
 		}
 
 		from := p.Session.Interface.IP
@@ -137,7 +136,7 @@ func (p *Prober) Start() error {
 				if !p.Running() {
 					return
 				} else if p.Session.Skip(ip) {
-					log.Debug("skipping address %s from probing.", ip)
+					p.Debug("skipping address %s from probing.", ip)
 					continue
 				} else if p.probes.NBNS {
 					p.sendProbeNBNS(from, from_hw, ip)

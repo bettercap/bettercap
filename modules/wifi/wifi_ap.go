@@ -5,7 +5,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
@@ -49,7 +48,7 @@ func (w *WiFiModule) startAp() error {
 		if !w.apConfig.Encryption {
 			enc = tui.Green("Open")
 		}
-		log.Info("Sending beacons as SSID %s (%s) on channel %d (%s).",
+		w.Info("sending beacons as SSID %s (%s) on channel %d (%s).",
 			tui.Bold(w.apConfig.SSID),
 			w.apConfig.BSSID.String(),
 			w.apConfig.Channel,
@@ -60,7 +59,7 @@ func (w *WiFiModule) startAp() error {
 			defer w.writes.Done()
 
 			if err, pkt := packets.NewDot11Beacon(w.apConfig, seqn); err != nil {
-				log.Error("Could not create beacon packet: %s", err)
+				w.Error("could not create beacon packet: %s", err)
 			} else {
 				w.injectPacket(pkt)
 			}

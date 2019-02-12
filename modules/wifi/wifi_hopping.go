@@ -3,7 +3,6 @@ package wifi
 import (
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 )
 
@@ -15,9 +14,9 @@ func (w *WiFiModule) onChannel(channel int, cb func()) {
 	w.stickChan = channel
 
 	if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
-		log.Warning("error while hopping to channel %d: %s", channel, err)
+		w.Warning("error while hopping to channel %d: %s", channel, err)
 	} else {
-		log.Debug("hopped on channel %d", channel)
+		w.Debug("hopped on channel %d", channel)
 	}
 
 	cb()
@@ -29,7 +28,7 @@ func (w *WiFiModule) channelHopper() {
 	w.reads.Add(1)
 	defer w.reads.Done()
 
-	log.Info("channel hopper started.")
+	w.Info("channel hopper started.")
 
 	for w.Running() {
 		delay := w.hopPeriod
@@ -51,17 +50,17 @@ func (w *WiFiModule) channelHopper() {
 				channel = w.stickChan
 			}
 
-			log.Debug("hopping on channel %d", channel)
+			w.Debug("hopping on channel %d", channel)
 
 			w.chanLock.Lock()
 			if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
-				log.Warning("error while hopping to channel %d: %s", channel, err)
+				w.Warning("error while hopping to channel %d: %s", channel, err)
 			}
 			w.chanLock.Unlock()
 
 			select {
 			case _ = <-w.hopChanges:
-				log.Debug("hop changed")
+				w.Debug("hop changed")
 				break loopCurrentChannels
 			case <-time.After(delay):
 				if !w.Running() {

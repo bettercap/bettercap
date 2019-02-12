@@ -10,7 +10,6 @@ import (
 	golog "log"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
@@ -110,7 +109,7 @@ func (d *BLERecon) Configure() (err error) {
 	if d.Running() {
 		return session.ErrAlreadyStarted
 	} else if d.gattDevice == nil {
-		log.Info("Initializing BLE device ...")
+		d.Info("Initializing BLE device ...")
 
 		// hey Paypal GATT library, could you please just STFU?!
 		golog.SetOutput(ioutil.Discard)
@@ -140,7 +139,7 @@ func (d *BLERecon) Start() error {
 
 		<-d.quit
 
-		log.Info("Stopping BLE scan ...")
+		d.Info("Stopping BLE scan ...")
 
 		d.gattDevice.StopScanning()
 
@@ -156,7 +155,7 @@ func (d *BLERecon) Stop() error {
 }
 
 func (d *BLERecon) pruner() {
-	log.Debug("Started BLE devices pruner ...")
+	d.Debug("Started BLE devices pruner ...")
 
 	for d.Running() {
 		for _, dev := range d.Session.BLE.Devices() {
@@ -193,7 +192,7 @@ func (d *BLERecon) enumAllTheThings(mac string) error {
 		return err
 	}
 
-	log.Info("Connecting to %s ...", mac)
+	d.Info("Connecting to %s ...", mac)
 
 	go func() {
 		time.Sleep(d.connTimeout)

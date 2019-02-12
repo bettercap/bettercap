@@ -6,10 +6,7 @@ import (
 
 	"github.com/google/gopacket"
 
-	"github.com/bettercap/bettercap/log"
-
 	"github.com/evilsocket/islazy/str"
-	"github.com/evilsocket/islazy/tui"
 )
 
 var mutators = []func(byte) byte{
@@ -60,13 +57,13 @@ func (s *Sniffer) doFuzzing(pkt gopacket.Packet) {
 	}
 
 	if bytesChanged > 0 {
-		logFn := log.Info
+		logFn := s.Info
 		if s.fuzzSilent {
-			logFn = log.Debug
+			logFn = s.Debug
 		}
-		logFn("[%s] changed %d bytes in %d layers.", tui.Green("net.fuzz"), bytesChanged, layersChanged)
+		logFn("changed %d bytes in %d layers.", bytesChanged, layersChanged)
 		if err := s.Session.Queue.Send(pkt.Data()); err != nil {
-			log.Error("error sending fuzzed packet: %s", err)
+			s.Error("error sending fuzzed packet: %s", err)
 		}
 	}
 }
@@ -110,7 +107,7 @@ func (s *Sniffer) StartFuzzing() error {
 
 	s.fuzzActive = true
 
-	log.Info("[%s] active on layer types %s (rate:%f ratio:%f)", tui.Green("net.fuzz"), strings.Join(s.fuzzLayers, ","), s.fuzzRate, s.fuzzRatio)
+	s.Info("active on layer types %s (rate:%f ratio:%f)", strings.Join(s.fuzzLayers, ","), s.fuzzRate, s.fuzzRatio)
 
 	return nil
 }

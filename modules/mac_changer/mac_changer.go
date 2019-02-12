@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/bettercap/bettercap/core"
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
@@ -112,16 +111,16 @@ func (mc *MacChanger) Start() error {
 	}
 
 	return mc.SetRunning(true, func() {
-		log.Info("Interface mac address set to %s", tui.Bold(mc.fakeMac.String()))
+		mc.Info("interface mac address set to %s", tui.Bold(mc.fakeMac.String()))
 	})
 }
 
 func (mc *MacChanger) Stop() error {
 	return mc.SetRunning(false, func() {
 		if err := mc.setMac(mc.originalMac); err == nil {
-			log.Info("Interface mac address restored to %s", tui.Bold(mc.originalMac.String()))
+			mc.Info("interface mac address restored to %s", tui.Bold(mc.originalMac.String()))
 		} else {
-			log.Error("Error while restoring mac address: %s", err)
+			mc.Error("error while restoring mac address: %s", err)
 		}
 	})
 }

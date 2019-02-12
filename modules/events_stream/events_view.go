@@ -2,7 +2,6 @@ package events_stream
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/modules/net_sniff"
 	"os"
 	"strings"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
+	"github.com/bettercap/bettercap/modules/net_sniff"
 	"github.com/bettercap/bettercap/modules/syn_scan"
 
 	"github.com/google/go-github/github"

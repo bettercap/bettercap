@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"github.com/bettercap/bettercap/core"
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/chifflier/nfqueue-go/nfqueue"
@@ -122,7 +121,7 @@ func (pp *PacketProxy) runRule(enable bool) (err error) {
 		"--queue-bypass",
 	}...)
 
-	log.Debug("iptables %s", args)
+	pp.Debug("iptables %s", args)
 
 	_, err = core.Exec("iptables", args)
 	return
@@ -149,7 +148,7 @@ func (pp *PacketProxy) Configure() (err error) {
 		return fmt.Errorf("%s does not exist.", pp.pluginPath)
 	}
 
-	log.Info("loading packet proxy plugin from %s ...", pp.pluginPath)
+	pp.Info("loading packet proxy plugin from %s ...", pp.pluginPath)
 
 	var ok bool
 	var sym plugin.Symbol
@@ -197,7 +196,7 @@ func (pp *PacketProxy) Start() error {
 	}
 
 	return pp.SetRunning(true, func() {
-		log.Info("%s started on queue number %d", tui.Green("packet.proxy"), pp.queueNum)
+		pp.Info("started on queue number %d", pp.queueNum)
 
 		defer pp.destroyQueue()
 

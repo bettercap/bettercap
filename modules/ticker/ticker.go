@@ -3,7 +3,6 @@ package ticker
 import (
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 )
 
@@ -79,7 +78,7 @@ func (t *Ticker) Start() error {
 	}
 
 	return t.SetRunning(true, func() {
-		log.Info("ticker running with period %.fs.", t.Period.Seconds())
+		t.Info("running with period %.fs", t.Period.Seconds())
 		tick := time.NewTicker(t.Period)
 		for range tick.C {
 			if !t.Running() {
@@ -88,7 +87,7 @@ func (t *Ticker) Start() error {
 
 			for _, cmd := range t.Commands {
 				if err := t.Session.Run(cmd); err != nil {
-					log.Error("%s", err)
+					t.Error("%s", err)
 				}
 			}
 		}

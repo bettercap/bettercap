@@ -2,13 +2,13 @@ package wifi
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/modules/discovery"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/bettercap/bettercap/modules/discovery"
 	"github.com/bettercap/bettercap/network"
 
 	"github.com/dustin/go-humanize"

@@ -8,7 +8,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
@@ -104,10 +103,10 @@ func (mysql *MySQLServer) Start() error {
 	}
 
 	return mysql.SetRunning(true, func() {
-		log.Info("[%s] server starting on address %s", tui.Green("mysql.server"), mysql.address)
+		mysql.Info("server starting on address %s", mysql.address)
 		for mysql.Running() {
 			if conn, err := mysql.listener.AcceptTCP(); err != nil {
-				log.Warning("[%s] error while accepting tcp connection: %s", tui.Green("mysql.server"), err)
+				mysql.Warning("error while accepting tcp connection: %s", err)
 				continue
 			} else {
 				defer conn.Close()
@@ -118,13 +117,13 @@ func (mysql *MySQLServer) Start() error {
 				reader := bufio.NewReader(conn)
 				read := 0
 
-				log.Info("[%s] connection from %s", tui.Green("mysql.server"), clientAddress)
+				mysql.Info("connection from %s", clientAddress)
 
 				if _, err := conn.Write(packets.MySQLGreeting); err != nil {
-					log.Warning("[%s] error while writing server greeting: %s", tui.Green("mysql.server"), err)
+					mysql.Warning("error while writing server greeting: %s", err)
 					continue
 				} else if read, err = reader.Read(readBuffer); err != nil {
-					log.Warning("[%s] error while reading client message: %s", tui.Green("mysql.server"), err)
+					mysql.Warning("error while reading client message: %s", err)
 					continue
 				}
 
@@ -135,38 +134,38 @@ func (mysql *MySQLServer) Start() error {
 				loadData := string(capabilities[8])
 				username := string(bytes.Split(readBuffer[36:], []byte{0})[0])
 
-				log.Info("[%s] can use LOAD DATA LOCAL: %s", tui.Green("mysql.server"), loadData)
-				log.Info("[%s] login request username: %s", tui.Green("mysql.server"), tui.Bold(username))
+				mysql.Info("can use LOAD DATA LOCAL: %s", loadData)
+				mysql.Info("login request username: %s", tui.Bold(username))
 
 				if _, err := conn.Write(packets.MySQLFirstResponseOK); err != nil {
-					log.Warning("[%s] error while writing server first response ok: %s", tui.Green("mysql.server"), err)
+					mysql.Warning("error while writing server first response ok: %s", err)
 					continue
 				} else if _, err := reader.Read(readBuffer); err != nil {
-					log.Warning("[%s] error while reading client message: %s", tui.Green("mysql.server"), err)
+					mysql.Warning("error while reading client message: %s", err)
 					continue
 				} else if _, err := conn.Write(packets.MySQLGetFile(mysql.infile)); err != nil {
-					log.Warning("[%s] error while writing server get file request: %s", tui.Green("mysql.server"), err)
+					mysql.Warning("error while writing server get file request: %s", err)
 					continue
 				} else if read, err = reader.Read(readBuffer); err != nil {
-					log.Warning("[%s] error while readind buffer: %s", tui.Green("mysql.server"), err)
+					mysql.Warning("error while readind buffer: %s", err)
 					continue
 				}
 
 				if strings.HasPrefix(mysql.infile, "\\") {
-					log.Info("[%s] NTLM from '%s' relayed to %s", tui.Green("mysql.server"), clientAddress, mysql.infile)
+					mysql.Info("NTLM from '%s' relayed to %s", clientAddress, mysql.infile)
 				} else if fileSize := read - 9; fileSize < 4 {
-					log.Warning("[%s] unpexpected buffer size %d", tui.Green("mysql.server"), read)
+					mysql.Warning("unpexpected buffer size %d", read)
 				} else {
-					log.Info("[%s] read file ( %s ) is %d bytes", tui.Green("mysql.server"), mysql.infile, fileSize)
+					mysql.Info("read file ( %s ) is %d bytes", mysql.infile, fileSize)
 
 					fileData := readBuffer[4 : read-4]
 
 					if mysql.outfile == "" {
-						log.Info("\n%s", string(fileData))
+						mysql.Info("\n%s", string(fileData))
 					} else {
-						log.Info("[%s] saving to %s ...", tui.Green("mysql.server"), mysql.outfile)
+						mysql.Info("saving to %s ...", mysql.outfile)
 						if err := ioutil.WriteFile(mysql.outfile, fileData, 0755); err != nil {
-							log.Warning("[%s] error while saving the file: %s", tui.Green("mysql.server"), err)
+							mysql.Warning("error while saving the file: %s", err)
 						}
 					}
 				}

@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/evilsocket/islazy/fs"
@@ -263,9 +262,9 @@ func (s *EventsStream) Show(limit int) error {
 
 func (s *EventsStream) startWaitingFor(tag string, timeout int) error {
 	if timeout == 0 {
-		log.Info("waiting for event %s ...", tui.Green(tag))
+		s.Info("waiting for event %s ...", tui.Green(tag))
 	} else {
-		log.Info("waiting for event %s for %d seconds ...", tui.Green(tag), timeout)
+		s.Info("waiting for event %s for %d seconds ...", tui.Green(tag), timeout)
 		go func() {
 			time.Sleep(time.Duration(timeout) * time.Second)
 			s.waitFor = ""
@@ -279,7 +278,7 @@ func (s *EventsStream) startWaitingFor(tag string, timeout int) error {
 	if event == nil {
 		return fmt.Errorf("'events.waitFor %s %d' timed out.", tag, timeout)
 	} else {
-		log.Debug("got event: %v", event)
+		s.Debug("got event: %v", event)
 	}
 
 	return nil

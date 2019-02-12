@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/bettercap/bettercap/firewall"
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 )
 
@@ -125,12 +124,12 @@ func (p *TcpProxy) Configure() error {
 		if err, p.script = LoadTcpProxyScript(scriptPath, p.Session); err != nil {
 			return err
 		} else {
-			log.Debug("TCP proxy script %s loaded.", scriptPath)
+			p.Debug("script %s loaded.", scriptPath)
 		}
 	}
 
 	if !p.Session.Firewall.IsForwardingEnabled() {
-		log.Info("Enabling forwarding.")
+		p.Info("enabling forwarding.")
 		p.Session.Firewall.EnableForwarding(true)
 	}
 
@@ -146,7 +145,7 @@ func (p *TcpProxy) Configure() error {
 		return err
 	}
 
-	log.Debug("Applied redirection %s", p.Redirection.String())
+	p.Debug("applied redirection %s", p.Redirection.String())
 
 	return nil
 }
@@ -159,7 +158,7 @@ func (p *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.Wa
 		n, err := src.Read(buff)
 		if err != nil {
 			if err.Error() != "EOF" {
-				log.Warning("Read failed: %s", err)
+				p.Warning("read failed: %s", err)
 			}
 			return
 		}
@@ -170,7 +169,7 @@ func (p *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.Wa
 
 			if ret != nil {
 				nret := len(ret)
-				log.Info("Overriding %d bytes of data from %s to %s with %d bytes of new data.",
+				p.Info("overriding %d bytes of data from %s to %s with %d bytes of new data.",
 					n, from.String(), to.String(), nret)
 				b = make([]byte, nret)
 				copy(b, ret)
@@ -179,28 +178,28 @@ func (p *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.Wa
 
 		n, err = dst.Write(b)
 		if err != nil {
-			log.Warning("Write failed: %s", err)
+			p.Warning("write failed: %s", err)
 			return
 		}
 
-		log.Debug("%s -> %s : %d bytes", from.String(), to.String(), n)
+		p.Debug("%s -> %s : %d bytes", from.String(), to.String(), n)
 	}
 }
 
 func (p *TcpProxy) handleConnection(c *net.TCPConn) {
 	defer c.Close()
 
-	log.Info("TCP proxy got a connection from %s", c.RemoteAddr().String())
+	p.Info("got a connection from %s", c.RemoteAddr().String())
 
 	// tcp tunnel enabled
 	if p.tunnelAddr.IP.To4() != nil {
-		log.Info("TCP tunnel started ( %s -> %s )", p.remoteAddr.String(), p.tunnelAddr.String())
+		p.Info("tcp tunnel started ( %s -> %s )", p.remoteAddr.String(), p.tunnelAddr.String())
 		p.remoteAddr = p.tunnelAddr
 	}
 
 	remote, err := net.DialTCP("tcp", nil, p.remoteAddr)
 	if err != nil {
-		log.Warning("Error while connecting to remote %s: %s", p.remoteAddr.String(), err)
+		p.Warning("error while connecting to remote %s: %s", p.remoteAddr.String(), err)
 		return
 	}
 	defer remote.Close()
@@ -221,12 +220,12 @@ func (p *TcpProxy) Start() error {
 	}
 
 	return p.SetRunning(true, func() {
-		log.Info("TCP proxy started ( x -> %s -> %s )", p.localAddr.String(), p.remoteAddr.String())
+		p.Info("started ( x -> %s -> %s )", p.localAddr.String(), p.remoteAddr.String())
 
 		for p.Running() {
 			conn, err := p.listener.AcceptTCP()
 			if err != nil {
-				log.Warning("Error while accepting TCP connection: %s", err)
+				p.Warning("error while accepting TCP connection: %s", err)
 				continue
 			}
 
@@ -238,7 +237,7 @@ func (p *TcpProxy) Start() error {
 func (p *TcpProxy) Stop() error {
 
 	if p.Redirection != nil {
-		log.Debug("Disabling redirection %s", p.Redirection.String())
+		p.Debug("disabling redirection %s", p.Redirection.String())
 		if err := p.Session.Firewall.EnableRedirection(p.Redirection, false); err != nil {
 			return err
 		}

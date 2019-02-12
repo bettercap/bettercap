@@ -1,10 +1,9 @@
 package https_proxy
 
 import (
-	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/modules/http_proxy"
 	"github.com/bettercap/bettercap/session"
 	"github.com/bettercap/bettercap/tls"
-	"github.com/bettercap/bettercap/modules/http_proxy"
 
 	"github.com/evilsocket/islazy/fs"
 )
@@ -127,15 +126,15 @@ func (p *HttpsProxy) Configure() error {
 			return err
 		}
 
-		log.Debug("%+v", cfg)
-		log.Info("Generating proxy certification authority TLS key to %s", keyFile)
-		log.Info("Generating proxy certification authority TLS certificate to %s", certFile)
+		p.Debug("%+v", cfg)
+		p.Info("generating proxy certification authority TLS key to %s", keyFile)
+		p.Info("generating proxy certification authority TLS certificate to %s", certFile)
 		if err := tls.Generate(cfg, certFile, keyFile); err != nil {
 			return err
 		}
 	} else {
-		log.Info("loading proxy certification authority TLS key from %s", keyFile)
-		log.Info("loading proxy certification authority TLS certificate from %s", certFile)
+		p.Info("loading proxy certification authority TLS key from %s", keyFile)
+		p.Info("loading proxy certification authority TLS certificate from %s", certFile)
 	}
 
 	return p.proxy.ConfigureTLS(address, proxyPort, httpPort, scriptPath, certFile, keyFile, jsToInject, stripSSL)

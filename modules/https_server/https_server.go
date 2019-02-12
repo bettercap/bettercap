@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 	"github.com/bettercap/bettercap/tls"
 
@@ -101,7 +100,7 @@ func (httpd *HttpsServer) Configure() error {
 	fileServer := http.FileServer(http.Dir(path))
 
 	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Info("(%s) %s %s %s%s", tui.Green("https"), tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		httpd.Info("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
 		fileServer.ServeHTTP(w, r)
 	}))
 
@@ -135,15 +134,15 @@ func (httpd *HttpsServer) Configure() error {
 			return err
 		}
 
-		log.Debug("%+v", cfg)
-		log.Info("generating server TLS key to %s", keyFile)
-		log.Info("generating server TLS certificate to %s", certFile)
+		httpd.Debug("%+v", cfg)
+		httpd.Info("generating server TLS key to %s", keyFile)
+		httpd.Info("generating server TLS certificate to %s", certFile)
 		if err := tls.Generate(cfg, certFile, keyFile); err != nil {
 			return err
 		}
 	} else {
-		log.Info("loading server TLS key from %s", keyFile)
-		log.Info("loading server TLS certificate from %s", certFile)
+		httpd.Info("loading server TLS key from %s", keyFile)
+		httpd.Info("loading server TLS certificate from %s", certFile)
 	}
 
 	httpd.certFile = certFile
@@ -158,7 +157,7 @@ func (httpd *HttpsServer) Start() error {
 	}
 
 	return httpd.SetRunning(true, func() {
-		log.Info("HTTPS server starting on https://%s", httpd.server.Addr)
+		httpd.Info("starting on https://%s", httpd.server.Addr)
 		if err := httpd.server.ListenAndServeTLS(httpd.certFile, httpd.keyFile); err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}

@@ -20,7 +20,7 @@ type HttpProxyScript struct {
 }
 
 func LoadHttpProxyScript(path string, sess *session.Session) (err error, s *HttpProxyScript) {
-	log.Info("loading proxy script %s ...", path)
+	log.Debug("loading proxy script %s ...", path)
 
 	plug, err := plugin.Load(path)
 	if err != nil {

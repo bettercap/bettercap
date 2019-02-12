@@ -6,8 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bettercap/bettercap/log"
-
 	"github.com/elazarl/goproxy"
 	"github.com/jpillora/go-tld"
 )
@@ -25,7 +23,6 @@ func NewCookieTracker() *CookieTracker {
 
 func (t *CookieTracker) domainOf(req *http.Request) string {
 	if parsed, err := tld.Parse(req.Host); err != nil {
-		log.Warning("Could not parse host %s: %s", req.Host, err)
 		return req.Host
 	} else {
 		return fmt.Sprintf("%s.%s", parsed.Domain, parsed.TLD)

@@ -5,7 +5,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/adrianmo/go-nmea"
@@ -24,7 +23,7 @@ type GPS struct {
 
 func NewGPS(s *session.Session) *GPS {
 	gps := &GPS{
-		SessionModule: session.NewSessionModule("http.server", s),
+		SessionModule: session.NewSessionModule("gps", s),
 		serialPort:    "/dev/ttyUSB0",
 		baudRate:      19200,
 	}
@@ -136,10 +135,10 @@ func (gps *GPS) Start() error {
 						gps.Session.GPS = m
 					}
 				} else {
-					log.Debug("Error parsing line '%s': %s", line, err)
+					gps.Debug("error parsing line '%s': %s", line, err)
 				}
 			} else if err != io.EOF {
-				log.Warning("Error while reading serial port: %s", err)
+				gps.Warning("error while reading serial port: %s", err)
 			}
 		}
 	})

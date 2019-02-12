@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/bettercap/bettercap/firewall"
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 	btls "github.com/bettercap/bettercap/tls"
 
@@ -24,6 +23,7 @@ import (
 	"github.com/inconshreveable/go-vhost"
 
 	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/islazy/tui"
 )
 
@@ -48,6 +48,7 @@ type HTTPProxy struct {
 	stripper    *SSLStripper
 	sniListener net.Listener
 	sess        *session.Session
+	tag         string
 }
 
 func stripPort(s string) string {
@@ -66,6 +67,7 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 		stripper: NewSSLStripper(s, false),
 		isTLS:    false,
 		Server:   nil,
+		tag:      session.AsTag("http.proxy"),
 	}
 
 	p.Proxy.Verbose = false
@@ -88,6 +90,26 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	return p
 }
 
+func (p *HTTPProxy) Debug(format string, args ...interface{}) {
+	p.sess.Events.Log(log.DEBUG, p.tag+format, args...)
+}
+
+func (p *HTTPProxy) Info(format string, args ...interface{}) {
+	p.sess.Events.Log(log.INFO, p.tag+format, args...)
+}
+
+func (p *HTTPProxy) Warning(format string, args ...interface{}) {
+	p.sess.Events.Log(log.WARNING, p.tag+format, args...)
+}
+
+func (p *HTTPProxy) Error(format string, args ...interface{}) {
+	p.sess.Events.Log(log.ERROR, p.tag+format, args...)
+}
+
+func (p *HTTPProxy) Fatal(format string, args ...interface{}) {
+	p.sess.Events.Log(log.FATAL, p.tag+format, args...)
+}
+
 func (p *HTTPProxy) doProxy(req *http.Request) bool {
 	blacklist := []string{
 		"localhost",
@@ -95,14 +117,14 @@ func (p *HTTPProxy) doProxy(req *http.Request) bool {
 	}
 
 	if req.Host == "" {
-		log.Error("Got request with empty host: %v", req)
+		p.Error("got request with empty host: %v", req)
 		return false
 	}
 
 	host := strings.Split(req.Host, ":")[0]
 	for _, blacklisted := range blacklist {
 		if host == blacklisted {
-			log.Error("Got request with blacklisted host: %s", req.Host)
+			p.Error("got request with blacklisted host: %s", req.Host)
 			return false
 		}
 	}
@@ -137,7 +159,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 		if err, p.Script = LoadHttpProxyScript(scriptPath, p.sess); err != nil {
 			return err
 		} else {
-			log.Debug("Proxy script %s loaded.", scriptPath)
+			p.Debug("proxy script %s loaded.", scriptPath)
 		}
 	}
 
@@ -149,7 +171,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	}
 
 	if !p.sess.Firewall.IsForwardingEnabled() {
-		log.Info("Enabling forwarding.")
+		p.Info("enabling forwarding.")
 		p.sess.Firewall.EnableForwarding(true)
 	}
 
@@ -163,7 +185,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 		return err
 	}
 
-	log.Debug("Applied redirection %s", p.Redirection.String())
+	p.Debug("applied redirection %s", p.Redirection.String())
 
 	p.sess.UnkCmdCallback = func(cmd string) bool {
 		if p.Script != nil {
@@ -175,7 +197,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 	return nil
 }
 
-func TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCtx) (*tls.Config, error) {
+func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCtx) (*tls.Config, error) {
 	return func(host string, ctx *goproxy.ProxyCtx) (c *tls.Config, err error) {
 		parts := strings.SplitN(host, ":", 2)
 		hostname := parts[0]
@@ -189,10 +211,10 @@ func TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCt
 
 		cert := getCachedCert(hostname, port)
 		if cert == nil {
-			log.Debug("Creating spoofed certificate for %s:%d", tui.Yellow(hostname), port)
+			p.Debug("creating spoofed certificate for %s:%d", tui.Yellow(hostname), port)
 			cert, err = btls.SignCertificateForHost(ca, hostname, port)
 			if err != nil {
-				log.Warning("Cannot sign host certificate with provided CA: %s", err)
+				p.Warning("cannot sign host certificate with provided CA: %s", err)
 				return nil, err
 			}
 
@@ -215,6 +237,7 @@ func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, sc
 
 	p.isTLS = true
 	p.Name = "https.proxy"
+	p.tag = session.AsTag("https.proxy")
 	p.CertFile = certFile
 	p.KeyFile = keyFile
 
@@ -230,10 +253,10 @@ func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, sc
 	}
 
 	goproxy.GoproxyCa = ourCa
-	goproxy.OkConnect = &goproxy.ConnectAction{Action: goproxy.ConnectAccept, TLSConfig: TLSConfigFromCA(&ourCa)}
-	goproxy.MitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectMitm, TLSConfig: TLSConfigFromCA(&ourCa)}
-	goproxy.HTTPMitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectHTTPMitm, TLSConfig: TLSConfigFromCA(&ourCa)}
-	goproxy.RejectConnect = &goproxy.ConnectAction{Action: goproxy.ConnectReject, TLSConfig: TLSConfigFromCA(&ourCa)}
+	goproxy.OkConnect = &goproxy.ConnectAction{Action: goproxy.ConnectAccept, TLSConfig: p.TLSConfigFromCA(&ourCa)}
+	goproxy.MitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectMitm, TLSConfig: p.TLSConfigFromCA(&ourCa)}
+	goproxy.HTTPMitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectHTTPMitm, TLSConfig: p.TLSConfigFromCA(&ourCa)}
+	goproxy.RejectConnect = &goproxy.ConnectAction{Action: goproxy.ConnectReject, TLSConfig: p.TLSConfigFromCA(&ourCa)}
 
 	return nil
 }
@@ -279,7 +302,7 @@ func (p *HTTPProxy) httpsWorker() error {
 	for p.isRunning {
 		c, err := p.sniListener.Accept()
 		if err != nil {
-			log.Warning("error accepting connection: %s.", err)
+			p.Warning("error accepting connection: %s.", err)
 			continue
 		}
 
@@ -290,17 +313,17 @@ func (p *HTTPProxy) httpsWorker() error {
 
 			tlsConn, err := vhost.TLS(c)
 			if err != nil {
-				log.Warning("error reading SNI: %s.", err)
+				p.Warning("error reading SNI: %s.", err)
 				return
 			}
 
 			hostname := tlsConn.Host()
 			if hostname == "" {
-				log.Warning("client does not support SNI.")
+				p.Warning("client does not support SNI.")
 				return
 			}
 
-			log.Debug("[%s] proxying connection from %s to %s", tui.Green("https.proxy"), tui.Bold(stripPort(c.RemoteAddr().String())), tui.Yellow(hostname))
+			p.Debug("proxying connection from %s to %s", tui.Bold(stripPort(c.RemoteAddr().String())), tui.Yellow(hostname))
 
 			req := &http.Request{
 				Method: "CONNECT",
@@ -327,7 +350,7 @@ func (p *HTTPProxy) Start() {
 			strip = tui.Dim("disabled")
 		}
 
-		log.Info("%s started on %s (sslstrip %s)", tui.Green(p.Name), p.Server.Addr, strip)
+		p.Info("started on %s (sslstrip %s)", p.Server.Addr, strip)
 
 		if p.isTLS {
 			err = p.httpsWorker()
@@ -336,14 +359,14 @@ func (p *HTTPProxy) Start() {
 		}
 
 		if err != nil && err.Error() != "http: Server closed" {
-			log.Fatal("%s", err)
+			p.Fatal("%s", err)
 		}
 	}()
 }
 
 func (p *HTTPProxy) Stop() error {
 	if p.Redirection != nil {
-		log.Debug("Disabling redirection %s", p.Redirection.String())
+		p.Debug("disabling redirection %s", p.Redirection.String())
 		if err := p.sess.Firewall.EnableRedirection(p.Redirection, false); err != nil {
 			return err
 		}

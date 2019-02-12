@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 )
@@ -31,6 +32,11 @@ type SessionModule struct {
 
 	handlers []ModuleHandler
 	params   map[string]*ModuleParam
+	tag      string
+}
+
+func AsTag(name string) string {
+	return fmt.Sprintf("%s ", tui.Wrap(tui.BACKLIGHTBLUE, tui.Wrap(tui.FOREBLACK, name)))
 }
 
 func NewSessionModule(name string, s *Session) SessionModule {
@@ -42,9 +48,30 @@ func NewSessionModule(name string, s *Session) SessionModule {
 
 		handlers: make([]ModuleHandler, 0),
 		params:   make(map[string]*ModuleParam),
+		tag:      AsTag(name),
 	}
 
 	return m
+}
+
+func (m *SessionModule) Debug(format string, args ...interface{}) {
+	m.Session.Events.Log(log.DEBUG, m.tag+format, args...)
+}
+
+func (m *SessionModule) Info(format string, args ...interface{}) {
+	m.Session.Events.Log(log.INFO, m.tag+format, args...)
+}
+
+func (m *SessionModule) Warning(format string, args ...interface{}) {
+	m.Session.Events.Log(log.WARNING, m.tag+format, args...)
+}
+
+func (m *SessionModule) Error(format string, args ...interface{}) {
+	m.Session.Events.Log(log.ERROR, m.tag+format, args...)
+}
+
+func (m *SessionModule) Fatal(format string, args ...interface{}) {
+	m.Session.Events.Log(log.FATAL, m.tag+format, args...)
 }
 
 func (m *SessionModule) Handlers() []ModuleHandler {

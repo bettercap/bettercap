@@ -8,14 +8,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/malfunkt/iprange"
 
 	"github.com/evilsocket/islazy/str"
-	"github.com/evilsocket/islazy/tui"
 )
 
 const synSourcePort = 666
@@ -157,8 +155,7 @@ func plural(n uint64) string {
 
 func (s *SynScanner) showProgress() error {
 	progress := 100.0 * (float64(s.stats.doneProbes) / float64(s.stats.totProbes))
-	log.Info("[%s] [%.2f%%] found %d open port%s for %d address%s, sent %d/%d packets in %s",
-		tui.Green("syn.scan"),
+	s.Info("[%.2f%%] found %d open port%s for %d address%s, sent %d/%d packets in %s",
 		progress,
 		s.stats.openPorts,
 		plural(s.stats.openPorts),
@@ -171,7 +168,7 @@ func (s *SynScanner) showProgress() error {
 }
 
 func (s *SynScanner) Stop() error {
-	log.Info("[%s] stopping ...", tui.Green("syn.scan"))
+	s.Info("stopping ...")
 	return s.SetRunning(false, func() {
 		s.waitGroup.Wait()
 		s.showProgress()
@@ -197,9 +194,9 @@ func (s *SynScanner) synScan() error {
 		}
 
 		if s.stats.numPorts > 1 {
-			log.Info("scanning %d address%s from port %d to port %d ...", s.stats.numAddresses, plural, s.startPort, s.endPort)
+			s.Info("scanning %d address%s from port %d to port %d ...", s.stats.numAddresses, plural, s.startPort, s.endPort)
 		} else {
-			log.Info("scanning %d address%s on port %d ...", s.stats.numAddresses, plural, s.startPort)
+			s.Info("scanning %d address%s on port %d ...", s.stats.numAddresses, plural, s.startPort)
 		}
 
 		// set the collector
@@ -226,7 +223,7 @@ func (s *SynScanner) synScan() error {
 			mac, err := s.Session.FindMAC(address, true)
 			if err != nil {
 				atomic.AddUint64(&s.stats.doneProbes, s.stats.numPorts)
-				log.Debug("Could not get MAC for %s: %s", address.String(), err)
+				s.Debug("could not get MAC for %s: %s", address.String(), err)
 				continue
 			}
 
@@ -239,14 +236,14 @@ func (s *SynScanner) synScan() error {
 
 				err, raw := packets.NewTCPSyn(s.Session.Interface.IP, s.Session.Interface.HW, address, mac, synSourcePort, dstPort)
 				if err != nil {
-					log.Error("Error creating SYN packet: %s", err)
+					s.Error("error creating SYN packet: %s", err)
 					continue
 				}
 
 				if err := s.Session.Queue.Send(raw); err != nil {
-					log.Error("Error sending SYN packet: %s", err)
+					s.Error("error sending SYN packet: %s", err)
 				} else {
-					log.Debug("Sent %d bytes of SYN packet to %s for port %d", len(raw), address.String(), dstPort)
+					s.Debug("sent %d bytes of SYN packet to %s for port %d", len(raw), address.String(), dstPort)
 				}
 
 				time.Sleep(time.Duration(10) * time.Millisecond)

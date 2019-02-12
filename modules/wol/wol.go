@@ -5,7 +5,6 @@ import (
 	"net"
 	"regexp"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
@@ -105,7 +104,7 @@ func (w *WOL) wolETH(mac string) error {
 	defer w.SetRunning(false, nil)
 
 	payload := buildPayload(mac)
-	log.Info("Sending %d bytes of ethernet WOL packet to %s", len(payload), tui.Bold(mac))
+	w.Info("sending %d bytes of ethernet WOL packet to %s", len(payload), tui.Bold(mac))
 	eth := layers.Ethernet{
 		SrcMAC:       w.Session.Interface.HW,
 		DstMAC:       layers.EthernetBroadcast,
@@ -126,7 +125,7 @@ func (w *WOL) wolUDP(mac string) error {
 	defer w.SetRunning(false, nil)
 
 	payload := buildPayload(mac)
-	log.Info("Sending %d bytes of UDP WOL packet to %s", len(payload), tui.Bold(mac))
+	w.Info("sending %d bytes of UDP WOL packet to %s", len(payload), tui.Bold(mac))
 
 	eth := layers.Ethernet{
 		SrcMAC:       w.Session.Interface.HW,

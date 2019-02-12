@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/gorilla/mux"
@@ -22,18 +21,18 @@ type APIResponse struct {
 	Message string `json:"msg"`
 }
 
-func setAuthFailed(w http.ResponseWriter, r *http.Request) {
-	log.Warning("Unauthorized authentication attempt from %s", r.RemoteAddr)
+func (api *RestAPI) setAuthFailed(w http.ResponseWriter, r *http.Request) {
+	api.Warning("Unauthorized authentication attempt from %s", r.RemoteAddr)
 
 	w.Header().Set("WWW-Authenticate", `Basic realm="auth"`)
 	w.WriteHeader(401)
 	w.Write([]byte("Unauthorized"))
 }
 
-func toJSON(w http.ResponseWriter, o interface{}) {
+func (api *RestAPI) toJSON(w http.ResponseWriter, o interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(o); err != nil {
-		log.Error("error while encoding object to JSON: %v", err)
+		api.Error("error while encoding object to JSON: %v", err)
 	}
 }
 
@@ -59,7 +58,7 @@ func (api *RestAPI) checkAuth(r *http.Request) bool {
 }
 
 func (api *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I)
+	api.toJSON(w, session.I)
 }
 
 func (api *RestAPI) showBle(w http.ResponseWriter, r *http.Request) {
@@ -67,28 +66,28 @@ func (api *RestAPI) showBle(w http.ResponseWriter, r *http.Request) {
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		toJSON(w, session.I.BLE)
+		api.toJSON(w, session.I.BLE)
 	} else if dev, found := session.I.BLE.Get(mac); found {
-		toJSON(w, dev)
+		api.toJSON(w, dev)
 	} else {
 		http.Error(w, "Not Found", 404)
 	}
 }
 
 func (api *RestAPI) showEnv(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.Env)
+	api.toJSON(w, session.I.Env)
 }
 
 func (api *RestAPI) showGateway(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.Gateway)
+	api.toJSON(w, session.I.Gateway)
 }
 
 func (api *RestAPI) showInterface(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.Interface)
+	api.toJSON(w, session.I.Interface)
 }
 
 func (api *RestAPI) showModules(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.Modules)
+	api.toJSON(w, session.I.Modules)
 }
 
 func (api *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
@@ -96,24 +95,24 @@ func (api *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		toJSON(w, session.I.Lan)
+		api.toJSON(w, session.I.Lan)
 	} else if host, found := session.I.Lan.Get(mac); found {
-		toJSON(w, host)
+		api.toJSON(w, host)
 	} else {
 		http.Error(w, "Not Found", 404)
 	}
 }
 
 func (api *RestAPI) showOptions(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.Options)
+	api.toJSON(w, session.I.Options)
 }
 
 func (api *RestAPI) showPackets(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.Queue)
+	api.toJSON(w, session.I.Queue)
 }
 
 func (api *RestAPI) showStartedAt(w http.ResponseWriter, r *http.Request) {
-	toJSON(w, session.I.StartedAt)
+	api.toJSON(w, session.I.StartedAt)
 }
 
 func (api *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
@@ -121,11 +120,11 @@ func (api *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		toJSON(w, session.I.WiFi)
+		api.toJSON(w, session.I.WiFi)
 	} else if station, found := session.I.WiFi.Get(mac); found {
-		toJSON(w, station)
+		api.toJSON(w, station)
 	} else if client, found := session.I.WiFi.GetClient(mac); found {
-		toJSON(w, client)
+		api.toJSON(w, client)
 	} else {
 		http.Error(w, "Not Found", 404)
 	}
@@ -142,7 +141,7 @@ func (api *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	} else if err = session.I.Run(cmd.Command); err != nil {
 		http.Error(w, err.Error(), 400)
 	} else {
-		toJSON(w, APIResponse{Success: true})
+		api.toJSON(w, APIResponse{Success: true})
 	}
 }
 
@@ -170,7 +169,7 @@ func (api *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		toJSON(w, events[nevents-n:])
+		api.toJSON(w, events[nevents-n:])
 	}
 }
 
@@ -182,7 +181,7 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 	api.setSecurityHeaders(w)
 
 	if !api.checkAuth(r) {
-		setAuthFailed(w, r)
+		api.setAuthFailed(w, r)
 		return
 	} else if r.Method == "POST" {
 		api.runSessionCommand(w, r)
@@ -239,7 +238,7 @@ func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 	api.setSecurityHeaders(w)
 
 	if !api.checkAuth(r) {
-		setAuthFailed(w, r)
+		api.setAuthFailed(w, r)
 		return
 	}
 

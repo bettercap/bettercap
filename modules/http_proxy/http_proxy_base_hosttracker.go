@@ -3,8 +3,6 @@ package http_proxy
 import (
 	"net"
 	"sync"
-
-	"github.com/bettercap/bettercap/log"
 )
 
 type Host struct {
@@ -27,7 +25,6 @@ func NewHost(name string) *Host {
 			ph.Address = make(net.IP, len(addrs[0]))
 			copy(ph.Address, addrs[0])
 		} else {
-			log.Error("Could not resolve %s: %s", ph.Hostname, err)
 			ph.Address = nil
 		}
 	}(h)

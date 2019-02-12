@@ -2,13 +2,13 @@ package wifi
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/modules/utils"
+
 	"net"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/modules/utils"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
@@ -224,7 +224,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			freqs := []int{}
 
 			if args[0] != "clear" {
-				log.Debug("setting hopping channels to %s", args[0])
+				w.Debug("setting hopping channels to %s", args[0])
 				for _, s := range str.Comma(args[0]) {
 					if ch, err := strconv.Atoi(s); err != nil {
 						return err
@@ -239,13 +239,13 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			}
 
 			if len(freqs) == 0 {
-				log.Debug("resetting hopping channels")
+				w.Debug("resetting hopping channels")
 				if freqs, err = network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
 					return err
 				}
 			}
 
-			log.Debug("new frequencies: %v", freqs)
+			w.Debug("new frequencies: %v", freqs)
 			w.frequencies = freqs
 
 			// if wifi.recon is not running, this would block forever
@@ -338,7 +338,7 @@ func (w *WiFiModule) Configure() error {
 				return fmt.Errorf("error while setting timeout: %s", err)
 			} else if w.handle, err = ihandle.Activate(); err != nil {
 				if retry == 0 && err.Error() == ErrIfaceNotUp {
-					log.Warning("interface %s is down, bringing it up ...", ifName)
+					w.Warning("interface %s is down, bringing it up ...", ifName)
 					if err := network.ActivateInterface(ifName); err != nil {
 						return err
 					}
@@ -366,14 +366,14 @@ func (w *WiFiModule) Configure() error {
 				return fmt.Errorf("error while getting supported frequencies of %s: %s", ifName, err)
 			}
 
-			log.Debug("wifi supported frequencies: %v", w.frequencies)
+			w.Debug("wifi supported frequencies: %v", w.frequencies)
 
 			// we need to start somewhere, this is just to check if
 			// this OS supports switching channel programmatically.
 			if err = network.SetInterfaceChannel(ifName, 1); err != nil {
 				return fmt.Errorf("error while initializing %s to channel 1: %s", ifName, err)
 			}
-			log.Info("wifi.recon started (min rssi: %d dBm)", w.minRSSI)
+			w.Info("started (min rssi: %d dBm)", w.minRSSI)
 		}
 	}
 
@@ -448,7 +448,7 @@ func (w *WiFiModule) Start() error {
 			if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok {
 				// check FCS checksum
 				if w.skipBroken && !dot11.ChecksumValid() {
-					log.Debug("Skipping dot11 packet with invalid checksum.")
+					w.Debug("skipping dot11 packet with invalid checksum.")
 					continue
 				}
 

@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/bettercap/bettercap/caplets"
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/dustin/go-humanize"
@@ -115,7 +114,7 @@ func (c *CapletsModule) Paths() error {
 
 func (c *CapletsModule) Update() error {
 	if !fs.Exists(caplets.InstallBase) {
-		log.Info("creating caplets install path %s ...", caplets.InstallBase)
+		c.Info("creating caplets install path %s ...", caplets.InstallBase)
 		if err := os.MkdirAll(caplets.InstallBase, os.ModePerm); err != nil {
 			return err
 		}
@@ -127,7 +126,7 @@ func (c *CapletsModule) Update() error {
 	}
 	defer out.Close()
 
-	log.Info("downloading caplets from %s ...", caplets.InstallArchive)
+	c.Info("downloading caplets from %s ...", caplets.InstallArchive)
 
 	resp, err := http.Get(caplets.InstallArchive)
 	if err != nil {
@@ -139,7 +138,7 @@ func (c *CapletsModule) Update() error {
 		return err
 	}
 
-	log.Info("installing caplets to %s ...", caplets.InstallPath)
+	c.Info("installing caplets to %s ...", caplets.InstallPath)
 
 	if _, err = zip.Unzip("/tmp/caplets.zip", caplets.InstallBase); err != nil {
 		return err

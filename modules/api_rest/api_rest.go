@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 	"github.com/bettercap/bettercap/tls"
 
@@ -157,15 +156,15 @@ func (api *RestAPI) Configure() error {
 				return err
 			}
 
-			log.Debug("%+v", cfg)
-			log.Info("generating TLS key to %s", api.keyFile)
-			log.Info("generating TLS certificate to %s", api.certFile)
+			api.Debug("%+v", cfg)
+			api.Info("generating TLS key to %s", api.keyFile)
+			api.Info("generating TLS certificate to %s", api.certFile)
 			if err := tls.Generate(cfg, api.certFile, api.keyFile); err != nil {
 				return err
 			}
 		} else {
-			log.Info("loading TLS key from %s", api.keyFile)
-			log.Info("loading TLS certificate from %s", api.certFile)
+			api.Info("loading TLS key from %s", api.keyFile)
+			api.Info("loading TLS certificate from %s", api.certFile)
 		}
 	}
 
@@ -192,7 +191,7 @@ func (api *RestAPI) Configure() error {
 	api.server.Handler = router
 
 	if api.username == "" || api.password == "" {
-		log.Warning("api.rest.username and/or api.rest.password parameters are empty, authentication is disabled.")
+		api.Warning("api.rest.username and/or api.rest.password parameters are empty, authentication is disabled.")
 	}
 
 	return nil
@@ -207,10 +206,10 @@ func (api *RestAPI) Start() error {
 		var err error
 
 		if api.isTLS() {
-			log.Info("api server starting on https://%s", api.server.Addr)
+			api.Info("api server starting on https://%s", api.server.Addr)
 			err = api.server.ListenAndServeTLS(api.certFile, api.keyFile)
 		} else {
-			log.Info("api server starting on http://%s", api.server.Addr)
+			api.Info("api server starting on http://%s", api.server.Addr)
 			err = api.server.ListenAndServe()
 		}
 

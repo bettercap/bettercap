@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bettercap/bettercap/log"
-
 	"github.com/elazarl/goproxy"
 
 	"github.com/evilsocket/islazy/tui"
@@ -21,7 +19,7 @@ func (p *HTTPProxy) fixRequestHeaders(req *http.Request) {
 }
 
 func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-	log.Debug("(%s) < %s %s %s%s", tui.Green(p.Name), req.RemoteAddr, req.Method, req.Host, req.URL.Path)
+	p.Debug("< %s %s %s%s", req.RemoteAddr, req.Method, req.Host, req.URL.Path)
 
 	p.fixRequestHeaders(req)
 
@@ -99,8 +97,7 @@ func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) (error, 
 	if err != nil {
 		return err, nil
 	} else if html := string(raw); strings.Contains(html, "</head>") {
-		log.Info("(%s) > injecting javascript (%d bytes) into %s (%d bytes) for %s",
-			tui.Green(p.Name),
+		p.Info("> injecting javascript (%d bytes) into %s (%d bytes) for %s",
 			len(p.jsHook),
 			tui.Yellow(res.Request.Host+res.Request.URL.Path),
 			len(raw),
@@ -126,7 +123,7 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 		return nil
 	}
 
-	log.Debug("(%s) > %s %s %s%s", tui.Green(p.Name), res.Request.RemoteAddr, res.Request.Method, res.Request.Host, res.Request.URL.Path)
+	p.Debug("> %s %s %s%s", res.Request.RemoteAddr, res.Request.Method, res.Request.Host, res.Request.URL.Path)
 
 	p.fixResponseHeaders(res)
 
@@ -145,7 +142,7 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 	// inject javascript code if specified and needed
 	if doInject, cType := p.isScriptInjectable(res); doInject {
 		if err, injectedResponse := p.doScriptInjection(res, cType); err != nil {
-			log.Error("(%s) error while injecting javascript: %s", p.Name, err)
+			p.Error("error while injecting javascript: %s", err)
 		} else if injectedResponse != nil {
 			return injectedResponse
 		}

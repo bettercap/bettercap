@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/evilsocket/islazy/tui"
@@ -83,7 +82,7 @@ func (httpd *HttpServer) Configure() error {
 	fileServer := http.FileServer(http.Dir(path))
 
 	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Info("(%s) %s %s %s%s", tui.Green("httpd"), tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		httpd.Info("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
 		fileServer.ServeHTTP(w, r)
 	}))
 
@@ -109,7 +108,7 @@ func (httpd *HttpServer) Start() error {
 
 	return httpd.SetRunning(true, func() {
 		var err error
-		log.Info("HTTP server starting on http://%s", httpd.server.Addr)
+		httpd.Info("starting on http://%s", httpd.server.Addr)
 		if err = httpd.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}
