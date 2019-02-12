@@ -78,7 +78,7 @@ func (s DNSSpoofer) Description() string {
 }
 
 func (s DNSSpoofer) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (s *DNSSpoofer) Configure() error {

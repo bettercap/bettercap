@@ -75,7 +75,7 @@ func (p Prober) Description() string {
 }
 
 func (p Prober) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (p *Prober) Configure() error {

@@ -88,7 +88,7 @@ func (p ArpSpoofer) Description() string {
 }
 
 func (p ArpSpoofer) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (p *ArpSpoofer) Configure() error {

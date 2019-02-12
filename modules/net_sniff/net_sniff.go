@@ -123,7 +123,7 @@ func (s Sniffer) Description() string {
 }
 
 func (s Sniffer) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (s Sniffer) isLocalPacket(packet gopacket.Packet) bool {

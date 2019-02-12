@@ -44,7 +44,7 @@ func (u *UpdateModule) Description() string {
 }
 
 func (u *UpdateModule) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (u *UpdateModule) Configure() error {

@@ -78,7 +78,7 @@ func (httpd *HttpsServer) Description() string {
 }
 
 func (httpd *HttpsServer) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (httpd *HttpsServer) Configure() error {

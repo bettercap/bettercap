@@ -68,7 +68,7 @@ func (p *AnyProxy) Description() string {
 }
 
 func (p *AnyProxy) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (p *AnyProxy) Configure() error {

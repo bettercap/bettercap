@@ -68,7 +68,7 @@ func (d Discovery) Description() string {
 }
 
 func (d Discovery) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (d *Discovery) runDiff(cache network.ArpTable) {

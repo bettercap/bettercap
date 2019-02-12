@@ -60,7 +60,7 @@ func (mc *MacChanger) Description() string {
 }
 
 func (mc *MacChanger) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (mc *MacChanger) Configure() (err error) {

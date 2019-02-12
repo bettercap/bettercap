@@ -66,7 +66,7 @@ func (p *HttpProxy) Description() string {
 }
 
 func (p *HttpProxy) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (p *HttpProxy) Configure() error {

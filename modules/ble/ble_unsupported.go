@@ -50,7 +50,7 @@ func (d BLERecon) Description() string {
 }
 
 func (d BLERecon) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (d *BLERecon) Configure() (err error) {

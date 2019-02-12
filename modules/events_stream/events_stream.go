@@ -171,7 +171,7 @@ func (s EventsStream) Description() string {
 }
 
 func (s EventsStream) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (s *EventsStream) Configure() (err error) {

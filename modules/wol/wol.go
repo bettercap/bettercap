@@ -76,7 +76,7 @@ func (w *WOL) Description() string {
 }
 
 func (w *WOL) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (w *WOL) Configure() error {

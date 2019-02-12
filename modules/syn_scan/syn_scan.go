@@ -137,7 +137,7 @@ func (s *SynScanner) Description() string {
 }
 
 func (s *SynScanner) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (s *SynScanner) Configure() error {

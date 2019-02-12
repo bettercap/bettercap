@@ -51,7 +51,7 @@ func (t *Ticker) Description() string {
 }
 
 func (t *Ticker) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (t *Ticker) Configure() error {

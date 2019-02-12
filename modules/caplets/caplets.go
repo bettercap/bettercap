@@ -56,7 +56,7 @@ func (c *CapletsModule) Description() string {
 }
 
 func (c *CapletsModule) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (c *CapletsModule) Configure() error {

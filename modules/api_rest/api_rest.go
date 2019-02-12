@@ -114,7 +114,7 @@ func (api *RestAPI) Description() string {
 }
 
 func (api *RestAPI) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (api *RestAPI) isTLS() bool {

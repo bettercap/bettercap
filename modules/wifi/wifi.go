@@ -281,7 +281,7 @@ func (w WiFiModule) Description() string {
 }
 
 func (w WiFiModule) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com> && Gianluca Braga <matrix86@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com> && Gianluca Braga <matrix86@gmail.com>"
 }
 
 const (

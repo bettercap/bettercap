@@ -72,7 +72,7 @@ func (s DHCP6Spoofer) Description() string {
 }
 
 func (s DHCP6Spoofer) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (s *DHCP6Spoofer) Configure() error {

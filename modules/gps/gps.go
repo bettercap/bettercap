@@ -68,7 +68,7 @@ func (gps *GPS) Description() string {
 }
 
 func (gps *GPS) Author() string {
-	return "Simone Margaritelli <evilsocket@protonmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
 func (gps *GPS) Configure() (err error) {
