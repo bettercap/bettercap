@@ -31,7 +31,6 @@ import (
 )
 
 func LoadModules(sess *session.Session) {
-
 	sess.Register(any_proxy.NewAnyProxy(sess))
 	sess.Register(arp_spoof.NewArpSpoofer(sess))
 	sess.Register(api_rest.NewRestAPI(sess))
@@ -57,5 +56,4 @@ func LoadModules(sess *session.Session) {
 	sess.Register(update.NewUpdateModule(sess))
 	sess.Register(wifi.NewWiFiModule(sess))
 	sess.Register(wol.NewWOL(sess))
-
 }
