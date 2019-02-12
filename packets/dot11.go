@@ -273,3 +273,21 @@ func Dot11ParseDSSet(packet gopacket.Packet) (bool, int) {
 
 	return found, channel
 }
+
+func Dot11ParseEAPOL(packet gopacket.Packet, dot11 *layers.Dot11) (ok bool, key *layers.EAPOLKey, apMac net.HardwareAddr, staMac net.HardwareAddr) {
+	ok = false
+	// ref. https://wlan1nde.wordpress.com/2014/10/27/4-way-handshake/
+	if keyLayer := packet.Layer(layers.LayerTypeEAPOLKey); keyLayer != nil {
+		if key = keyLayer.(*layers.EAPOLKey); key.KeyType == layers.EAPOLKeyTypePairwise {
+			ok = true
+			if dot11.Flags.FromDS() {
+				staMac = dot11.Address1
+				apMac = dot11.Address2
+			} else if dot11.Flags.ToDS() {
+				staMac = dot11.Address2
+				apMac = dot11.Address1
+			}
+		}
+	}
+	return
+}
