@@ -14,8 +14,8 @@ var (
 	openFlags = 1057
 	wpaFlags  = 1041
 	//1-54 Mbit
-	supportedRates = []byte{0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c, 0x03, 0x01}
-	wpaRSN         = []byte{
+	fakeApRates  = []byte{0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c, 0x03, 0x01}
+	fakeApWpaRSN = []byte{
 		0x01, 0x00, // RSN Version 1
 		0x00, 0x0f, 0xac, 0x02, // Group Cipher Suite : 00-0f-ac TKIP
 		0x02, 0x00, // 2 Pairwise Cipher Suites (next two lines)
@@ -26,6 +26,11 @@ var (
 		0x00, 0x00,
 	}
 	wpaSignatureBytes = []byte{0, 0x50, 0xf2, 1}
+
+	assocRates        = []byte{0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c}
+	assocESRates      = []byte{0x0C, 0x12, 0x18, 0x60}
+	assocRSNInfo      = []byte{0x01, 0x00, 0x00, 0x0F, 0xAC, 0x04, 0x01, 0x00, 0x00, 0x0F, 0xAC, 0x04, 0x01, 0x00, 0x00, 0x0F, 0xAC, 0x02, 0x8C, 0x00}
+	assocCapabilities = []byte{0x2C, 0x01, 0x03, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 )
 
 type Dot11ApConfig struct {
@@ -66,15 +71,15 @@ func NewDot11Beacon(conf Dot11ApConfig, seq uint16) (error, []byte) {
 			Interval: 100,
 		},
 		Dot11Info(layers.Dot11InformationElementIDSSID, []byte(conf.SSID)),
-		Dot11Info(layers.Dot11InformationElementIDRates, supportedRates),
+		Dot11Info(layers.Dot11InformationElementIDRates, fakeApRates),
 		Dot11Info(layers.Dot11InformationElementIDDSSet, []byte{byte(conf.Channel & 0xff)}),
 	}
 
 	if conf.Encryption {
 		stack = append(stack, &layers.Dot11InformationElement{
 			ID:     layers.Dot11InformationElementIDRSNInfo,
-			Length: uint8(len(wpaRSN) & 0xff),
-			Info:   wpaRSN,
+			Length: uint8(len(fakeApWpaRSN) & 0xff),
+			Info:   fakeApWpaRSN,
 		})
 	}
 
@@ -134,31 +139,11 @@ func NewDot11AssociationRequest(sta net.HardwareAddr, apBSSID net.HardwareAddr, 
 			CapabilityInfo: 0x0411,
 			ListenInterval: 3,
 		},
-		&layers.Dot11InformationElement{
-			ID:     layers.Dot11InformationElementIDSSID,
-			Length: uint8(len(apESSID) & 0xff),
-			Info:   []byte(apESSID),
-		},
-		&layers.Dot11InformationElement{
-			ID:     layers.Dot11InformationElementIDRates,
-			Length: 8,
-			Info:   []byte{0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c},
-		},
-		&layers.Dot11InformationElement{
-			ID:     layers.Dot11InformationElementIDESRates,
-			Length: 4,
-			Info:   []byte{0x0C, 0x12, 0x18, 0x60},
-		},
-		&layers.Dot11InformationElement{
-			ID:     layers.Dot11InformationElementIDRSNInfo,
-			Length: 20,
-			Info:   []byte{0x01, 0x00, 0x00, 0x0F, 0xAC, 0x04, 0x01, 0x00, 0x00, 0x0F, 0xAC, 0x04, 0x01, 0x00, 0x00, 0x0F, 0xAC, 0x02, 0x8C, 0x00},
-		},
-		&layers.Dot11InformationElement{
-			ID:     layers.Dot11InformationElementIDHTCapabilities,
-			Length: 26,
-			Info:   []byte{0x2C, 0x01, 0x03, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		},
+		Dot11Info(layers.Dot11InformationElementIDSSID, []byte(apESSID)),
+		Dot11Info(layers.Dot11InformationElementIDRates, assocRates),
+		Dot11Info(layers.Dot11InformationElementIDESRates, assocESRates),
+		Dot11Info(layers.Dot11InformationElementIDRSNInfo, assocRSNInfo),
+		Dot11Info(layers.Dot11InformationElementIDHTCapabilities, assocCapabilities),
 		&layers.Dot11InformationElement{
 			ID:     layers.Dot11InformationElementIDVendor,
 			Length: 7,
