@@ -13,6 +13,12 @@
 
 ## How to Install
 
+<p align="center">
+    <a href="https://snapcraft.io/bettercap" target="_blank">
+      <img alt="Get it from the Snap Store" src="https://snapcraft.io/static/images/badges/en/snap-store-white.svg" />
+    </a>
+</p>
+
 A [precompiled version is available](https://github.com/bettercap/bettercap/releases) for each release, alternatively you can use the latest version of the source code from this repository in order to build your own binary.
 
 Make sure you have a correctly configured **Go >= 1.8** environment, that `$GOPATH/bin` is in `$PATH`, that the `libpcap-dev` and `libnetfilter-queue-dev` (this one is only required on Linux) package installed for your system and then:
