@@ -25,6 +25,7 @@ import (
 
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/log"
+	"github.com/evilsocket/islazy/ops"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 )
@@ -226,15 +227,18 @@ func (s *Session) Start() error {
 		return err
 	}
 
-	if s.Gateway, err = network.GatewayProvidedByUser(s.Interface, *s.Options.Gateway); err != nil {
-		level := log.WARNING
-		if s.Interface.IsMonitor() {
-			level = log.DEBUG
+	if *s.Options.Gateway != "" {
+		if s.Gateway, err = network.GatewayProvidedByUser(s.Interface, *s.Options.Gateway); err != nil {
+			s.Events.Log(log.WARNING, "%s", err.Error())
+			s.Gateway, err = network.FindGateway(s.Interface)
 		}
+	} else {
+		s.Gateway, err = network.FindGateway(s.Interface)
+	}
+
+	if err != nil {
+		level := ops.Ternary(s.Interface.IsMonitor(), log.DEBUG, log.WARNING).(log.Verbosity)
 		s.Events.Log(level, "%s", err.Error())
-		if s.Gateway, err = network.FindGateway(s.Interface); err != nil {
-			s.Events.Log(level, "%s", err.Error())
-  		}
 	}
 
 	if s.Gateway == nil || s.Gateway.IpAddress == s.Interface.IpAddress {
