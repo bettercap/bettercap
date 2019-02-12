@@ -11,8 +11,11 @@ import (
 )
 
 var (
-	openFlags = 1057
-	wpaFlags  = 1041
+	openFlags      = 1057
+	wpaFlags       = 1041
+	durationID     = uint16(0x013a)
+	capabilityInfo = uint16(0x0411)
+	listenInterval = uint16(3)
 	//1-54 Mbit
 	fakeApRates  = []byte{0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c, 0x03, 0x01}
 	fakeApWpaRSN = []byte{
@@ -112,7 +115,7 @@ func NewDot11Auth(sta net.HardwareAddr, apBSSID net.HardwareAddr, seq uint16) (e
 			Type:           layers.Dot11TypeMgmtAuthentication,
 			SequenceNumber: seq,
 			FragmentNumber: 0,
-			DurationID:     0x013a,
+			DurationID:     durationID,
 		},
 		&layers.Dot11MgmtAuthentication{
 			Algorithm: layers.Dot11AlgorithmOpen,
@@ -132,12 +135,12 @@ func NewDot11AssociationRequest(sta net.HardwareAddr, apBSSID net.HardwareAddr, 
 			Type:           layers.Dot11TypeMgmtAssociationReq,
 			SequenceNumber: seq,
 			FragmentNumber: 0,
-			DurationID:     0x013a,
+			DurationID:     durationID,
 		},
 		// as seen on wireshark ...
 		&layers.Dot11MgmtAssociationReq{
-			CapabilityInfo: 0x0411,
-			ListenInterval: 3,
+			CapabilityInfo: capabilityInfo,
+			ListenInterval: listenInterval,
 		},
 		Dot11Info(layers.Dot11InformationElementIDSSID, []byte(apESSID)),
 		Dot11Info(layers.Dot11InformationElementIDRates, assocRates),
