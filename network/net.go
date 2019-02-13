@@ -271,3 +271,18 @@ func ActivateInterface(name string) error {
 	}
 	return nil
 }
+
+func GatewayProvidedByUser(iface *Endpoint, gateway string) (*Endpoint, error) {
+	Debug("GatewayProvidedByUser(%s) [cmd=%v opts=%v parser=%v]", gateway, IPv4RouteCmd, IPv4RouteCmdOpts, IPv4RouteParser)
+	if IPv4Validator.MatchString(gateway) {
+		Debug("valid gateway ip %s", gateway)
+		// we have the address, now we need its mac
+		if mac, err := ArpLookup(iface.Name(), gateway, false); err != nil {
+			return nil, err
+		} else {
+			Debug("gateway is %s[%s]", gateway, mac)
+			return NewEndpoint(gateway, mac), nil
+		}
+	}
+	return nil, fmt.Errorf("Provided gateway %s not a valid IPv4 address! Revert to find default gateway.", gateway)
+}
