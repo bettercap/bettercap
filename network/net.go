@@ -80,7 +80,7 @@ func ParseMACs(targets string) (macs []net.HardwareAddr, err error) {
 		mac = NormalizeMac(mac)
 		hw, err := net.ParseMAC(mac)
 		if err != nil {
-			return nil, fmt.Errorf("Error while parsing MAC '%s': %s", mac, err)
+			return nil, fmt.Errorf("error while parsing MAC '%s': %s", mac, err)
 		}
 
 		macs = append(macs, hw)
@@ -103,7 +103,7 @@ func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs
 		mac = NormalizeMac(mac)
 		hw, err := net.ParseMAC(mac)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Error while parsing MAC '%s': %s", mac, err)
+			return nil, nil, fmt.Errorf("error while parsing MAC '%s': %s", mac, err)
 		}
 
 		macs = append(macs, hw)
@@ -112,18 +112,22 @@ func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs
 	targets = strings.Trim(targets, ", ")
 
 	// check and resolve aliases
-	for _, alias := range aliasParser.FindAllString(targets, -1) {
-		if mac, found := aliasMap.Get(alias); found {
-			mac = NormalizeMac(mac)
-			hw, err := net.ParseMAC(mac)
-			if err != nil {
-				return nil, nil, fmt.Errorf("Error while parsing MAC '%s': %s", mac, err)
+	for _, targetAlias := range aliasParser.FindAllString(targets, -1) {
+		found := false
+		aliasMap.Each(func(mac, alias string) bool {
+			if alias == targetAlias {
+				if hw, err := net.ParseMAC(mac); err == nil {
+					macs = append(macs, hw)
+					targets = strings.Replace(targets, targetAlias, "", -1)
+					found = true
+					return true
+				}
 			}
+			return false
+		})
 
-			macs = append(macs, hw)
-			targets = strings.Replace(targets, alias, "", -1)
-		} else {
-			return nil, nil, fmt.Errorf("Could not resolve alias %s", alias)
+		if !found {
+			return nil, nil, fmt.Errorf("could not resolve alias %s", targetAlias)
 		}
 	}
 	targets = strings.Trim(targets, ", ")
@@ -132,7 +136,7 @@ func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs
 	if targets != "" {
 		list, err := iprange.ParseList(targets)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Error while parsing address list '%s': %s.", targets, err)
+			return nil, nil, fmt.Errorf("error while parsing address list '%s': %s.", targets, err)
 		}
 
 		ips = list.Expand()
@@ -225,7 +229,7 @@ func findInterfaceByName(name string, ifaces []net.Interface) (*Endpoint, error)
 		}
 	}
 
-	return nil, fmt.Errorf("No interface matching '%s' found.", name)
+	return nil, fmt.Errorf("no interface matching '%s' found.", name)
 }
 
 func FindInterface(name string) (*Endpoint, error) {
@@ -244,7 +248,7 @@ func FindInterface(name string) (*Endpoint, error) {
 	for _, iface := range ifaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
-			fmt.Printf("WTF of the day: %s", err)
+			fmt.Printf("wtf of the day: %s", err)
 			continue
 		}
 
