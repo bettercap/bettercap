@@ -80,6 +80,14 @@ func (lan *LAN) Get(mac string) (*Endpoint, bool) {
 	lan.Lock()
 	defer lan.Unlock()
 
+	mac = NormalizeMac(mac)
+
+	if mac == lan.iface.HwAddress {
+		return lan.iface, true
+	} else if mac == lan.gateway.HwAddress {
+		return lan.gateway, true
+	}
+
 	if e, found := lan.hosts[mac]; found {
 		return e, true
 	}
@@ -89,6 +97,12 @@ func (lan *LAN) Get(mac string) (*Endpoint, bool) {
 func (lan *LAN) GetByIp(ip string) *Endpoint {
 	lan.Lock()
 	defer lan.Unlock()
+
+	if ip == lan.iface.IpAddress {
+		return lan.iface
+	} else if ip == lan.gateway.IpAddress {
+		return lan.gateway
+	}
 
 	for _, e := range lan.hosts {
 		if e.IpAddress == ip {
