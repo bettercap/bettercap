@@ -20,17 +20,17 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 )
 
-func (api *RestAPI) streamEvent(ws *websocket.Conn, event session.Event) error {
+func (mod *RestAPI) streamEvent(ws *websocket.Conn, event session.Event) error {
 	msg, err := json.Marshal(event)
 	if err != nil {
-		api.Error("Error while creating websocket message: %s", err)
+		mod.Error("Error while creating websocket message: %s", err)
 		return err
 	}
 
 	ws.SetWriteDeadline(time.Now().Add(writeWait))
 	if err := ws.WriteMessage(websocket.TextMessage, msg); err != nil {
 		if !strings.Contains(err.Error(), "closed connection") {
-			api.Error("Error while writing websocket message: %s", err)
+			mod.Error("Error while writing websocket message: %s", err)
 			return err
 		}
 	}
@@ -38,25 +38,25 @@ func (api *RestAPI) streamEvent(ws *websocket.Conn, event session.Event) error {
 	return nil
 }
 
-func (api *RestAPI) sendPing(ws *websocket.Conn) error {
+func (mod *RestAPI) sendPing(ws *websocket.Conn) error {
 	ws.SetWriteDeadline(time.Now().Add(writeWait))
 	if err := ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-		api.Error("Error while writing websocket ping message: %s", err)
+		mod.Error("Error while writing websocket ping message: %s", err)
 		return err
 	}
 	return nil
 }
 
-func (api *RestAPI) streamWriter(ws *websocket.Conn, w http.ResponseWriter, r *http.Request) {
+func (mod *RestAPI) streamWriter(ws *websocket.Conn, w http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 
 	// first we stream what we already have
 	events := session.I.Events.Sorted()
 	n := len(events)
 	if n > 0 {
-		api.Debug("Sending %d events.", n)
+		mod.Debug("Sending %d events.", n)
 		for _, event := range events {
-			if err := api.streamEvent(ws, event); err != nil {
+			if err := mod.streamEvent(ws, event); err != nil {
 				return
 			}
 		}
@@ -64,7 +64,7 @@ func (api *RestAPI) streamWriter(ws *websocket.Conn, w http.ResponseWriter, r *h
 
 	session.I.Events.Clear()
 
-	api.Debug("Listening for events and streaming to ws endpoint ...")
+	mod.Debug("Listening for events and streaming to ws endpoint ...")
 
 	pingTicker := time.NewTicker(pingPeriod)
 	listener := session.I.Events.Listen()
@@ -73,21 +73,21 @@ func (api *RestAPI) streamWriter(ws *websocket.Conn, w http.ResponseWriter, r *h
 	for {
 		select {
 		case <-pingTicker.C:
-			if err := api.sendPing(ws); err != nil {
+			if err := mod.sendPing(ws); err != nil {
 				return
 			}
 		case event := <-listener:
-			if err := api.streamEvent(ws, event); err != nil {
+			if err := mod.streamEvent(ws, event); err != nil {
 				return
 			}
-		case <-api.quit:
-			api.Info("Stopping websocket events streamer ...")
+		case <-mod.quit:
+			mod.Info("Stopping websocket events streamer ...")
 			return
 		}
 	}
 }
 
-func (api *RestAPI) streamReader(ws *websocket.Conn) {
+func (mod *RestAPI) streamReader(ws *websocket.Conn) {
 	defer ws.Close()
 	ws.SetReadLimit(512)
 	ws.SetReadDeadline(time.Now().Add(pongWait))
@@ -95,23 +95,23 @@ func (api *RestAPI) streamReader(ws *websocket.Conn) {
 	for {
 		_, _, err := ws.ReadMessage()
 		if err != nil {
-			api.Debug("Closing websocket reader.")
+			mod.Debug("Closing websocket reader.")
 			break
 		}
 	}
 }
 
-func (api *RestAPI) startStreamingEvents(w http.ResponseWriter, r *http.Request) {
-	ws, err := api.upgrader.Upgrade(w, r, nil)
+func (mod *RestAPI) startStreamingEvents(w http.ResponseWriter, r *http.Request) {
+	ws, err := mod.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		if _, ok := err.(websocket.HandshakeError); !ok {
-			api.Error("Error while updating api.rest connection to websocket: %s", err)
+			mod.Error("Error while updating api.rest connection to websocket: %s", err)
 		}
 		return
 	}
 
-	api.Debug("Websocket streaming started for %s", r.RemoteAddr)
+	mod.Debug("Websocket streaming started for %s", r.RemoteAddr)
 
-	go api.streamWriter(ws, w, r)
-	api.streamReader(ws)
+	go mod.streamWriter(ws, w, r)
+	mod.streamReader(ws)
 }

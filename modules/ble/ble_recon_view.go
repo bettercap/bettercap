@@ -23,7 +23,7 @@ var (
 	blePresentInterval = time.Duration(30) * time.Second
 )
 
-func (d *BLERecon) getRow(dev *network.BLEDevice) []string {
+func (mod *BLERecon) getRow(dev *network.BLEDevice) []string {
 	address := network.NormalizeMac(dev.Device.ID())
 	vendor := dev.Vendor
 	sinceSeen := time.Since(dev.LastSeen)
@@ -51,14 +51,14 @@ func (d *BLERecon) getRow(dev *network.BLEDevice) []string {
 	}
 }
 
-func (d *BLERecon) Show() error {
-	devices := d.Session.BLE.Devices()
+func (mod *BLERecon) Show() error {
+	devices := mod.Session.BLE.Devices()
 
 	sort.Sort(ByBLERSSISorter(devices))
 
 	rows := make([][]string, 0)
 	for _, dev := range devices {
-		rows = append(rows, d.getRow(dev))
+		rows = append(rows, mod.getRow(dev))
 	}
 	nrows := len(rows)
 
@@ -68,7 +68,7 @@ func (d *BLERecon) Show() error {
 		tui.Table(os.Stdout, columns, rows)
 	}
 
-	d.Session.Refresh()
+	mod.Session.Refresh()
 	return nil
 }
 
@@ -124,15 +124,15 @@ func parseRawData(raw []byte) string {
 	return tui.Yellow(s)
 }
 
-func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
+func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 	columns := []string{"Handles", "Service > Characteristics", "Properties", "Data"}
 	rows := make([][]string, 0)
 
-	wantsToWrite := d.writeUUID != nil
+	wantsToWrite := mod.writeUUID != nil
 	foundToWrite := false
 
 	for _, svc := range services {
-		d.Session.Events.Add("ble.device.service.discovered", svc)
+		mod.Session.Events.Add("ble.device.service.discovered", svc)
 
 		name := svc.Name()
 		if name == "" {
@@ -152,12 +152,12 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 
 		chars, err := p.DiscoverCharacteristics(nil, svc)
 		if err != nil {
-			d.Error("Error while enumerating chars for service %s: %s", svc.UUID(), err)
+			mod.Error("Error while enumerating chars for service %s: %s", svc.UUID(), err)
 			continue
 		}
 
 		for _, ch := range chars {
-			d.Session.Events.Add("ble.device.characteristic.discovered", ch)
+			mod.Session.Events.Add("ble.device.characteristic.discovered", ch)
 
 			name = ch.Name()
 			if name == "" {
@@ -168,17 +168,17 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 
 			props, isReadable, isWritable, withResponse := parseProperties(ch)
 
-			if wantsToWrite && d.writeUUID.Equal(ch.UUID()) {
+			if wantsToWrite && mod.writeUUID.Equal(ch.UUID()) {
 				foundToWrite = true
 				if isWritable {
-					d.Info("Writing %d bytes to characteristics %s ...", len(d.writeData), d.writeUUID)
+					mod.Info("Writing %d bytes to characteristics %s ...", len(mod.writeData), mod.writeUUID)
 				} else {
-					d.Warning("Attempt to write %d bytes to non writable characteristics %s ...", len(d.writeData), d.writeUUID)
+					mod.Warning("Attempt to write %d bytes to non writable characteristics %s ...", len(mod.writeData), mod.writeUUID)
 				}
 
-				err := p.WriteCharacteristic(ch, d.writeData, !withResponse)
+				err := p.WriteCharacteristic(ch, mod.writeData, !withResponse)
 				if err != nil {
-					d.Error("Error while writing: %s", err)
+					mod.Error("Error while writing: %s", err)
 				}
 			}
 
@@ -204,9 +204,9 @@ func (d *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 	}
 
 	if wantsToWrite && !foundToWrite {
-		d.Error("Writable characteristics %s not found.", d.writeUUID)
+		mod.Error("Writable characteristics %s not found.", mod.writeUUID)
 	} else {
 		tui.Table(os.Stdout, columns, rows)
-		d.Session.Refresh()
+		mod.Session.Refresh()
 	}
 }

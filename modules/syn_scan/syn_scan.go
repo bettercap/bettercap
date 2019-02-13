@@ -38,111 +38,111 @@ type SynScanner struct {
 }
 
 func NewSynScanner(s *session.Session) *SynScanner {
-	ss := &SynScanner{
+	mod := &SynScanner{
 		SessionModule: session.NewSessionModule("syn.scan", s),
 		addresses:     make([]net.IP, 0),
 		waitGroup:     &sync.WaitGroup{},
 		progressEvery: time.Duration(1) * time.Second,
 	}
 
-	ss.AddParam(session.NewIntParameter("syn.scan.show-progress-every",
+	mod.AddParam(session.NewIntParameter("syn.scan.show-progress-every",
 		"1",
 		"Period in seconds for the scanning progress reporting."))
 
-	ss.AddHandler(session.NewModuleHandler("syn.scan stop", "syn\\.scan (stop|off)",
+	mod.AddHandler(session.NewModuleHandler("syn.scan stop", "syn\\.scan (stop|off)",
 		"Stop the current syn scanning session.",
 		func(args []string) error {
-			if !ss.Running() {
+			if !mod.Running() {
 				return fmt.Errorf("no syn.scan is running")
 			}
-			return ss.Stop()
+			return mod.Stop()
 		}))
 
-	ss.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE [START-PORT] [END-PORT]", "syn.scan ([^\\s]+) ?(\\d+)?([\\s\\d]*)?",
+	mod.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE [START-PORT] [END-PORT]", "syn.scan ([^\\s]+) ?(\\d+)?([\\s\\d]*)?",
 		"Perform a syn port scanning against an IP address within the provided ports range.",
 		func(args []string) error {
 			period := 0
-			if ss.Running() {
+			if mod.Running() {
 				return fmt.Errorf("A scan is already running, wait for it to end before starting a new one.")
-			} else if err := ss.parseTargets(args[0]); err != nil {
+			} else if err := mod.parseTargets(args[0]); err != nil {
 				return err
-			} else if err = ss.parsePorts(args); err != nil {
+			} else if err = mod.parsePorts(args); err != nil {
 				return err
-			} else if err, period = ss.IntParam("syn.scan.show-progress-every"); err != nil {
+			} else if err, period = mod.IntParam("syn.scan.show-progress-every"); err != nil {
 				return err
 			} else {
-				ss.progressEvery = time.Duration(period) * time.Second
+				mod.progressEvery = time.Duration(period) * time.Second
 			}
-			return ss.synScan()
+			return mod.synScan()
 		}))
 
-	ss.AddHandler(session.NewModuleHandler("syn.scan.progress", "syn\\.scan\\.progress",
+	mod.AddHandler(session.NewModuleHandler("syn.scan.progress", "syn\\.scan\\.progress",
 		"Print progress of the current syn scanning session.",
 		func(args []string) error {
-			if !ss.Running() {
+			if !mod.Running() {
 				return fmt.Errorf("no syn.scan is running")
 			}
-			return ss.showProgress()
+			return mod.showProgress()
 		}))
 
-	return ss
+	return mod
 }
 
-func (s *SynScanner) parseTargets(arg string) error {
+func (mod *SynScanner) parseTargets(arg string) error {
 	if list, err := iprange.Parse(arg); err != nil {
 		return fmt.Errorf("error while parsing IP range '%s': %s", arg, err)
 	} else {
-		s.addresses = list.Expand()
+		mod.addresses = list.Expand()
 	}
 	return nil
 }
 
-func (s *SynScanner) parsePorts(args []string) (err error) {
+func (mod *SynScanner) parsePorts(args []string) (err error) {
 	argc := len(args)
-	s.stats.totProbes = 0
-	s.stats.doneProbes = 0
-	s.startPort = 1
-	s.endPort = 65535
+	mod.stats.totProbes = 0
+	mod.stats.doneProbes = 0
+	mod.startPort = 1
+	mod.endPort = 65535
 
 	if argc > 1 && str.Trim(args[1]) != "" {
-		if s.startPort, err = strconv.Atoi(str.Trim(args[1])); err != nil {
+		if mod.startPort, err = strconv.Atoi(str.Trim(args[1])); err != nil {
 			return fmt.Errorf("invalid start port %s: %s", args[1], err)
-		} else if s.startPort > 65535 {
-			s.startPort = 65535
+		} else if mod.startPort > 65535 {
+			mod.startPort = 65535
 		}
-		s.endPort = s.startPort
+		mod.endPort = mod.startPort
 	}
 
 	if argc > 2 && str.Trim(args[2]) != "" {
-		if s.endPort, err = strconv.Atoi(str.Trim(args[2])); err != nil {
+		if mod.endPort, err = strconv.Atoi(str.Trim(args[2])); err != nil {
 			return fmt.Errorf("invalid end port %s: %s", args[2], err)
 		}
 	}
 
-	if s.endPort < s.startPort {
-		return fmt.Errorf("end port %d is greater than start port %d", s.endPort, s.startPort)
+	if mod.endPort < mod.startPort {
+		return fmt.Errorf("end port %d is greater than start port %d", mod.endPort, mod.startPort)
 	}
 
 	return
 }
 
-func (s *SynScanner) Name() string {
+func (mod *SynScanner) Name() string {
 	return "syn.scan"
 }
 
-func (s *SynScanner) Description() string {
+func (mod *SynScanner) Description() string {
 	return "A module to perform SYN port scanning."
 }
 
-func (s *SynScanner) Author() string {
+func (mod *SynScanner) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (s *SynScanner) Configure() error {
+func (mod *SynScanner) Configure() error {
 	return nil
 }
 
-func (s *SynScanner) Start() error {
+func (mod *SynScanner) Start() error {
 	return nil
 }
 
@@ -153,62 +153,62 @@ func plural(n uint64) string {
 	return ""
 }
 
-func (s *SynScanner) showProgress() error {
-	progress := 100.0 * (float64(s.stats.doneProbes) / float64(s.stats.totProbes))
-	s.Info("[%.2f%%] found %d open port%s for %d address%s, sent %d/%d packets in %s",
+func (mod *SynScanner) showProgress() error {
+	progress := 100.0 * (float64(mod.stats.doneProbes) / float64(mod.stats.totProbes))
+	mod.Info("[%.2f%%] found %d open port%s for %d address%s, sent %d/%d packets in %s",
 		progress,
-		s.stats.openPorts,
-		plural(s.stats.openPorts),
-		s.stats.numAddresses,
-		plural(s.stats.numAddresses),
-		s.stats.doneProbes,
-		s.stats.totProbes,
-		time.Since(s.stats.started))
+		mod.stats.openPorts,
+		plural(mod.stats.openPorts),
+		mod.stats.numAddresses,
+		plural(mod.stats.numAddresses),
+		mod.stats.doneProbes,
+		mod.stats.totProbes,
+		time.Since(mod.stats.started))
 	return nil
 }
 
-func (s *SynScanner) Stop() error {
-	s.Info("stopping ...")
-	return s.SetRunning(false, func() {
-		s.waitGroup.Wait()
-		s.showProgress()
+func (mod *SynScanner) Stop() error {
+	mod.Info("stopping ...")
+	return mod.SetRunning(false, func() {
+		mod.waitGroup.Wait()
+		mod.showProgress()
 	})
 }
 
-func (s *SynScanner) synScan() error {
-	s.SetRunning(true, func() {
-		defer s.SetRunning(false, nil)
+func (mod *SynScanner) synScan() error {
+	mod.SetRunning(true, func() {
+		defer mod.SetRunning(false, nil)
 
-		s.waitGroup.Add(1)
-		defer s.waitGroup.Done()
+		mod.waitGroup.Add(1)
+		defer mod.waitGroup.Done()
 
-		s.stats.openPorts = 0
-		s.stats.numPorts = uint64(s.endPort - s.startPort + 1)
-		s.stats.started = time.Now()
-		s.stats.numAddresses = uint64(len(s.addresses))
-		s.stats.totProbes = s.stats.numAddresses * s.stats.numPorts
-		s.stats.doneProbes = 0
+		mod.stats.openPorts = 0
+		mod.stats.numPorts = uint64(mod.endPort - mod.startPort + 1)
+		mod.stats.started = time.Now()
+		mod.stats.numAddresses = uint64(len(mod.addresses))
+		mod.stats.totProbes = mod.stats.numAddresses * mod.stats.numPorts
+		mod.stats.doneProbes = 0
 		plural := "es"
-		if s.stats.numAddresses == 1 {
+		if mod.stats.numAddresses == 1 {
 			plural = ""
 		}
 
-		if s.stats.numPorts > 1 {
-			s.Info("scanning %d address%s from port %d to port %d ...", s.stats.numAddresses, plural, s.startPort, s.endPort)
+		if mod.stats.numPorts > 1 {
+			mod.Info("scanning %d address%s from port %d to port %d ...", mod.stats.numAddresses, plural, mod.startPort, mod.endPort)
 		} else {
-			s.Info("scanning %d address%s on port %d ...", s.stats.numAddresses, plural, s.startPort)
+			mod.Info("scanning %d address%s on port %d ...", mod.stats.numAddresses, plural, mod.startPort)
 		}
 
 		// set the collector
-		s.Session.Queue.OnPacket(s.onPacket)
-		defer s.Session.Queue.OnPacket(nil)
+		mod.Session.Queue.OnPacket(mod.onPacket)
+		defer mod.Session.Queue.OnPacket(nil)
 
 		// start to show progress every second
 		go func() {
 			for {
-				time.Sleep(s.progressEvery)
-				if s.Running() {
-					s.showProgress()
+				time.Sleep(mod.progressEvery)
+				if mod.Running() {
+					mod.showProgress()
 				} else {
 					break
 				}
@@ -216,34 +216,34 @@ func (s *SynScanner) synScan() error {
 		}()
 
 		// start sending SYN packets and wait
-		for _, address := range s.addresses {
-			if !s.Running() {
+		for _, address := range mod.addresses {
+			if !mod.Running() {
 				break
 			}
-			mac, err := s.Session.FindMAC(address, true)
+			mac, err := mod.Session.FindMAC(address, true)
 			if err != nil {
-				atomic.AddUint64(&s.stats.doneProbes, s.stats.numPorts)
-				s.Debug("could not get MAC for %s: %s", address.String(), err)
+				atomic.AddUint64(&mod.stats.doneProbes, mod.stats.numPorts)
+				mod.Debug("could not get MAC for %s: %s", address.String(), err)
 				continue
 			}
 
-			for dstPort := s.startPort; dstPort < s.endPort+1; dstPort++ {
-				if !s.Running() {
+			for dstPort := mod.startPort; dstPort < mod.endPort+1; dstPort++ {
+				if !mod.Running() {
 					break
 				}
 
-				atomic.AddUint64(&s.stats.doneProbes, 1)
+				atomic.AddUint64(&mod.stats.doneProbes, 1)
 
-				err, raw := packets.NewTCPSyn(s.Session.Interface.IP, s.Session.Interface.HW, address, mac, synSourcePort, dstPort)
+				err, raw := packets.NewTCPSyn(mod.Session.Interface.IP, mod.Session.Interface.HW, address, mac, synSourcePort, dstPort)
 				if err != nil {
-					s.Error("error creating SYN packet: %s", err)
+					mod.Error("error creating SYN packet: %s", err)
 					continue
 				}
 
-				if err := s.Session.Queue.Send(raw); err != nil {
-					s.Error("error sending SYN packet: %s", err)
+				if err := mod.Session.Queue.Send(raw); err != nil {
+					mod.Error("error sending SYN packet: %s", err)
 				} else {
-					s.Debug("sent %d bytes of SYN packet to %s for port %d", len(raw), address.String(), dstPort)
+					mod.Debug("sent %d bytes of SYN packet to %s for port %d", len(raw), address.String(), dstPort)
 				}
 
 				time.Sleep(time.Duration(10) * time.Millisecond)

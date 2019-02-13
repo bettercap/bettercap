@@ -21,106 +21,106 @@ type MacChanger struct {
 }
 
 func NewMacChanger(s *session.Session) *MacChanger {
-	mc := &MacChanger{
+	mod := &MacChanger{
 		SessionModule: session.NewSessionModule("mac.changer", s),
 	}
 
-	mc.AddParam(session.NewStringParameter("mac.changer.iface",
+	mod.AddParam(session.NewStringParameter("mac.changer.iface",
 		session.ParamIfaceName,
 		"",
 		"Name of the interface to use."))
 
-	mc.AddParam(session.NewStringParameter("mac.changer.address",
+	mod.AddParam(session.NewStringParameter("mac.changer.address",
 		session.ParamRandomMAC,
 		"[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}",
 		"Hardware address to apply to the interface."))
 
-	mc.AddHandler(session.NewModuleHandler("mac.changer on", "",
+	mod.AddHandler(session.NewModuleHandler("mac.changer on", "",
 		"Start mac changer module.",
 		func(args []string) error {
-			return mc.Start()
+			return mod.Start()
 		}))
 
-	mc.AddHandler(session.NewModuleHandler("mac.changer off", "",
+	mod.AddHandler(session.NewModuleHandler("mac.changer off", "",
 		"Stop mac changer module and restore original mac address.",
 		func(args []string) error {
-			return mc.Stop()
+			return mod.Stop()
 		}))
 
-	return mc
+	return mod
 }
 
-func (mc *MacChanger) Name() string {
+func (mod *MacChanger) Name() string {
 	return "mac.changer"
 }
 
-func (mc *MacChanger) Description() string {
+func (mod *MacChanger) Description() string {
 	return "Change active interface mac address."
 }
 
-func (mc *MacChanger) Author() string {
+func (mod *MacChanger) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (mc *MacChanger) Configure() (err error) {
+func (mod *MacChanger) Configure() (err error) {
 	var changeTo string
 
-	if err, mc.iface = mc.StringParam("mac.changer.iface"); err != nil {
+	if err, mod.iface = mod.StringParam("mac.changer.iface"); err != nil {
 		return err
-	} else if err, changeTo = mc.StringParam("mac.changer.address"); err != nil {
+	} else if err, changeTo = mod.StringParam("mac.changer.address"); err != nil {
 		return err
 	}
 
 	changeTo = network.NormalizeMac(changeTo)
-	if mc.fakeMac, err = net.ParseMAC(changeTo); err != nil {
+	if mod.fakeMac, err = net.ParseMAC(changeTo); err != nil {
 		return err
 	}
 
-	mc.originalMac = mc.Session.Interface.HW
+	mod.originalMac = mod.Session.Interface.HW
 
 	return nil
 }
 
-func (mc *MacChanger) setMac(mac net.HardwareAddr) error {
+func (mod *MacChanger) setMac(mac net.HardwareAddr) error {
 	var args []string
 
 	os := runtime.GOOS
 	if strings.Contains(os, "bsd") || os == "darwin" {
-		args = []string{mc.iface, "ether", mac.String()}
+		args = []string{mod.iface, "ether", mac.String()}
 	} else if os == "linux" || os == "android" {
-		args = []string{mc.iface, "hw", "ether", mac.String()}
+		args = []string{mod.iface, "hw", "ether", mac.String()}
 	} else {
 		return fmt.Errorf("OS %s is not supported by mac.changer module.", os)
 	}
 
 	_, err := core.Exec("ifconfig", args)
 	if err == nil {
-		mc.Session.Interface.HW = mac
+		mod.Session.Interface.HW = mac
 	}
 
 	return err
 }
 
-func (mc *MacChanger) Start() error {
-	if mc.Running() {
+func (mod *MacChanger) Start() error {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if err := mc.Configure(); err != nil {
+	} else if err := mod.Configure(); err != nil {
 		return err
-	} else if err := mc.setMac(mc.fakeMac); err != nil {
+	} else if err := mod.setMac(mod.fakeMac); err != nil {
 		return err
 	}
 
-	return mc.SetRunning(true, func() {
-		mc.Info("interface mac address set to %s", tui.Bold(mc.fakeMac.String()))
+	return mod.SetRunning(true, func() {
+		mod.Info("interface mac address set to %s", tui.Bold(mod.fakeMac.String()))
 	})
 }
 
-func (mc *MacChanger) Stop() error {
-	return mc.SetRunning(false, func() {
-		if err := mc.setMac(mc.originalMac); err == nil {
-			mc.Info("interface mac address restored to %s", tui.Bold(mc.originalMac.String()))
+func (mod *MacChanger) Stop() error {
+	return mod.SetRunning(false, func() {
+		if err := mod.setMac(mod.originalMac); err == nil {
+			mod.Info("interface mac address restored to %s", tui.Bold(mod.originalMac.String()))
 		} else {
-			mc.Error("error while restoring mac address: %s", err)
+			mod.Error("error while restoring mac address: %s", err)
 		}
 	})
 }

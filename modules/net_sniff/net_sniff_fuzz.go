@@ -21,10 +21,10 @@ var mutators = []func(byte) byte{
 	},
 }
 
-func (s *Sniffer) fuzz(data []byte) int {
+func (mod *Sniffer) fuzz(data []byte) int {
 	changes := 0
 	for off, b := range data {
-		if rand.Float64() > s.fuzzRatio {
+		if rand.Float64() > mod.fuzzRatio {
 			continue
 		}
 
@@ -34,19 +34,19 @@ func (s *Sniffer) fuzz(data []byte) int {
 	return changes
 }
 
-func (s *Sniffer) doFuzzing(pkt gopacket.Packet) {
-	if rand.Float64() > s.fuzzRate {
+func (mod *Sniffer) doFuzzing(pkt gopacket.Packet) {
+	if rand.Float64() > mod.fuzzRate {
 		return
 	}
 
 	layersChanged := 0
 	bytesChanged := 0
 
-	for _, fuzzLayerType := range s.fuzzLayers {
+	for _, fuzzLayerType := range mod.fuzzLayers {
 		for _, layer := range pkt.Layers() {
 			if layer.LayerType().String() == fuzzLayerType {
 				fuzzData := layer.LayerContents()
-				changes := s.fuzz(fuzzData)
+				changes := mod.fuzz(fuzzData)
 				if changes > 0 {
 					layersChanged++
 					bytesChanged += changes
@@ -57,62 +57,62 @@ func (s *Sniffer) doFuzzing(pkt gopacket.Packet) {
 	}
 
 	if bytesChanged > 0 {
-		logFn := s.Info
-		if s.fuzzSilent {
-			logFn = s.Debug
+		logFn := mod.Info
+		if mod.fuzzSilent {
+			logFn = mod.Debug
 		}
 		logFn("changed %d bytes in %d layers.", bytesChanged, layersChanged)
-		if err := s.Session.Queue.Send(pkt.Data()); err != nil {
-			s.Error("error sending fuzzed packet: %s", err)
+		if err := mod.Session.Queue.Send(pkt.Data()); err != nil {
+			mod.Error("error sending fuzzed packet: %s", err)
 		}
 	}
 }
 
-func (s *Sniffer) configureFuzzing() (err error) {
+func (mod *Sniffer) configureFuzzing() (err error) {
 	layers := ""
 
-	if err, layers = s.StringParam("net.fuzz.layers"); err != nil {
+	if err, layers = mod.StringParam("net.fuzz.layers"); err != nil {
 		return
 	} else {
-		s.fuzzLayers = str.Comma(layers)
+		mod.fuzzLayers = str.Comma(layers)
 	}
 
-	if err, s.fuzzRate = s.DecParam("net.fuzz.rate"); err != nil {
+	if err, mod.fuzzRate = mod.DecParam("net.fuzz.rate"); err != nil {
 		return
 	}
 
-	if err, s.fuzzRatio = s.DecParam("net.fuzz.ratio"); err != nil {
+	if err, mod.fuzzRatio = mod.DecParam("net.fuzz.ratio"); err != nil {
 		return
 	}
 
-	if err, s.fuzzSilent = s.BoolParam("net.fuzz.silent"); err != nil {
+	if err, mod.fuzzSilent = mod.BoolParam("net.fuzz.silent"); err != nil {
 		return
 	}
 
 	return
 }
 
-func (s *Sniffer) StartFuzzing() error {
-	if s.fuzzActive {
+func (mod *Sniffer) StartFuzzing() error {
+	if mod.fuzzActive {
 		return nil
 	}
 
-	if err := s.configureFuzzing(); err != nil {
+	if err := mod.configureFuzzing(); err != nil {
 		return err
-	} else if !s.Running() {
-		if err := s.Start(); err != nil {
+	} else if !mod.Running() {
+		if err := mod.Start(); err != nil {
 			return err
 		}
 	}
 
-	s.fuzzActive = true
+	mod.fuzzActive = true
 
-	s.Info("active on layer types %s (rate:%f ratio:%f)", strings.Join(s.fuzzLayers, ","), s.fuzzRate, s.fuzzRatio)
+	mod.Info("active on layer types %s (rate:%f ratio:%f)", strings.Join(mod.fuzzLayers, ","), mod.fuzzRate, mod.fuzzRatio)
 
 	return nil
 }
 
-func (s *Sniffer) StopFuzzing() error {
-	s.fuzzActive = false
+func (mod *Sniffer) StopFuzzing() error {
+	mod.fuzzActive = false
 	return nil
 }

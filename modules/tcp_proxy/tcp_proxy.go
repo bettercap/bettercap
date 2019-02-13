@@ -21,70 +21,70 @@ type TcpProxy struct {
 }
 
 func NewTcpProxy(s *session.Session) *TcpProxy {
-	p := &TcpProxy{
+	mod := &TcpProxy{
 		SessionModule: session.NewSessionModule("tcp.proxy", s),
 	}
 
-	p.AddParam(session.NewIntParameter("tcp.port",
+	mod.AddParam(session.NewIntParameter("tcp.port",
 		"443",
 		"Remote port to redirect when the TCP proxy is activated."))
 
-	p.AddParam(session.NewStringParameter("tcp.address",
+	mod.AddParam(session.NewStringParameter("tcp.address",
 		"",
 		session.IPv4Validator,
 		"Remote address of the TCP proxy."))
 
-	p.AddParam(session.NewStringParameter("tcp.proxy.address",
+	mod.AddParam(session.NewStringParameter("tcp.proxy.address",
 		session.ParamIfaceAddress,
 		session.IPv4Validator,
 		"Address to bind the TCP proxy to."))
 
-	p.AddParam(session.NewIntParameter("tcp.proxy.port",
+	mod.AddParam(session.NewIntParameter("tcp.proxy.port",
 		"8443",
 		"Port to bind the TCP proxy to."))
 
-	p.AddParam(session.NewStringParameter("tcp.proxy.script",
+	mod.AddParam(session.NewStringParameter("tcp.proxy.script",
 		"",
 		"",
 		"Path of a TCP proxy JS script."))
 
-	p.AddParam(session.NewStringParameter("tcp.tunnel.address",
+	mod.AddParam(session.NewStringParameter("tcp.tunnel.address",
 		"",
 		"",
 		"Address to redirect the TCP tunnel to (optional)."))
 
-	p.AddParam(session.NewIntParameter("tcp.tunnel.port",
+	mod.AddParam(session.NewIntParameter("tcp.tunnel.port",
 		"0",
 		"Port to redirect the TCP tunnel to (optional)."))
 
-	p.AddHandler(session.NewModuleHandler("tcp.proxy on", "",
+	mod.AddHandler(session.NewModuleHandler("tcp.proxy on", "",
 		"Start TCP proxy.",
 		func(args []string) error {
-			return p.Start()
+			return mod.Start()
 		}))
 
-	p.AddHandler(session.NewModuleHandler("tcp.proxy off", "",
+	mod.AddHandler(session.NewModuleHandler("tcp.proxy off", "",
 		"Stop TCP proxy.",
 		func(args []string) error {
-			return p.Stop()
+			return mod.Stop()
 		}))
 
-	return p
+	return mod
 }
 
-func (p *TcpProxy) Name() string {
+func (mod *TcpProxy) Name() string {
 	return "tcp.proxy"
 }
 
-func (p *TcpProxy) Description() string {
+func (mod *TcpProxy) Description() string {
 	return "A full featured TCP proxy and tunnel, all TCP traffic to a given remote address and port will be redirected to it."
 }
 
-func (p *TcpProxy) Author() string {
+func (mod *TcpProxy) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (p *TcpProxy) Configure() error {
+func (mod *TcpProxy) Configure() error {
 	var err error
 	var port int
 	var proxyPort int
@@ -94,63 +94,63 @@ func (p *TcpProxy) Configure() error {
 	var tunnelAddress string
 	var tunnelPort int
 
-	if p.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if err, address = p.StringParam("tcp.address"); err != nil {
+	} else if err, address = mod.StringParam("tcp.address"); err != nil {
 		return err
-	} else if err, proxyAddress = p.StringParam("tcp.proxy.address"); err != nil {
+	} else if err, proxyAddress = mod.StringParam("tcp.proxy.address"); err != nil {
 		return err
-	} else if err, proxyPort = p.IntParam("tcp.proxy.port"); err != nil {
+	} else if err, proxyPort = mod.IntParam("tcp.proxy.port"); err != nil {
 		return err
-	} else if err, port = p.IntParam("tcp.port"); err != nil {
+	} else if err, port = mod.IntParam("tcp.port"); err != nil {
 		return err
-	} else if err, tunnelAddress = p.StringParam("tcp.tunnel.address"); err != nil {
+	} else if err, tunnelAddress = mod.StringParam("tcp.tunnel.address"); err != nil {
 		return err
-	} else if err, tunnelPort = p.IntParam("tcp.tunnel.port"); err != nil {
+	} else if err, tunnelPort = mod.IntParam("tcp.tunnel.port"); err != nil {
 		return err
-	} else if err, scriptPath = p.StringParam("tcp.proxy.script"); err != nil {
+	} else if err, scriptPath = mod.StringParam("tcp.proxy.script"); err != nil {
 		return err
-	} else if p.localAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", proxyAddress, proxyPort)); err != nil {
+	} else if mod.localAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", proxyAddress, proxyPort)); err != nil {
 		return err
-	} else if p.remoteAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
+	} else if mod.remoteAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
 		return err
-	} else if p.tunnelAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", tunnelAddress, tunnelPort)); err != nil {
+	} else if mod.tunnelAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", tunnelAddress, tunnelPort)); err != nil {
 		return err
-	} else if p.listener, err = net.ListenTCP("tcp", p.localAddr); err != nil {
+	} else if mod.listener, err = net.ListenTCP("tcp", mod.localAddr); err != nil {
 		return err
 	}
 
 	if scriptPath != "" {
-		if err, p.script = LoadTcpProxyScript(scriptPath, p.Session); err != nil {
+		if err, mod.script = LoadTcpProxyScript(scriptPath, mod.Session); err != nil {
 			return err
 		} else {
-			p.Debug("script %s loaded.", scriptPath)
+			mod.Debug("script %s loaded.", scriptPath)
 		}
 	}
 
-	if !p.Session.Firewall.IsForwardingEnabled() {
-		p.Info("enabling forwarding.")
-		p.Session.Firewall.EnableForwarding(true)
+	if !mod.Session.Firewall.IsForwardingEnabled() {
+		mod.Info("enabling forwarding.")
+		mod.Session.Firewall.EnableForwarding(true)
 	}
 
-	p.Redirection = firewall.NewRedirection(p.Session.Interface.Name(),
+	mod.Redirection = firewall.NewRedirection(mod.Session.Interface.Name(),
 		"TCP",
 		port,
 		proxyAddress,
 		proxyPort)
 
-	p.Redirection.SrcAddress = address
+	mod.Redirection.SrcAddress = address
 
-	if err := p.Session.Firewall.EnableRedirection(p.Redirection, true); err != nil {
+	if err := mod.Session.Firewall.EnableRedirection(mod.Redirection, true); err != nil {
 		return err
 	}
 
-	p.Debug("applied redirection %s", p.Redirection.String())
+	mod.Debug("applied redirection %s", mod.Redirection.String())
 
 	return nil
 }
 
-func (p *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.WaitGroup) {
+func (mod *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	buff := make([]byte, 0xffff)
@@ -158,18 +158,18 @@ func (p *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.Wa
 		n, err := src.Read(buff)
 		if err != nil {
 			if err.Error() != "EOF" {
-				p.Warning("read failed: %s", err)
+				mod.Warning("read failed: %s", err)
 			}
 			return
 		}
 		b := buff[:n]
 
-		if p.script != nil {
-			ret := p.script.OnData(from, to, b)
+		if mod.script != nil {
+			ret := mod.script.OnData(from, to, b)
 
 			if ret != nil {
 				nret := len(ret)
-				p.Info("overriding %d bytes of data from %s to %s with %d bytes of new data.",
+				mod.Info("overriding %d bytes of data from %s to %s with %d bytes of new data.",
 					n, from.String(), to.String(), nret)
 				b = make([]byte, nret)
 				copy(b, ret)
@@ -178,28 +178,28 @@ func (p *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.Wa
 
 		n, err = dst.Write(b)
 		if err != nil {
-			p.Warning("write failed: %s", err)
+			mod.Warning("write failed: %s", err)
 			return
 		}
 
-		p.Debug("%s -> %s : %d bytes", from.String(), to.String(), n)
+		mod.Debug("%s -> %s : %d bytes", from.String(), to.String(), n)
 	}
 }
 
-func (p *TcpProxy) handleConnection(c *net.TCPConn) {
+func (mod *TcpProxy) handleConnection(c *net.TCPConn) {
 	defer c.Close()
 
-	p.Info("got a connection from %s", c.RemoteAddr().String())
+	mod.Info("got a connection from %s", c.RemoteAddr().String())
 
 	// tcp tunnel enabled
-	if p.tunnelAddr.IP.To4() != nil {
-		p.Info("tcp tunnel started ( %s -> %s )", p.remoteAddr.String(), p.tunnelAddr.String())
-		p.remoteAddr = p.tunnelAddr
+	if mod.tunnelAddr.IP.To4() != nil {
+		mod.Info("tcp tunnel started ( %s -> %s )", mod.remoteAddr.String(), mod.tunnelAddr.String())
+		mod.remoteAddr = mod.tunnelAddr
 	}
 
-	remote, err := net.DialTCP("tcp", nil, p.remoteAddr)
+	remote, err := net.DialTCP("tcp", nil, mod.remoteAddr)
 	if err != nil {
-		p.Warning("error while connecting to remote %s: %s", p.remoteAddr.String(), err)
+		mod.Warning("error while connecting to remote %s: %s", mod.remoteAddr.String(), err)
 		return
 	}
 	defer remote.Close()
@@ -208,43 +208,43 @@ func (p *TcpProxy) handleConnection(c *net.TCPConn) {
 	wg.Add(2)
 
 	// start pipeing
-	go p.doPipe(c.RemoteAddr(), p.remoteAddr, c, remote, &wg)
-	go p.doPipe(p.remoteAddr, c.RemoteAddr(), remote, c, &wg)
+	go mod.doPipe(c.RemoteAddr(), mod.remoteAddr, c, remote, &wg)
+	go mod.doPipe(mod.remoteAddr, c.RemoteAddr(), remote, c, &wg)
 
 	wg.Wait()
 }
 
-func (p *TcpProxy) Start() error {
-	if err := p.Configure(); err != nil {
+func (mod *TcpProxy) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return p.SetRunning(true, func() {
-		p.Info("started ( x -> %s -> %s )", p.localAddr.String(), p.remoteAddr.String())
+	return mod.SetRunning(true, func() {
+		mod.Info("started ( x -> %s -> %s )", mod.localAddr.String(), mod.remoteAddr.String())
 
-		for p.Running() {
-			conn, err := p.listener.AcceptTCP()
+		for mod.Running() {
+			conn, err := mod.listener.AcceptTCP()
 			if err != nil {
-				p.Warning("error while accepting TCP connection: %s", err)
+				mod.Warning("error while accepting TCP connection: %s", err)
 				continue
 			}
 
-			go p.handleConnection(conn)
+			go mod.handleConnection(conn)
 		}
 	})
 }
 
-func (p *TcpProxy) Stop() error {
+func (mod *TcpProxy) Stop() error {
 
-	if p.Redirection != nil {
-		p.Debug("disabling redirection %s", p.Redirection.String())
-		if err := p.Session.Firewall.EnableRedirection(p.Redirection, false); err != nil {
+	if mod.Redirection != nil {
+		mod.Debug("disabling redirection %s", mod.Redirection.String())
+		if err := mod.Session.Firewall.EnableRedirection(mod.Redirection, false); err != nil {
 			return err
 		}
-		p.Redirection = nil
+		mod.Redirection = nil
 	}
 
-	return p.SetRunning(false, func() {
-		p.listener.Close()
+	return mod.SetRunning(false, func() {
+		mod.listener.Close()
 	})
 }

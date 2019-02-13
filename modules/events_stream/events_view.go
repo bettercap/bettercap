@@ -20,15 +20,15 @@ import (
 
 const eventTimeFormat = "15:04:05"
 
-func (s *EventsStream) viewLogEvent(e session.Event) {
-	fmt.Fprintf(s.output, "[%s] [%s] [%s] %s\n",
+func (mod *EventsStream) viewLogEvent(e session.Event) {
+	fmt.Fprintf(mod.output, "[%s] [%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
 		tui.Green(e.Tag),
 		e.Label(),
 		e.Data.(session.LogMessage).Message)
 }
 
-func (s *EventsStream) viewEndpointEvent(e session.Event) {
+func (mod *EventsStream) viewEndpointEvent(e session.Event) {
 	t := e.Data.(*network.Endpoint)
 	vend := ""
 	name := ""
@@ -44,7 +44,7 @@ func (s *EventsStream) viewEndpointEvent(e session.Event) {
 	}
 
 	if e.Tag == "endpoint.new" {
-		fmt.Fprintf(s.output, "[%s] [%s] endpoint %s%s detected as %s%s.\n",
+		fmt.Fprintf(mod.output, "[%s] [%s] endpoint %s%s detected as %s%s.\n",
 			e.Time.Format(eventTimeFormat),
 			tui.Green(e.Tag),
 			tui.Bold(t.IpAddress),
@@ -52,7 +52,7 @@ func (s *EventsStream) viewEndpointEvent(e session.Event) {
 			tui.Green(t.HwAddress),
 			tui.Dim(vend))
 	} else if e.Tag == "endpoint.lost" {
-		fmt.Fprintf(s.output, "[%s] [%s] endpoint %s%s %s%s lost.\n",
+		fmt.Fprintf(mod.output, "[%s] [%s] endpoint %s%s %s%s lost.\n",
 			e.Time.Format(eventTimeFormat),
 			tui.Green(e.Tag),
 			tui.Red(t.IpAddress),
@@ -60,82 +60,82 @@ func (s *EventsStream) viewEndpointEvent(e session.Event) {
 			tui.Green(t.HwAddress),
 			tui.Dim(vend))
 	} else {
-		fmt.Fprintf(s.output, "[%s] [%s] %s\n",
+		fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
 			e.Time.Format(eventTimeFormat),
 			tui.Green(e.Tag),
 			t.String())
 	}
 }
 
-func (s *EventsStream) viewModuleEvent(e session.Event) {
-	fmt.Fprintf(s.output, "[%s] [%s] %s\n",
+func (mod *EventsStream) viewModuleEvent(e session.Event) {
+	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
 		tui.Green(e.Tag),
 		e.Data)
 }
 
-func (s *EventsStream) viewSnifferEvent(e session.Event) {
+func (mod *EventsStream) viewSnifferEvent(e session.Event) {
 	if strings.HasPrefix(e.Tag, "net.sniff.http.") {
-		s.viewHttpEvent(e)
+		mod.viewHttpEvent(e)
 	} else {
-		fmt.Fprintf(s.output, "[%s] [%s] %s\n",
+		fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
 			e.Time.Format(eventTimeFormat),
 			tui.Green(e.Tag),
 			e.Data.(net_sniff.SnifferEvent).Message)
 	}
 }
 
-func (s *EventsStream) viewSynScanEvent(e session.Event) {
+func (mod *EventsStream) viewSynScanEvent(e session.Event) {
 	se := e.Data.(syn_scan.SynScanEvent)
-	fmt.Fprintf(s.output, "[%s] [%s] found open port %d for %s\n",
+	fmt.Fprintf(mod.output, "[%s] [%s] found open port %d for %s\n",
 		e.Time.Format(eventTimeFormat),
 		tui.Green(e.Tag),
 		se.Port,
 		tui.Bold(se.Address))
 }
 
-func (s *EventsStream) viewUpdateEvent(e session.Event) {
+func (mod *EventsStream) viewUpdateEvent(e session.Event) {
 	update := e.Data.(*github.RepositoryRelease)
 
-	fmt.Fprintf(s.output, "[%s] [%s] an update to version %s is available at %s\n",
+	fmt.Fprintf(mod.output, "[%s] [%s] an update to version %s is available at %s\n",
 		e.Time.Format(eventTimeFormat),
 		tui.Bold(tui.Yellow(e.Tag)),
 		tui.Bold(*update.TagName),
 		*update.HTMLURL)
 }
 
-func (s *EventsStream) doRotation() {
-	if s.output == os.Stdout {
+func (mod *EventsStream) doRotation() {
+	if mod.output == os.Stdout {
 		return
-	} else if !s.rotation.Enabled {
+	} else if !mod.rotation.Enabled {
 		return
 	}
 
-	s.rotation.Lock()
-	defer s.rotation.Unlock()
+	mod.rotation.Lock()
+	defer mod.rotation.Unlock()
 
 	doRotate := false
-	if info, err := s.output.Stat(); err == nil {
-		if s.rotation.How == "size" {
-			doRotate = float64(info.Size()) >= float64(s.rotation.Period*1024*1024)
-		} else if s.rotation.How == "time" {
-			doRotate = info.ModTime().Unix()%int64(s.rotation.Period) == 0
+	if info, err := mod.output.Stat(); err == nil {
+		if mod.rotation.How == "size" {
+			doRotate = float64(info.Size()) >= float64(mod.rotation.Period*1024*1024)
+		} else if mod.rotation.How == "time" {
+			doRotate = info.ModTime().Unix()%int64(mod.rotation.Period) == 0
 		}
 	}
 
 	if doRotate {
 		var err error
 
-		name := fmt.Sprintf("%s-%s", s.outputName, time.Now().Format(s.rotation.Format))
+		name := fmt.Sprintf("%s-%s", mod.outputName, time.Now().Format(mod.rotation.Format))
 
-		if err := s.output.Close(); err != nil {
+		if err := mod.output.Close(); err != nil {
 			fmt.Printf("could not close log for rotation: %s\n", err)
 			return
 		}
 
-		if err := os.Rename(s.outputName, name); err != nil {
-			fmt.Printf("could not rename %s to %s: %s\n", s.outputName, name, err)
-		} else if s.rotation.Compress {
+		if err := os.Rename(mod.outputName, name); err != nil {
+			fmt.Printf("could not rename %s to %s: %s\n", mod.outputName, name, err)
+		} else if mod.rotation.Compress {
 			zipName := fmt.Sprintf("%s.zip", name)
 			if err = zip.Files(zipName, []string{name}); err != nil {
 				fmt.Printf("error creating %s: %s", zipName, err)
@@ -144,37 +144,37 @@ func (s *EventsStream) doRotation() {
 			}
 		}
 
-		s.output, err = os.OpenFile(s.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		mod.output, err = os.OpenFile(mod.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			fmt.Printf("could not open %s: %s", s.outputName, err)
+			fmt.Printf("could not open %s: %s", mod.outputName, err)
 		}
 	}
 }
 
-func (s *EventsStream) View(e session.Event, refresh bool) {
+func (mod *EventsStream) View(e session.Event, refresh bool) {
 	if e.Tag == "sys.log" {
-		s.viewLogEvent(e)
+		mod.viewLogEvent(e)
 	} else if strings.HasPrefix(e.Tag, "endpoint.") {
-		s.viewEndpointEvent(e)
+		mod.viewEndpointEvent(e)
 	} else if strings.HasPrefix(e.Tag, "wifi.") {
-		s.viewWiFiEvent(e)
+		mod.viewWiFiEvent(e)
 	} else if strings.HasPrefix(e.Tag, "ble.") {
-		s.viewBLEEvent(e)
+		mod.viewBLEEvent(e)
 	} else if strings.HasPrefix(e.Tag, "mod.") {
-		s.viewModuleEvent(e)
+		mod.viewModuleEvent(e)
 	} else if strings.HasPrefix(e.Tag, "net.sniff.") {
-		s.viewSnifferEvent(e)
+		mod.viewSnifferEvent(e)
 	} else if e.Tag == "syn.scan" {
-		s.viewSynScanEvent(e)
+		mod.viewSynScanEvent(e)
 	} else if e.Tag == "update.available" {
-		s.viewUpdateEvent(e)
+		mod.viewUpdateEvent(e)
 	} else {
-		fmt.Fprintf(s.output, "[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), tui.Green(e.Tag), e)
+		fmt.Fprintf(mod.output, "[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), tui.Green(e.Tag), e)
 	}
 
-	if refresh && s.output == os.Stdout {
-		s.Session.Refresh()
+	if refresh && mod.output == os.Stdout {
+		mod.Session.Refresh()
 	}
 
-	s.doRotation()
+	mod.doRotation()
 }

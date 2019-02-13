@@ -38,7 +38,7 @@ type EventsStream struct {
 }
 
 func NewEventsStream(s *session.Session) *EventsStream {
-	stream := &EventsStream{
+	mod := &EventsStream{
 		SessionModule: session.NewSessionModule("events.stream", s),
 		output:        os.Stdout,
 		quit:          make(chan bool),
@@ -47,19 +47,19 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		ignoreList:    NewIgnoreList(),
 	}
 
-	stream.AddHandler(session.NewModuleHandler("events.stream on", "",
+	mod.AddHandler(session.NewModuleHandler("events.stream on", "",
 		"Start events stream.",
 		func(args []string) error {
-			return stream.Start()
+			return mod.Start()
 		}))
 
-	stream.AddHandler(session.NewModuleHandler("events.stream off", "",
+	mod.AddHandler(session.NewModuleHandler("events.stream off", "",
 		"Stop events stream.",
 		func(args []string) error {
-			return stream.Stop()
+			return mod.Stop()
 		}))
 
-	stream.AddHandler(session.NewModuleHandler("events.show LIMIT?", "events.show(\\s\\d+)?",
+	mod.AddHandler(session.NewModuleHandler("events.show LIMIT?", "events.show(\\s\\d+)?",
 		"Show events stream.",
 		func(args []string) error {
 			limit := -1
@@ -67,10 +67,10 @@ func NewEventsStream(s *session.Session) *EventsStream {
 				arg := str.Trim(args[0])
 				limit, _ = strconv.Atoi(arg)
 			}
-			return stream.Show(limit)
+			return mod.Show(limit)
 		}))
 
-	stream.AddHandler(session.NewModuleHandler("events.waitfor TAG TIMEOUT?", `events.waitfor ([^\s]+)([\s\d]*)`,
+	mod.AddHandler(session.NewModuleHandler("events.waitfor TAG TIMEOUT?", `events.waitfor ([^\s]+)([\s\d]*)`,
 		"Wait for an event with the given tag either forever or for a timeout in seconds.",
 		func(args []string) error {
 			tag := args[0]
@@ -85,163 +85,163 @@ func NewEventsStream(s *session.Session) *EventsStream {
 					timeout = n
 				}
 			}
-			return stream.startWaitingFor(tag, timeout)
+			return mod.startWaitingFor(tag, timeout)
 		}))
 
-	stream.AddHandler(session.NewModuleHandler("events.ignore FILTER", "events.ignore ([^\\s]+)",
+	mod.AddHandler(session.NewModuleHandler("events.ignore FILTER", "events.ignore ([^\\s]+)",
 		"Events with an identifier matching this filter will not be shown (use multiple times to add more filters).",
 		func(args []string) error {
-			return stream.ignoreList.Add(args[0])
+			return mod.ignoreList.Add(args[0])
 		}))
 
-	stream.AddHandler(session.NewModuleHandler("events.include FILTER", "events.include ([^\\s]+)",
+	mod.AddHandler(session.NewModuleHandler("events.include FILTER", "events.include ([^\\s]+)",
 		"Used to remove filters passed with the events.ignore command.",
 		func(args []string) error {
-			return stream.ignoreList.Remove(args[0])
+			return mod.ignoreList.Remove(args[0])
 		}))
 
-	stream.AddHandler(session.NewModuleHandler("events.filters", "",
+	mod.AddHandler(session.NewModuleHandler("events.filters", "",
 		"Print the list of filters used to ignore events.",
 		func(args []string) error {
-			if stream.ignoreList.Empty() {
+			if mod.ignoreList.Empty() {
 				fmt.Printf("Ignore filters list is empty.\n")
 			} else {
-				stream.ignoreList.RLock()
-				defer stream.ignoreList.RUnlock()
+				mod.ignoreList.RLock()
+				defer mod.ignoreList.RUnlock()
 
-				for _, filter := range stream.ignoreList.Filters() {
+				for _, filter := range mod.ignoreList.Filters() {
 					fmt.Printf("  '%s'\n", string(filter))
 				}
 			}
 			return nil
 		}))
 
-	stream.AddHandler(session.NewModuleHandler("events.clear", "",
+	mod.AddHandler(session.NewModuleHandler("events.clear", "",
 		"Clear events stream.",
 		func(args []string) error {
-			stream.Session.Events.Clear()
+			mod.Session.Events.Clear()
 			return nil
 		}))
 
-	stream.AddParam(session.NewStringParameter("events.stream.output",
+	mod.AddParam(session.NewStringParameter("events.stream.output",
 		"",
 		"",
 		"If not empty, events will be written to this file instead of the standard output."))
 
-	stream.AddParam(session.NewBoolParameter("events.stream.output.rotate",
+	mod.AddParam(session.NewBoolParameter("events.stream.output.rotate",
 		"true",
 		"If true will enable log rotation."))
 
-	stream.AddParam(session.NewBoolParameter("events.stream.output.rotate.compress",
+	mod.AddParam(session.NewBoolParameter("events.stream.output.rotate.compress",
 		"true",
 		"If true will enable log rotation compression."))
 
-	stream.AddParam(session.NewStringParameter("events.stream.output.rotate.how",
+	mod.AddParam(session.NewStringParameter("events.stream.output.rotate.how",
 		"size",
 		"(size|time)",
 		"Rotate by 'size' or 'time'."))
 
-	stream.AddParam(session.NewStringParameter("events.stream.output.rotate.format",
+	mod.AddParam(session.NewStringParameter("events.stream.output.rotate.format",
 		"2006-01-02 15:04:05",
 		"",
 		"Datetime format to use for log rotation file names."))
 
-	stream.AddParam(session.NewDecimalParameter("events.stream.output.rotate.when",
+	mod.AddParam(session.NewDecimalParameter("events.stream.output.rotate.when",
 		"10",
 		"File size (in MB) or time duration (in seconds) for log rotation."))
 
-	stream.AddParam(session.NewBoolParameter("events.stream.http.request.dump",
+	mod.AddParam(session.NewBoolParameter("events.stream.http.request.dump",
 		"false",
 		"If true all HTTP requests will be dumped."))
 
-	stream.AddParam(session.NewBoolParameter("events.stream.http.response.dump",
+	mod.AddParam(session.NewBoolParameter("events.stream.http.response.dump",
 		"false",
 		"If true all HTTP responses will be dumped."))
 
-	return stream
+	return mod
 }
 
-func (s EventsStream) Name() string {
+func (mod EventsStream) Name() string {
 	return "events.stream"
 }
 
-func (s EventsStream) Description() string {
+func (mod EventsStream) Description() string {
 	return "Print events as a continuous stream."
 }
 
-func (s EventsStream) Author() string {
+func (mod EventsStream) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (s *EventsStream) Configure() (err error) {
+func (mod *EventsStream) Configure() (err error) {
 	var output string
 
-	if err, output = s.StringParam("events.stream.output"); err == nil {
+	if err, output = mod.StringParam("events.stream.output"); err == nil {
 		if output == "" {
-			s.output = os.Stdout
-		} else if s.outputName, err = fs.Expand(output); err == nil {
-			s.output, err = os.OpenFile(s.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			mod.output = os.Stdout
+		} else if mod.outputName, err = fs.Expand(output); err == nil {
+			mod.output, err = os.OpenFile(mod.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		}
 	}
 
-	if err, s.rotation.Enabled = s.BoolParam("events.stream.output.rotate"); err != nil {
+	if err, mod.rotation.Enabled = mod.BoolParam("events.stream.output.rotate"); err != nil {
 		return err
-	} else if err, s.rotation.Compress = s.BoolParam("events.stream.output.rotate.compress"); err != nil {
+	} else if err, mod.rotation.Compress = mod.BoolParam("events.stream.output.rotate.compress"); err != nil {
 		return err
-	} else if err, s.rotation.Format = s.StringParam("events.stream.output.rotate.format"); err != nil {
+	} else if err, mod.rotation.Format = mod.StringParam("events.stream.output.rotate.format"); err != nil {
 		return err
-	} else if err, s.rotation.How = s.StringParam("events.stream.output.rotate.how"); err != nil {
+	} else if err, mod.rotation.How = mod.StringParam("events.stream.output.rotate.how"); err != nil {
 		return err
-	} else if err, s.rotation.Period = s.DecParam("events.stream.output.rotate.when"); err != nil {
+	} else if err, mod.rotation.Period = mod.DecParam("events.stream.output.rotate.when"); err != nil {
 		return err
 	}
 
-	if err, s.dumpHttpReqs = s.BoolParam("events.stream.http.request.dump"); err != nil {
+	if err, mod.dumpHttpReqs = mod.BoolParam("events.stream.http.request.dump"); err != nil {
 		return err
-	} else if err, s.dumpHttpResp = s.BoolParam("events.stream.http.response.dump"); err != nil {
+	} else if err, mod.dumpHttpResp = mod.BoolParam("events.stream.http.response.dump"); err != nil {
 		return err
 	}
 
 	return err
 }
 
-func (s *EventsStream) Start() error {
-	if err := s.Configure(); err != nil {
+func (mod *EventsStream) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return s.SetRunning(true, func() {
-		s.eventListener = s.Session.Events.Listen()
-		defer s.Session.Events.Unlisten(s.eventListener)
+	return mod.SetRunning(true, func() {
+		mod.eventListener = mod.Session.Events.Listen()
+		defer mod.Session.Events.Unlisten(mod.eventListener)
 
 		for {
 			var e session.Event
 			select {
-			case e = <-s.eventListener:
-				if e.Tag == s.waitFor {
-					s.waitFor = ""
-					s.waitChan <- &e
+			case e = <-mod.eventListener:
+				if e.Tag == mod.waitFor {
+					mod.waitFor = ""
+					mod.waitChan <- &e
 				}
 
-				if !s.ignoreList.Ignored(e) {
-					s.View(e, true)
+				if !mod.ignoreList.Ignored(e) {
+					mod.View(e, true)
 				}
 
-			case <-s.quit:
+			case <-mod.quit:
 				return
 			}
 		}
 	})
 }
 
-func (s *EventsStream) Show(limit int) error {
-	events := s.Session.Events.Sorted()
+func (mod *EventsStream) Show(limit int) error {
+	events := mod.Session.Events.Sorted()
 	num := len(events)
 
 	selected := []session.Event{}
 	for i := range events {
 		e := events[num-1-i]
-		if !s.ignoreList.Ignored(e) {
+		if !mod.ignoreList.Ignored(e) {
 			selected = append(selected, e)
 			if len(selected) == limit {
 				break
@@ -252,43 +252,43 @@ func (s *EventsStream) Show(limit int) error {
 	if numSelected := len(selected); numSelected > 0 {
 		fmt.Println()
 		for i := range selected {
-			s.View(selected[numSelected-1-i], false)
+			mod.View(selected[numSelected-1-i], false)
 		}
-		s.Session.Refresh()
+		mod.Session.Refresh()
 	}
 
 	return nil
 }
 
-func (s *EventsStream) startWaitingFor(tag string, timeout int) error {
+func (mod *EventsStream) startWaitingFor(tag string, timeout int) error {
 	if timeout == 0 {
-		s.Info("waiting for event %s ...", tui.Green(tag))
+		mod.Info("waiting for event %s ...", tui.Green(tag))
 	} else {
-		s.Info("waiting for event %s for %d seconds ...", tui.Green(tag), timeout)
+		mod.Info("waiting for event %s for %d seconds ...", tui.Green(tag), timeout)
 		go func() {
 			time.Sleep(time.Duration(timeout) * time.Second)
-			s.waitFor = ""
-			s.waitChan <- nil
+			mod.waitFor = ""
+			mod.waitChan <- nil
 		}()
 	}
 
-	s.waitFor = tag
-	event := <-s.waitChan
+	mod.waitFor = tag
+	event := <-mod.waitChan
 
 	if event == nil {
 		return fmt.Errorf("'events.waitFor %s %d' timed out.", tag, timeout)
 	} else {
-		s.Debug("got event: %v", event)
+		mod.Debug("got event: %v", event)
 	}
 
 	return nil
 }
 
-func (s *EventsStream) Stop() error {
-	return s.SetRunning(false, func() {
-		s.quit <- true
-		if s.output != os.Stdout {
-			s.output.Close()
+func (mod *EventsStream) Stop() error {
+	return mod.SetRunning(false, func() {
+		mod.quit <- true
+		if mod.output != os.Stdout {
+			mod.output.Close()
 		}
 	})
 }

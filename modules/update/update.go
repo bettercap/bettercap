@@ -20,41 +20,42 @@ type UpdateModule struct {
 }
 
 func NewUpdateModule(s *session.Session) *UpdateModule {
-	u := &UpdateModule{
+	mod := &UpdateModule{
 		SessionModule: session.NewSessionModule("update", s),
 		client:        github.NewClient(nil),
 	}
 
-	u.AddHandler(session.NewModuleHandler("update.check on", "",
+	mod.AddHandler(session.NewModuleHandler("update.check on", "",
 		"Check latest available stable version and compare it with the one being used.",
 		func(args []string) error {
-			return u.Start()
+			return mod.Start()
 		}))
 
-	return u
+	return mod
 }
 
-func (u *UpdateModule) Name() string {
+
+func (mod *UpdateModule) Name() string {
 	return "update"
 }
 
-func (u *UpdateModule) Description() string {
+func (mod *UpdateModule) Description() string {
 	return "A module to check for bettercap's updates."
 }
 
-func (u *UpdateModule) Author() string {
+func (mod *UpdateModule) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (u *UpdateModule) Configure() error {
+func (mod *UpdateModule) Configure() error {
 	return nil
 }
 
-func (u *UpdateModule) Stop() error {
+func (mod *UpdateModule) Stop() error {
 	return nil
 }
 
-func (u *UpdateModule) versionToNum(ver string) float64 {
+func (mod *UpdateModule) versionToNum(ver string) float64 {
 	if ver[0] == 'v' {
 		ver = ver[1:]
 	}
@@ -77,21 +78,21 @@ func (u *UpdateModule) versionToNum(ver string) float64 {
 	return n
 }
 
-func (u *UpdateModule) Start() error {
-	return u.SetRunning(true, func() {
-		defer u.SetRunning(false, nil)
+func (mod *UpdateModule) Start() error {
+	return mod.SetRunning(true, func() {
+		defer mod.SetRunning(false, nil)
 
-		u.Info("checking latest stable release ...")
+		mod.Info("checking latest stable release ...")
 
-		if releases, _, err := u.client.Repositories.ListReleases(context.Background(), "bettercap", "bettercap", nil); err == nil {
+		if releases, _, err := mod.client.Repositories.ListReleases(context.Background(), "bettercap", "bettercap", nil); err == nil {
 			latest := releases[0]
-			if u.versionToNum(core.Version) < u.versionToNum(*latest.TagName) {
-				u.Session.Events.Add("update.available", latest)
+			if mod.versionToNum(core.Version) < mod.versionToNum(*latest.TagName) {
+				mod.Session.Events.Add("update.available", latest)
 			} else {
-				u.Info("you are running %s which is the latest stable version.", tui.Bold(core.Version))
+				mod.Info("you are running %s which is the latest stable version.", tui.Bold(core.Version))
 			}
 		} else {
-			u.Error("error while fetching latest release info from GitHub: %s", err)
+			mod.Error("error while fetching latest release info from GitHub: %s", err)
 		}
 	})
 }

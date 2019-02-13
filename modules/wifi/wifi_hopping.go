@@ -6,64 +6,64 @@ import (
 	"github.com/bettercap/bettercap/network"
 )
 
-func (w *WiFiModule) onChannel(channel int, cb func()) {
-	w.chanLock.Lock()
-	defer w.chanLock.Unlock()
+func (mod *WiFiModule) onChannel(channel int, cb func()) {
+	mod.chanLock.Lock()
+	defer mod.chanLock.Unlock()
 
-	prev := w.stickChan
-	w.stickChan = channel
+	prev := mod.stickChan
+	mod.stickChan = channel
 
-	if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
-		w.Warning("error while hopping to channel %d: %s", channel, err)
+	if err := network.SetInterfaceChannel(mod.Session.Interface.Name(), channel); err != nil {
+		mod.Warning("error while hopping to channel %d: %s", channel, err)
 	} else {
-		w.Debug("hopped on channel %d", channel)
+		mod.Debug("hopped on channel %d", channel)
 	}
 
 	cb()
 
-	w.stickChan = prev
+	mod.stickChan = prev
 }
 
-func (w *WiFiModule) channelHopper() {
-	w.reads.Add(1)
-	defer w.reads.Done()
+func (mod *WiFiModule) channelHopper() {
+	mod.reads.Add(1)
+	defer mod.reads.Done()
 
-	w.Info("channel hopper started.")
+	mod.Info("channel hopper started.")
 
-	for w.Running() {
-		delay := w.hopPeriod
+	for mod.Running() {
+		delay := mod.hopPeriod
 		// if we have both 2.4 and 5ghz capabilities, we have
 		// more channels, therefore we need to increase the time
 		// we hop on each one otherwise me lose information
-		if len(w.frequencies) > 14 {
+		if len(mod.frequencies) > 14 {
 			delay = delay * 2
 		}
 
-		frequencies := w.frequencies
+		frequencies := mod.frequencies
 
 	loopCurrentChannels:
 		for _, frequency := range frequencies {
 			channel := network.Dot11Freq2Chan(frequency)
 			// stick to the access point channel as long as it's selected
 			// or as long as we're deauthing on it
-			if w.stickChan != 0 {
-				channel = w.stickChan
+			if mod.stickChan != 0 {
+				channel = mod.stickChan
 			}
 
-			w.Debug("hopping on channel %d", channel)
+			mod.Debug("hopping on channel %d", channel)
 
-			w.chanLock.Lock()
-			if err := network.SetInterfaceChannel(w.Session.Interface.Name(), channel); err != nil {
-				w.Warning("error while hopping to channel %d: %s", channel, err)
+			mod.chanLock.Lock()
+			if err := network.SetInterfaceChannel(mod.Session.Interface.Name(), channel); err != nil {
+				mod.Warning("error while hopping to channel %d: %s", channel, err)
 			}
-			w.chanLock.Unlock()
+			mod.chanLock.Unlock()
 
 			select {
-			case _ = <-w.hopChanges:
-				w.Debug("hop changed")
+			case _ = <-mod.hopChanges:
+				mod.Debug("hop changed")
 				break loopCurrentChannels
 			case <-time.After(delay):
-				if !w.Running() {
+				if !mod.Running() {
 					return
 				}
 			}

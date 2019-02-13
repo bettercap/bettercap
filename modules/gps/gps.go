@@ -22,78 +22,78 @@ type GPS struct {
 }
 
 func NewGPS(s *session.Session) *GPS {
-	gps := &GPS{
+	mod := &GPS{
 		SessionModule: session.NewSessionModule("gps", s),
 		serialPort:    "/dev/ttyUSB0",
 		baudRate:      19200,
 	}
 
-	gps.AddParam(session.NewStringParameter("gps.device",
-		gps.serialPort,
+	mod.AddParam(session.NewStringParameter("gps.device",
+		mod.serialPort,
 		"",
 		"Serial device of the GPS hardware."))
 
-	gps.AddParam(session.NewIntParameter("gps.baudrate",
-		fmt.Sprintf("%d", gps.baudRate),
+	mod.AddParam(session.NewIntParameter("gps.baudrate",
+		fmt.Sprintf("%d", mod.baudRate),
 		"Baud rate of the GPS serial device."))
 
-	gps.AddHandler(session.NewModuleHandler("gps on", "",
+	mod.AddHandler(session.NewModuleHandler("gps on", "",
 		"Start acquiring from the GPS hardware.",
 		func(args []string) error {
-			return gps.Start()
+			return mod.Start()
 		}))
 
-	gps.AddHandler(session.NewModuleHandler("gps off", "",
+	mod.AddHandler(session.NewModuleHandler("gps off", "",
 		"Stop acquiring from the GPS hardware.",
 		func(args []string) error {
-			return gps.Stop()
+			return mod.Stop()
 		}))
 
-	gps.AddHandler(session.NewModuleHandler("gps.show", "",
+	mod.AddHandler(session.NewModuleHandler("gps.show", "",
 		"Show the last coordinates returned by the GPS hardware.",
 		func(args []string) error {
-			return gps.Show()
+			return mod.Show()
 		}))
 
-	return gps
+	return mod
 }
 
-func (gps *GPS) Name() string {
+func (mod *GPS) Name() string {
 	return "gps"
 }
 
-func (gps *GPS) Description() string {
+func (mod *GPS) Description() string {
 	return "A module talking with GPS hardware on a serial interface."
 }
 
-func (gps *GPS) Author() string {
+func (mod *GPS) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (gps *GPS) Configure() (err error) {
-	if gps.Running() {
+func (mod *GPS) Configure() (err error) {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if err, gps.serialPort = gps.StringParam("gps.device"); err != nil {
+	} else if err, mod.serialPort = mod.StringParam("gps.device"); err != nil {
 		return err
-	} else if err, gps.baudRate = gps.IntParam("gps.baudrate"); err != nil {
+	} else if err, mod.baudRate = mod.IntParam("gps.baudrate"); err != nil {
 		return err
 	}
 
-	gps.serial, err = serial.OpenPort(&serial.Config{
-		Name:        gps.serialPort,
-		Baud:        gps.baudRate,
+	mod.serial, err = serial.OpenPort(&serial.Config{
+		Name:        mod.serialPort,
+		Baud:        mod.baudRate,
 		ReadTimeout: time.Second * 1,
 	})
 
 	return
 }
 
-func (gps *GPS) readLine() (line string, err error) {
+func (mod *GPS) readLine() (line string, err error) {
 	var n int
 
 	b := make([]byte, 1)
 	for {
-		if n, err = gps.serial.Read(b); err != nil {
+		if n, err = mod.serial.Read(b); err != nil {
 			return
 		} else if n == 1 {
 			if b[0] == '\n' {
@@ -105,48 +105,48 @@ func (gps *GPS) readLine() (line string, err error) {
 	}
 }
 
-func (gps *GPS) Show() error {
+func (mod *GPS) Show() error {
 	fmt.Printf("latitude:%f longitude:%f quality:%s satellites:%d altitude:%f\n",
-		gps.Session.GPS.Latitude,
-		gps.Session.GPS.Longitude,
-		gps.Session.GPS.FixQuality,
-		gps.Session.GPS.NumSatellites,
-		gps.Session.GPS.Altitude)
+		mod.Session.GPS.Latitude,
+		mod.Session.GPS.Longitude,
+		mod.Session.GPS.FixQuality,
+		mod.Session.GPS.NumSatellites,
+		mod.Session.GPS.Altitude)
 
-	gps.Session.Refresh()
+	mod.Session.Refresh()
 
 	return nil
 }
 
-func (gps *GPS) Start() error {
-	if err := gps.Configure(); err != nil {
+func (mod *GPS) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return gps.SetRunning(true, func() {
+	return mod.SetRunning(true, func() {
 
-		defer gps.serial.Close()
+		defer mod.serial.Close()
 
-		for gps.Running() {
-			if line, err := gps.readLine(); err == nil {
+		for mod.Running() {
+			if line, err := mod.readLine(); err == nil {
 				if s, err := nmea.Parse(line); err == nil {
 					// http://aprs.gids.nl/nmea/#gga
 					if m, ok := s.(nmea.GNGGA); ok {
-						gps.Session.GPS = m
+						mod.Session.GPS = m
 					}
 				} else {
-					gps.Debug("error parsing line '%s': %s", line, err)
+					mod.Debug("error parsing line '%s': %s", line, err)
 				}
 			} else if err != io.EOF {
-				gps.Warning("error while reading serial port: %s", err)
+				mod.Warning("error while reading serial port: %s", err)
 			}
 		}
 	})
 }
 
-func (gps *GPS) Stop() error {
-	return gps.SetRunning(false, func() {
+func (mod *GPS) Stop() error {
+	return mod.SetRunning(false, func() {
 		// let the read fail and exit
-		gps.serial.Close()
+		mod.serial.Close()
 	})
 }

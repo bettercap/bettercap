@@ -10,8 +10,8 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-func (s *SynScanner) isAddressInRange(ip net.IP) bool {
-	for _, a := range s.addresses {
+func (mod *SynScanner) isAddressInRange(ip net.IP) bool {
+	for _, a := range mod.addresses {
 		if a.Equal(ip) {
 			return true
 		}
@@ -19,7 +19,7 @@ func (s *SynScanner) isAddressInRange(ip net.IP) bool {
 	return false
 }
 
-func (s *SynScanner) onPacket(pkt gopacket.Packet) {
+func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
 	var eth layers.Ethernet
 	var ip layers.IPv4
 	var tcp layers.TCP
@@ -37,19 +37,19 @@ func (s *SynScanner) onPacket(pkt gopacket.Packet) {
 		return
 	}
 
-	if s.isAddressInRange(ip.SrcIP) && tcp.DstPort == synSourcePort && tcp.SYN && tcp.ACK {
-		atomic.AddUint64(&s.stats.openPorts, 1)
+	if mod.isAddressInRange(ip.SrcIP) && tcp.DstPort == synSourcePort && tcp.SYN && tcp.ACK {
+		atomic.AddUint64(&mod.stats.openPorts, 1)
 
 		from := ip.SrcIP.String()
 		port := int(tcp.SrcPort)
 
 		var host *network.Endpoint
-		if ip.SrcIP.Equal(s.Session.Interface.IP) {
-			host = s.Session.Interface
-		} else if ip.SrcIP.Equal(s.Session.Gateway.IP) {
-			host = s.Session.Gateway
+		if ip.SrcIP.Equal(mod.Session.Interface.IP) {
+			host = mod.Session.Interface
+		} else if ip.SrcIP.Equal(mod.Session.Gateway.IP) {
+			host = mod.Session.Gateway
 		} else {
-			host = s.Session.Lan.GetByIp(from)
+			host = mod.Session.Lan.GetByIp(from)
 		}
 
 		if host != nil {

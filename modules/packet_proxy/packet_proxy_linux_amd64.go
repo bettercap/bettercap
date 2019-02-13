@@ -78,103 +78,103 @@ func NewPacketProxy(s *session.Session) *PacketProxy {
 	return mod
 }
 
-func (pp PacketProxy) Name() string {
+func (mod PacketProxy) Name() string {
 	return "packet.proxy"
 }
 
-func (pp PacketProxy) Description() string {
+func (mod PacketProxy) Description() string {
 	return "A Linux only module that relies on NFQUEUEs in order to filter packets."
 }
 
-func (pp PacketProxy) Author() string {
+func (mod PacketProxy) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (pp *PacketProxy) destroyQueue() {
-	if pp.queue == nil {
+func (mod *PacketProxy) destroyQueue() {
+	if mod.queue == nil {
 		return
 	}
 
-	pp.queue.DestroyQueue()
-	pp.queue.Close()
-	pp.queue = nil
+	mod.queue.DestroyQueue()
+	mod.queue.Close()
+	mod.queue = nil
 }
 
-func (pp *PacketProxy) runRule(enable bool) (err error) {
+func (mod *PacketProxy) runRule(enable bool) (err error) {
 	action := "-A"
 	if !enable {
 		action = "-D"
 	}
 
 	args := []string{
-		action, pp.chainName,
+		action, mod.chainName,
 	}
 
-	if pp.rule != "" {
-		rule := strings.Split(pp.rule, " ")
+	if mod.rule != "" {
+		rule := strings.Split(mod.rule, " ")
 		args = append(args, rule...)
 	}
 
 	args = append(args, []string{
 		"-j", "NFQUEUE",
-		"--queue-num", fmt.Sprintf("%d", pp.queueNum),
+		"--queue-num", fmt.Sprintf("%d", mod.queueNum),
 		"--queue-bypass",
 	}...)
 
-	pp.Debug("iptables %s", args)
+	mod.Debug("iptables %s", args)
 
 	_, err = core.Exec("iptables", args)
 	return
 }
 
-func (pp *PacketProxy) Configure() (err error) {
+func (mod *PacketProxy) Configure() (err error) {
 	golog.SetOutput(ioutil.Discard)
 
-	pp.destroyQueue()
+	mod.destroyQueue()
 
-	if err, pp.queueNum = pp.IntParam("packet.proxy.queue.num"); err != nil {
+	if err, mod.queueNum = mod.IntParam("packet.proxy.queue.num"); err != nil {
 		return
-	} else if err, pp.chainName = pp.StringParam("packet.proxy.chain"); err != nil {
+	} else if err, mod.chainName = mod.StringParam("packet.proxy.chain"); err != nil {
 		return
-	} else if err, pp.rule = pp.StringParam("packet.proxy.rule"); err != nil {
+	} else if err, mod.rule = mod.StringParam("packet.proxy.rule"); err != nil {
 		return
-	} else if err, pp.pluginPath = pp.StringParam("packet.proxy.plugin"); err != nil {
+	} else if err, mod.pluginPath = mod.StringParam("packet.proxy.plugin"); err != nil {
 		return
 	}
 
-	if pp.pluginPath == "" {
+	if mod.pluginPath == "" {
 		return fmt.Errorf("The parameter %s can not be empty.", tui.Bold("packet.proxy.plugin"))
-	} else if !fs.Exists(pp.pluginPath) {
-		return fmt.Errorf("%s does not exist.", pp.pluginPath)
+	} else if !fs.Exists(mod.pluginPath) {
+		return fmt.Errorf("%s does not exist.", mod.pluginPath)
 	}
 
-	pp.Info("loading packet proxy plugin from %s ...", pp.pluginPath)
+	mod.Info("loading packet proxy plugin from %s ...", mod.pluginPath)
 
 	var ok bool
 	var sym plugin.Symbol
 
-	if pp.plugin, err = plugin.Open(pp.pluginPath); err != nil {
+	if mod.plugin, err = plugin.Open(mod.pluginPath); err != nil {
 		return
-	} else if sym, err = pp.plugin.Lookup("OnPacket"); err != nil {
+	} else if sym, err = mod.plugin.Lookup("OnPacket"); err != nil {
 		return
-	} else if pp.queueCb, ok = sym.(func(*nfqueue.Payload) int); !ok {
+	} else if mod.queueCb, ok = sym.(func(*nfqueue.Payload) int); !ok {
 		return fmt.Errorf("Symbol OnPacket is not a valid callback function.")
 	}
 
-	pp.queue = new(nfqueue.Queue)
-	if err = pp.queue.SetCallback(dummyCallback); err != nil {
+	mod.queue = new(nfqueue.Queue)
+	if err = mod.queue.SetCallback(dummyCallback); err != nil {
 		return
-	} else if err = pp.queue.Init(); err != nil {
+	} else if err = mod.queue.Init(); err != nil {
 		return
-	} else if err = pp.queue.Unbind(syscall.AF_INET); err != nil {
+	} else if err = mod.queue.Unbind(syscall.AF_INET); err != nil {
 		return
-	} else if err = pp.queue.Bind(syscall.AF_INET); err != nil {
+	} else if err = mod.queue.Bind(syscall.AF_INET); err != nil {
 		return
-	} else if err = pp.queue.CreateQueue(pp.queueNum); err != nil {
+	} else if err = mod.queue.CreateQueue(mod.queueNum); err != nil {
 		return
-	} else if err = pp.queue.SetMode(nfqueue.NFQNL_COPY_PACKET); err != nil {
+	} else if err = mod.queue.SetMode(nfqueue.NFQNL_COPY_PACKET); err != nil {
 		return
-	} else if err = pp.runRule(true); err != nil {
+	} else if err = mod.runRule(true); err != nil {
 		return
 	}
 
@@ -188,28 +188,28 @@ func dummyCallback(payload *nfqueue.Payload) int {
 	return mod.queueCb(payload)
 }
 
-func (pp *PacketProxy) Start() error {
-	if pp.Running() {
+func (mod *PacketProxy) Start() error {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if err := pp.Configure(); err != nil {
+	} else if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return pp.SetRunning(true, func() {
-		pp.Info("started on queue number %d", pp.queueNum)
+	return mod.SetRunning(true, func() {
+		mod.Info("started on queue number %d", mod.queueNum)
 
-		defer pp.destroyQueue()
+		defer mod.destroyQueue()
 
-		pp.queue.Loop()
+		mod.queue.Loop()
 
-		pp.done <- true
+		mod.done <- true
 	})
 }
 
-func (pp *PacketProxy) Stop() error {
-	return pp.SetRunning(false, func() {
-		pp.queue.StopLoop()
-		pp.runRule(false)
-		<-pp.done
+func (mod *PacketProxy) Stop() error {
+	return mod.SetRunning(false, func() {
+		mod.queue.StopLoop()
+		mod.runRule(false)
+		<-mod.done
 	})
 }

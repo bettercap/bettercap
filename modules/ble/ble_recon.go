@@ -29,7 +29,7 @@ type BLERecon struct {
 }
 
 func NewBLERecon(s *session.Session) *BLERecon {
-	d := &BLERecon{
+	mod := &BLERecon{
 		SessionModule: session.NewSessionModule("ble.recon", s),
 		gattDevice:    nil,
 		quit:          make(chan bool),
@@ -39,38 +39,38 @@ func NewBLERecon(s *session.Session) *BLERecon {
 		connected:     false,
 	}
 
-	d.AddHandler(session.NewModuleHandler("ble.recon on", "",
+	mod.AddHandler(session.NewModuleHandler("ble.recon on", "",
 		"Start Bluetooth Low Energy devices discovery.",
 		func(args []string) error {
-			return d.Start()
+			return mod.Start()
 		}))
 
-	d.AddHandler(session.NewModuleHandler("ble.recon off", "",
+	mod.AddHandler(session.NewModuleHandler("ble.recon off", "",
 		"Stop Bluetooth Low Energy devices discovery.",
 		func(args []string) error {
-			return d.Stop()
+			return mod.Stop()
 		}))
 
-	d.AddHandler(session.NewModuleHandler("ble.show", "",
+	mod.AddHandler(session.NewModuleHandler("ble.show", "",
 		"Show discovered Bluetooth Low Energy devices.",
 		func(args []string) error {
-			return d.Show()
+			return mod.Show()
 		}))
 
-	d.AddHandler(session.NewModuleHandler("ble.enum MAC", "ble.enum "+network.BLEMacValidator,
+	mod.AddHandler(session.NewModuleHandler("ble.enum MAC", "ble.enum "+network.BLEMacValidator,
 		"Enumerate services and characteristics for the given BLE device.",
 		func(args []string) error {
-			if d.isEnumerating() {
-				return fmt.Errorf("An enumeration for %s is already running, please wait.", d.currDevice.Device.ID())
+			if mod.isEnumerating() {
+				return fmt.Errorf("An enumeration for %s is already running, please wait.", mod.currDevice.Device.ID())
 			}
 
-			d.writeData = nil
-			d.writeUUID = nil
+			mod.writeData = nil
+			mod.writeUUID = nil
 
-			return d.enumAllTheThings(network.NormalizeMac(args[0]))
+			return mod.enumAllTheThings(network.NormalizeMac(args[0]))
 		}))
 
-	d.AddHandler(session.NewModuleHandler("ble.write MAC UUID HEX_DATA", "ble.write "+network.BLEMacValidator+" ([a-fA-F0-9]+) ([a-fA-F0-9]+)",
+	mod.AddHandler(session.NewModuleHandler("ble.write MAC UUID HEX_DATA", "ble.write "+network.BLEMacValidator+" ([a-fA-F0-9]+) ([a-fA-F0-9]+)",
 		"Write the HEX_DATA buffer to the BLE device with the specified MAC address, to the characteristics with the given UUID.",
 		func(args []string) error {
 			mac := network.NormalizeMac(args[0])
@@ -83,84 +83,84 @@ func NewBLERecon(s *session.Session) *BLERecon {
 				return fmt.Errorf("Error parsing %s: %s", args[2], err)
 			}
 
-			return d.writeBuffer(mac, uuid, data)
+			return mod.writeBuffer(mac, uuid, data)
 		}))
 
-	return d
+	return mod
 }
 
-func (d BLERecon) Name() string {
+func (mod BLERecon) Name() string {
 	return "ble.recon"
 }
 
-func (d BLERecon) Description() string {
+func (mod BLERecon) Description() string {
 	return "Bluetooth Low Energy devices discovery."
 }
 
-func (d BLERecon) Author() string {
+func (mod BLERecon) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (d *BLERecon) isEnumerating() bool {
-	return d.currDevice != nil
+func (mod *BLERecon) isEnumerating() bool {
+	return mod.currDevice != nil
 }
 
-func (d *BLERecon) Configure() (err error) {
-	if d.Running() {
+func (mod *BLERecon) Configure() (err error) {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if d.gattDevice == nil {
-		d.Info("Initializing BLE device ...")
+	} else if mod.gattDevice == nil {
+		mod.Info("Initializing BLE device ...")
 
 		// hey Paypal GATT library, could you please just STFU?!
 		golog.SetOutput(ioutil.Discard)
-		if d.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
+		if mod.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
 			return err
 		}
 
-		d.gattDevice.Handle(
-			gatt.PeripheralDiscovered(d.onPeriphDiscovered),
-			gatt.PeripheralConnected(d.onPeriphConnected),
-			gatt.PeripheralDisconnected(d.onPeriphDisconnected),
+		mod.gattDevice.Handle(
+			gatt.PeripheralDiscovered(mod.onPeriphDiscovered),
+			gatt.PeripheralConnected(mod.onPeriphConnected),
+			gatt.PeripheralDisconnected(mod.onPeriphDisconnected),
 		)
 
-		d.gattDevice.Init(d.onStateChanged)
+		mod.gattDevice.Init(mod.onStateChanged)
 	}
 
 	return nil
 }
 
-func (d *BLERecon) Start() error {
-	if err := d.Configure(); err != nil {
+func (mod *BLERecon) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return d.SetRunning(true, func() {
-		go d.pruner()
+	return mod.SetRunning(true, func() {
+		go mod.pruner()
 
-		<-d.quit
+		<-mod.quit
 
-		d.Info("Stopping BLE scan ...")
+		mod.Info("Stopping BLE scan ...")
 
-		d.gattDevice.StopScanning()
+		mod.gattDevice.StopScanning()
 
-		d.done <- true
+		mod.done <- true
 	})
 }
 
-func (d *BLERecon) Stop() error {
-	return d.SetRunning(false, func() {
-		d.quit <- true
-		<-d.done
+func (mod *BLERecon) Stop() error {
+	return mod.SetRunning(false, func() {
+		mod.quit <- true
+		<-mod.done
 	})
 }
 
-func (d *BLERecon) pruner() {
-	d.Debug("Started BLE devices pruner ...")
+func (mod *BLERecon) pruner() {
+	mod.Debug("Started BLE devices pruner ...")
 
-	for d.Running() {
-		for _, dev := range d.Session.BLE.Devices() {
+	for mod.Running() {
+		for _, dev := range mod.Session.BLE.Devices() {
 			if time.Since(dev.LastSeen) > blePresentInterval {
-				d.Session.BLE.Remove(dev.Device.ID())
+				mod.Session.BLE.Remove(dev.Device.ID())
 			}
 		}
 
@@ -168,41 +168,41 @@ func (d *BLERecon) pruner() {
 	}
 }
 
-func (d *BLERecon) setCurrentDevice(dev *network.BLEDevice) {
-	d.connected = false
-	d.currDevice = dev
+func (mod *BLERecon) setCurrentDevice(dev *network.BLEDevice) {
+	mod.connected = false
+	mod.currDevice = dev
 }
 
-func (d *BLERecon) writeBuffer(mac string, uuid gatt.UUID, data []byte) error {
-	d.writeUUID = &uuid
-	d.writeData = data
-	return d.enumAllTheThings(mac)
+func (mod *BLERecon) writeBuffer(mac string, uuid gatt.UUID, data []byte) error {
+	mod.writeUUID = &uuid
+	mod.writeData = data
+	return mod.enumAllTheThings(mac)
 }
 
-func (d *BLERecon) enumAllTheThings(mac string) error {
-	dev, found := d.Session.BLE.Get(mac)
+func (mod *BLERecon) enumAllTheThings(mac string) error {
+	dev, found := mod.Session.BLE.Get(mac)
 	if !found || dev == nil {
 		return fmt.Errorf("BLE device with address %s not found.", mac)
-	} else if d.Running() {
-		d.gattDevice.StopScanning()
+	} else if mod.Running() {
+		mod.gattDevice.StopScanning()
 	}
 
-	d.setCurrentDevice(dev)
-	if err := d.Configure(); err != nil && err != session.ErrAlreadyStarted {
+	mod.setCurrentDevice(dev)
+	if err := mod.Configure(); err != nil && err != session.ErrAlreadyStarted {
 		return err
 	}
 
-	d.Info("Connecting to %s ...", mac)
+	mod.Info("Connecting to %s ...", mac)
 
 	go func() {
-		time.Sleep(d.connTimeout)
-		if d.isEnumerating() && !d.connected {
-			d.Session.Events.Add("ble.connection.timeout", d.currDevice)
-			d.onPeriphDisconnected(nil, nil)
+		time.Sleep(mod.connTimeout)
+		if mod.isEnumerating() && !mod.connected {
+			mod.Session.Events.Add("ble.connection.timeout", mod.currDevice)
+			mod.onPeriphDisconnected(nil, nil)
 		}
 	}()
 
-	d.gattDevice.Connect(dev.Device)
+	mod.gattDevice.Connect(dev.Device)
 
 	return nil
 }

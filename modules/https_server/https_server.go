@@ -22,65 +22,65 @@ type HttpsServer struct {
 }
 
 func NewHttpsServer(s *session.Session) *HttpsServer {
-	httpd := &HttpsServer{
+	mod := &HttpsServer{
 		SessionModule: session.NewSessionModule("https.server", s),
 		server:        &http.Server{},
 	}
 
-	httpd.AddParam(session.NewStringParameter("https.server.path",
+	mod.AddParam(session.NewStringParameter("https.server.path",
 		".",
 		"",
 		"Server folder."))
 
-	httpd.AddParam(session.NewStringParameter("https.server.address",
+	mod.AddParam(session.NewStringParameter("https.server.address",
 		session.ParamIfaceAddress,
 		session.IPv4Validator,
 		"Address to bind the http server to."))
 
-	httpd.AddParam(session.NewIntParameter("https.server.port",
+	mod.AddParam(session.NewIntParameter("https.server.port",
 		"443",
 		"Port to bind the http server to."))
 
-	httpd.AddParam(session.NewStringParameter("https.server.certificate",
+	mod.AddParam(session.NewStringParameter("https.server.certificate",
 		"~/.bettercap-https.cert.pem",
 		"",
 		"TLS certificate file (will be auto generated if filled but not existing)."))
 
-	httpd.AddParam(session.NewStringParameter("https.server.key",
+	mod.AddParam(session.NewStringParameter("https.server.key",
 		"~/.bettercap-https.key.pem",
 		"",
 		"TLS key file (will be auto generated if filled but not existing)."))
 
-	tls.CertConfigToModule("https.server", &httpd.SessionModule, tls.DefaultLegitConfig)
+	tls.CertConfigToModule("https.server", &mod.SessionModule, tls.DefaultLegitConfig)
 
-	httpd.AddHandler(session.NewModuleHandler("https.server on", "",
+	mod.AddHandler(session.NewModuleHandler("https.server on", "",
 		"Start https server.",
 		func(args []string) error {
-			return httpd.Start()
+			return mod.Start()
 		}))
 
-	httpd.AddHandler(session.NewModuleHandler("https.server off", "",
+	mod.AddHandler(session.NewModuleHandler("https.server off", "",
 		"Stop https server.",
 		func(args []string) error {
-			return httpd.Stop()
+			return mod.Stop()
 		}))
 
-	return httpd
+	return mod
 }
 
-func (httpd *HttpsServer) Name() string {
+func (mod *HttpsServer) Name() string {
 	return "https.server"
 }
 
-func (httpd *HttpsServer) Description() string {
+func (mod *HttpsServer) Description() string {
 	return "A simple HTTPS server, to be used to serve files and scripts across the network."
 }
 
-func (httpd *HttpsServer) Author() string {
+func (mod *HttpsServer) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (httpd *HttpsServer) Configure() error {
+func (mod *HttpsServer) Configure() error {
 	var err error
 	var path string
 	var address string
@@ -88,11 +88,11 @@ func (httpd *HttpsServer) Configure() error {
 	var certFile string
 	var keyFile string
 
-	if httpd.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
 	}
 
-	if err, path = httpd.StringParam("https.server.path"); err != nil {
+	if err, path = mod.StringParam("https.server.path"); err != nil {
 		return err
 	}
 
@@ -100,74 +100,74 @@ func (httpd *HttpsServer) Configure() error {
 	fileServer := http.FileServer(http.Dir(path))
 
 	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httpd.Info("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		mod.Info("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
 		fileServer.ServeHTTP(w, r)
 	}))
 
-	httpd.server.Handler = router
+	mod.server.Handler = router
 
-	if err, address = httpd.StringParam("https.server.address"); err != nil {
+	if err, address = mod.StringParam("https.server.address"); err != nil {
 		return err
 	}
 
-	if err, port = httpd.IntParam("https.server.port"); err != nil {
+	if err, port = mod.IntParam("https.server.port"); err != nil {
 		return err
 	}
 
-	httpd.server.Addr = fmt.Sprintf("%s:%d", address, port)
+	mod.server.Addr = fmt.Sprintf("%s:%d", address, port)
 
-	if err, certFile = httpd.StringParam("https.server.certificate"); err != nil {
+	if err, certFile = mod.StringParam("https.server.certificate"); err != nil {
 		return err
 	} else if certFile, err = fs.Expand(certFile); err != nil {
 		return err
 	}
 
-	if err, keyFile = httpd.StringParam("https.server.key"); err != nil {
+	if err, keyFile = mod.StringParam("https.server.key"); err != nil {
 		return err
 	} else if keyFile, err = fs.Expand(keyFile); err != nil {
 		return err
 	}
 
 	if !fs.Exists(certFile) || !fs.Exists(keyFile) {
-		err, cfg := tls.CertConfigFromModule("https.server", httpd.SessionModule)
+		err, cfg := tls.CertConfigFromModule("https.server", mod.SessionModule)
 		if err != nil {
 			return err
 		}
 
-		httpd.Debug("%+v", cfg)
-		httpd.Info("generating server TLS key to %s", keyFile)
-		httpd.Info("generating server TLS certificate to %s", certFile)
+		mod.Debug("%+v", cfg)
+		mod.Info("generating server TLS key to %s", keyFile)
+		mod.Info("generating server TLS certificate to %s", certFile)
 		if err := tls.Generate(cfg, certFile, keyFile); err != nil {
 			return err
 		}
 	} else {
-		httpd.Info("loading server TLS key from %s", keyFile)
-		httpd.Info("loading server TLS certificate from %s", certFile)
+		mod.Info("loading server TLS key from %s", keyFile)
+		mod.Info("loading server TLS certificate from %s", certFile)
 	}
 
-	httpd.certFile = certFile
-	httpd.keyFile = keyFile
+	mod.certFile = certFile
+	mod.keyFile = keyFile
 
 	return nil
 }
 
-func (httpd *HttpsServer) Start() error {
-	if err := httpd.Configure(); err != nil {
+func (mod *HttpsServer) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return httpd.SetRunning(true, func() {
-		httpd.Info("starting on https://%s", httpd.server.Addr)
-		if err := httpd.server.ListenAndServeTLS(httpd.certFile, httpd.keyFile); err != nil && err != http.ErrServerClosed {
+	return mod.SetRunning(true, func() {
+		mod.Info("starting on https://%s", mod.server.Addr)
+		if err := mod.server.ListenAndServeTLS(mod.certFile, mod.keyFile); err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}
 	})
 }
 
-func (httpd *HttpsServer) Stop() error {
-	return httpd.SetRunning(false, func() {
+func (mod *HttpsServer) Stop() error {
+	return mod.SetRunning(false, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
-		httpd.server.Shutdown(ctx)
+		mod.server.Shutdown(ctx)
 	})
 }

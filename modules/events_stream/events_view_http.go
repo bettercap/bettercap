@@ -20,8 +20,8 @@ var (
 	reJsonKey = regexp.MustCompile(`("[^"]+"):`)
 )
 
-func (s *EventsStream) shouldDumpHttpRequest(req net_sniff.HTTPRequest) bool {
-	if s.dumpHttpReqs {
+func (mod *EventsStream) shouldDumpHttpRequest(req net_sniff.HTTPRequest) bool {
+	if mod.dumpHttpReqs {
 		// dump all
 		return true
 	} else if req.Method != "GET" {
@@ -38,8 +38,8 @@ func (s *EventsStream) shouldDumpHttpRequest(req net_sniff.HTTPRequest) bool {
 	return false
 }
 
-func (s *EventsStream) shouldDumpHttpResponse(res net_sniff.HTTPResponse) bool {
-	if s.dumpHttpResp {
+func (mod *EventsStream) shouldDumpHttpResponse(res net_sniff.HTTPResponse) bool {
+	if mod.dumpHttpResp {
 		return true
 	} else if strings.Contains(res.ContentType, "text/plain") {
 		return true
@@ -58,7 +58,7 @@ func (s *EventsStream) shouldDumpHttpResponse(res net_sniff.HTTPResponse) bool {
 	return false
 }
 
-func (s *EventsStream) dumpForm(body []byte) string {
+func (mod *EventsStream) dumpForm(body []byte) string {
 	form := []string{}
 	for _, v := range strings.Split(string(body), "&") {
 		if strings.Contains(v, "=") {
@@ -81,23 +81,23 @@ func (s *EventsStream) dumpForm(body []byte) string {
 	return "\n" + strings.Join(form, "&") + "\n"
 }
 
-func (s *EventsStream) dumpText(body []byte) string {
+func (mod *EventsStream) dumpText(body []byte) string {
 	return "\n" + tui.Bold(tui.Red(string(body))) + "\n"
 }
 
-func (s *EventsStream) dumpGZIP(body []byte) string {
+func (mod *EventsStream) dumpGZIP(body []byte) string {
 	buffer := bytes.NewBuffer(body)
 	uncompressed := bytes.Buffer{}
 	reader, err := gzip.NewReader(buffer)
 	if err != nil {
-		return s.dumpRaw(body)
+		return mod.dumpRaw(body)
 	} else if _, err = uncompressed.ReadFrom(reader); err != nil {
-		return s.dumpRaw(body)
+		return mod.dumpRaw(body)
 	}
-	return s.dumpRaw(uncompressed.Bytes())
+	return mod.dumpRaw(uncompressed.Bytes())
 }
 
-func (s *EventsStream) dumpJSON(body []byte) string {
+func (mod *EventsStream) dumpJSON(body []byte) string {
 	var buf bytes.Buffer
 	var pretty string
 
@@ -110,25 +110,25 @@ func (s *EventsStream) dumpJSON(body []byte) string {
 	return "\n" + reJsonKey.ReplaceAllString(pretty, tui.Green(`$1:`)) + "\n"
 }
 
-func (s *EventsStream) dumpXML(body []byte) string {
+func (mod *EventsStream) dumpXML(body []byte) string {
 	// TODO: indent xml
 	return "\n" + string(body) + "\n"
 }
 
-func (s *EventsStream) dumpRaw(body []byte) string {
+func (mod *EventsStream) dumpRaw(body []byte) string {
 	return "\n" + hex.Dump(body) + "\n"
 }
 
-func (s *EventsStream) viewHttpRequest(e session.Event) {
+func (mod *EventsStream) viewHttpRequest(e session.Event) {
 	se := e.Data.(net_sniff.SnifferEvent)
 	req := se.Data.(net_sniff.HTTPRequest)
 
-	fmt.Fprintf(s.output, "[%s] [%s] %s\n",
+	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
 		tui.Green(e.Tag),
 		se.Message)
 
-	if s.shouldDumpHttpRequest(req) {
+	if mod.shouldDumpHttpRequest(req) {
 		dump := fmt.Sprintf("%s %s %s\n", tui.Bold(req.Method), req.URL, tui.Dim(req.Proto))
 		dump += fmt.Sprintf("%s: %s\n", tui.Blue("Host"), tui.Yellow(req.Host))
 		for name, values := range req.Headers {
@@ -139,34 +139,34 @@ func (s *EventsStream) viewHttpRequest(e session.Event) {
 
 		if req.Body != nil {
 			if req.IsType("application/x-www-form-urlencoded") {
-				dump += s.dumpForm(req.Body)
+				dump += mod.dumpForm(req.Body)
 			} else if req.IsType("text/plain") {
-				dump += s.dumpText(req.Body)
+				dump += mod.dumpText(req.Body)
 			} else if req.IsType("text/xml") {
-				dump += s.dumpXML(req.Body)
+				dump += mod.dumpXML(req.Body)
 			} else if req.IsType("gzip") {
-				dump += s.dumpGZIP(req.Body)
+				dump += mod.dumpGZIP(req.Body)
 			} else if req.IsType("application/json") {
-				dump += s.dumpJSON(req.Body)
+				dump += mod.dumpJSON(req.Body)
 			} else {
-				dump += s.dumpRaw(req.Body)
+				dump += mod.dumpRaw(req.Body)
 			}
 		}
 
-		fmt.Fprintf(s.output, "\n%s\n", dump)
+		fmt.Fprintf(mod.output, "\n%s\n", dump)
 	}
 }
 
-func (s *EventsStream) viewHttpResponse(e session.Event) {
+func (mod *EventsStream) viewHttpResponse(e session.Event) {
 	se := e.Data.(net_sniff.SnifferEvent)
 	res := se.Data.(net_sniff.HTTPResponse)
 
-	fmt.Fprintf(s.output, "[%s] [%s] %s\n",
+	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
 		e.Time.Format(eventTimeFormat),
 		tui.Green(e.Tag),
 		se.Message)
 
-	if s.shouldDumpHttpResponse(res) {
+	if mod.shouldDumpHttpResponse(res) {
 		dump := fmt.Sprintf("%s %s\n", tui.Dim(res.Protocol), res.Status)
 		for name, values := range res.Headers {
 			for _, value := range values {
@@ -177,22 +177,22 @@ func (s *EventsStream) viewHttpResponse(e session.Event) {
 		if res.Body != nil {
 			// TODO: add more interesting response types
 			if res.IsType("text/plain") {
-				dump += s.dumpText(res.Body)
+				dump += mod.dumpText(res.Body)
 			} else if res.IsType("application/json") {
-				dump += s.dumpJSON(res.Body)
+				dump += mod.dumpJSON(res.Body)
 			} else if res.IsType("text/xml") {
-				dump += s.dumpXML(res.Body)
+				dump += mod.dumpXML(res.Body)
 			}
 		}
 
-		fmt.Fprintf(s.output, "\n%s\n", dump)
+		fmt.Fprintf(mod.output, "\n%s\n", dump)
 	}
 }
 
-func (s *EventsStream) viewHttpEvent(e session.Event) {
+func (mod *EventsStream) viewHttpEvent(e session.Event) {
 	if e.Tag == "net.sniff.http.request" {
-		s.viewHttpRequest(e)
+		mod.viewHttpRequest(e)
 	} else if e.Tag == "net.sniff.http.response" {
-		s.viewHttpResponse(e)
+		mod.viewHttpResponse(e)
 	}
 }

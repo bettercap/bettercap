@@ -21,116 +21,116 @@ type APIResponse struct {
 	Message string `json:"msg"`
 }
 
-func (api *RestAPI) setAuthFailed(w http.ResponseWriter, r *http.Request) {
-	api.Warning("Unauthorized authentication attempt from %s", r.RemoteAddr)
+func (mod *RestAPI) setAuthFailed(w http.ResponseWriter, r *http.Request) {
+	mod.Warning("Unauthorized authentication attempt from %s", r.RemoteAddr)
 
 	w.Header().Set("WWW-Authenticate", `Basic realm="auth"`)
 	w.WriteHeader(401)
 	w.Write([]byte("Unauthorized"))
 }
 
-func (api *RestAPI) toJSON(w http.ResponseWriter, o interface{}) {
+func (mod *RestAPI) toJSON(w http.ResponseWriter, o interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(o); err != nil {
-		api.Error("error while encoding object to JSON: %v", err)
+		mod.Error("error while encoding object to JSON: %v", err)
 	}
 }
 
-func (api *RestAPI) setSecurityHeaders(w http.ResponseWriter) {
+func (mod *RestAPI) setSecurityHeaders(w http.ResponseWriter) {
 	w.Header().Add("X-Frame-Options", "DENY")
 	w.Header().Add("X-Content-Type-Options", "nosniff")
 	w.Header().Add("X-XSS-Protection", "1; mode=block")
 	w.Header().Add("Referrer-Policy", "same-origin")
-	w.Header().Set("Access-Control-Allow-Origin", api.allowOrigin)
+	w.Header().Set("Access-Control-Allow-Origin", mod.allowOrigin)
 }
 
-func (api *RestAPI) checkAuth(r *http.Request) bool {
-	if api.username != "" && api.password != "" {
+func (mod *RestAPI) checkAuth(r *http.Request) bool {
+	if mod.username != "" && mod.password != "" {
 		user, pass, _ := r.BasicAuth()
 		// timing attack my ass
-		if subtle.ConstantTimeCompare([]byte(user), []byte(api.username)) != 1 {
+		if subtle.ConstantTimeCompare([]byte(user), []byte(mod.username)) != 1 {
 			return false
-		} else if subtle.ConstantTimeCompare([]byte(pass), []byte(api.password)) != 1 {
+		} else if subtle.ConstantTimeCompare([]byte(pass), []byte(mod.password)) != 1 {
 			return false
 		}
 	}
 	return true
 }
 
-func (api *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
-	api.toJSON(w, session.I)
+func (mod *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
+	mod.toJSON(w, session.I)
 }
 
-func (api *RestAPI) showBle(w http.ResponseWriter, r *http.Request) {
+func (mod *RestAPI) showBle(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		api.toJSON(w, session.I.BLE)
+		mod.toJSON(w, session.I.BLE)
 	} else if dev, found := session.I.BLE.Get(mac); found {
-		api.toJSON(w, dev)
+		mod.toJSON(w, dev)
 	} else {
 		http.Error(w, "Not Found", 404)
 	}
 }
 
-func (api *RestAPI) showEnv(w http.ResponseWriter, r *http.Request) {
-	api.toJSON(w, session.I.Env)
+func (mod *RestAPI) showEnv(w http.ResponseWriter, r *http.Request) {
+	mod.toJSON(w, session.I.Env)
 }
 
-func (api *RestAPI) showGateway(w http.ResponseWriter, r *http.Request) {
-	api.toJSON(w, session.I.Gateway)
+func (mod *RestAPI) showGateway(w http.ResponseWriter, r *http.Request) {
+	mod.toJSON(w, session.I.Gateway)
 }
 
-func (api *RestAPI) showInterface(w http.ResponseWriter, r *http.Request) {
-	api.toJSON(w, session.I.Interface)
+func (mod *RestAPI) showInterface(w http.ResponseWriter, r *http.Request) {
+	mod.toJSON(w, session.I.Interface)
 }
 
-func (api *RestAPI) showModules(w http.ResponseWriter, r *http.Request) {
-	api.toJSON(w, session.I.Modules)
+func (mod *RestAPI) showModules(w http.ResponseWriter, r *http.Request) {
+	mod.toJSON(w, session.I.Modules)
 }
 
-func (api *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
+func (mod *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		api.toJSON(w, session.I.Lan)
+		mod.toJSON(w, session.I.Lan)
 	} else if host, found := session.I.Lan.Get(mac); found {
-		api.toJSON(w, host)
+		mod.toJSON(w, host)
 	} else {
 		http.Error(w, "Not Found", 404)
 	}
 }
 
-func (api *RestAPI) showOptions(w http.ResponseWriter, r *http.Request) {
-	api.toJSON(w, session.I.Options)
+func (mod *RestAPI) showOptions(w http.ResponseWriter, r *http.Request) {
+	mod.toJSON(w, session.I.Options)
 }
 
-func (api *RestAPI) showPackets(w http.ResponseWriter, r *http.Request) {
-	api.toJSON(w, session.I.Queue)
+func (mod *RestAPI) showPackets(w http.ResponseWriter, r *http.Request) {
+	mod.toJSON(w, session.I.Queue)
 }
 
-func (api *RestAPI) showStartedAt(w http.ResponseWriter, r *http.Request) {
-	api.toJSON(w, session.I.StartedAt)
+func (mod *RestAPI) showStartedAt(w http.ResponseWriter, r *http.Request) {
+	mod.toJSON(w, session.I.StartedAt)
 }
 
-func (api *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
+func (mod *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		api.toJSON(w, session.I.WiFi)
+		mod.toJSON(w, session.I.WiFi)
 	} else if station, found := session.I.WiFi.Get(mac); found {
-		api.toJSON(w, station)
+		mod.toJSON(w, station)
 	} else if client, found := session.I.WiFi.GetClient(mac); found {
-		api.toJSON(w, client)
+		mod.toJSON(w, client)
 	} else {
 		http.Error(w, "Not Found", 404)
 	}
 }
 
-func (api *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
+func (mod *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var cmd CommandRequest
 
@@ -141,15 +141,15 @@ func (api *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	} else if err = session.I.Run(cmd.Command); err != nil {
 		http.Error(w, err.Error(), 400)
 	} else {
-		api.toJSON(w, APIResponse{Success: true})
+		mod.toJSON(w, APIResponse{Success: true})
 	}
 }
 
-func (api *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
+func (mod *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 	var err error
 
-	if api.useWebsocket {
-		api.startStreamingEvents(w, r)
+	if mod.useWebsocket {
+		mod.startStreamingEvents(w, r)
 	} else {
 		events := session.I.Events.Sorted()
 		nevents := len(events)
@@ -169,22 +169,22 @@ func (api *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		api.toJSON(w, events[nevents-n:])
+		mod.toJSON(w, events[nevents-n:])
 	}
 }
 
-func (api *RestAPI) clearEvents(w http.ResponseWriter, r *http.Request) {
+func (mod *RestAPI) clearEvents(w http.ResponseWriter, r *http.Request) {
 	session.I.Events.Clear()
 }
 
-func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
-	api.setSecurityHeaders(w)
+func (mod *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
+	mod.setSecurityHeaders(w)
 
-	if !api.checkAuth(r) {
-		api.setAuthFailed(w, r)
+	if !mod.checkAuth(r) {
+		mod.setAuthFailed(w, r)
 		return
 	} else if r.Method == "POST" {
-		api.runSessionCommand(w, r)
+		mod.runSessionCommand(w, r)
 		return
 	} else if r.Method != "GET" {
 		http.Error(w, "Bad Request", 400)
@@ -197,55 +197,55 @@ func (api *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.String()
 	switch {
 	case path == "/api/session":
-		api.showSession(w, r)
+		mod.showSession(w, r)
 
 	case path == "/api/session/env":
-		api.showEnv(w, r)
+		mod.showEnv(w, r)
 
 	case path == "/api/session/gateway":
-		api.showGateway(w, r)
+		mod.showGateway(w, r)
 
 	case path == "/api/session/interface":
-		api.showInterface(w, r)
+		mod.showInterface(w, r)
 
 	case strings.HasPrefix(path, "/api/session/modules"):
-		api.showModules(w, r)
+		mod.showModules(w, r)
 
 	case strings.HasPrefix(path, "/api/session/lan"):
-		api.showLan(w, r)
+		mod.showLan(w, r)
 
 	case path == "/api/session/options":
-		api.showOptions(w, r)
+		mod.showOptions(w, r)
 
 	case path == "/api/session/packets":
-		api.showPackets(w, r)
+		mod.showPackets(w, r)
 
 	case path == "/api/session/started-at":
-		api.showStartedAt(w, r)
+		mod.showStartedAt(w, r)
 
 	case strings.HasPrefix(path, "/api/session/ble"):
-		api.showBle(w, r)
+		mod.showBle(w, r)
 
 	case strings.HasPrefix(path, "/api/session/wifi"):
-		api.showWiFi(w, r)
+		mod.showWiFi(w, r)
 
 	default:
 		http.Error(w, "Not Found", 404)
 	}
 }
 
-func (api *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
-	api.setSecurityHeaders(w)
+func (mod *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
+	mod.setSecurityHeaders(w)
 
-	if !api.checkAuth(r) {
-		api.setAuthFailed(w, r)
+	if !mod.checkAuth(r) {
+		mod.setAuthFailed(w, r)
 		return
 	}
 
 	if r.Method == "GET" {
-		api.showEvents(w, r)
+		mod.showEvents(w, r)
 	} else if r.Method == "DELETE" {
-		api.clearEvents(w, r)
+		mod.clearEvents(w, r)
 	} else {
 		http.Error(w, "Bad Request", 400)
 	}

@@ -11,37 +11,37 @@ import (
 	"github.com/bettercap/bettercap/packets"
 )
 
-func (w *WiFiModule) injectPacket(data []byte) {
-	if err := w.handle.WritePacketData(data); err != nil {
-		w.Error("could not inject WiFi packet: %s", err)
-		w.Session.Queue.TrackError()
+func (mod *WiFiModule) injectPacket(data []byte) {
+	if err := mod.handle.WritePacketData(data); err != nil {
+		mod.Error("could not inject WiFi packet: %s", err)
+		mod.Session.Queue.TrackError()
 	} else {
-		w.Session.Queue.TrackSent(uint64(len(data)))
+		mod.Session.Queue.TrackSent(uint64(len(data)))
 	}
 	// let the network card breath a little
 	time.Sleep(10 * time.Millisecond)
 }
 
-func (w *WiFiModule) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
-	for seq := uint16(0); seq < 64 && w.Running(); seq++ {
+func (mod *WiFiModule) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
+	for seq := uint16(0); seq < 64 && mod.Running(); seq++ {
 		if err, pkt := packets.NewDot11Deauth(ap, client, ap, seq); err != nil {
-			w.Error("could not create deauth packet: %s", err)
+			mod.Error("could not create deauth packet: %s", err)
 			continue
 		} else {
-			w.injectPacket(pkt)
+			mod.injectPacket(pkt)
 		}
 
 		if err, pkt := packets.NewDot11Deauth(client, ap, ap, seq); err != nil {
-			w.Error("could not create deauth packet: %s", err)
+			mod.Error("could not create deauth packet: %s", err)
 			continue
 		} else {
-			w.injectPacket(pkt)
+			mod.injectPacket(pkt)
 		}
 	}
 }
 
-func (w *WiFiModule) skipDeauth(to net.HardwareAddr) bool {
-	for _, mac := range w.deauthSkip {
+func (mod *WiFiModule) skipDeauth(to net.HardwareAddr) bool {
+	for _, mac := range mod.deauthSkip {
 		if bytes.Equal(to, mac) {
 			return true
 		}
@@ -49,41 +49,41 @@ func (w *WiFiModule) skipDeauth(to net.HardwareAddr) bool {
 	return false
 }
 
-func (w *WiFiModule) isDeauthSilent() bool {
-	if err, is := w.BoolParam("wifi.deauth.silent"); err != nil {
-		w.Warning("%v", err)
+func (mod *WiFiModule) isDeauthSilent() bool {
+	if err, is := mod.BoolParam("wifi.deauth.silent"); err != nil {
+		mod.Warning("%v", err)
 	} else {
-		w.deauthSilent = is
+		mod.deauthSilent = is
 	}
-	return w.deauthSilent
+	return mod.deauthSilent
 }
 
-func (w *WiFiModule) doDeauthOpen() bool {
-	if err, is := w.BoolParam("wifi.deauth.open"); err != nil {
-		w.Warning("%v", err)
+func (mod *WiFiModule) doDeauthOpen() bool {
+	if err, is := mod.BoolParam("wifi.deauth.open"); err != nil {
+		mod.Warning("%v", err)
 	} else {
-		w.deauthOpen = is
+		mod.deauthOpen = is
 	}
-	return w.deauthOpen
+	return mod.deauthOpen
 }
 
-func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
+func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	// parse skip list
-	if err, deauthSkip := w.StringParam("wifi.deauth.skip"); err != nil {
+	if err, deauthSkip := mod.StringParam("wifi.deauth.skip"); err != nil {
 		return err
 	} else if macs, err := network.ParseMACs(deauthSkip); err != nil {
 		return err
 	} else {
-		w.deauthSkip = macs
+		mod.deauthSkip = macs
 	}
 
 	// if not already running, temporarily enable the pcap handle
 	// for packet injection
-	if !w.Running() {
-		if err := w.Configure(); err != nil {
+	if !mod.Running() {
+		if err := mod.Configure(); err != nil {
 			return err
 		}
-		defer w.handle.Close()
+		defer mod.handle.Close()
 	}
 
 	type flow struct {
@@ -93,14 +93,14 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 
 	toDeauth := make([]flow, 0)
 	isBcast := network.IsBroadcastMac(to)
-	for _, ap := range w.Session.WiFi.List() {
+	for _, ap := range mod.Session.WiFi.List() {
 		isAP := bytes.Equal(ap.HW, to)
 		for _, client := range ap.Clients() {
 			if isBcast || isAP || bytes.Equal(client.HW, to) {
-				if !w.skipDeauth(ap.HW) && !w.skipDeauth(client.HW) {
+				if !mod.skipDeauth(ap.HW) && !mod.skipDeauth(client.HW) {
 					toDeauth = append(toDeauth, flow{Ap: ap, Client: client})
 				} else {
-					w.Debug("skipping ap:%v client:%v because skip list %v", ap, client, w.deauthSkip)
+					mod.Debug("skipping ap:%v client:%v because skip list %v", ap, client, mod.deauthSkip)
 				}
 			}
 		}
@@ -114,8 +114,8 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	}
 
 	go func() {
-		w.writes.Add(1)
-		defer w.writes.Done()
+		mod.writes.Add(1)
+		defer mod.writes.Done()
 
 		// since we need to change the wifi adapter channel for each
 		// deauth packet, let's sort by channel so we do the minimum
@@ -128,19 +128,19 @@ func (w *WiFiModule) startDeauth(to net.HardwareAddr) error {
 		for _, deauth := range toDeauth {
 			client := deauth.Client
 			ap := deauth.Ap
-			if w.Running() {
-				logger := w.Info
-				if w.isDeauthSilent() {
-					logger = w.Debug
+			if mod.Running() {
+				logger := mod.Info
+				if mod.isDeauthSilent() {
+					logger = mod.Debug
 				}
 
-				if ap.IsOpen() && !w.doDeauthOpen() {
-					w.Debug("skipping deauth for open network %s (wifi.deauth.open is false)", ap.ESSID())
+				if ap.IsOpen() && !mod.doDeauthOpen() {
+					mod.Debug("skipping deauth for open network %s (wifi.deauth.open is false)", ap.ESSID())
 				} else {
 					logger("deauthing client %s from AP %s (channel:%d encryption:%s)", client.String(), ap.ESSID(), ap.Channel(), ap.Encryption)
 
-					w.onChannel(ap.Channel(), func() {
-						w.sendDeauthPacket(ap.HW, client.HW)
+					mod.onChannel(ap.Channel(), func() {
+						mod.sendDeauthPacket(ap.HW, client.HW)
 					})
 				}
 			}

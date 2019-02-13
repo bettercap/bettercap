@@ -22,45 +22,45 @@ var defaultBLEServerOptions = []gatt.Option{
 }
 */
 func NewBLERecon(s *session.Session) *BLERecon {
-	d := &BLERecon{
+	mod := &BLERecon{
 		SessionModule: session.NewSessionModule("ble.recon", s),
 	}
 
-	d.AddHandler(session.NewModuleHandler("ble.recon on", "",
+	mod.AddHandler(session.NewModuleHandler("ble.recon on", "",
 		"Start Bluetooth Low Energy devices discovery.",
 		func(args []string) error {
 			return session.ErrNotSupported
 		}))
 
-	d.AddHandler(session.NewModuleHandler("ble.recon off", "",
+	mod.AddHandler(session.NewModuleHandler("ble.recon off", "",
 		"Stop Bluetooth Low Energy devices discovery.",
 		func(args []string) error {
 			return session.ErrNotSupported
 		}))
 
-	return d
+	return mod
 }
 
-func (d BLERecon) Name() string {
+func (mod BLERecon) Name() string {
 	return "ble.recon"
 }
 
-func (d BLERecon) Description() string {
+func (mod BLERecon) Description() string {
 	return "Bluetooth Low Energy devices discovery."
 }
 
-func (d BLERecon) Author() string {
+func (mod BLERecon) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (d *BLERecon) Configure() (err error) {
+func (mod *BLERecon) Configure() (err error) {
 	return session.ErrNotSupported
 }
 
-func (d *BLERecon) Start() error {
+func (mod *BLERecon) Start() error {
 	return session.ErrNotSupported
 }
 
-func (d *BLERecon) Stop() error {
+func (mod *BLERecon) Stop() error {
 	return session.ErrNotSupported
 }

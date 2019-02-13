@@ -24,133 +24,133 @@ type Sniffer struct {
 }
 
 func NewSniffer(s *session.Session) *Sniffer {
-	sniff := &Sniffer{
+	mod := &Sniffer{
 		SessionModule: session.NewSessionModule("net.sniff", s),
 		Stats:         nil,
 	}
 
-	sniff.AddParam(session.NewBoolParameter("net.sniff.verbose",
+	mod.AddParam(session.NewBoolParameter("net.sniff.verbose",
 		"false",
 		"If true, every captured and parsed packet will be sent to the events.stream for displaying, otherwise only the ones parsed at the application layer (sni, http, etc)."))
 
-	sniff.AddParam(session.NewBoolParameter("net.sniff.local",
+	mod.AddParam(session.NewBoolParameter("net.sniff.local",
 		"false",
 		"If true it will consider packets from/to this computer, otherwise it will skip them."))
 
-	sniff.AddParam(session.NewStringParameter("net.sniff.filter",
+	mod.AddParam(session.NewStringParameter("net.sniff.filter",
 		"not arp",
 		"",
 		"BPF filter for the sniffer."))
 
-	sniff.AddParam(session.NewStringParameter("net.sniff.regexp",
+	mod.AddParam(session.NewStringParameter("net.sniff.regexp",
 		"",
 		"",
 		"If set, only packets matching this regular expression will be considered."))
 
-	sniff.AddParam(session.NewStringParameter("net.sniff.output",
+	mod.AddParam(session.NewStringParameter("net.sniff.output",
 		"",
 		"",
 		"If set, the sniffer will write captured packets to this file."))
 
-	sniff.AddParam(session.NewStringParameter("net.sniff.source",
+	mod.AddParam(session.NewStringParameter("net.sniff.source",
 		"",
 		"",
 		"If set, the sniffer will read from this pcap file instead of the current interface."))
 
-	sniff.AddHandler(session.NewModuleHandler("net.sniff stats", "",
+	mod.AddHandler(session.NewModuleHandler("net.sniff stats", "",
 		"Print sniffer session configuration and statistics.",
 		func(args []string) error {
-			if sniff.Stats == nil {
+			if mod.Stats == nil {
 				return fmt.Errorf("No stats yet.")
 			}
 
-			sniff.Ctx.Log(sniff.Session)
+			mod.Ctx.Log(mod.Session)
 
-			return sniff.Stats.Print()
+			return mod.Stats.Print()
 		}))
 
-	sniff.AddHandler(session.NewModuleHandler("net.sniff on", "",
+	mod.AddHandler(session.NewModuleHandler("net.sniff on", "",
 		"Start network sniffer in background.",
 		func(args []string) error {
-			return sniff.Start()
+			return mod.Start()
 		}))
 
-	sniff.AddHandler(session.NewModuleHandler("net.sniff off", "",
+	mod.AddHandler(session.NewModuleHandler("net.sniff off", "",
 		"Stop network sniffer in background.",
 		func(args []string) error {
-			return sniff.Stop()
+			return mod.Stop()
 		}))
 
-	sniff.AddHandler(session.NewModuleHandler("net.fuzz on", "",
+	mod.AddHandler(session.NewModuleHandler("net.fuzz on", "",
 		"Enable fuzzing for every sniffed packet containing the sapecified layers.",
 		func(args []string) error {
-			return sniff.StartFuzzing()
+			return mod.StartFuzzing()
 		}))
 
-	sniff.AddHandler(session.NewModuleHandler("net.fuzz off", "",
+	mod.AddHandler(session.NewModuleHandler("net.fuzz off", "",
 		"Disable fuzzing",
 		func(args []string) error {
-			return sniff.StopFuzzing()
+			return mod.StopFuzzing()
 		}))
 
-	sniff.AddParam(session.NewStringParameter("net.fuzz.layers",
+	mod.AddParam(session.NewStringParameter("net.fuzz.layers",
 		"Payload",
 		"",
 		"Types of layer to fuzz."))
 
-	sniff.AddParam(session.NewDecimalParameter("net.fuzz.rate",
+	mod.AddParam(session.NewDecimalParameter("net.fuzz.rate",
 		"1.0",
 		"Rate in the [0.0,1.0] interval of packets to fuzz."))
 
-	sniff.AddParam(session.NewDecimalParameter("net.fuzz.ratio",
+	mod.AddParam(session.NewDecimalParameter("net.fuzz.ratio",
 		"0.4",
 		"Rate in the [0.0,1.0] interval of bytes to fuzz for each packet."))
 
-	sniff.AddParam(session.NewBoolParameter("net.fuzz.silent",
+	mod.AddParam(session.NewBoolParameter("net.fuzz.silent",
 		"false",
 		"If true it will not report fuzzed packets."))
 
-	return sniff
+	return mod
 }
 
-func (s Sniffer) Name() string {
+func (mod Sniffer) Name() string {
 	return "net.sniff"
 }
 
-func (s Sniffer) Description() string {
+func (mod Sniffer) Description() string {
 	return "Sniff packets from the network."
 }
 
-func (s Sniffer) Author() string {
+func (mod Sniffer) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (s Sniffer) isLocalPacket(packet gopacket.Packet) bool {
+func (mod Sniffer) isLocalPacket(packet gopacket.Packet) bool {
 	ipl := packet.Layer(layers.LayerTypeIPv4)
 	if ipl != nil {
 		ip, _ := ipl.(*layers.IPv4)
-		if ip.SrcIP.Equal(s.Session.Interface.IP) || ip.DstIP.Equal(s.Session.Interface.IP) {
+		if ip.SrcIP.Equal(mod.Session.Interface.IP) || ip.DstIP.Equal(mod.Session.Interface.IP) {
 			return true
 		}
 	}
 	return false
 }
 
-func (s *Sniffer) onPacketMatched(pkt gopacket.Packet) {
-	if mainParser(pkt, s.Ctx.Verbose) {
-		s.Stats.NumDumped++
+func (mod *Sniffer) onPacketMatched(pkt gopacket.Packet) {
+	if mainParser(pkt, mod.Ctx.Verbose) {
+		mod.Stats.NumDumped++
 	}
 }
 
-func (s *Sniffer) Configure() error {
+func (mod *Sniffer) Configure() error {
 	var err error
 
-	if s.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if err, s.Ctx = s.GetContext(); err != nil {
-		if s.Ctx != nil {
-			s.Ctx.Close()
-			s.Ctx = nil
+	} else if err, mod.Ctx = mod.GetContext(); err != nil {
+		if mod.Ctx != nil {
+			mod.Ctx.Close()
+			mod.Ctx = nil
 		}
 		return err
 	}
@@ -158,66 +158,66 @@ func (s *Sniffer) Configure() error {
 	return nil
 }
 
-func (s *Sniffer) Start() error {
-	if err := s.Configure(); err != nil {
+func (mod *Sniffer) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return s.SetRunning(true, func() {
-		s.Stats = NewSnifferStats()
+	return mod.SetRunning(true, func() {
+		mod.Stats = NewSnifferStats()
 
-		src := gopacket.NewPacketSource(s.Ctx.Handle, s.Ctx.Handle.LinkType())
-		s.pktSourceChan = src.Packets()
-		for packet := range s.pktSourceChan {
-			if !s.Running() {
-				s.Debug("end pkt loop (pkt=%v filter='%s')", packet, s.Ctx.Filter)
+		src := gopacket.NewPacketSource(mod.Ctx.Handle, mod.Ctx.Handle.LinkType())
+		mod.pktSourceChan = src.Packets()
+		for packet := range mod.pktSourceChan {
+			if !mod.Running() {
+				mod.Debug("end pkt loop (pkt=%v filter='%s')", packet, mod.Ctx.Filter)
 				break
 			}
 
 			now := time.Now()
-			if s.Stats.FirstPacket.IsZero() {
-				s.Stats.FirstPacket = now
+			if mod.Stats.FirstPacket.IsZero() {
+				mod.Stats.FirstPacket = now
 			}
-			s.Stats.LastPacket = now
+			mod.Stats.LastPacket = now
 
-			isLocal := s.isLocalPacket(packet)
+			isLocal := mod.isLocalPacket(packet)
 			if isLocal {
-				s.Stats.NumLocal++
+				mod.Stats.NumLocal++
 			}
 
-			if s.fuzzActive {
-				s.doFuzzing(packet)
+			if mod.fuzzActive {
+				mod.doFuzzing(packet)
 			}
 
-			if s.Ctx.DumpLocal || !isLocal {
+			if mod.Ctx.DumpLocal || !isLocal {
 				data := packet.Data()
-				if s.Ctx.Compiled == nil || s.Ctx.Compiled.Match(data) {
-					s.Stats.NumMatched++
+				if mod.Ctx.Compiled == nil || mod.Ctx.Compiled.Match(data) {
+					mod.Stats.NumMatched++
 
-					s.onPacketMatched(packet)
+					mod.onPacketMatched(packet)
 
-					if s.Ctx.OutputWriter != nil {
-						s.Ctx.OutputWriter.WritePacket(packet.Metadata().CaptureInfo, data)
-						s.Stats.NumWrote++
+					if mod.Ctx.OutputWriter != nil {
+						mod.Ctx.OutputWriter.WritePacket(packet.Metadata().CaptureInfo, data)
+						mod.Stats.NumWrote++
 					}
 				}
 			}
 		}
 
-		s.pktSourceChan = nil
+		mod.pktSourceChan = nil
 	})
 }
 
-func (s *Sniffer) Stop() error {
-	return s.SetRunning(false, func() {
-		s.Debug("stopping sniffer")
-		if s.pktSourceChan != nil {
-			s.Debug("sending nil")
-			s.pktSourceChan <- nil
-			s.Debug("nil sent")
+func (mod *Sniffer) Stop() error {
+	return mod.SetRunning(false, func() {
+		mod.Debug("stopping sniffer")
+		if mod.pktSourceChan != nil {
+			mod.Debug("sending nil")
+			mod.pktSourceChan <- nil
+			mod.Debug("nil sent")
 		}
-		s.Debug("closing ctx")
-		s.Ctx.Close()
-		s.Debug("ctx closed")
+		mod.Debug("closing ctx")
+		mod.Ctx.Close()
+		mod.Debug("ctx closed")
 	})
 }

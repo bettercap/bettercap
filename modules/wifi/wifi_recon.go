@@ -13,28 +13,28 @@ import (
 
 var maxStationTTL = 5 * time.Minute
 
-func (w *WiFiModule) stationPruner() {
-	w.reads.Add(1)
-	defer w.reads.Done()
+func (mod *WiFiModule) stationPruner() {
+	mod.reads.Add(1)
+	defer mod.reads.Done()
 
-	w.Debug("wifi stations pruner started.")
-	for w.Running() {
+	mod.Debug("wifi stations pruner started.")
+	for mod.Running() {
 		// loop every AP
-		for _, ap := range w.Session.WiFi.List() {
+		for _, ap := range mod.Session.WiFi.List() {
 			sinceLastSeen := time.Since(ap.LastSeen)
 			if sinceLastSeen > maxStationTTL {
-				w.Debug("station %s not seen in %s, removing.", ap.BSSID(), sinceLastSeen)
-				w.Session.WiFi.Remove(ap.BSSID())
+				mod.Debug("station %s not seen in %s, removing.", ap.BSSID(), sinceLastSeen)
+				mod.Session.WiFi.Remove(ap.BSSID())
 				continue
 			}
 			// loop every AP client
 			for _, c := range ap.Clients() {
 				sinceLastSeen := time.Since(c.LastSeen)
 				if sinceLastSeen > maxStationTTL {
-					w.Debug("client %s of station %s not seen in %s, removing.", c.String(), ap.BSSID(), sinceLastSeen)
+					mod.Debug("client %s of station %s not seen in %s, removing.", c.String(), ap.BSSID(), sinceLastSeen)
 					ap.RemoveClient(c.BSSID())
 
-					w.Session.Events.Add("wifi.client.lost", WiFiClientEvent{
+					mod.Session.Events.Add("wifi.client.lost", ClientEvent{
 						AP:     ap,
 						Client: c,
 					})
@@ -45,18 +45,18 @@ func (w *WiFiModule) stationPruner() {
 	}
 }
 
-func (w *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	// search for Dot11InformationElementIDSSID
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok {
 		from := dot11.Address3
 
 		// skip stuff we're sending
-		if w.apRunning && bytes.Equal(from, w.apConfig.BSSID) {
+		if mod.apRunning && bytes.Equal(from, mod.apConfig.BSSID) {
 			return
 		}
 
 		if !network.IsZeroMac(from) && !network.IsBroadcastMac(from) {
-			if int(radiotap.DBMAntennaSignal) >= w.minRSSI {
+			if int(radiotap.DBMAntennaSignal) >= mod.minRSSI {
 				var frequency int
 				bssid := from.String()
 
@@ -66,19 +66,19 @@ func (w *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *laye
 					frequency = int(radiotap.ChannelFrequency)
 				}
 
-				if ap, isNew := w.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal); !isNew {
+				if ap, isNew := mod.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal); !isNew {
 					ap.EachClient(func(mac string, station *network.Station) {
 						station.Handshake.SetBeacon(packet)
 					})
 				}
 			} else {
-				w.Debug("skipping %s with %d dBm", from.String(), radiotap.DBMAntennaSignal)
+				mod.Debug("skipping %s with %d dBm", from.String(), radiotap.DBMAntennaSignal)
 			}
 		}
 	}
 }
 
-func (w *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+func (mod *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	if dot11.Type != layers.Dot11TypeMgmtProbeReq {
 		return
 	}
@@ -107,17 +107,17 @@ func (w *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot
 		return
 	}
 
-	w.Session.Events.Add("wifi.client.probe", WiFiProbeEvent{
+	mod.Session.Events.Add("wifi.client.probe", ProbeEvent{
 		FromAddr:   dot11.Address2,
 		FromVendor: network.ManufLookup(dot11.Address2.String()),
-		FromAlias:  w.Session.Lan.GetAlias(dot11.Address2.String()),
+		FromAlias:  mod.Session.Lan.GetAlias(dot11.Address2.String()),
 		SSID:       string(req.Contents[2 : 2+size]),
 		RSSI:       radiotap.DBMAntennaSignal,
 	})
 }
 
-func (w *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
-	w.Session.WiFi.EachAccessPoint(func(bssid string, ap *network.AccessPoint) {
+func (mod *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+	mod.Session.WiFi.EachAccessPoint(func(bssid string, ap *network.AccessPoint) {
 		// packet going to this specific BSSID?
 		if packets.Dot11IsDataFor(dot11, ap.HW) {
 			bssid := dot11.Address2.String()
@@ -125,7 +125,7 @@ func (w *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Do
 			rssi := radiotap.DBMAntennaSignal
 
 			if station, isNew := ap.AddClientIfNew(bssid, freq, rssi); isNew {
-				w.Session.Events.Add("wifi.client.new", WiFiClientEvent{
+				mod.Session.Events.Add("wifi.client.new", ClientEvent{
 					AP:     ap,
 					Client: station,
 				})
@@ -143,12 +143,12 @@ func allZeros(s []byte) bool {
 	return true
 }
 
-func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	if ok, key, apMac, staMac := packets.Dot11ParseEAPOL(packet, dot11); ok {
 		// first, locate the AP in our list by its BSSID
-		ap, found := w.Session.WiFi.Get(apMac.String())
+		ap, found := mod.Session.WiFi.Get(apMac.String())
 		if !found {
-			w.Warning("could not find AP with BSSID %s", apMac.String())
+			mod.Warning("could not find AP with BSSID %s", apMac.String())
 			return
 		}
 
@@ -158,7 +158,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 		// (Reference about PMKID https://hashcat.net/forum/thread-7717.html)
 		// In this case, we need to add ourselves as a client station of the AP
 		// in order to have a consistent association of AP, client and handshakes.
-		staIsUs := bytes.Equal(staMac, w.Session.Interface.HW)
+		staIsUs := bytes.Equal(staMac, mod.Session.Interface.HW)
 		station, found := ap.Get(staMac.String())
 		if !found {
 			station, _ = ap.AddClientIfNew(staMac.String(), ap.Frequency, ap.RSSI)
@@ -173,7 +173,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 				PMKID = "with PMKID"
 			}
 
-			w.Debug("got frame 1/4 of the %s <-> %s handshake (%s) (anonce:%x)",
+			mod.Debug("got frame 1/4 of the %s <-> %s handshake (%s) (anonce:%x)",
 				apMac,
 				staMac,
 				PMKID,
@@ -182,7 +182,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 			// [2] (MIC) client is sending SNonce+MIC to the API
 			station.Handshake.AddFrame(1, packet)
 
-			w.Debug("got frame 2/4 of the %s <-> %s handshake (snonce:%x mic:%x)",
+			mod.Debug("got frame 2/4 of the %s <-> %s handshake (snonce:%x mic:%x)",
 				apMac,
 				staMac,
 				key.Nonce,
@@ -191,7 +191,7 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 			// [3]: (INSTALL+ACK+MIC) AP informs the client that the PTK is installed
 			station.Handshake.AddFrame(2, packet)
 
-			w.Debug("got frame 3/4 of the %s <-> %s handshake (mic:%x)",
+			mod.Debug("got frame 3/4 of the %s <-> %s handshake (mic:%x)",
 				apMac,
 				staMac,
 				key.MIC)
@@ -200,18 +200,18 @@ func (w *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers
 		// if we have unsaved packets as part of the handshake, save them.
 		numUnsaved := station.Handshake.NumUnsaved()
 		doSave := numUnsaved > 0
-		if doSave && w.shakesFile != "" {
-			w.Debug("saving handshake frames to %s", w.shakesFile)
-			if err := w.Session.WiFi.SaveHandshakesTo(w.shakesFile, w.handle.LinkType()); err != nil {
-				w.Error("error while saving handshake frames to %s: %s", w.shakesFile, err)
+		if doSave && mod.shakesFile != "" {
+			mod.Debug("saving handshake frames to %s", mod.shakesFile)
+			if err := mod.Session.WiFi.SaveHandshakesTo(mod.shakesFile, mod.handle.LinkType()); err != nil {
+				mod.Error("error while saving handshake frames to %s: %s", mod.shakesFile, err)
 			}
 		}
 
 		// if we had unsaved packets and either the handshake is complete
 		// or it contains the PMKID, generate a new event.
 		if doSave && (rawPMKID != nil || station.Handshake.Complete()) {
-			w.Session.Events.Add("wifi.client.handshake", WiFiHandshakeEvent{
-				File:       w.shakesFile,
+			mod.Session.Events.Add("wifi.client.handshake", HandshakeEvent{
+				File:       mod.shakesFile,
 				NewPackets: numUnsaved,
 				AP:         apMac,
 				Station:    staMac,

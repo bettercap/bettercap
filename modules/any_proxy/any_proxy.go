@@ -11,66 +11,66 @@ type AnyProxy struct {
 }
 
 func NewAnyProxy(s *session.Session) *AnyProxy {
-	p := &AnyProxy{
+	mod := &AnyProxy{
 		SessionModule: session.NewSessionModule("any.proxy", s),
 	}
 
-	p.AddParam(session.NewStringParameter("any.proxy.iface",
+	mod.AddParam(session.NewStringParameter("any.proxy.iface",
 		session.ParamIfaceName,
 		"",
 		"Interface to redirect packets from."))
 
-	p.AddParam(session.NewStringParameter("any.proxy.protocol",
+	mod.AddParam(session.NewStringParameter("any.proxy.protocol",
 		"TCP",
 		"(TCP|UDP)",
 		"Proxy protocol."))
 
-	p.AddParam(session.NewIntParameter("any.proxy.src_port",
+	mod.AddParam(session.NewIntParameter("any.proxy.src_port",
 		"80",
 		"Remote port to redirect when the module is activated."))
 
-	p.AddParam(session.NewStringParameter("any.proxy.src_address",
+	mod.AddParam(session.NewStringParameter("any.proxy.src_address",
 		"",
 		"",
 		"Leave empty to intercept any source address."))
 
-	p.AddParam(session.NewStringParameter("any.proxy.dst_address",
+	mod.AddParam(session.NewStringParameter("any.proxy.dst_address",
 		session.ParamIfaceAddress,
 		session.IPv4Validator,
 		"Address where the proxy is listening."))
 
-	p.AddParam(session.NewIntParameter("any.proxy.dst_port",
+	mod.AddParam(session.NewIntParameter("any.proxy.dst_port",
 		"8080",
 		"Port where the proxy is listening."))
 
-	p.AddHandler(session.NewModuleHandler("any.proxy on", "",
+	mod.AddHandler(session.NewModuleHandler("any.proxy on", "",
 		"Start the custom proxy redirection.",
 		func(args []string) error {
-			return p.Start()
+			return mod.Start()
 		}))
 
-	p.AddHandler(session.NewModuleHandler("any.proxy off", "",
+	mod.AddHandler(session.NewModuleHandler("any.proxy off", "",
 		"Stop the custom proxy redirection.",
 		func(args []string) error {
-			return p.Stop()
+			return mod.Stop()
 		}))
 
-	return p
+	return mod
 }
 
-func (p *AnyProxy) Name() string {
+func (mod *AnyProxy) Name() string {
 	return "any.proxy"
 }
 
-func (p *AnyProxy) Description() string {
+func (mod *AnyProxy) Description() string {
 	return "A firewall redirection to any custom proxy."
 }
 
-func (p *AnyProxy) Author() string {
+func (mod *AnyProxy) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (p *AnyProxy) Configure() error {
+func (mod *AnyProxy) Configure() error {
 	var err error
 	var srcPort int
 	var dstPort int
@@ -79,62 +79,62 @@ func (p *AnyProxy) Configure() error {
 	var srcAddress string
 	var dstAddress string
 
-	if p.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if err, iface = p.StringParam("any.proxy.iface"); err != nil {
+	} else if err, iface = mod.StringParam("any.proxy.iface"); err != nil {
 		return err
-	} else if err, protocol = p.StringParam("any.proxy.protocol"); err != nil {
+	} else if err, protocol = mod.StringParam("any.proxy.protocol"); err != nil {
 		return err
-	} else if err, srcPort = p.IntParam("any.proxy.src_port"); err != nil {
+	} else if err, srcPort = mod.IntParam("any.proxy.src_port"); err != nil {
 		return err
-	} else if err, dstPort = p.IntParam("any.proxy.dst_port"); err != nil {
+	} else if err, dstPort = mod.IntParam("any.proxy.dst_port"); err != nil {
 		return err
-	} else if err, srcAddress = p.StringParam("any.proxy.src_address"); err != nil {
+	} else if err, srcAddress = mod.StringParam("any.proxy.src_address"); err != nil {
 		return err
-	} else if err, dstAddress = p.StringParam("any.proxy.dst_address"); err != nil {
+	} else if err, dstAddress = mod.StringParam("any.proxy.dst_address"); err != nil {
 		return err
 	}
 
-	if !p.Session.Firewall.IsForwardingEnabled() {
-		p.Info("Enabling forwarding.")
-		p.Session.Firewall.EnableForwarding(true)
+	if !mod.Session.Firewall.IsForwardingEnabled() {
+		mod.Info("Enabling forwarding.")
+		mod.Session.Firewall.EnableForwarding(true)
 	}
 
-	p.Redirection = firewall.NewRedirection(iface,
+	mod.Redirection = firewall.NewRedirection(iface,
 		protocol,
 		srcPort,
 		dstAddress,
 		dstPort)
 
 	if srcAddress != "" {
-		p.Redirection.SrcAddress = srcAddress
+		mod.Redirection.SrcAddress = srcAddress
 	}
 
-	if err := p.Session.Firewall.EnableRedirection(p.Redirection, true); err != nil {
+	if err := mod.Session.Firewall.EnableRedirection(mod.Redirection, true); err != nil {
 		return err
 	}
 
-	p.Info("Applied redirection %s", p.Redirection.String())
+	mod.Info("Applied redirection %s", mod.Redirection.String())
 
 	return nil
 }
 
-func (p *AnyProxy) Start() error {
-	if err := p.Configure(); err != nil {
+func (mod *AnyProxy) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return p.SetRunning(true, func() {})
+	return mod.SetRunning(true, func() {})
 }
 
-func (p *AnyProxy) Stop() error {
-	if p.Redirection != nil {
-		p.Info("Disabling redirection %s", p.Redirection.String())
-		if err := p.Session.Firewall.EnableRedirection(p.Redirection, false); err != nil {
+func (mod *AnyProxy) Stop() error {
+	if mod.Redirection != nil {
+		mod.Info("Disabling redirection %s", mod.Redirection.String())
+		if err := mod.Session.Firewall.EnableRedirection(mod.Redirection, false); err != nil {
 			return err
 		}
-		p.Redirection = nil
+		mod.Redirection = nil
 	}
 
-	return p.SetRunning(false, func() {})
+	return mod.SetRunning(false, func() {})
 }

@@ -53,7 +53,7 @@ type WiFiModule struct {
 }
 
 func NewWiFiModule(s *session.Session) *WiFiModule {
-	w := &WiFiModule{
+	mod := &WiFiModule{
 		SessionModule: session.NewSessionModule("wifi", s),
 		minRSSI:       -200,
 		channel:       0,
@@ -74,47 +74,47 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		chanLock:      &sync.Mutex{},
 	}
 
-	w.AddHandler(session.NewModuleHandler("wifi.recon on", "",
+	mod.AddHandler(session.NewModuleHandler("wifi.recon on", "",
 		"Start 802.11 wireless base stations discovery and channel hopping.",
 		func(args []string) error {
-			return w.Start()
+			return mod.Start()
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wifi.recon off", "",
+	mod.AddHandler(session.NewModuleHandler("wifi.recon off", "",
 		"Stop 802.11 wireless base stations discovery and channel hopping.",
 		func(args []string) error {
-			return w.Stop()
+			return mod.Stop()
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wifi.recon MAC", "wifi.recon ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
+	mod.AddHandler(session.NewModuleHandler("wifi.recon MAC", "wifi.recon ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
 		"Set 802.11 base station address to filter for.",
 		func(args []string) error {
 			bssid, err := net.ParseMAC(args[0])
 			if err != nil {
 				return err
-			} else if ap, found := w.Session.WiFi.Get(bssid.String()); found {
-				w.ap = ap
-				w.stickChan = ap.Channel()
+			} else if ap, found := mod.Session.WiFi.Get(bssid.String()); found {
+				mod.ap = ap
+				mod.stickChan = ap.Channel()
 				return nil
 			}
 			return fmt.Errorf("Could not find station with BSSID %s", args[0])
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wifi.recon clear", "",
+	mod.AddHandler(session.NewModuleHandler("wifi.recon clear", "",
 		"Remove the 802.11 base station filter.",
 		func(args []string) (err error) {
-			w.ap = nil
-			w.stickChan = 0
-			w.frequencies, err = network.GetSupportedFrequencies(w.Session.Interface.Name())
-			w.hopChanges <- true
+			mod.ap = nil
+			mod.stickChan = 0
+			mod.frequencies, err = network.GetSupportedFrequencies(mod.Session.Interface.Name())
+			mod.hopChanges <- true
 			return err
 		}))
 
-	w.AddParam(session.NewIntParameter("wifi.rssi.min",
+	mod.AddParam(session.NewIntParameter("wifi.rssi.min",
 		"-200",
 		"Minimum WiFi signal strength in dBm."))
 
-	w.AddHandler(session.NewModuleHandler("wifi.deauth BSSID", `wifi\.deauth ((?:[a-fA-F0-9:]{11,})|all|\*)`,
+	mod.AddHandler(session.NewModuleHandler("wifi.deauth BSSID", `wifi\.deauth ((?:[a-fA-F0-9:]{11,})|all|\*)`,
 		"Start a 802.11 deauth attack, if an access point BSSID is provided, every client will be deauthenticated, otherwise only the selected client. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate every access point with at least one client and start a deauth attack for each one.",
 		func(args []string) error {
 			if args[0] == "all" || args[0] == "*" {
@@ -124,23 +124,23 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			if err != nil {
 				return err
 			}
-			return w.startDeauth(bssid)
+			return mod.startDeauth(bssid)
 		}))
 
-	w.AddParam(session.NewStringParameter("wifi.deauth.skip",
+	mod.AddParam(session.NewStringParameter("wifi.deauth.skip",
 		"",
 		"",
 		"Comma separated list of BSSID to skip while sending deauth packets."))
 
-	w.AddParam(session.NewBoolParameter("wifi.deauth.silent",
+	mod.AddParam(session.NewBoolParameter("wifi.deauth.silent",
 		"false",
 		"If true, messages from wifi.deauth will be suppressed."))
 
-	w.AddParam(session.NewBoolParameter("wifi.deauth.open",
+	mod.AddParam(session.NewBoolParameter("wifi.deauth.open",
 		"true",
 		"Send wifi deauth packets to open networks."))
 
-	w.AddHandler(session.NewModuleHandler("wifi.assoc BSSID", `wifi\.assoc ((?:[a-fA-F0-9:]{11,})|all|\*)`,
+	mod.AddHandler(session.NewModuleHandler("wifi.assoc BSSID", `wifi\.assoc ((?:[a-fA-F0-9:]{11,})|all|\*)`,
 		"Send an association request to the selected BSSID in order to receive a RSN PMKID key. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate for every access point.",
 		func(args []string) error {
 			if args[0] == "all" || args[0] == "*" {
@@ -150,81 +150,81 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			if err != nil {
 				return err
 			}
-			return w.startAssoc(bssid)
+			return mod.startAssoc(bssid)
 		}))
 
-	w.AddParam(session.NewStringParameter("wifi.assoc.skip",
+	mod.AddParam(session.NewStringParameter("wifi.assoc.skip",
 		"",
 		"",
 		"Comma separated list of BSSID to skip while sending association requests."))
 
-	w.AddParam(session.NewBoolParameter("wifi.assoc.silent",
+	mod.AddParam(session.NewBoolParameter("wifi.assoc.silent",
 		"false",
 		"If true, messages from wifi.assoc will be suppressed."))
 
-	w.AddParam(session.NewBoolParameter("wifi.assoc.open",
+	mod.AddParam(session.NewBoolParameter("wifi.assoc.open",
 		"false",
 		"Send association requests to open networks."))
 
-	w.AddHandler(session.NewModuleHandler("wifi.ap", "",
+	mod.AddHandler(session.NewModuleHandler("wifi.ap", "",
 		"Inject fake management beacons in order to create a rogue access point.",
 		func(args []string) error {
-			if err := w.parseApConfig(); err != nil {
+			if err := mod.parseApConfig(); err != nil {
 				return err
 			} else {
-				return w.startAp()
+				return mod.startAp()
 			}
 		}))
 
-	w.AddParam(session.NewStringParameter("wifi.handshakes.file",
+	mod.AddParam(session.NewStringParameter("wifi.handshakes.file",
 		"~/bettercap-wifi-handshakes.pcap",
 		"",
 		"File path of the pcap file to save handshakes to."))
 
-	w.AddParam(session.NewStringParameter("wifi.ap.ssid",
+	mod.AddParam(session.NewStringParameter("wifi.ap.ssid",
 		"FreeWiFi",
 		"",
 		"SSID of the fake access point."))
 
-	w.AddParam(session.NewStringParameter("wifi.ap.bssid",
+	mod.AddParam(session.NewStringParameter("wifi.ap.bssid",
 		session.ParamRandomMAC,
 		"[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}",
 		"BSSID of the fake access point."))
 
-	w.AddParam(session.NewIntParameter("wifi.ap.channel",
+	mod.AddParam(session.NewIntParameter("wifi.ap.channel",
 		"1",
 		"Channel of the fake access point."))
 
-	w.AddParam(session.NewBoolParameter("wifi.ap.encryption",
+	mod.AddParam(session.NewBoolParameter("wifi.ap.encryption",
 		"true",
 		"If true, the fake access point will use WPA2, otherwise it'll result as an open AP."))
 
-	w.AddHandler(session.NewModuleHandler("wifi.show.wps BSSID",
+	mod.AddHandler(session.NewModuleHandler("wifi.show.wps BSSID",
 		`wifi\.show\.wps ((?:[a-fA-F0-9:]{11,})|all|\*)`,
 		"Show WPS information about a given station (use 'all', '*' or a broadcast BSSID for all).",
 		func(args []string) error {
 			if args[0] == "all" || args[0] == "*" {
 				args[0] = "ff:ff:ff:ff:ff:ff"
 			}
-			return w.ShowWPS(args[0])
+			return mod.ShowWPS(args[0])
 		}))
 
-	w.AddHandler(session.NewModuleHandler("wifi.show", "",
+	mod.AddHandler(session.NewModuleHandler("wifi.show", "",
 		"Show current wireless stations list (default sorting by essid).",
 		func(args []string) error {
-			return w.Show()
+			return mod.Show()
 		}))
 
-	w.selector = utils.ViewSelectorFor(&w.SessionModule, "wifi.show",
+	mod.selector = utils.ViewSelectorFor(&mod.SessionModule, "wifi.show",
 		[]string{"rssi", "bssid", "essid", "channel", "encryption", "clients", "seen", "sent", "rcvd"}, "rssi asc")
 
-	w.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
+	mod.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
 		"WiFi channels (comma separated) or 'clear' for channel hopping.",
 		func(args []string) (err error) {
 			freqs := []int{}
 
 			if args[0] != "clear" {
-				w.Debug("setting hopping channels to %s", args[0])
+				mod.Debug("setting hopping channels to %s", args[0])
 				for _, s := range str.Comma(args[0]) {
 					if ch, err := strconv.Atoi(s); err != nil {
 						return err
@@ -239,48 +239,48 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			}
 
 			if len(freqs) == 0 {
-				w.Debug("resetting hopping channels")
-				if freqs, err = network.GetSupportedFrequencies(w.Session.Interface.Name()); err != nil {
+				mod.Debug("resetting hopping channels")
+				if freqs, err = network.GetSupportedFrequencies(mod.Session.Interface.Name()); err != nil {
 					return err
 				}
 			}
 
-			w.Debug("new frequencies: %v", freqs)
-			w.frequencies = freqs
+			mod.Debug("new frequencies: %v", freqs)
+			mod.frequencies = freqs
 
 			// if wifi.recon is not running, this would block forever
-			if w.Running() {
-				w.hopChanges <- true
+			if mod.Running() {
+				mod.hopChanges <- true
 			}
 
 			return nil
 		}))
 
-	w.AddParam(session.NewStringParameter("wifi.source.file",
+	mod.AddParam(session.NewStringParameter("wifi.source.file",
 		"",
 		"",
 		"If set, the wifi module will read from this pcap file instead of the hardware interface."))
 
-	w.AddParam(session.NewIntParameter("wifi.hop.period",
+	mod.AddParam(session.NewIntParameter("wifi.hop.period",
 		"250",
 		"If channel hopping is enabled (empty wifi.recon.channel), this is the time in milliseconds the algorithm will hop on every channel (it'll be doubled if both 2.4 and 5.0 bands are available)."))
 
-	w.AddParam(session.NewBoolParameter("wifi.skip-broken",
+	mod.AddParam(session.NewBoolParameter("wifi.skip-broken",
 		"true",
 		"If true, dot11 packets with an invalid checksum will be skipped."))
 
-	return w
+	return mod
 }
 
-func (w WiFiModule) Name() string {
+func (mod WiFiModule) Name() string {
 	return "wifi"
 }
 
-func (w WiFiModule) Description() string {
+func (mod WiFiModule) Description() string {
 	return "A module to monitor and perform wireless attacks on 802.11."
 }
 
-func (w WiFiModule) Author() string {
+func (mod WiFiModule) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com> && Gianluca Braga <matrix86@gmail.com>"
 }
 
@@ -290,31 +290,31 @@ const (
 	ErrIfaceNotUp = "Interface Not Up"
 )
 
-func (w *WiFiModule) Configure() error {
+func (mod *WiFiModule) Configure() error {
 	var hopPeriod int
 	var err error
 
-	if err, w.source = w.StringParam("wifi.source.file"); err != nil {
+	if err, mod.source = mod.StringParam("wifi.source.file"); err != nil {
 		return err
 	}
 
-	if err, w.shakesFile = w.StringParam("wifi.handshakes.file"); err != nil {
+	if err, mod.shakesFile = mod.StringParam("wifi.handshakes.file"); err != nil {
 		return err
-	} else if w.shakesFile != "" {
-		if w.shakesFile, err = fs.Expand(w.shakesFile); err != nil {
+	} else if mod.shakesFile != "" {
+		if mod.shakesFile, err = fs.Expand(mod.shakesFile); err != nil {
 			return err
 		}
 	}
 
-	if err, w.minRSSI = w.IntParam("wifi.rssi.min"); err != nil {
+	if err, mod.minRSSI = mod.IntParam("wifi.rssi.min"); err != nil {
 		return err
 	}
 
-	ifName := w.Session.Interface.Name()
+	ifName := mod.Session.Interface.Name()
 
-	if w.source != "" {
-		if w.handle, err = pcap.OpenOffline(w.source); err != nil {
-			return fmt.Errorf("error while opening file %s: %s", w.source, err)
+	if mod.source != "" {
+		if mod.handle, err = pcap.OpenOffline(mod.source); err != nil {
+			return fmt.Errorf("error while opening file %s: %s", mod.source, err)
 		}
 	} else {
 		for retry := 0; ; retry++ {
@@ -336,9 +336,9 @@ func (w *WiFiModule) Configure() error {
 			readTimeout := 500 * time.Millisecond
 			if err = ihandle.SetTimeout(readTimeout); err != nil {
 				return fmt.Errorf("error while setting timeout: %s", err)
-			} else if w.handle, err = ihandle.Activate(); err != nil {
+			} else if mod.handle, err = ihandle.Activate(); err != nil {
 				if retry == 0 && err.Error() == ErrIfaceNotUp {
-					w.Warning("interface %s is down, bringing it up ...", ifName)
+					mod.Warning("interface %s is down, bringing it up ...", ifName)
 					if err := network.ActivateInterface(ifName); err != nil {
 						return err
 					}
@@ -351,39 +351,39 @@ func (w *WiFiModule) Configure() error {
 		}
 	}
 
-	if err, w.skipBroken = w.BoolParam("wifi.skip-broken"); err != nil {
+	if err, mod.skipBroken = mod.BoolParam("wifi.skip-broken"); err != nil {
 		return err
-	} else if err, hopPeriod = w.IntParam("wifi.hop.period"); err != nil {
+	} else if err, hopPeriod = mod.IntParam("wifi.hop.period"); err != nil {
 		return err
 	}
 
-	w.hopPeriod = time.Duration(hopPeriod) * time.Millisecond
+	mod.hopPeriod = time.Duration(hopPeriod) * time.Millisecond
 
-	if w.source == "" {
+	if mod.source == "" {
 		// No channels setted, retrieve frequencies supported by the card
-		if len(w.frequencies) == 0 {
-			if w.frequencies, err = network.GetSupportedFrequencies(ifName); err != nil {
+		if len(mod.frequencies) == 0 {
+			if mod.frequencies, err = network.GetSupportedFrequencies(ifName); err != nil {
 				return fmt.Errorf("error while getting supported frequencies of %s: %s", ifName, err)
 			}
 
-			w.Debug("wifi supported frequencies: %v", w.frequencies)
+			mod.Debug("wifi supported frequencies: %v", mod.frequencies)
 
 			// we need to start somewhere, this is just to check if
 			// this OS supports switching channel programmatically.
 			if err = network.SetInterfaceChannel(ifName, 1); err != nil {
 				return fmt.Errorf("error while initializing %s to channel 1: %s", ifName, err)
 			}
-			w.Info("started (min rssi: %d dBm)", w.minRSSI)
+			mod.Info("started (min rssi: %d dBm)", mod.minRSSI)
 		}
 	}
 
 	return nil
 }
 
-func (w *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
+func (mod *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
 	if ok, enc, cipher, auth := packets.Dot11ParseEncryption(packet, dot11); ok {
 		bssid := dot11.Address3.String()
-		if station, found := w.Session.WiFi.Get(bssid); found {
+		if station, found := mod.Session.WiFi.Get(bssid); found {
 			station.Encryption = enc
 			station.Cipher = cipher
 			station.Authentication = auth
@@ -391,7 +391,7 @@ func (w *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
 	}
 
 	if ok, bssid, info := packets.Dot11ParseWPS(packet, dot11); ok {
-		if station, found := w.Session.WiFi.Get(bssid.String()); found {
+		if station, found := mod.Session.WiFi.Get(bssid.String()); found {
 			for name, value := range info {
 				station.WPS[name] = value
 			}
@@ -399,84 +399,84 @@ func (w *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
 	}
 }
 
-func (w *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
+func (mod *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) {
 	// collect stats from data frames
 	if dot11.Type.MainType() == layers.Dot11TypeData {
 		bytes := uint64(len(packet.Data()))
 
 		dst := dot11.Address1.String()
-		if station, found := w.Session.WiFi.Get(dst); found {
+		if station, found := mod.Session.WiFi.Get(dst); found {
 			station.Received += bytes
 		}
 
 		src := dot11.Address2.String()
-		if station, found := w.Session.WiFi.Get(src); found {
+		if station, found := mod.Session.WiFi.Get(src); found {
 			station.Sent += bytes
 		}
 	}
 }
 
-func (w *WiFiModule) Start() error {
-	if err := w.Configure(); err != nil {
+func (mod *WiFiModule) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	w.SetRunning(true, func() {
+	mod.SetRunning(true, func() {
 		// start channel hopper if needed
-		if w.channel == 0 && w.source == "" {
-			go w.channelHopper()
+		if mod.channel == 0 && mod.source == "" {
+			go mod.channelHopper()
 		}
 
 		// start the pruner
-		go w.stationPruner()
+		go mod.stationPruner()
 
-		w.reads.Add(1)
-		defer w.reads.Done()
+		mod.reads.Add(1)
+		defer mod.reads.Done()
 
-		src := gopacket.NewPacketSource(w.handle, w.handle.LinkType())
-		w.pktSourceChan = src.Packets()
-		for packet := range w.pktSourceChan {
-			if !w.Running() {
+		src := gopacket.NewPacketSource(mod.handle, mod.handle.LinkType())
+		mod.pktSourceChan = src.Packets()
+		for packet := range mod.pktSourceChan {
+			if !mod.Running() {
 				break
 			} else if packet == nil {
 				continue
 			}
 
-			w.Session.Queue.TrackPacket(uint64(len(packet.Data())))
+			mod.Session.Queue.TrackPacket(uint64(len(packet.Data())))
 
 			// perform initial dot11 parsing and layers validation
 			if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok {
 				// check FCS checksum
-				if w.skipBroken && !dot11.ChecksumValid() {
-					w.Debug("skipping dot11 packet with invalid checksum.")
+				if mod.skipBroken && !dot11.ChecksumValid() {
+					mod.Debug("skipping dot11 packet with invalid checksum.")
 					continue
 				}
 
-				w.discoverProbes(radiotap, dot11, packet)
-				w.discoverAccessPoints(radiotap, dot11, packet)
-				w.discoverClients(radiotap, dot11, packet)
-				w.discoverHandshakes(radiotap, dot11, packet)
-				w.updateInfo(dot11, packet)
-				w.updateStats(dot11, packet)
+				mod.discoverProbes(radiotap, dot11, packet)
+				mod.discoverAccessPoints(radiotap, dot11, packet)
+				mod.discoverClients(radiotap, dot11, packet)
+				mod.discoverHandshakes(radiotap, dot11, packet)
+				mod.updateInfo(dot11, packet)
+				mod.updateStats(dot11, packet)
 			}
 		}
 
-		w.pktSourceChanClosed = true
+		mod.pktSourceChanClosed = true
 	})
 
 	return nil
 }
 
-func (w *WiFiModule) Stop() error {
-	return w.SetRunning(false, func() {
+func (mod *WiFiModule) Stop() error {
+	return mod.SetRunning(false, func() {
 		// wait any pending write operation
-		w.writes.Wait()
+		mod.writes.Wait()
 		// signal the main for loop we want to exit
-		if !w.pktSourceChanClosed {
-			w.pktSourceChan <- nil
+		if !mod.pktSourceChanClosed {
+			mod.pktSourceChan <- nil
 		}
-		w.reads.Wait()
+		mod.reads.Wait()
 		// close the pcap handle to make the main for exit
-		w.handle.Close()
+		mod.handle.Close()
 	})
 }

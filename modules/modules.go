@@ -7,7 +7,7 @@ import (
 	"github.com/bettercap/bettercap/modules/ble"
 	"github.com/bettercap/bettercap/modules/caplets"
 	"github.com/bettercap/bettercap/modules/dhcp6_spoof"
-	"github.com/bettercap/bettercap/modules/discovery"
+	"github.com/bettercap/bettercap/modules/net_recon"
 	"github.com/bettercap/bettercap/modules/dns_spoof"
 	"github.com/bettercap/bettercap/modules/events_stream"
 	"github.com/bettercap/bettercap/modules/gps"
@@ -19,7 +19,7 @@ import (
 	"github.com/bettercap/bettercap/modules/mysql_server"
 	"github.com/bettercap/bettercap/modules/net_sniff"
 	"github.com/bettercap/bettercap/modules/packet_proxy"
-	"github.com/bettercap/bettercap/modules/prober"
+	"github.com/bettercap/bettercap/modules/net_probe"
 	"github.com/bettercap/bettercap/modules/syn_scan"
 	"github.com/bettercap/bettercap/modules/tcp_proxy"
 	"github.com/bettercap/bettercap/modules/ticker"
@@ -37,7 +37,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(ble.NewBLERecon(sess))
 	sess.Register(caplets.NewCapletsModule(sess))
 	sess.Register(dhcp6_spoof.NewDHCP6Spoofer(sess))
-	sess.Register(discovery.NewDiscovery(sess))
+	sess.Register(net_recon.NewDiscovery(sess))
 	sess.Register(dns_spoof.NewDNSSpoofer(sess))
 	sess.Register(events_stream.NewEventsStream(sess))
 	sess.Register(gps.NewGPS(sess))
@@ -49,7 +49,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(mysql_server.NewMySQLServer(sess))
 	sess.Register(net_sniff.NewSniffer(sess))
 	sess.Register(packet_proxy.NewPacketProxy(sess))
-	sess.Register(prober.NewProber(sess))
+	sess.Register(net_probe.NewProber(sess))
 	sess.Register(syn_scan.NewSynScanner(sess))
 	sess.Register(tcp_proxy.NewTcpProxy(sess))
 	sess.Register(ticker.NewTicker(sess))

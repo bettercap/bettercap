@@ -21,56 +21,56 @@ type CapletsModule struct {
 }
 
 func NewCapletsModule(s *session.Session) *CapletsModule {
-	c := &CapletsModule{
+	mod := &CapletsModule{
 		SessionModule: session.NewSessionModule("caplets", s),
 	}
 
-	c.AddHandler(session.NewModuleHandler("caplets.show", "",
+	mod.AddHandler(session.NewModuleHandler("caplets.show", "",
 		"Show a list of installed caplets.",
 		func(args []string) error {
-			return c.Show()
+			return mod.Show()
 		}))
 
-	c.AddHandler(session.NewModuleHandler("caplets.paths", "",
+	mod.AddHandler(session.NewModuleHandler("caplets.paths", "",
 		"Show a list caplet search paths.",
 		func(args []string) error {
-			return c.Paths()
+			return mod.Paths()
 		}))
 
-	c.AddHandler(session.NewModuleHandler("caplets.update", "",
+	mod.AddHandler(session.NewModuleHandler("caplets.update", "",
 		"Install/updates the caplets.",
 		func(args []string) error {
-			return c.Update()
+			return mod.Update()
 		}))
 
-	return c
+	return mod
 }
 
-func (c *CapletsModule) Name() string {
+func (mod *CapletsModule) Name() string {
 	return "caplets"
 }
 
-func (c *CapletsModule) Description() string {
+func (mod *CapletsModule) Description() string {
 	return "A module to list and update caplets."
 }
 
-func (c *CapletsModule) Author() string {
+func (mod *CapletsModule) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (c *CapletsModule) Configure() error {
+func (mod *CapletsModule) Configure() error {
 	return nil
 }
 
-func (c *CapletsModule) Stop() error {
+func (mod *CapletsModule) Stop() error {
 	return nil
 }
 
-func (c *CapletsModule) Start() error {
+func (mod *CapletsModule) Start() error {
 	return nil
 }
 
-func (c *CapletsModule) Show() error {
+func (mod *CapletsModule) Show() error {
 	caplets := caplets.List()
 	if len(caplets) == 0 {
 		return fmt.Errorf("no installed caplets on this system, use the caplets.update command to download them")
@@ -96,7 +96,7 @@ func (c *CapletsModule) Show() error {
 	return nil
 }
 
-func (c *CapletsModule) Paths() error {
+func (mod *CapletsModule) Paths() error {
 	colNames := []string{
 		"Path",
 	}
@@ -112,9 +112,9 @@ func (c *CapletsModule) Paths() error {
 	return nil
 }
 
-func (c *CapletsModule) Update() error {
+func (mod *CapletsModule) Update() error {
 	if !fs.Exists(caplets.InstallBase) {
-		c.Info("creating caplets install path %s ...", caplets.InstallBase)
+		mod.Info("creating caplets install path %s ...", caplets.InstallBase)
 		if err := os.MkdirAll(caplets.InstallBase, os.ModePerm); err != nil {
 			return err
 		}
@@ -126,7 +126,7 @@ func (c *CapletsModule) Update() error {
 	}
 	defer out.Close()
 
-	c.Info("downloading caplets from %s ...", caplets.InstallArchive)
+	mod.Info("downloading caplets from %s ...", caplets.InstallArchive)
 
 	resp, err := http.Get(caplets.InstallArchive)
 	if err != nil {
@@ -138,7 +138,7 @@ func (c *CapletsModule) Update() error {
 		return err
 	}
 
-	c.Info("installing caplets to %s ...", caplets.InstallPath)
+	mod.Info("installing caplets to %s ...", caplets.InstallPath)
 
 	if _, err = zip.Unzip("/tmp/caplets.zip", caplets.InstallBase); err != nil {
 		return err

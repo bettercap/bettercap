@@ -1,4 +1,4 @@
-package discovery
+package net_recon
 
 import (
 	"fmt"
@@ -32,13 +32,13 @@ func (p ProtoPairList) Len() int           { return len(p) }
 func (p ProtoPairList) Less(i, j int) bool { return p[i].Hits < p[j].Hits }
 func (p ProtoPairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
-	sinceStarted := time.Since(d.Session.StartedAt)
+func (mod *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
+	sinceStarted := time.Since(mod.Session.StartedAt)
 	sinceFirstSeen := time.Since(e.FirstSeen)
 
 	addr := e.IpAddress
 	mac := e.HwAddress
-	if d.Session.Lan.WasMissed(e.HwAddress) {
+	if mod.Session.Lan.WasMissed(e.HwAddress) {
 		// if endpoint was not found in ARP at least once
 		addr = tui.Dim(addr)
 		mac = tui.Dim(mac)
@@ -49,9 +49,9 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	}
 
 	name := ""
-	if e == d.Session.Interface {
+	if e == mod.Session.Interface {
 		name = e.Name()
-	} else if e == d.Session.Gateway {
+	} else if e == mod.Session.Gateway {
 		name = "gateway"
 	} else if e.Alias != "" {
 		name = tui.Green(e.Alias)
@@ -61,7 +61,7 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 
 	var traffic *packets.Traffic
 	var found bool
-	if traffic, found = d.Session.Queue.Traffic[e.IpAddress]; !found {
+	if traffic, found = mod.Session.Queue.Traffic[e.IpAddress]; !found {
 		traffic = &packets.Traffic{}
 	}
 
@@ -111,40 +111,40 @@ func (d *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	return rows
 }
 
-func (d *Discovery) doFilter(target *network.Endpoint) bool {
-	if d.selector.Expression == nil {
+func (mod *Discovery) doFilter(target *network.Endpoint) bool {
+	if mod.selector.Expression == nil {
 		return true
 	}
-	return d.selector.Expression.MatchString(target.IpAddress) ||
-		d.selector.Expression.MatchString(target.Ip6Address) ||
-		d.selector.Expression.MatchString(target.HwAddress) ||
-		d.selector.Expression.MatchString(target.Hostname) ||
-		d.selector.Expression.MatchString(target.Alias) ||
-		d.selector.Expression.MatchString(target.Vendor)
+	return mod.selector.Expression.MatchString(target.IpAddress) ||
+		mod.selector.Expression.MatchString(target.Ip6Address) ||
+		mod.selector.Expression.MatchString(target.HwAddress) ||
+		mod.selector.Expression.MatchString(target.Hostname) ||
+		mod.selector.Expression.MatchString(target.Alias) ||
+		mod.selector.Expression.MatchString(target.Vendor)
 }
 
-func (d *Discovery) doSelection(arg string) (err error, targets []*network.Endpoint) {
-	if err = d.selector.Update(); err != nil {
+func (mod *Discovery) doSelection(arg string) (err error, targets []*network.Endpoint) {
+	if err = mod.selector.Update(); err != nil {
 		return
 	}
 
 	if arg != "" {
-		if targets, err = network.ParseEndpoints(arg, d.Session.Lan); err != nil {
+		if targets, err = network.ParseEndpoints(arg, mod.Session.Lan); err != nil {
 			return
 		}
 	} else {
-		targets = d.Session.Lan.List()
+		targets = mod.Session.Lan.List()
 	}
 
 	filtered := []*network.Endpoint{}
 	for _, target := range targets {
-		if d.doFilter(target) {
+		if mod.doFilter(target) {
 			filtered = append(filtered, target)
 		}
 	}
 	targets = filtered
 
-	switch d.selector.SortField {
+	switch mod.selector.SortField {
 	case "ip":
 		sort.Sort(ByIpSorter(targets))
 	case "mac":
@@ -160,7 +160,7 @@ func (d *Discovery) doSelection(arg string) (err error, targets []*network.Endpo
 	}
 
 	// default is asc
-	if d.selector.Sort == "desc" {
+	if mod.selector.Sort == "desc" {
 		// from https://github.com/golang/go/wiki/SliceTricks
 		for i := len(targets)/2 - 1; i >= 0; i-- {
 			opp := len(targets) - 1 - i
@@ -168,8 +168,8 @@ func (d *Discovery) doSelection(arg string) (err error, targets []*network.Endpo
 		}
 	}
 
-	if d.selector.Limit > 0 {
-		limit := d.selector.Limit
+	if mod.selector.Limit > 0 {
+		limit := mod.selector.Limit
 		max := len(targets)
 		if limit > max {
 			limit = max
@@ -180,61 +180,61 @@ func (d *Discovery) doSelection(arg string) (err error, targets []*network.Endpo
 	return
 }
 
-func (d *Discovery) colNames(hasMeta bool) []string {
+func (mod *Discovery) colNames(hasMeta bool) []string {
 	colNames := []string{"IP", "MAC", "Name", "Vendor", "Sent", "Recvd", "Seen"}
 	if hasMeta {
 		colNames = append(colNames, "Meta")
 	}
 
-	switch d.selector.SortField {
+	switch mod.selector.SortField {
 	case "mac":
-		colNames[1] += " " + d.selector.SortSymbol
+		colNames[1] += " " + mod.selector.SortSymbol
 	case "sent":
-		colNames[4] += " " + d.selector.SortSymbol
+		colNames[4] += " " + mod.selector.SortSymbol
 	case "rcvd":
-		colNames[5] += " " + d.selector.SortSymbol
+		colNames[5] += " " + mod.selector.SortSymbol
 	case "seen":
-		colNames[6] += " " + d.selector.SortSymbol
+		colNames[6] += " " + mod.selector.SortSymbol
 	case "ip":
-		colNames[0] += " " + d.selector.SortSymbol
+		colNames[0] += " " + mod.selector.SortSymbol
 	}
 
 	return colNames
 }
 
-func (d *Discovery) showStatusBar() {
-	d.Session.Queue.Stats.RLock()
-	defer d.Session.Queue.Stats.RUnlock()
+func (mod *Discovery) showStatusBar() {
+	mod.Session.Queue.Stats.RLock()
+	defer mod.Session.Queue.Stats.RUnlock()
 
 	parts := []string{
-		fmt.Sprintf("%s %s", tui.Red("↑"), humanize.Bytes(d.Session.Queue.Stats.Sent)),
-		fmt.Sprintf("%s %s", tui.Green("↓"), humanize.Bytes(d.Session.Queue.Stats.Received)),
-		fmt.Sprintf("%d pkts", d.Session.Queue.Stats.PktReceived),
+		fmt.Sprintf("%s %s", tui.Red("↑"), humanize.Bytes(mod.Session.Queue.Stats.Sent)),
+		fmt.Sprintf("%s %s", tui.Green("↓"), humanize.Bytes(mod.Session.Queue.Stats.Received)),
+		fmt.Sprintf("%d pkts", mod.Session.Queue.Stats.PktReceived),
 	}
 
-	if nErrors := d.Session.Queue.Stats.Errors; nErrors > 0 {
+	if nErrors := mod.Session.Queue.Stats.Errors; nErrors > 0 {
 		parts = append(parts, fmt.Sprintf("%d errs", nErrors))
 	}
 
 	fmt.Printf("\n%s\n\n", strings.Join(parts, " / "))
 }
 
-func (d *Discovery) Show(arg string) (err error) {
+func (mod *Discovery) Show(arg string) (err error) {
 	var targets []*network.Endpoint
-	if err, targets = d.doSelection(arg); err != nil {
+	if err, targets = mod.doSelection(arg); err != nil {
 		return
 	}
 
 	pad := 1
-	if d.Session.Interface.HwAddress == d.Session.Gateway.HwAddress {
+	if mod.Session.Interface.HwAddress == mod.Session.Gateway.HwAddress {
 		pad = 0
-		targets = append([]*network.Endpoint{d.Session.Interface}, targets...)
+		targets = append([]*network.Endpoint{mod.Session.Interface}, targets...)
 	} else {
-		targets = append([]*network.Endpoint{d.Session.Interface, d.Session.Gateway}, targets...)
+		targets = append([]*network.Endpoint{mod.Session.Interface, mod.Session.Gateway}, targets...)
 	}
 
 	hasMeta := false
-	if err, showMeta := d.BoolParam("net.show.meta"); err != nil {
+	if err, showMeta := mod.BoolParam("net.show.meta"); err != nil {
 		return err
 	} else if showMeta {
 		for _, t := range targets {
@@ -245,12 +245,12 @@ func (d *Discovery) Show(arg string) (err error) {
 		}
 	}
 
-	colNames := d.colNames(hasMeta)
+	colNames := mod.colNames(hasMeta)
 	padCols := make([]string, len(colNames))
 
 	rows := make([][]string, 0)
 	for i, t := range targets {
-		rows = append(rows, d.getRow(t, hasMeta)...)
+		rows = append(rows, mod.getRow(t, hasMeta)...)
 		if i == pad {
 			rows = append(rows, padCols)
 		}
@@ -258,16 +258,16 @@ func (d *Discovery) Show(arg string) (err error) {
 
 	tui.Table(os.Stdout, colNames, rows)
 
-	d.showStatusBar()
+	mod.showStatusBar()
 
-	d.Session.Refresh()
+	mod.Session.Refresh()
 
 	return nil
 }
 
-func (d *Discovery) showMeta(arg string) (err error) {
+func (mod *Discovery) showMeta(arg string) (err error) {
 	var targets []*network.Endpoint
-	if err, targets = d.doSelection(arg); err != nil {
+	if err, targets = mod.doSelection(arg); err != nil {
 		return
 	}
 
@@ -303,7 +303,7 @@ func (d *Discovery) showMeta(arg string) (err error) {
 	}
 
 	if any {
-		d.Session.Refresh()
+		mod.Session.Refresh()
 	}
 
 	return nil

@@ -6,12 +6,12 @@ import (
 	"github.com/bettercap/bettercap/network"
 )
 
-type WiFiClientEvent struct {
+type ClientEvent struct {
 	AP     *network.AccessPoint
 	Client *network.Station
 }
 
-type WiFiProbeEvent struct {
+type ProbeEvent struct {
 	FromAddr   net.HardwareAddr
 	FromVendor string
 	FromAlias  string
@@ -19,7 +19,7 @@ type WiFiProbeEvent struct {
 	RSSI       int8
 }
 
-type WiFiHandshakeEvent struct {
+type HandshakeEvent struct {
 	File       string
 	NewPackets int
 	AP         net.HardwareAddr

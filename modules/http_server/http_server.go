@@ -18,63 +18,63 @@ type HttpServer struct {
 }
 
 func NewHttpServer(s *session.Session) *HttpServer {
-	httpd := &HttpServer{
+	mod := &HttpServer{
 		SessionModule: session.NewSessionModule("http.server", s),
 		server:        &http.Server{},
 	}
 
-	httpd.AddParam(session.NewStringParameter("http.server.path",
+	mod.AddParam(session.NewStringParameter("http.server.path",
 		".",
 		"",
 		"Server folder."))
 
-	httpd.AddParam(session.NewStringParameter("http.server.address",
+	mod.AddParam(session.NewStringParameter("http.server.address",
 		session.ParamIfaceAddress,
 		session.IPv4Validator,
 		"Address to bind the http server to."))
 
-	httpd.AddParam(session.NewIntParameter("http.server.port",
+	mod.AddParam(session.NewIntParameter("http.server.port",
 		"80",
 		"Port to bind the http server to."))
 
-	httpd.AddHandler(session.NewModuleHandler("http.server on", "",
+	mod.AddHandler(session.NewModuleHandler("http.server on", "",
 		"Start httpd server.",
 		func(args []string) error {
-			return httpd.Start()
+			return mod.Start()
 		}))
 
-	httpd.AddHandler(session.NewModuleHandler("http.server off", "",
+	mod.AddHandler(session.NewModuleHandler("http.server off", "",
 		"Stop httpd server.",
 		func(args []string) error {
-			return httpd.Stop()
+			return mod.Stop()
 		}))
 
-	return httpd
+	return mod
 }
 
-func (httpd *HttpServer) Name() string {
+func (mod *HttpServer) Name() string {
 	return "http.server"
 }
 
-func (httpd *HttpServer) Description() string {
+func (mod *HttpServer) Description() string {
 	return "A simple HTTP server, to be used to serve files and scripts across the network."
 }
 
-func (httpd *HttpServer) Author() string {
+func (mod *HttpServer) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (httpd *HttpServer) Configure() error {
+func (mod *HttpServer) Configure() error {
 	var err error
 	var path string
 	var address string
 	var port int
 
-	if httpd.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
 	}
 
-	if err, path = httpd.StringParam("http.server.path"); err != nil {
+	if err, path = mod.StringParam("http.server.path"); err != nil {
 		return err
 	}
 
@@ -82,43 +82,43 @@ func (httpd *HttpServer) Configure() error {
 	fileServer := http.FileServer(http.Dir(path))
 
 	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httpd.Info("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		mod.Info("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
 		fileServer.ServeHTTP(w, r)
 	}))
 
-	httpd.server.Handler = router
+	mod.server.Handler = router
 
-	if err, address = httpd.StringParam("http.server.address"); err != nil {
+	if err, address = mod.StringParam("http.server.address"); err != nil {
 		return err
 	}
 
-	if err, port = httpd.IntParam("http.server.port"); err != nil {
+	if err, port = mod.IntParam("http.server.port"); err != nil {
 		return err
 	}
 
-	httpd.server.Addr = fmt.Sprintf("%s:%d", address, port)
+	mod.server.Addr = fmt.Sprintf("%s:%d", address, port)
 
 	return nil
 }
 
-func (httpd *HttpServer) Start() error {
-	if err := httpd.Configure(); err != nil {
+func (mod *HttpServer) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return httpd.SetRunning(true, func() {
+	return mod.SetRunning(true, func() {
 		var err error
-		httpd.Info("starting on http://%s", httpd.server.Addr)
-		if err = httpd.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		mod.Info("starting on http://%s", mod.server.Addr)
+		if err = mod.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}
 	})
 }
 
-func (httpd *HttpServer) Stop() error {
-	return httpd.SetRunning(false, func() {
+func (mod *HttpServer) Stop() error {
+	return mod.SetRunning(false, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
-		httpd.server.Shutdown(ctx)
+		mod.server.Shutdown(ctx)
 	})
 }

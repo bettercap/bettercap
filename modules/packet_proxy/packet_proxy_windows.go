@@ -14,26 +14,26 @@ func NewPacketProxy(s *session.Session) *PacketProxy {
 	}
 }
 
-func (pp PacketProxy) Name() string {
+func (mod PacketProxy) Name() string {
 	return "packet.proxy"
 }
 
-func (pp PacketProxy) Description() string {
+func (mod PacketProxy) Description() string {
 	return "Not supported on this OS"
 }
 
-func (pp PacketProxy) Author() string {
+func (mod PacketProxy) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (pp *PacketProxy) Configure() (err error) {
+func (mod *PacketProxy) Configure() (err error) {
 	return session.ErrNotSupported
 }
 
-func (pp *PacketProxy) Start() error {
+func (mod *PacketProxy) Start() error {
 	return session.ErrNotSupported
 }
 
-func (pp *PacketProxy) Stop() error {
+func (mod *PacketProxy) Stop() error {
 	return session.ErrNotSupported
 }

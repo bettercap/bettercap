@@ -27,12 +27,12 @@ type SnifferContext struct {
 	OutputWriter *pcapgo.Writer
 }
 
-func (s *Sniffer) GetContext() (error, *SnifferContext) {
+func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 	var err error
 
 	ctx := NewSnifferContext()
 
-	if err, ctx.Source = s.StringParam("net.sniff.source"); err != nil {
+	if err, ctx.Source = mod.StringParam("net.sniff.source"); err != nil {
 		return err, ctx
 	}
 
@@ -42,7 +42,7 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 		 * could hang waiting for a timeout to expire ...
 		 */
 		readTimeout := 500 * time.Millisecond
-		if ctx.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, readTimeout); err != nil {
+		if ctx.Handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, readTimeout); err != nil {
 			return err, ctx
 		}
 	} else {
@@ -51,15 +51,15 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 		}
 	}
 
-	if err, ctx.Verbose = s.BoolParam("net.sniff.verbose"); err != nil {
+	if err, ctx.Verbose = mod.BoolParam("net.sniff.verbose"); err != nil {
 		return err, ctx
 	}
 
-	if err, ctx.DumpLocal = s.BoolParam("net.sniff.local"); err != nil {
+	if err, ctx.DumpLocal = mod.BoolParam("net.sniff.local"); err != nil {
 		return err, ctx
 	}
 
-	if err, ctx.Filter = s.StringParam("net.sniff.filter"); err != nil {
+	if err, ctx.Filter = mod.StringParam("net.sniff.filter"); err != nil {
 		return err, ctx
 	} else if ctx.Filter != "" {
 		err = ctx.Handle.SetBPFFilter(ctx.Filter)
@@ -68,7 +68,7 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 		}
 	}
 
-	if err, ctx.Expression = s.StringParam("net.sniff.regexp"); err != nil {
+	if err, ctx.Expression = mod.StringParam("net.sniff.regexp"); err != nil {
 		return err, ctx
 	} else if ctx.Expression != "" {
 		if ctx.Compiled, err = regexp.Compile(ctx.Expression); err != nil {
@@ -76,7 +76,7 @@ func (s *Sniffer) GetContext() (error, *SnifferContext) {
 		}
 	}
 
-	if err, ctx.Output = s.StringParam("net.sniff.output"); err != nil {
+	if err, ctx.Output = mod.StringParam("net.sniff.output"); err != nil {
 		return err, ctx
 	} else if ctx.Output != "" {
 		if ctx.OutputFile, err = os.Create(ctx.Output); err != nil {

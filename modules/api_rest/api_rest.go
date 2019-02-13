@@ -29,7 +29,7 @@ type RestAPI struct {
 }
 
 func NewRestAPI(s *session.Session) *RestAPI {
-	api := &RestAPI{
+	mod := &RestAPI{
 		SessionModule: session.NewSessionModule("api.rest", s),
 		server:        &http.Server{},
 		quit:          make(chan bool),
@@ -41,59 +41,59 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		},
 	}
 
-	api.AddParam(session.NewStringParameter("api.rest.address",
+	mod.AddParam(session.NewStringParameter("api.rest.address",
 		session.ParamIfaceAddress,
 		session.IPv4Validator,
 		"Address to bind the API REST server to."))
 
-	api.AddParam(session.NewIntParameter("api.rest.port",
+	mod.AddParam(session.NewIntParameter("api.rest.port",
 		"8081",
 		"Port to bind the API REST server to."))
 
-	api.AddParam(session.NewStringParameter("api.rest.alloworigin",
-		api.allowOrigin,
+	mod.AddParam(session.NewStringParameter("api.rest.alloworigin",
+		mod.allowOrigin,
 		"",
 		"Value of the Access-Control-Allow-Origin header of the API server."))
 
-	api.AddParam(session.NewStringParameter("api.rest.username",
+	mod.AddParam(session.NewStringParameter("api.rest.username",
 		"",
 		"",
 		"API authentication username."))
 
-	api.AddParam(session.NewStringParameter("api.rest.password",
+	mod.AddParam(session.NewStringParameter("api.rest.password",
 		"",
 		"",
 		"API authentication password."))
 
-	api.AddParam(session.NewStringParameter("api.rest.certificate",
+	mod.AddParam(session.NewStringParameter("api.rest.certificate",
 		"",
 		"",
 		"API TLS certificate."))
 
-	tls.CertConfigToModule("api.rest", &api.SessionModule, tls.DefaultLegitConfig)
+	tls.CertConfigToModule("api.rest", &mod.SessionModule, tls.DefaultLegitConfig)
 
-	api.AddParam(session.NewStringParameter("api.rest.key",
+	mod.AddParam(session.NewStringParameter("api.rest.key",
 		"",
 		"",
 		"API TLS key"))
 
-	api.AddParam(session.NewBoolParameter("api.rest.websocket",
+	mod.AddParam(session.NewBoolParameter("api.rest.websocket",
 		"false",
 		"If true the /api/events route will be available as a websocket endpoint instead of HTTPS."))
 
-	api.AddHandler(session.NewModuleHandler("api.rest on", "",
+	mod.AddHandler(session.NewModuleHandler("api.rest on", "",
 		"Start REST API server.",
 		func(args []string) error {
-			return api.Start()
+			return mod.Start()
 		}))
 
-	api.AddHandler(session.NewModuleHandler("api.rest off", "",
+	mod.AddHandler(session.NewModuleHandler("api.rest off", "",
 		"Stop REST API server.",
 		func(args []string) error {
-			return api.Stop()
+			return mod.Stop()
 		}))
 
-	return api
+	return mod
 }
 
 type JSSessionRequest struct {
@@ -104,113 +104,113 @@ type JSSessionResponse struct {
 	Error string `json:"error"`
 }
 
-func (api *RestAPI) Name() string {
+func (mod *RestAPI) Name() string {
 	return "api.rest"
 }
 
-func (api *RestAPI) Description() string {
+func (mod *RestAPI) Description() string {
 	return "Expose a RESTful API."
 }
 
-func (api *RestAPI) Author() string {
+func (mod *RestAPI) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (api *RestAPI) isTLS() bool {
-	return api.certFile != "" && api.keyFile != ""
+func (mod *RestAPI) isTLS() bool {
+	return mod.certFile != "" && mod.keyFile != ""
 }
 
-func (api *RestAPI) Configure() error {
+func (mod *RestAPI) Configure() error {
 	var err error
 	var ip string
 	var port int
 
-	if api.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if err, ip = api.StringParam("api.rest.address"); err != nil {
+	} else if err, ip = mod.StringParam("api.rest.address"); err != nil {
 		return err
-	} else if err, port = api.IntParam("api.rest.port"); err != nil {
+	} else if err, port = mod.IntParam("api.rest.port"); err != nil {
 		return err
-	} else if err, api.allowOrigin = api.StringParam("api.rest.alloworigin"); err != nil {
+	} else if err, mod.allowOrigin = mod.StringParam("api.rest.alloworigin"); err != nil {
 		return err
-	} else if err, api.certFile = api.StringParam("api.rest.certificate"); err != nil {
+	} else if err, mod.certFile = mod.StringParam("api.rest.certificate"); err != nil {
 		return err
-	} else if api.certFile, err = fs.Expand(api.certFile); err != nil {
+	} else if mod.certFile, err = fs.Expand(mod.certFile); err != nil {
 		return err
-	} else if err, api.keyFile = api.StringParam("api.rest.key"); err != nil {
+	} else if err, mod.keyFile = mod.StringParam("api.rest.key"); err != nil {
 		return err
-	} else if api.keyFile, err = fs.Expand(api.keyFile); err != nil {
+	} else if mod.keyFile, err = fs.Expand(mod.keyFile); err != nil {
 		return err
-	} else if err, api.username = api.StringParam("api.rest.username"); err != nil {
+	} else if err, mod.username = mod.StringParam("api.rest.username"); err != nil {
 		return err
-	} else if err, api.password = api.StringParam("api.rest.password"); err != nil {
+	} else if err, mod.password = mod.StringParam("api.rest.password"); err != nil {
 		return err
-	} else if err, api.useWebsocket = api.BoolParam("api.rest.websocket"); err != nil {
+	} else if err, mod.useWebsocket = mod.BoolParam("api.rest.websocket"); err != nil {
 		return err
 	}
 
-	if api.isTLS() {
-		if !fs.Exists(api.certFile) || !fs.Exists(api.keyFile) {
-			err, cfg := tls.CertConfigFromModule("api.rest", api.SessionModule)
+	if mod.isTLS() {
+		if !fs.Exists(mod.certFile) || !fs.Exists(mod.keyFile) {
+			err, cfg := tls.CertConfigFromModule("api.rest", mod.SessionModule)
 			if err != nil {
 				return err
 			}
 
-			api.Debug("%+v", cfg)
-			api.Info("generating TLS key to %s", api.keyFile)
-			api.Info("generating TLS certificate to %s", api.certFile)
-			if err := tls.Generate(cfg, api.certFile, api.keyFile); err != nil {
+			mod.Debug("%+v", cfg)
+			mod.Info("generating TLS key to %s", mod.keyFile)
+			mod.Info("generating TLS certificate to %s", mod.certFile)
+			if err := tls.Generate(cfg, mod.certFile, mod.keyFile); err != nil {
 				return err
 			}
 		} else {
-			api.Info("loading TLS key from %s", api.keyFile)
-			api.Info("loading TLS certificate from %s", api.certFile)
+			mod.Info("loading TLS key from %s", mod.keyFile)
+			mod.Info("loading TLS certificate from %s", mod.certFile)
 		}
 	}
 
-	api.server.Addr = fmt.Sprintf("%s:%d", ip, port)
+	mod.server.Addr = fmt.Sprintf("%s:%d", ip, port)
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/events", api.eventsRoute)
-	router.HandleFunc("/api/session", api.sessionRoute)
-	router.HandleFunc("/api/session/ble", api.sessionRoute)
-	router.HandleFunc("/api/session/ble/{mac}", api.sessionRoute)
-	router.HandleFunc("/api/session/env", api.sessionRoute)
-	router.HandleFunc("/api/session/gateway", api.sessionRoute)
-	router.HandleFunc("/api/session/interface", api.sessionRoute)
-	router.HandleFunc("/api/session/modules", api.sessionRoute)
-	router.HandleFunc("/api/session/lan", api.sessionRoute)
-	router.HandleFunc("/api/session/lan/{mac}", api.sessionRoute)
-	router.HandleFunc("/api/session/options", api.sessionRoute)
-	router.HandleFunc("/api/session/packets", api.sessionRoute)
-	router.HandleFunc("/api/session/started-at", api.sessionRoute)
-	router.HandleFunc("/api/session/wifi", api.sessionRoute)
-	router.HandleFunc("/api/session/wifi/{mac}", api.sessionRoute)
+	router.HandleFunc("/api/events", mod.eventsRoute)
+	router.HandleFunc("/api/session", mod.sessionRoute)
+	router.HandleFunc("/api/session/ble", mod.sessionRoute)
+	router.HandleFunc("/api/session/ble/{mac}", mod.sessionRoute)
+	router.HandleFunc("/api/session/env", mod.sessionRoute)
+	router.HandleFunc("/api/session/gateway", mod.sessionRoute)
+	router.HandleFunc("/api/session/interface", mod.sessionRoute)
+	router.HandleFunc("/api/session/modules", mod.sessionRoute)
+	router.HandleFunc("/api/session/lan", mod.sessionRoute)
+	router.HandleFunc("/api/session/lan/{mac}", mod.sessionRoute)
+	router.HandleFunc("/api/session/options", mod.sessionRoute)
+	router.HandleFunc("/api/session/packets", mod.sessionRoute)
+	router.HandleFunc("/api/session/started-at", mod.sessionRoute)
+	router.HandleFunc("/api/session/wifi", mod.sessionRoute)
+	router.HandleFunc("/api/session/wifi/{mac}", mod.sessionRoute)
 
-	api.server.Handler = router
+	mod.server.Handler = router
 
-	if api.username == "" || api.password == "" {
-		api.Warning("api.rest.username and/or api.rest.password parameters are empty, authentication is disabled.")
+	if mod.username == "" || mod.password == "" {
+		mod.Warning("api.rest.username and/or api.rest.password parameters are empty, authentication is disabled.")
 	}
 
 	return nil
 }
 
-func (api *RestAPI) Start() error {
-	if err := api.Configure(); err != nil {
+func (mod *RestAPI) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	api.SetRunning(true, func() {
+	mod.SetRunning(true, func() {
 		var err error
 
-		if api.isTLS() {
-			api.Info("api server starting on https://%s", api.server.Addr)
-			err = api.server.ListenAndServeTLS(api.certFile, api.keyFile)
+		if mod.isTLS() {
+			mod.Info("api server starting on https://%s", mod.server.Addr)
+			err = mod.server.ListenAndServeTLS(mod.certFile, mod.keyFile)
 		} else {
-			api.Info("api server starting on http://%s", api.server.Addr)
-			err = api.server.ListenAndServe()
+			mod.Info("api server starting on http://%s", mod.server.Addr)
+			err = mod.server.ListenAndServe()
 		}
 
 		if err != nil && err != http.ErrServerClosed {
@@ -221,14 +221,14 @@ func (api *RestAPI) Start() error {
 	return nil
 }
 
-func (api *RestAPI) Stop() error {
-	return api.SetRunning(false, func() {
+func (mod *RestAPI) Stop() error {
+	return mod.SetRunning(false, func() {
 		go func() {
-			api.quit <- true
+			mod.quit <- true
 		}()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
-		api.server.Shutdown(ctx)
+		mod.server.Shutdown(ctx)
 	})
 }

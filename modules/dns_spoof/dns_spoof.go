@@ -26,7 +26,7 @@ type DNSSpoofer struct {
 }
 
 func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
-	spoof := &DNSSpoofer{
+	mod := &DNSSpoofer{
 		SessionModule: session.NewSessionModule("dns.spoof", s),
 		Handle:        nil,
 		All:           false,
@@ -34,120 +34,120 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		waitGroup:     &sync.WaitGroup{},
 	}
 
-	spoof.AddParam(session.NewStringParameter("dns.spoof.hosts",
+	mod.AddParam(session.NewStringParameter("dns.spoof.hosts",
 		"",
 		"",
 		"If not empty, this hosts file will be used to map domains to IP addresses."))
 
-	spoof.AddParam(session.NewStringParameter("dns.spoof.domains",
+	mod.AddParam(session.NewStringParameter("dns.spoof.domains",
 		"",
 		"",
 		"Comma separated values of domain names to spoof."))
 
-	spoof.AddParam(session.NewStringParameter("dns.spoof.address",
+	mod.AddParam(session.NewStringParameter("dns.spoof.address",
 		session.ParamIfaceAddress,
 		session.IPv4Validator,
 		"IP address to map the domains to."))
 
-	spoof.AddParam(session.NewBoolParameter("dns.spoof.all",
+	mod.AddParam(session.NewBoolParameter("dns.spoof.all",
 		"false",
 		"If true the module will reply to every DNS request, otherwise it will only reply to the one targeting the local pc."))
 
-	spoof.AddHandler(session.NewModuleHandler("dns.spoof on", "",
+	mod.AddHandler(session.NewModuleHandler("dns.spoof on", "",
 		"Start the DNS spoofer in the background.",
 		func(args []string) error {
-			return spoof.Start()
+			return mod.Start()
 		}))
 
-	spoof.AddHandler(session.NewModuleHandler("dns.spoof off", "",
+	mod.AddHandler(session.NewModuleHandler("dns.spoof off", "",
 		"Stop the DNS spoofer in the background.",
 		func(args []string) error {
-			return spoof.Stop()
+			return mod.Stop()
 		}))
 
-	return spoof
+	return mod
 }
 
-func (s DNSSpoofer) Name() string {
+func (mod DNSSpoofer) Name() string {
 	return "dns.spoof"
 }
 
-func (s DNSSpoofer) Description() string {
+func (mod DNSSpoofer) Description() string {
 	return "Replies to DNS messages with spoofed responses."
 }
 
-func (s DNSSpoofer) Author() string {
+func (mod DNSSpoofer) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (s *DNSSpoofer) Configure() error {
+func (mod *DNSSpoofer) Configure() error {
 	var err error
 	var hostsFile string
 	var domains []string
 	var address net.IP
 
-	if s.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if s.Handle, err = pcap.OpenLive(s.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+	} else if mod.Handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
 		return err
-	} else if err = s.Handle.SetBPFFilter("udp"); err != nil {
+	} else if err = mod.Handle.SetBPFFilter("udp"); err != nil {
 		return err
-	} else if err, s.All = s.BoolParam("dns.spoof.all"); err != nil {
+	} else if err, mod.All = mod.BoolParam("dns.spoof.all"); err != nil {
 		return err
-	} else if err, address = s.IPParam("dns.spoof.address"); err != nil {
+	} else if err, address = mod.IPParam("dns.spoof.address"); err != nil {
 		return err
-	} else if err, domains = s.ListParam("dns.spoof.domains"); err != nil {
+	} else if err, domains = mod.ListParam("dns.spoof.domains"); err != nil {
 		return err
-	} else if err, hostsFile = s.StringParam("dns.spoof.hosts"); err != nil {
+	} else if err, hostsFile = mod.StringParam("dns.spoof.hosts"); err != nil {
 		return err
 	}
 
-	s.Hosts = Hosts{}
+	mod.Hosts = Hosts{}
 	for _, domain := range domains {
-		s.Hosts = append(s.Hosts, NewHostEntry(domain, address))
+		mod.Hosts = append(mod.Hosts, NewHostEntry(domain, address))
 	}
 
 	if hostsFile != "" {
-		s.Info("loading hosts from file %s ...", hostsFile)
+		mod.Info("loading hosts from file %s ...", hostsFile)
 		if err, hosts := HostsFromFile(hostsFile); err != nil {
 			return fmt.Errorf("error reading hosts from file %s: %v", hostsFile, err)
 		} else {
-			s.Hosts = append(s.Hosts, hosts...)
+			mod.Hosts = append(mod.Hosts, hosts...)
 		}
 	}
 
-	if len(s.Hosts) == 0 {
+	if len(mod.Hosts) == 0 {
 		return fmt.Errorf("at least dns.spoof.hosts or dns.spoof.domains must be filled")
 	}
 
-	for _, entry := range s.Hosts {
-		s.Info("%s -> %s", entry.Host, entry.Address)
+	for _, entry := range mod.Hosts {
+		mod.Info("%s -> %s", entry.Host, entry.Address)
 	}
 
-	if !s.Session.Firewall.IsForwardingEnabled() {
-		s.Info("enabling forwarding.")
-		s.Session.Firewall.EnableForwarding(true)
+	if !mod.Session.Firewall.IsForwardingEnabled() {
+		mod.Info("enabling forwarding.")
+		mod.Session.Firewall.EnableForwarding(true)
 	}
 
 	return nil
 }
 
-func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, address net.IP, req *layers.DNS, target net.HardwareAddr) {
+func (mod *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, address net.IP, req *layers.DNS, target net.HardwareAddr) {
 	redir := fmt.Sprintf("(->%s)", address.String())
 	who := target.String()
 
-	if t, found := s.Session.Lan.Get(target.String()); found {
+	if t, found := mod.Session.Lan.Get(target.String()); found {
 		who = t.String()
 	}
 
-	s.Info("sending spoofed DNS reply for %s %s to %s.", tui.Red(domain), tui.Dim(redir), tui.Bold(who))
+	mod.Info("sending spoofed DNS reply for %s %s to %s.", tui.Red(domain), tui.Dim(redir), tui.Bold(who))
 
 	var err error
 	var src, dst net.IP
 
 	nlayer := pkt.NetworkLayer()
 	if nlayer == nil {
-		s.Debug("missing network layer skipping packet.")
+		mod.Debug("missing network layer skipping packet.")
 		return
 	}
 
@@ -216,7 +216,7 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 
 		err, raw = packets.Serialize(&eth, &ip6, &udp, &dns)
 		if err != nil {
-			s.Error("error serializing packet: %s.", err)
+			mod.Error("error serializing packet: %s.", err)
 			return
 		}
 	} else {
@@ -237,18 +237,18 @@ func (s *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *
 
 		err, raw = packets.Serialize(&eth, &ip4, &udp, &dns)
 		if err != nil {
-			s.Error("error serializing packet: %s.", err)
+			mod.Error("error serializing packet: %s.", err)
 			return
 		}
 	}
 
-	s.Debug("sending %d bytes of packet ...", len(raw))
-	if err := s.Session.Queue.Send(raw); err != nil {
-		s.Error("error sending packet: %s", err)
+	mod.Debug("sending %d bytes of packet ...", len(raw))
+	if err := mod.Session.Queue.Send(raw); err != nil {
+		mod.Error("error sending packet: %s", err)
 	}
 }
 
-func (s *DNSSpoofer) onPacket(pkt gopacket.Packet) {
+func (mod *DNSSpoofer) onPacket(pkt gopacket.Packet) {
 	typeEth := pkt.Layer(layers.LayerTypeEthernet)
 	typeUDP := pkt.Layer(layers.LayerTypeUDP)
 	if typeEth == nil || typeUDP == nil {
@@ -256,48 +256,48 @@ func (s *DNSSpoofer) onPacket(pkt gopacket.Packet) {
 	}
 
 	eth := typeEth.(*layers.Ethernet)
-	if s.All || bytes.Equal(eth.DstMAC, s.Session.Interface.HW) {
+	if mod.All || bytes.Equal(eth.DstMAC, mod.Session.Interface.HW) {
 		dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
 		if parsed && dns.OpCode == layers.DNSOpCodeQuery && len(dns.Questions) > 0 && len(dns.Answers) == 0 {
 			udp := typeUDP.(*layers.UDP)
 			for _, q := range dns.Questions {
 				qName := string(q.Name)
-				if address := s.Hosts.Resolve(qName); address != nil {
-					s.dnsReply(pkt, eth, udp, qName, address, dns, eth.SrcMAC)
+				if address := mod.Hosts.Resolve(qName); address != nil {
+					mod.dnsReply(pkt, eth, udp, qName, address, dns, eth.SrcMAC)
 					break
 				} else {
-					s.Debug("skipping domain %s", qName)
+					mod.Debug("skipping domain %s", qName)
 				}
 			}
 		}
 	}
 }
 
-func (s *DNSSpoofer) Start() error {
-	if err := s.Configure(); err != nil {
+func (mod *DNSSpoofer) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return s.SetRunning(true, func() {
-		s.waitGroup.Add(1)
-		defer s.waitGroup.Done()
+	return mod.SetRunning(true, func() {
+		mod.waitGroup.Add(1)
+		defer mod.waitGroup.Done()
 
-		src := gopacket.NewPacketSource(s.Handle, s.Handle.LinkType())
-		s.pktSourceChan = src.Packets()
-		for packet := range s.pktSourceChan {
-			if !s.Running() {
+		src := gopacket.NewPacketSource(mod.Handle, mod.Handle.LinkType())
+		mod.pktSourceChan = src.Packets()
+		for packet := range mod.pktSourceChan {
+			if !mod.Running() {
 				break
 			}
 
-			s.onPacket(packet)
+			mod.onPacket(packet)
 		}
 	})
 }
 
-func (s *DNSSpoofer) Stop() error {
-	return s.SetRunning(false, func() {
-		s.pktSourceChan <- nil
-		s.Handle.Close()
-		s.waitGroup.Wait()
+func (mod *DNSSpoofer) Stop() error {
+	return mod.SetRunning(false, func() {
+		mod.pktSourceChan <- nil
+		mod.Handle.Close()
+		mod.waitGroup.Wait()
 	})
 }

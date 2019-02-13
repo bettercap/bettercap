@@ -14,54 +14,54 @@ import (
 
 var errNoRecon = errors.New("Module wifi.ap requires module wifi.recon to be activated.")
 
-func (w *WiFiModule) parseApConfig() (err error) {
+func (mod *WiFiModule) parseApConfig() (err error) {
 	var bssid string
-	if err, w.apConfig.SSID = w.StringParam("wifi.ap.ssid"); err != nil {
+	if err, mod.apConfig.SSID = mod.StringParam("wifi.ap.ssid"); err != nil {
 		return
-	} else if err, bssid = w.StringParam("wifi.ap.bssid"); err != nil {
+	} else if err, bssid = mod.StringParam("wifi.ap.bssid"); err != nil {
 		return
-	} else if w.apConfig.BSSID, err = net.ParseMAC(network.NormalizeMac(bssid)); err != nil {
+	} else if mod.apConfig.BSSID, err = net.ParseMAC(network.NormalizeMac(bssid)); err != nil {
 		return
-	} else if err, w.apConfig.Channel = w.IntParam("wifi.ap.channel"); err != nil {
+	} else if err, mod.apConfig.Channel = mod.IntParam("wifi.ap.channel"); err != nil {
 		return
-	} else if err, w.apConfig.Encryption = w.BoolParam("wifi.ap.encryption"); err != nil {
+	} else if err, mod.apConfig.Encryption = mod.BoolParam("wifi.ap.encryption"); err != nil {
 		return
 	}
 	return
 }
 
-func (w *WiFiModule) startAp() error {
+func (mod *WiFiModule) startAp() error {
 	// we need channel hopping and packet injection for this
-	if !w.Running() {
+	if !mod.Running() {
 		return errNoRecon
-	} else if w.apRunning {
+	} else if mod.apRunning {
 		return session.ErrAlreadyStarted
 	}
 
 	go func() {
-		w.apRunning = true
+		mod.apRunning = true
 		defer func() {
-			w.apRunning = false
+			mod.apRunning = false
 		}()
 
 		enc := tui.Yellow("WPA2")
-		if !w.apConfig.Encryption {
+		if !mod.apConfig.Encryption {
 			enc = tui.Green("Open")
 		}
-		w.Info("sending beacons as SSID %s (%s) on channel %d (%s).",
-			tui.Bold(w.apConfig.SSID),
-			w.apConfig.BSSID.String(),
-			w.apConfig.Channel,
+		mod.Info("sending beacons as SSID %s (%s) on channel %d (%s).",
+			tui.Bold(mod.apConfig.SSID),
+			mod.apConfig.BSSID.String(),
+			mod.apConfig.Channel,
 			enc)
 
-		for seqn := uint16(0); w.Running(); seqn++ {
-			w.writes.Add(1)
-			defer w.writes.Done()
+		for seqn := uint16(0); mod.Running(); seqn++ {
+			mod.writes.Add(1)
+			defer mod.writes.Done()
 
-			if err, pkt := packets.NewDot11Beacon(w.apConfig, seqn); err != nil {
-				w.Error("could not create beacon packet: %s", err)
+			if err, pkt := packets.NewDot11Beacon(mod.apConfig, seqn); err != nil {
+				mod.Error("could not create beacon packet: %s", err)
 			} else {
-				w.injectPacket(pkt)
+				mod.injectPacket(pkt)
 			}
 
 			time.Sleep(100 * time.Millisecond)

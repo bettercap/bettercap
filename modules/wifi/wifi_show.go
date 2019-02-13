@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/modules/discovery"
+	"github.com/bettercap/bettercap/modules/net_recon"
 	"github.com/bettercap/bettercap/network"
 
 	"github.com/dustin/go-humanize"
@@ -17,11 +17,11 @@ import (
 	"github.com/evilsocket/islazy/tui"
 )
 
-func (w *WiFiModule) isApSelected() bool {
-	return w.ap != nil
+func (mod *WiFiModule) isApSelected() bool {
+	return mod.ap != nil
 }
 
-func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
+func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 	// ref. https://www.metageek.com/training/resources/understanding-rssi-2.html
 	rssi := fmt.Sprintf("%d dBm", station.RSSI)
 	if station.RSSI >= -67 {
@@ -35,19 +35,19 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 	}
 
 	bssid := station.HwAddress
-	sinceStarted := time.Since(w.Session.StartedAt)
+	sinceStarted := time.Since(mod.Session.StartedAt)
 	sinceFirstSeen := time.Since(station.FirstSeen)
-	if sinceStarted > (discovery.JustJoinedTimeInterval*2) && sinceFirstSeen <= discovery.JustJoinedTimeInterval {
+	if sinceStarted > (net_recon.JustJoinedTimeInterval*2) && sinceFirstSeen <= net_recon.JustJoinedTimeInterval {
 		// if endpoint was first seen in the last 10 seconds
 		bssid = tui.Bold(bssid)
 	}
 
 	seen := station.LastSeen.Format("15:04:05")
 	sinceLastSeen := time.Since(station.LastSeen)
-	if sinceStarted > discovery.AliveTimeInterval && sinceLastSeen <= discovery.AliveTimeInterval {
+	if sinceStarted > net_recon.AliveTimeInterval && sinceLastSeen <= net_recon.AliveTimeInterval {
 		// if endpoint seen in the last 10 seconds
 		seen = tui.Bold(seen)
-	} else if sinceLastSeen > discovery.PresentTimeInterval {
+	} else if sinceLastSeen > net_recon.PresentTimeInterval {
 		// if endpoint not  seen in the last 60 seconds
 		seen = tui.Dim(seen)
 	}
@@ -67,7 +67,7 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		// this is ugly, but necessary in order to have this
 		// method handle both access point and clients
 		// transparently
-		if ap, found := w.Session.WiFi.Get(station.HwAddress); found && (ap.HasHandshakes() || ap.HasPMKID()) {
+		if ap, found := mod.Session.WiFi.Get(station.HwAddress); found && (ap.HasHandshakes() || ap.HasPMKID()) {
 			encryption = tui.Red(encryption)
 		}
 	}
@@ -76,8 +76,8 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 	recvd := ops.Ternary(station.Received > 0, humanize.Bytes(station.Received), "").(string)
 
 	include := false
-	if w.source == "" {
-		for _, frequencies := range w.frequencies {
+	if mod.source == "" {
+		for _, frequencies := range mod.frequencies {
 			if frequencies == station.Frequency {
 				include = true
 				break
@@ -87,11 +87,11 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		include = true
 	}
 
-	if int(station.RSSI) < w.minRSSI {
+	if int(station.RSSI) < mod.minRSSI {
 		include = false
 	}
 
-	if w.isApSelected() {
+	if mod.isApSelected() {
 		return []string{
 			rssi,
 			bssid,
@@ -105,7 +105,7 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		// method handle both access point and clients
 		// transparently
 		clients := ""
-		if ap, found := w.Session.WiFi.Get(station.HwAddress); found {
+		if ap, found := mod.Session.WiFi.Get(station.HwAddress); found {
 			if ap.NumClients() > 0 {
 				clients = strconv.Itoa(ap.NumClients())
 			}
@@ -143,43 +143,43 @@ func (w *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 	}
 }
 
-func (w *WiFiModule) doFilter(station *network.Station) bool {
-	if w.selector.Expression == nil {
+func (mod *WiFiModule) doFilter(station *network.Station) bool {
+	if mod.selector.Expression == nil {
 		return true
 	}
-	return w.selector.Expression.MatchString(station.BSSID()) ||
-		w.selector.Expression.MatchString(station.ESSID()) ||
-		w.selector.Expression.MatchString(station.Alias) ||
-		w.selector.Expression.MatchString(station.Vendor) ||
-		w.selector.Expression.MatchString(station.Encryption)
+	return mod.selector.Expression.MatchString(station.BSSID()) ||
+		mod.selector.Expression.MatchString(station.ESSID()) ||
+		mod.selector.Expression.MatchString(station.Alias) ||
+		mod.selector.Expression.MatchString(station.Vendor) ||
+		mod.selector.Expression.MatchString(station.Encryption)
 }
 
-func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
-	if err = w.selector.Update(); err != nil {
+func (mod *WiFiModule) doSelection() (err error, stations []*network.Station) {
+	if err = mod.selector.Update(); err != nil {
 		return
 	}
 
-	apSelected := w.isApSelected()
+	apSelected := mod.isApSelected()
 	if apSelected {
-		if ap, found := w.Session.WiFi.Get(w.ap.HwAddress); found {
+		if ap, found := mod.Session.WiFi.Get(mod.ap.HwAddress); found {
 			stations = ap.Clients()
 		} else {
-			err = fmt.Errorf("Could not find station %s", w.ap.HwAddress)
+			err = fmt.Errorf("Could not find station %s", mod.ap.HwAddress)
 			return
 		}
 	} else {
-		stations = w.Session.WiFi.Stations()
+		stations = mod.Session.WiFi.Stations()
 	}
 
 	filtered := []*network.Station{}
 	for _, station := range stations {
-		if w.doFilter(station) {
+		if mod.doFilter(station) {
 			filtered = append(filtered, station)
 		}
 	}
 	stations = filtered
 
-	switch w.selector.SortField {
+	switch mod.selector.SortField {
 	case "seen":
 		sort.Sort(ByWiFiSeenSorter(stations))
 	case "essid":
@@ -203,7 +203,7 @@ func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
 	}
 
 	// default is asc
-	if w.selector.Sort == "desc" {
+	if mod.selector.Sort == "desc" {
 		// from https://github.com/golang/go/wiki/SliceTricks
 		for i := len(stations)/2 - 1; i >= 0; i-- {
 			opp := len(stations) - 1 - i
@@ -211,8 +211,8 @@ func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
 		}
 	}
 
-	if w.selector.Limit > 0 {
-		limit := w.selector.Limit
+	if mod.selector.Limit > 0 {
+		limit := mod.selector.Limit
 		max := len(stations)
 		if limit > max {
 			limit = max
@@ -223,7 +223,7 @@ func (w *WiFiModule) doSelection() (err error, stations []*network.Station) {
 	return
 }
 
-func (w *WiFiModule) colDecorate(colNames []string, name string, dir string) {
+func (mod *WiFiModule) colDecorate(colNames []string, name string, dir string) {
 	for i, c := range colNames {
 		if c == name {
 			colNames[i] += " " + dir
@@ -232,101 +232,101 @@ func (w *WiFiModule) colDecorate(colNames []string, name string, dir string) {
 	}
 }
 
-func (w *WiFiModule) colNames(nrows int) []string {
+func (mod *WiFiModule) colNames(nrows int) []string {
 	columns := []string(nil)
 
-	if !w.isApSelected() {
+	if !mod.isApSelected() {
 		columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "WPS", "Ch", "Clients", "Sent", "Recvd", "Seen"}
 	} else if nrows > 0 {
 		columns = []string{"RSSI", "BSSID", "Ch", "Sent", "Recvd", "Seen"}
-		fmt.Printf("\n%s clients:\n", w.ap.HwAddress)
+		fmt.Printf("\n%s clients:\n", mod.ap.HwAddress)
 	} else {
-		fmt.Printf("\nNo authenticated clients detected for %s.\n", w.ap.HwAddress)
+		fmt.Printf("\nNo authenticated clients detected for %s.\n", mod.ap.HwAddress)
 	}
 
 	if columns != nil {
-		switch w.selector.SortField {
+		switch mod.selector.SortField {
 		case "seen":
-			w.colDecorate(columns, "Seen", w.selector.SortSymbol)
+			mod.colDecorate(columns, "Seen", mod.selector.SortSymbol)
 		case "essid":
-			w.colDecorate(columns, "SSID", w.selector.SortSymbol)
+			mod.colDecorate(columns, "SSID", mod.selector.SortSymbol)
 		case "bssid":
-			w.colDecorate(columns, "BSSID", w.selector.SortSymbol)
+			mod.colDecorate(columns, "BSSID", mod.selector.SortSymbol)
 		case "channel":
-			w.colDecorate(columns, "Ch", w.selector.SortSymbol)
+			mod.colDecorate(columns, "Ch", mod.selector.SortSymbol)
 		case "clients":
-			w.colDecorate(columns, "Clients", w.selector.SortSymbol)
+			mod.colDecorate(columns, "Clients", mod.selector.SortSymbol)
 		case "encryption":
-			w.colDecorate(columns, "Encryption", w.selector.SortSymbol)
+			mod.colDecorate(columns, "Encryption", mod.selector.SortSymbol)
 		case "sent":
-			w.colDecorate(columns, "Sent", w.selector.SortSymbol)
+			mod.colDecorate(columns, "Sent", mod.selector.SortSymbol)
 		case "rcvd":
-			w.colDecorate(columns, "Recvd", w.selector.SortSymbol)
+			mod.colDecorate(columns, "Recvd", mod.selector.SortSymbol)
 		case "rssi":
-			w.colDecorate(columns, "RSSI", w.selector.SortSymbol)
+			mod.colDecorate(columns, "RSSI", mod.selector.SortSymbol)
 		}
 	}
 
 	return columns
 }
 
-func (w *WiFiModule) showStatusBar() {
-	w.Session.Queue.Stats.RLock()
-	defer w.Session.Queue.Stats.RUnlock()
+func (mod *WiFiModule) showStatusBar() {
+	mod.Session.Queue.Stats.RLock()
+	defer mod.Session.Queue.Stats.RUnlock()
 
 	parts := []string{
-		fmt.Sprintf("%s (ch. %d)", w.Session.Interface.Name(), network.GetInterfaceChannel(w.Session.Interface.Name())),
-		fmt.Sprintf("%s %s", tui.Red("↑"), humanize.Bytes(w.Session.Queue.Stats.Sent)),
-		fmt.Sprintf("%s %s", tui.Green("↓"), humanize.Bytes(w.Session.Queue.Stats.Received)),
-		fmt.Sprintf("%d pkts", w.Session.Queue.Stats.PktReceived),
+		fmt.Sprintf("%s (ch. %d)", mod.Session.Interface.Name(), network.GetInterfaceChannel(mod.Session.Interface.Name())),
+		fmt.Sprintf("%s %s", tui.Red("↑"), humanize.Bytes(mod.Session.Queue.Stats.Sent)),
+		fmt.Sprintf("%s %s", tui.Green("↓"), humanize.Bytes(mod.Session.Queue.Stats.Received)),
+		fmt.Sprintf("%d pkts", mod.Session.Queue.Stats.PktReceived),
 	}
 
-	if nErrors := w.Session.Queue.Stats.Errors; nErrors > 0 {
+	if nErrors := mod.Session.Queue.Stats.Errors; nErrors > 0 {
 		parts = append(parts, fmt.Sprintf("%d errs", nErrors))
 	}
 
-	if nHandshakes := w.Session.WiFi.NumHandshakes(); nHandshakes > 0 {
+	if nHandshakes := mod.Session.WiFi.NumHandshakes(); nHandshakes > 0 {
 		parts = append(parts, fmt.Sprintf("%d handshakes", nHandshakes))
 	}
 
 	fmt.Printf("\n%s\n\n", strings.Join(parts, " / "))
 }
 
-func (w *WiFiModule) Show() (err error) {
+func (mod *WiFiModule) Show() (err error) {
 	var stations []*network.Station
-	if err, stations = w.doSelection(); err != nil {
+	if err, stations = mod.doSelection(); err != nil {
 		return
 	}
 
 	rows := make([][]string, 0)
 	for _, s := range stations {
-		if row, include := w.getRow(s); include {
+		if row, include := mod.getRow(s); include {
 			rows = append(rows, row)
 		}
 	}
 	nrows := len(rows)
 	if nrows > 0 {
-		tui.Table(os.Stdout, w.colNames(nrows), rows)
+		tui.Table(os.Stdout, mod.colNames(nrows), rows)
 	}
 
-	w.showStatusBar()
+	mod.showStatusBar()
 
-	w.Session.Refresh()
+	mod.Session.Refresh()
 
 	return nil
 }
 
-func (w *WiFiModule) ShowWPS(bssid string) (err error) {
+func (mod *WiFiModule) ShowWPS(bssid string) (err error) {
 	toShow := []*network.Station{}
 
 	if bssid == network.BroadcastMac {
-		for _, station := range w.Session.WiFi.List() {
+		for _, station := range mod.Session.WiFi.List() {
 			if station.HasWPS() {
 				toShow = append(toShow, station.Station)
 			}
 		}
 	} else {
-		if station, found := w.Session.WiFi.Get(bssid); found {
+		if station, found := mod.Session.WiFi.Get(bssid); found {
 			if station.HasWPS() {
 				toShow = append(toShow, station.Station)
 			}

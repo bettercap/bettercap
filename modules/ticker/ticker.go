@@ -13,87 +13,87 @@ type Ticker struct {
 }
 
 func NewTicker(s *session.Session) *Ticker {
-	t := &Ticker{
+	mod := &Ticker{
 		SessionModule: session.NewSessionModule("ticker", s),
 	}
 
-	t.AddParam(session.NewStringParameter("ticker.commands",
+	mod.AddParam(session.NewStringParameter("ticker.commands",
 		"clear; net.show; events.show 20",
 		"",
 		"List of commands separated by a ;"))
 
-	t.AddParam(session.NewIntParameter("ticker.period",
+	mod.AddParam(session.NewIntParameter("ticker.period",
 		"1",
 		"Ticker period in seconds"))
 
-	t.AddHandler(session.NewModuleHandler("ticker on", "",
+	mod.AddHandler(session.NewModuleHandler("ticker on", "",
 		"Start the ticker.",
 		func(args []string) error {
-			return t.Start()
+			return mod.Start()
 		}))
 
-	t.AddHandler(session.NewModuleHandler("ticker off", "",
+	mod.AddHandler(session.NewModuleHandler("ticker off", "",
 		"Stop the ticker.",
 		func(args []string) error {
-			return t.Stop()
+			return mod.Stop()
 		}))
 
-	return t
+	return mod
 }
 
-func (t *Ticker) Name() string {
+func (mod *Ticker) Name() string {
 	return "ticker"
 }
 
-func (t *Ticker) Description() string {
+func (mod *Ticker) Description() string {
 	return "A module to execute one or more commands every given amount of seconds."
 }
 
-func (t *Ticker) Author() string {
+func (mod *Ticker) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (t *Ticker) Configure() error {
+func (mod *Ticker) Configure() error {
 	var err error
 	var commands string
 	var period int
 
-	if t.Running() {
+	if mod.Running() {
 		return session.ErrAlreadyStarted
-	} else if err, commands = t.StringParam("ticker.commands"); err != nil {
+	} else if err, commands = mod.StringParam("ticker.commands"); err != nil {
 		return err
-	} else if err, period = t.IntParam("ticker.period"); err != nil {
+	} else if err, period = mod.IntParam("ticker.period"); err != nil {
 		return err
 	}
 
-	t.Commands = session.ParseCommands(commands)
-	t.Period = time.Duration(period) * time.Second
+	mod.Commands = session.ParseCommands(commands)
+	mod.Period = time.Duration(period) * time.Second
 
 	return nil
 }
 
-func (t *Ticker) Start() error {
-	if err := t.Configure(); err != nil {
+func (mod *Ticker) Start() error {
+	if err := mod.Configure(); err != nil {
 		return err
 	}
 
-	return t.SetRunning(true, func() {
-		t.Info("running with period %.fs", t.Period.Seconds())
-		tick := time.NewTicker(t.Period)
+	return mod.SetRunning(true, func() {
+		mod.Info("running with period %.fs", mod.Period.Seconds())
+		tick := time.NewTicker(mod.Period)
 		for range tick.C {
-			if !t.Running() {
+			if !mod.Running() {
 				break
 			}
 
-			for _, cmd := range t.Commands {
-				if err := t.Session.Run(cmd); err != nil {
-					t.Error("%s", err)
+			for _, cmd := range mod.Commands {
+				if err := mod.Session.Run(cmd); err != nil {
+					mod.Error("%s", err)
 				}
 			}
 		}
 	})
 }
 
-func (t *Ticker) Stop() error {
-	return t.SetRunning(false, nil)
+func (mod *Ticker) Stop() error {
+	return mod.SetRunning(false, nil)
 }

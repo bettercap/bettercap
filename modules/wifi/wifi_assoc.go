@@ -10,22 +10,22 @@ import (
 	"github.com/bettercap/bettercap/packets"
 )
 
-func (w *WiFiModule) sendAssocPacket(ap *network.AccessPoint) {
-	if err, pkt := packets.NewDot11Auth(w.Session.Interface.HW, ap.HW, 1); err != nil {
-		w.Error("cloud not create auth packet: %s", err)
+func (mod *WiFiModule) sendAssocPacket(ap *network.AccessPoint) {
+	if err, pkt := packets.NewDot11Auth(mod.Session.Interface.HW, ap.HW, 1); err != nil {
+		mod.Error("cloud not create auth packet: %s", err)
 	} else {
-		w.injectPacket(pkt)
+		mod.injectPacket(pkt)
 	}
 
-	if err, pkt := packets.NewDot11AssociationRequest(w.Session.Interface.HW, ap.HW, ap.ESSID(), 1); err != nil {
-		w.Error("cloud not create association request packet: %s", err)
+	if err, pkt := packets.NewDot11AssociationRequest(mod.Session.Interface.HW, ap.HW, ap.ESSID(), 1); err != nil {
+		mod.Error("cloud not create association request packet: %s", err)
 	} else {
-		w.injectPacket(pkt)
+		mod.injectPacket(pkt)
 	}
 }
 
-func (w *WiFiModule) skipAssoc(to net.HardwareAddr) bool {
-	for _, mac := range w.assocSkip {
+func (mod *WiFiModule) skipAssoc(to net.HardwareAddr) bool {
+	for _, mac := range mod.assocSkip {
 		if bytes.Equal(to, mac) {
 			return true
 		}
@@ -33,51 +33,51 @@ func (w *WiFiModule) skipAssoc(to net.HardwareAddr) bool {
 	return false
 }
 
-func (w *WiFiModule) isAssocSilent() bool {
-	if err, is := w.BoolParam("wifi.assoc.silent"); err != nil {
-		w.Warning("%v", err)
+func (mod *WiFiModule) isAssocSilent() bool {
+	if err, is := mod.BoolParam("wifi.assoc.silent"); err != nil {
+		mod.Warning("%v", err)
 	} else {
-		w.assocSilent = is
+		mod.assocSilent = is
 	}
-	return w.assocSilent
+	return mod.assocSilent
 }
 
-func (w *WiFiModule) doAssocOpen() bool {
-	if err, is := w.BoolParam("wifi.assoc.open"); err != nil {
-		w.Warning("%v", err)
+func (mod *WiFiModule) doAssocOpen() bool {
+	if err, is := mod.BoolParam("wifi.assoc.open"); err != nil {
+		mod.Warning("%v", err)
 	} else {
-		w.assocOpen = is
+		mod.assocOpen = is
 	}
-	return w.assocOpen
+	return mod.assocOpen
 }
 
-func (w *WiFiModule) startAssoc(to net.HardwareAddr) error {
+func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 	// parse skip list
-	if err, assocSkip := w.StringParam("wifi.assoc.skip"); err != nil {
+	if err, assocSkip := mod.StringParam("wifi.assoc.skip"); err != nil {
 		return err
 	} else if macs, err := network.ParseMACs(assocSkip); err != nil {
 		return err
 	} else {
-		w.assocSkip = macs
+		mod.assocSkip = macs
 	}
 
 	// if not already running, temporarily enable the pcap handle
 	// for packet injection
-	if !w.Running() {
-		if err := w.Configure(); err != nil {
+	if !mod.Running() {
+		if err := mod.Configure(); err != nil {
 			return err
 		}
-		defer w.handle.Close()
+		defer mod.handle.Close()
 	}
 
 	toAssoc := make([]*network.AccessPoint, 0)
 	isBcast := network.IsBroadcastMac(to)
-	for _, ap := range w.Session.WiFi.List() {
+	for _, ap := range mod.Session.WiFi.List() {
 		if isBcast || bytes.Equal(ap.HW, to) {
-			if !w.skipAssoc(ap.HW) {
+			if !mod.skipAssoc(ap.HW) {
 				toAssoc = append(toAssoc, ap)
 			} else {
-				w.Debug("skipping ap:%v because skip list %v", ap, w.assocSkip)
+				mod.Debug("skipping ap:%v because skip list %v", ap, mod.assocSkip)
 			}
 		}
 	}
@@ -90,8 +90,8 @@ func (w *WiFiModule) startAssoc(to net.HardwareAddr) error {
 	}
 
 	go func() {
-		w.writes.Add(1)
-		defer w.writes.Done()
+		mod.writes.Add(1)
+		defer mod.writes.Done()
 
 		// since we need to change the wifi adapter channel for each
 		// association request, let's sort by channel so we do the minimum
@@ -102,19 +102,19 @@ func (w *WiFiModule) startAssoc(to net.HardwareAddr) error {
 
 		// send the association request frames
 		for _, ap := range toAssoc {
-			if w.Running() {
-				logger := w.Info
-				if w.isAssocSilent() {
-					logger = w.Debug
+			if mod.Running() {
+				logger := mod.Info
+				if mod.isAssocSilent() {
+					logger = mod.Debug
 				}
 
-				if ap.IsOpen() && !w.doAssocOpen() {
-					w.Debug("skipping association for open network %s (wifi.assoc.open is false)", ap.ESSID())
+				if ap.IsOpen() && !mod.doAssocOpen() {
+					mod.Debug("skipping association for open network %s (wifi.assoc.open is false)", ap.ESSID())
 				} else {
 					logger("sending association request to AP %s (channel:%d encryption:%s)", ap.ESSID(), ap.Channel(), ap.Encryption)
 
-					w.onChannel(ap.Channel(), func() {
-						w.sendAssocPacket(ap)
+					mod.onChannel(ap.Channel(), func() {
+						mod.sendAssocPacket(ap)
 					})
 				}
 			}
