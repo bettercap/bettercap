@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	// "net/url"
 	"strings"
 
 	"github.com/evilsocket/islazy/str"
