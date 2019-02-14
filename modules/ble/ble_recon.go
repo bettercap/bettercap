@@ -10,6 +10,7 @@ import (
 	golog "log"
 	"time"
 
+	"github.com/bettercap/bettercap/modules/utils"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
@@ -26,6 +27,7 @@ type BLERecon struct {
 	connTimeout time.Duration
 	quit        chan bool
 	done        chan bool
+	selector    *utils.ViewSelector
 }
 
 func NewBLERecon(s *session.Session) *BLERecon {
@@ -38,6 +40,10 @@ func NewBLERecon(s *session.Session) *BLERecon {
 		currDevice:    nil,
 		connected:     false,
 	}
+
+	mod.selector = utils.ViewSelectorFor(&mod.SessionModule,
+		"ble.show",
+		[]string{"rssi", "mac", "seen"}, "rssi asc")
 
 	mod.AddHandler(session.NewModuleHandler("ble.recon on", "",
 		"Start Bluetooth Low Energy devices discovery.",

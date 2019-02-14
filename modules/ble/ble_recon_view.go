@@ -24,8 +24,20 @@ var (
 )
 
 func (mod *BLERecon) getRow(dev *network.BLEDevice) []string {
+	// ref. https://www.metageek.com/training/resources/understanding-rssi-2.html
+	rssi := fmt.Sprintf("%d dBm", dev.RSSI)
+	if dev.RSSI >= -67 {
+		rssi = tui.Green(rssi)
+	} else if dev.RSSI >= -70 {
+		rssi = tui.Dim(tui.Green(rssi))
+	} else if dev.RSSI >= -80 {
+		rssi = tui.Yellow(rssi)
+	} else {
+		rssi = tui.Dim(tui.Red(rssi))
+	}
+
 	address := network.NormalizeMac(dev.Device.ID())
-	vendor := dev.Vendor
+	vendor := tui.Dim(dev.Vendor)
 	sinceSeen := time.Since(dev.LastSeen)
 	lastSeen := dev.LastSeen.Format("15:04:05")
 
@@ -36,13 +48,13 @@ func (mod *BLERecon) getRow(dev *network.BLEDevice) []string {
 		address = tui.Dim(address)
 	}
 
-	isConnectable := tui.Red("no")
+	isConnectable := tui.Red("✖")
 	if dev.Advertisement.Connectable {
-		isConnectable = tui.Green("yes")
+		isConnectable = tui.Green("✔")
 	}
 
 	return []string{
-		fmt.Sprintf("%d dBm", dev.RSSI),
+		rssi,
 		address,
 		dev.Device.Name(),
 		vendor,
@@ -51,24 +63,88 @@ func (mod *BLERecon) getRow(dev *network.BLEDevice) []string {
 	}
 }
 
-func (mod *BLERecon) Show() error {
-	devices := mod.Session.BLE.Devices()
+func (mod *BLERecon) doFilter(dev *network.BLEDevice) bool {
+	if mod.selector.Expression == nil {
+		return true
+	}
+	return mod.selector.Expression.MatchString(dev.Device.ID()) ||
+		mod.selector.Expression.MatchString(dev.Device.Name()) ||
+		mod.selector.Expression.MatchString(dev.Vendor)
+}
 
-	sort.Sort(ByBLERSSISorter(devices))
+func (mod *BLERecon) doSelection() (err error, devices []*network.BLEDevice) {
+	if err = mod.selector.Update(); err != nil {
+		return
+	}
+
+	devices = mod.Session.BLE.Devices()
+	filtered := []*network.BLEDevice{}
+	for _, dev := range devices {
+		if mod.doFilter(dev) {
+			filtered = append(filtered, dev)
+		}
+	}
+	devices = filtered
+
+	switch mod.selector.SortField {
+	case "mac":
+		sort.Sort(ByBLEMacSorter(devices))
+	case "seen":
+		sort.Sort(ByBLESeenSorter(devices))
+	default:
+		sort.Sort(ByBLERSSISorter(devices))
+	}
+
+	// default is asc
+	if mod.selector.Sort == "desc" {
+		// from https://github.com/golang/go/wiki/SliceTricks
+		for i := len(devices)/2 - 1; i >= 0; i-- {
+			opp := len(devices) - 1 - i
+			devices[i], devices[opp] = devices[opp], devices[i]
+		}
+	}
+
+	if mod.selector.Limit > 0 {
+		limit := mod.selector.Limit
+		max := len(devices)
+		if limit > max {
+			limit = max
+		}
+		devices = devices[0:limit]
+	}
+
+	return
+}
+
+func (mod *BLERecon) colNames() []string {
+	colNames := []string{"RSSI", "MAC", "Name", "Vendor", "Connectable", "Seen"}
+	switch mod.selector.SortField {
+	case "rssi":
+		colNames[0] += " " + mod.selector.SortSymbol
+	case "mac":
+		colNames[1] += " " + mod.selector.SortSymbol
+	case "seen":
+		colNames[5] += " " + mod.selector.SortSymbol
+	}
+	return colNames
+}
+
+func (mod *BLERecon) Show() error {
+	err, devices := mod.doSelection()
+	if err != nil {
+		return err
+	}
 
 	rows := make([][]string, 0)
 	for _, dev := range devices {
 		rows = append(rows, mod.getRow(dev))
 	}
-	nrows := len(rows)
 
-	columns := []string{"RSSI", "Address", "Name", "Vendor", "Connectable", "Last Seen"}
-
-	if nrows > 0 {
-		tui.Table(os.Stdout, columns, rows)
+	if len(rows) > 0 {
+		tui.Table(os.Stdout, mod.colNames(), rows)
+		mod.Session.Refresh()
 	}
 
-	mod.Session.Refresh()
 	return nil
 }
 
