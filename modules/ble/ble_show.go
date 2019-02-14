@@ -21,7 +21,6 @@ var (
 
 func (mod *BLERecon) getRow(dev *network.BLEDevice) []string {
 	rssi := network.ColorRSSI(dev.RSSI)
-	name := ops.Ternary(dev.Device.Name() == "", dev.Advertisement.LocalName, dev.Device.Name()).(string)
 	address := network.NormalizeMac(dev.Device.ID())
 	vendor := tui.Dim(ops.Ternary(dev.Vendor == "", dev.Advertisement.Company, dev.Vendor).(string))
 	isConnectable := ops.Ternary(dev.Advertisement.Connectable, tui.Green("✔"), tui.Red("✖")).(string)
@@ -38,7 +37,6 @@ func (mod *BLERecon) getRow(dev *network.BLEDevice) []string {
 	return []string{
 		rssi,
 		address,
-		name,
 		vendor,
 		dev.Advertisement.Flags.String(),
 		isConnectable,
@@ -100,14 +98,14 @@ func (mod *BLERecon) doSelection() (err error, devices []*network.BLEDevice) {
 }
 
 func (mod *BLERecon) colNames() []string {
-	colNames := []string{"RSSI", "MAC", "Name", "Vendor", "Flags", "Connect", "Seen"}
+	colNames := []string{"RSSI", "MAC", "Vendor", "Flags", "Connect", "Seen"}
 	switch mod.selector.SortField {
 	case "rssi":
 		colNames[0] += " " + mod.selector.SortSymbol
 	case "mac":
 		colNames[1] += " " + mod.selector.SortSymbol
 	case "seen":
-		colNames[6] += " " + mod.selector.SortSymbol
+		colNames[5] += " " + mod.selector.SortSymbol
 	}
 	return colNames
 }
