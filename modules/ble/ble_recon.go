@@ -115,7 +115,7 @@ func (mod *BLERecon) Configure() (err error) {
 	if mod.Running() {
 		return session.ErrAlreadyStarted
 	} else if mod.gattDevice == nil {
-		mod.Info("Initializing BLE device ...")
+		mod.Info("initializing device ...")
 
 		// hey Paypal GATT library, could you please just STFU?!
 		golog.SetOutput(ioutil.Discard)
@@ -145,7 +145,7 @@ func (mod *BLERecon) Start() error {
 
 		<-mod.quit
 
-		mod.Info("Stopping BLE scan ...")
+		mod.Info("stopping scan ...")
 
 		mod.gattDevice.StopScanning()
 
@@ -161,7 +161,7 @@ func (mod *BLERecon) Stop() error {
 }
 
 func (mod *BLERecon) pruner() {
-	mod.Debug("Started BLE devices pruner ...")
+	mod.Debug("started devices pruner ...")
 
 	for mod.Running() {
 		for _, dev := range mod.Session.BLE.Devices() {
@@ -198,7 +198,7 @@ func (mod *BLERecon) enumAllTheThings(mac string) error {
 		return err
 	}
 
-	mod.Info("Connecting to %s ...", mac)
+	mod.Info("connecting to %s ...", mac)
 
 	go func() {
 		time.Sleep(mod.connTimeout)

@@ -228,7 +228,7 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 
 		chars, err := p.DiscoverCharacteristics(nil, svc)
 		if err != nil {
-			mod.Error("Error while enumerating chars for service %s: %s", svc.UUID(), err)
+			mod.Error("error while enumerating chars for service %s: %s", svc.UUID(), err)
 			continue
 		}
 
@@ -247,14 +247,14 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 			if wantsToWrite && mod.writeUUID.Equal(ch.UUID()) {
 				foundToWrite = true
 				if isWritable {
-					mod.Info("Writing %d bytes to characteristics %s ...", len(mod.writeData), mod.writeUUID)
+					mod.Info("writing %d bytes to characteristics %s ...", len(mod.writeData), mod.writeUUID)
 				} else {
-					mod.Warning("Attempt to write %d bytes to non writable characteristics %s ...", len(mod.writeData), mod.writeUUID)
+					mod.Warning("attempt to write %d bytes to non writable characteristics %s ...", len(mod.writeData), mod.writeUUID)
 				}
 
 				err := p.WriteCharacteristic(ch, mod.writeData, !withResponse)
 				if err != nil {
-					mod.Error("Error while writing: %s", err)
+					mod.Error("error while writing: %s", err)
 				}
 			}
 
@@ -280,7 +280,7 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 	}
 
 	if wantsToWrite && !foundToWrite {
-		mod.Error("Writable characteristics %s not found.", mod.writeUUID)
+		mod.Error("writable characteristics %s not found.", mod.writeUUID)
 	} else {
 		tui.Table(os.Stdout, columns, rows)
 		mod.Session.Refresh()
