@@ -17,6 +17,7 @@ func (mod *BLERecon) onStateChanged(dev gatt.Device, s gatt.State) {
 			dev.Scan([]gatt.UUID{}, true)
 		}
 	case gatt.StatePoweredOff:
+		mod.setCurrentDevice(nil)
 		mod.gattDevice = nil
 
 	default:
@@ -29,12 +30,11 @@ func (mod *BLERecon) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement
 }
 
 func (mod *BLERecon) onPeriphDisconnected(p gatt.Peripheral, err error) {
+	mod.setCurrentDevice(nil)
 	if mod.Running() {
-		// restore scanning
 		mod.Info("device disconnected, restoring discovery.")
 		mod.gattDevice.Scan([]gatt.UUID{}, true)
 	}
-	mod.setCurrentDevice(nil)
 }
 
 func (mod *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
@@ -42,7 +42,6 @@ func (mod *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
 		mod.Warning("connected to %s but with error: %s", p.ID(), err)
 		return
 	} else if mod.currDevice == nil {
-		// timed out
 		mod.Warning("connected to %s but after the timeout :(", p.ID())
 		return
 	}
