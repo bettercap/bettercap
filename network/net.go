@@ -11,6 +11,7 @@ import (
 
 	"github.com/evilsocket/islazy/data"
 	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
 
 	"github.com/malfunkt/iprange"
 )
@@ -285,4 +286,19 @@ func GatewayProvidedByUser(iface *Endpoint, gateway string) (*Endpoint, error) {
 		}
 	}
 	return nil, fmt.Errorf("Provided gateway %s not a valid IPv4 address! Revert to find default gateway.", gateway)
+}
+
+func ColorRSSI(n int) string {
+	// ref. https://www.metageek.com/training/resources/understanding-rssi-2.html
+	rssi := fmt.Sprintf("%d dBm", n)
+	if n >= -67 {
+		rssi = tui.Green(rssi)
+	} else if n >= -70 {
+		rssi = tui.Dim(tui.Green(rssi))
+	} else if n >= -80 {
+		rssi = tui.Yellow(rssi)
+	} else {
+		rssi = tui.Dim(tui.Red(rssi))
+	}
+	return rssi
 }

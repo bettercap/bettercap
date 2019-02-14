@@ -1,0 +1,9 @@
+.DS_Store
+tmp/
+*.log
+_*
+node_modules
+example/dist
+godobin*
+/cmd/godo/godo
+*.iml

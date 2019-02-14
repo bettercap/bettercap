@@ -22,18 +22,7 @@ func (mod *WiFiModule) isApSelected() bool {
 }
 
 func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
-	// ref. https://www.metageek.com/training/resources/understanding-rssi-2.html
-	rssi := fmt.Sprintf("%d dBm", station.RSSI)
-	if station.RSSI >= -67 {
-		rssi = tui.Green(rssi)
-	} else if station.RSSI >= -70 {
-		rssi = tui.Dim(tui.Green(rssi))
-	} else if station.RSSI >= -80 {
-		rssi = tui.Yellow(rssi)
-	} else {
-		rssi = tui.Dim(tui.Red(rssi))
-	}
-
+	rssi := network.ColorRSSI(int(station.RSSI))
 	bssid := station.HwAddress
 	sinceStarted := time.Since(mod.Session.StartedAt)
 	sinceFirstSeen := time.Since(station.FirstSeen)
