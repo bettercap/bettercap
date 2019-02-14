@@ -11,7 +11,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a05b82f85695079c51be7c18bde0626065c8c4b785d28c7c6a4709e5caf2a150"
+  digest = "1:c309b41787813f80ec393023471014b0be16346bba6e16bf5fa01ce1d310a4ea"
   name = "github.com/bettercap/gatt"
   packages = [
     ".",
@@ -24,7 +24,7 @@
     "xpc",
   ]
   pruneopts = "UT"
-  revision = "06302e1b3ef319b444942decc2ed38fc950c74ed"
+  revision = "1353e80bee488dc02d1f7e42759c1352492bf18b"
 
 [[projects]]
   digest = "1:b95738a1e6ace058b5b8544303c0871fc01d224ef0d672f778f696265d0f2917"
