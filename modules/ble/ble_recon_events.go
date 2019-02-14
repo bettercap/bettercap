@@ -32,9 +32,9 @@ func (mod *BLERecon) onPeriphDisconnected(p gatt.Peripheral, err error) {
 	if mod.Running() {
 		// restore scanning
 		mod.Info("device disconnected, restoring discovery.")
-		mod.setCurrentDevice(nil)
 		mod.gattDevice.Scan([]gatt.UUID{}, true)
 	}
+	mod.setCurrentDevice(nil)
 }
 
 func (mod *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
