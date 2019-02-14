@@ -123,11 +123,12 @@ func (p *peripheral) DiscoverCharacteristics(cs []UUID, s *Service) ([]*Characte
 		binary.LittleEndian.PutUint16(b[5:7], 0x2803)
 
 		b = p.sendReq(op, b)
-		if done = b[0] != byte(attOpReadByTypeRsp); done {
+		done, err = finish(op, start, b)
+		if done {
 			break
 		}
-
 		b = b[1:]
+
 		l, b := int(b[0]), b[1:]
 		switch {
 		case l == 7 && (len(b)%7 == 0):
