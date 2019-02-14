@@ -27,10 +27,14 @@ type bleDeviceJSON struct {
 }
 
 func NewBLEDevice(p gatt.Peripheral, a *gatt.Advertisement, rssi int) *BLEDevice {
+	vendor := ManufLookup(NormalizeMac(p.ID()))
+	if vendor == "" && a != nil {
+		vendor = a.Company
+	}
 	return &BLEDevice{
 		LastSeen:      time.Now(),
 		Device:        p,
-		Vendor:        ManufLookup(NormalizeMac(p.ID())),
+		Vendor:        vendor,
 		Advertisement: a,
 		RSSI:          rssi,
 	}
