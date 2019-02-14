@@ -5,3 +5,9 @@ pcaps
 build
 bettercap
 bettercap.history
+*.snap
+*.snap.xdelta3
+prime/
+snap/
+stage/
+
