@@ -34,7 +34,6 @@ func NewUpdateModule(s *session.Session) *UpdateModule {
 	return mod
 }
 
-
 func (mod *UpdateModule) Name() string {
 	return "update"
 }

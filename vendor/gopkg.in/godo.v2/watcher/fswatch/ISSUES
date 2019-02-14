@@ -1,2 +1,0 @@
-* directory deletions not recognised as events
-* wi should use filepath.Abs

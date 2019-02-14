@@ -22,6 +22,16 @@ var knownServices = map[string]struct{ Name, Type string }{
 	"1813": {Name: "Scan Parameters", Type: "org.bluetooth.service.scan_parameters"},
 	"1814": {Name: "Running Speed and Cadence", Type: "org.bluetooth.service.running_speed_and_cadence"},
 	"1815": {Name: "Cycling Speed and Cadence", Type: "org.bluetooth.service.cycling_speed_and_cadence"},
+
+	"d0611e78bbb44591a5f8487910ae4366": {Name: "Apple Continuity Service"},
+	"7905f431b5ce4e99a40f4b1e122d00d0": {Name: "Apple Notification Center Service"},
+	"69d1d8f345e149a898219bbdfdaad9d9": {Name: "Control Point"},
+	"9fbf120d630142d98c5825e699a21dbd": {Name: "Notification Source"},
+	"22eac6e924d64bb5be44b36ace7c7bfb": {Name: "Data Source"},
+	"89d3502b0f36433a8ef4c502ad55f8dc": {Name: "Apple Media Service"},
+	"9b3c81d857b14a8ab8df0e56f7ca51c2": {Name: "Remote Command"},
+	"2f7cabce808d411f9a0cbb92ba96c102": {Name: "Entity Update"},
+	"c6b2f38c23ab46d8a6aba3a870bbd5d7": {Name: "Entity Attribute"},
 }
 
 // A dictionary of known descriptor names and type (keyed by attribute uuid)

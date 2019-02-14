@@ -334,8 +334,8 @@ func (mod *WiFiModule) ShowWPS(bssid string) (err error) {
 		ssid := ops.Ternary(station.ESSID() == "<hidden>", tui.Dim(station.ESSID()), station.ESSID()).(string)
 
 		rows := [][]string{
-			[]string{tui.Green("essid"), ssid},
-			[]string{tui.Green("bssid"), station.BSSID()},
+			{tui.Green("essid"), ssid},
+			{tui.Green("bssid"), station.BSSID()},
 		}
 
 		keys := []string{}

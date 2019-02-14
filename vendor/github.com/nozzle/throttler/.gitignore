@@ -1,7 +1,0 @@
-.glue
-!empty
-.idea
-server.command
-*.bak
-*.out
-*.cov

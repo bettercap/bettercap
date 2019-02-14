@@ -2,22 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:a43533baccdb3c8c2b849c932d70f56df8e2b83c6861c529dee8a031d69fa3cc"
-  name = "github.com/MichaelTJones/walk"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "4748e29d5718c2df4028a6543edf86fd8cc0f881"
-
-[[projects]]
-  digest = "1:87c2e02fb01c27060ccc5ba7c5a407cc91147726f8f40b70cceeedbc52b1f3a8"
-  name = "github.com/Sirupsen/logrus"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "e1e72e9de974bd926e5c56f83753fba2df402ce5"
-  version = "v1.3.0"
-
-[[projects]]
   digest = "1:4132a4623657c2ba93a7cf83dccc6869b3e3bb91dc2afefa7c7032e10ceeaa12"
   name = "github.com/adrianmo/go-nmea"
   packages = ["."]
@@ -27,12 +11,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6645619c3e2c7537c63f13da6a16b1d1e3c002e1d265f0259d860f9a1762f207"
+  digest = "1:a05b82f85695079c51be7c18bde0626065c8c4b785d28c7c6a4709e5caf2a150"
   name = "github.com/bettercap/gatt"
   packages = [
     ".",
-    "examples/option",
-    "examples/service",
     "linux",
     "linux/cmd",
     "linux/evt",
@@ -42,7 +24,7 @@
     "xpc",
   ]
   pruneopts = "UT"
-  revision = "18f00dded16b57d023af9b568325daa253b130ee"
+  revision = "06302e1b3ef319b444942decc2ed38fc950c74ed"
 
 [[projects]]
   digest = "1:b95738a1e6ace058b5b8544303c0871fc01d224ef0d672f778f696265d0f2917"
@@ -59,38 +41,6 @@
   packages = ["nfqueue"]
   pruneopts = "UT"
   revision = "61ca646babef3bd4dea1deb610bfb0005c0a1298"
-
-[[projects]]
-  digest = "1:6f9fb839c8ee0ac883c3c81e023e41990314c3c26423171fec2aa58ca0d11999"
-  name = "github.com/chzyer/logex"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "cd112f618178aaaf4ea8592c8839f5276145d9cf"
-  version = "v1.1.10"
-
-[[projects]]
-  digest = "1:b95738a1e6ace058b5b8544303c0871fc01d224ef0d672f778f696265d0f2917"
-  name = "github.com/chzyer/readline"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "62c6fe6193755f722b8b8788aa7357be55a50ff1"
-  version = "v1.4"
-
-[[projects]]
-  branch = "master"
-  digest = "1:578bc050373e726ac19c3cff37b45b4ff8b9116e670cf4f2220de00a72d6cbac"
-  name = "github.com/chzyer/test"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "a1ea475d72b168a29f44221e0ad031a842642302"
-
-[[projects]]
-  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
-  name = "github.com/davecgh/go-spew"
-  packages = ["spew"]
-  pruneopts = "UT"
-  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
-  version = "v1.1.1"
 
 [[projects]]
   branch = "master"
@@ -124,14 +74,6 @@
   pruneopts = "UT"
   revision = "268495ba2f4621f397a274dc33b9296553db855d"
   version = "v1.10.0"
-
-[[projects]]
-  digest = "1:586ea76dbd0374d6fb649a91d70d652b7fe0ccffb8910a77468e7702e7901f3d"
-  name = "github.com/go-stack/stack"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "2fee6af1a9795aafbe0253a0cfbdf668e1fb8a9a"
-  version = "v1.8.0"
 
 [[projects]]
   branch = "master"
@@ -196,14 +138,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0778dc7fce1b4669a8bfa7ae506ec1f595b6ab0f8989c1c0d22a8ca1144e9972"
-  name = "github.com/howeyc/gopass"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
-
-[[projects]]
-  branch = "master"
   digest = "1:6480de9b8abc75bfb06947e139aa07429dfed37f95a258e90865c4c84a9e188b"
   name = "github.com/inconshreveable/go-vhost"
   packages = ["."]
@@ -217,14 +151,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "f16ca3b7b383d3f0373109cac19147de3e8ae2d1"
-
-[[projects]]
-  digest = "1:0a69a1c0db3591fcefb47f115b224592c8dfa4368b7ba9fae509d5e16cdc95c8"
-  name = "github.com/konsorten/go-windows-terminal-sequences"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
-  version = "v1.0.1"
 
 [[projects]]
   digest = "1:4701b2acabe16722ecb1e387d39741a29269386bfc4ba6283ecda362d289eff1"
@@ -287,70 +213,12 @@
   version = "v1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:1e6768c349cb08d80a2c39224d325fed93d5d41df93df66444bdc22ef8613dc1"
-  name = "github.com/mgutz/minimist"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "39eb8cf573ca29344bd7d7e6ba4d7febdebd37a9"
-
-[[projects]]
-  digest = "1:c182b8d45f3687b6c148eec6de90cda533ef58ee9e55a917a466597deec4878f"
-  name = "github.com/mgutz/str"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "968bf66e3da857419e4f6e71b2d5c9ae95682dc4"
-  version = "v1.2.0"
-
-[[projects]]
-  digest = "1:124ed46e55fae0c87b2a96ce3f2b918df69a5a40f32b12b049a6fae12965a4f1"
-  name = "github.com/mgutz/to"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "00c06406c2dd2e011f153a6502a21473676db33f"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:66b0a65aba488ca6c72f77132d5b8d7e2c5baf07d577dee64502b69a2c90c791"
-  name = "github.com/nbutton23/zxcvbn-go"
-  packages = [
-    ".",
-    "adjacency",
-    "data",
-    "entropy",
-    "frequency",
-    "match",
-    "matching",
-    "scoring",
-    "utils/math",
-  ]
-  pruneopts = "UT"
-  revision = "eafdab6b0663b4b528c35975c8b0e78be6e25261"
-  version = "v0.1"
-
-[[projects]]
-  digest = "1:f6932ea98e86ea2ef88f9927b55d614884403620b81ac13cac81882314de55ca"
-  name = "github.com/nozzle/throttler"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "93e5576933fecb0d3fb25f2d2e50a012efd93ca0"
-  version = "v1.1"
-
-[[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
   name = "github.com/pkg/errors"
   packages = ["."]
   pruneopts = "UT"
   revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
   version = "v0.8.1"
-
-[[projects]]
-  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
-  name = "github.com/pmezard/go-difflib"
-  packages = ["difflib"]
-  pruneopts = "UT"
-  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
-  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -369,28 +237,12 @@
   revision = "15f95af6e78dcd2030d8195a138bd88d4f403546"
 
 [[projects]]
-  digest = "1:972c2427413d41a1e06ca4897e8528e5a1622894050e2f527b38ddf0f343f759"
-  name = "github.com/stretchr/testify"
-  packages = ["assert"]
-  pruneopts = "UT"
-  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
-  version = "v1.3.0"
-
-[[projects]]
   branch = "master"
   digest = "1:52b21e6be25049834aea5ecdde35d723c00fbdad3ea0357f2072dfb105836e02"
   name = "github.com/tarm/serial"
   packages = ["."]
   pruneopts = "UT"
   revision = "98f6abe2eb07edd42f6dfa2a934aea469acc29b7"
-
-[[projects]]
-  branch = "master"
-  digest = "1:fde12c4da6237363bf36b81b59aa36a43d28061167ec4acb0d41fc49464e28b9"
-  name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
-  pruneopts = "UT"
-  revision = "74369b46fc6756741c016591724fd1cb8e26845f"
 
 [[projects]]
   branch = "master"
@@ -402,36 +254,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0d703f14f9bbbe1070ff0ce86d749dcbc9d68fb0ae554252c09bd4bb37a072e7"
+  digest = "1:8207c052fb873f83c61a5aa16f6add5feb9881eda2112b56f69fd3b9e7f55c3f"
   name = "golang.org/x/sys"
-  packages = [
-    "unix",
-    "windows",
-  ]
+  packages = ["unix"]
   pruneopts = "UT"
   revision = "983097b1a8a340cd1cc7df17d735154d89e10b1a"
-
-[[projects]]
-  digest = "1:5f6b4da023890e325d29ac3212cada4a2ee006b108ba6c4022b8cee56fee31d1"
-  name = "gopkg.in/godo.v2"
-  packages = [
-    ".",
-    "glob",
-    "util",
-    "watcher",
-    "watcher/fswatch",
-  ]
-  pruneopts = "UT"
-  revision = "b5fd2f0bef1ebe832e628cfad18ab1cc707f65a1"
-  version = "v2.0.9"
-
-[[projects]]
-  digest = "1:e96640e5b9ce93e2d7ee18f48048483080fd23e72e3c38bc17e9c8b77062031a"
-  name = "gopkg.in/inconshreveable/log15.v2"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "67afb5ed74ec82fd7ac8f49d27c509ac6f991970"
-  version = "v2.14"
 
 [[projects]]
   digest = "1:9935525a8c49b8434a0b0a54e1980e94a6fae73aaff45c5d33ba8dff69de123e"
@@ -448,22 +275,10 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/Sirupsen/logrus",
     "github.com/adrianmo/go-nmea",
     "github.com/bettercap/gatt",
-    "github.com/bettercap/gatt/examples/option",
-    "github.com/bettercap/gatt/examples/service",
-    "github.com/bettercap/gatt/linux",
-    "github.com/bettercap/gatt/linux/cmd",
-    "github.com/bettercap/gatt/linux/evt",
-    "github.com/bettercap/gatt/linux/gioctl",
-    "github.com/bettercap/gatt/linux/socket",
-    "github.com/bettercap/gatt/linux/util",
-    "github.com/bettercap/gatt/xpc",
     "github.com/bettercap/readline",
     "github.com/chifflier/nfqueue-go/nfqueue",
-    "github.com/chzyer/readline",
-    "github.com/chzyer/test",
     "github.com/dustin/go-humanize",
     "github.com/elazarl/goproxy",
     "github.com/evilsocket/islazy/data",
@@ -485,19 +300,10 @@
     "github.com/inconshreveable/go-vhost",
     "github.com/jpillora/go-tld",
     "github.com/malfunkt/iprange",
-    "github.com/mattn/go-colorable",
-    "github.com/mattn/go-isatty",
     "github.com/mdlayher/dhcp6",
     "github.com/mdlayher/dhcp6/dhcp6opts",
-    "github.com/mgutz/ansi",
-    "github.com/mgutz/logxi/v1",
-    "github.com/nbutton23/zxcvbn-go",
     "github.com/robertkrimen/otto",
-    "github.com/stretchr/testify/assert",
     "github.com/tarm/serial",
-    "golang.org/x/sys/unix",
-    "gopkg.in/godo.v2",
-    "gopkg.in/inconshreveable/log15.v2",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

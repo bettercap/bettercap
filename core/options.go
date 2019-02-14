@@ -4,7 +4,7 @@ import "flag"
 
 type Options struct {
 	InterfaceName *string
-	Gateway				*string
+	Gateway       *string
 	Caplet        *string
 	AutoStart     *string
 	Debug         *bool
@@ -20,7 +20,7 @@ type Options struct {
 func ParseOptions() (Options, error) {
 	o := Options{
 		InterfaceName: flag.String("iface", "", "Network interface to bind to, if empty the default interface will be auto selected."),
-		Gateway:			 flag.String("gateway-override","","Use the provided IP address instead of the default gateway. If not specified or invalid, the default gateway will be used."),
+		Gateway:       flag.String("gateway-override", "", "Use the provided IP address instead of the default gateway. If not specified or invalid, the default gateway will be used."),
 		AutoStart:     flag.String("autostart", "events.stream, net.recon", "Comma separated list of modules to auto start."),
 		Caplet:        flag.String("caplet", "", "Read commands from this file and execute them in the interactive session."),
 		Debug:         flag.Bool("debug", false, "Print debug messages."),

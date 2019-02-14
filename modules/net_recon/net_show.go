@@ -284,7 +284,7 @@ func (mod *Discovery) showMeta(arg string) (err error) {
 		if len(keys) > 0 {
 			sort.Strings(keys)
 			rows := [][]string{
-				[]string{
+				{
 					tui.Green("address"),
 					t.IP.String(),
 				},
