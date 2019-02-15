@@ -40,14 +40,21 @@ func NewBLEDevice(p gatt.Peripheral, a *gatt.Advertisement, rssi int) *BLEDevice
 	}
 }
 
+func (d *BLEDevice) Name() string {
+	name := d.Device.Name()
+	if name == "" && d.Advertisement != nil {
+		name = d.Advertisement.LocalName
+	}
+	return name
+}
+
 func (d *BLEDevice) MarshalJSON() ([]byte, error) {
 	doc := bleDeviceJSON{
 		LastSeen: d.LastSeen,
-		Name:     d.Device.Name(),
+		Name:     d.Name(),
 		MAC:      d.Device.ID(),
 		Vendor:   d.Vendor,
 		RSSI:     d.RSSI,
 	}
-
 	return json.Marshal(doc)
 }

@@ -19,7 +19,7 @@ var (
 	blePresentInterval = time.Duration(30) * time.Second
 )
 
-func (mod *BLERecon) getRow(dev *network.BLEDevice) []string {
+func (mod *BLERecon) getRow(dev *network.BLEDevice, withName bool) []string {
 	rssi := network.ColorRSSI(dev.RSSI)
 	address := network.NormalizeMac(dev.Device.ID())
 	vendor := tui.Dim(ops.Ternary(dev.Vendor == "", dev.Advertisement.Company, dev.Vendor).(string))
@@ -34,13 +34,25 @@ func (mod *BLERecon) getRow(dev *network.BLEDevice) []string {
 		address = tui.Dim(address)
 	}
 
-	return []string{
-		rssi,
-		address,
-		vendor,
-		dev.Advertisement.Flags.String(),
-		isConnectable,
-		lastSeen,
+	if withName {
+		return []string{
+			rssi,
+			address,
+			dev.Name(),
+			vendor,
+			dev.Advertisement.Flags.String(),
+			isConnectable,
+			lastSeen,
+		}
+	} else {
+		return []string{
+			rssi,
+			address,
+			vendor,
+			dev.Advertisement.Flags.String(),
+			isConnectable,
+			lastSeen,
+		}
 	}
 }
 
@@ -97,15 +109,20 @@ func (mod *BLERecon) doSelection() (err error, devices []*network.BLEDevice) {
 	return
 }
 
-func (mod *BLERecon) colNames() []string {
+func (mod *BLERecon) colNames(withName bool) []string {
 	colNames := []string{"RSSI", "MAC", "Vendor", "Flags", "Connect", "Seen"}
+	seenIdx := 5
+	if withName {
+		colNames = []string{"RSSI", "MAC", "Name", "Vendor", "Flags", "Connect", "Seen"}
+		seenIdx = 6
+	}
 	switch mod.selector.SortField {
 	case "rssi":
 		colNames[0] += " " + mod.selector.SortSymbol
 	case "mac":
 		colNames[1] += " " + mod.selector.SortSymbol
 	case "seen":
-		colNames[5] += " " + mod.selector.SortSymbol
+		colNames[seenIdx] += " " + mod.selector.SortSymbol
 	}
 	return colNames
 }
@@ -116,13 +133,21 @@ func (mod *BLERecon) Show() error {
 		return err
 	}
 
+	hasName := false
+	for _, dev := range devices {
+		if dev.Name() != "" {
+			hasName = true
+			break
+		}
+	}
+
 	rows := make([][]string, 0)
 	for _, dev := range devices {
-		rows = append(rows, mod.getRow(dev))
+		rows = append(rows, mod.getRow(dev, hasName))
 	}
 
 	if len(rows) > 0 {
-		tui.Table(os.Stdout, mod.colNames(), rows)
+		tui.Table(os.Stdout, mod.colNames(hasName), rows)
 		mod.Session.Refresh()
 	}
 
