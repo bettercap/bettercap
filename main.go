@@ -42,28 +42,28 @@ func main() {
 		log.Fatal("%s", err)
 	}
 
+	// Some modules are enabled by default in order
+	// to make the interactive session useful.
+	for _, modName := range str.Comma(*sess.Options.AutoStart) {
+		if err = sess.Run(modName + " on"); err != nil {
+			log.Fatal("error while starting module %s: %s", modName, err)
+		}
+	}
+
 	// Commands sent with -eval are used to set specific
 	// caplet parameters (i.e. arp.spoof.targets) via command
 	// line, therefore they need to be executed first otherwise
 	// modules might already be started.
 	for _, cmd := range session.ParseCommands(*sess.Options.Commands) {
 		if err = sess.Run(cmd); err != nil {
-			log.Error("Error while running '%s': %s", tui.Bold(cmd), tui.Red(err.Error()))
-		}
-	}
-
-	// Some modules are enabled by default in order
-	// to make the interactive session useful.
-	for _, modName := range str.Comma(*sess.Options.AutoStart) {
-		if err = sess.Run(modName + " on"); err != nil {
-			log.Fatal("Error while starting module %s: %s", modName, err)
+			log.Error("error while running '%s': %s", tui.Bold(cmd), tui.Red(err.Error()))
 		}
 	}
 
 	// Then run the caplet if specified.
 	if *sess.Options.Caplet != "" {
 		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
-			log.Error("Error while running caplet %s: %s", tui.Bold(*sess.Options.Caplet), tui.Red(err.Error()))
+			log.Error("error while running caplet %s: %s", tui.Bold(*sess.Options.Caplet), tui.Red(err.Error()))
 		}
 	}
 
