@@ -1,8 +1,8 @@
 package wifi
 
 import (
+	"bytes"
 	"fmt"
-
 	"net"
 	"strconv"
 	"sync"
@@ -18,6 +18,7 @@ import (
 	"github.com/google/gopacket/pcap"
 
 	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/ops"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 )
@@ -381,19 +382,26 @@ func (mod *WiFiModule) Configure() error {
 }
 
 func (mod *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
-	if ok, enc, cipher, auth := packets.Dot11ParseEncryption(packet, dot11); ok {
-		bssid := dot11.Address3.String()
-		if station, found := mod.Session.WiFi.Get(bssid); found {
-			station.Encryption = enc
-			station.Cipher = cipher
-			station.Authentication = auth
+	// avoid parsing info from frames we're sending
+	staMac := ops.Ternary(dot11.Flags.FromDS(), dot11.Address1, dot11.Address2).(net.HardwareAddr)
+	if !bytes.Equal(staMac, mod.Session.Interface.HW) {
+		if ok, enc, cipher, auth := packets.Dot11ParseEncryption(packet, dot11); ok {
+			// Sometimes we get incomplete info about encryption, which
+			// makes stations with encryption enabled switch to OPEN.
+			// Prevent this behaviour by not downgrading the encryption.
+			bssid := dot11.Address3.String()
+			if station, found := mod.Session.WiFi.Get(bssid); found && station.IsOpen() {
+				station.Encryption = enc
+				station.Cipher = cipher
+				station.Authentication = auth
+			}
 		}
-	}
 
-	if ok, bssid, info := packets.Dot11ParseWPS(packet, dot11); ok {
-		if station, found := mod.Session.WiFi.Get(bssid.String()); found {
-			for name, value := range info {
-				station.WPS[name] = value
+		if ok, bssid, info := packets.Dot11ParseWPS(packet, dot11); ok {
+			if station, found := mod.Session.WiFi.Get(bssid.String()); found {
+				for name, value := range info {
+					station.WPS[name] = value
+				}
 			}
 		}
 	}
