@@ -10,7 +10,8 @@ type AccessPoint struct {
 	*Station
 	sync.Mutex
 
-	clients map[string]*Station
+	clients         map[string]*Station
+	withKeyMaterial bool
 }
 
 type apJSON struct {
@@ -104,6 +105,20 @@ func (ap *AccessPoint) EachClient(cb func(mac string, station *Station)) {
 	for m, station := range ap.clients {
 		cb(m, station)
 	}
+}
+
+func (ap *AccessPoint) WithKeyMaterial(state bool) {
+	ap.Lock()
+	defer ap.Unlock()
+
+	ap.withKeyMaterial = state
+}
+
+func (ap *AccessPoint) HasKeyMaterial() bool {
+	ap.Lock()
+	defer ap.Unlock()
+
+	return ap.withKeyMaterial
 }
 
 func (ap *AccessPoint) NumHandshakes() int {
