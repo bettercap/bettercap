@@ -223,7 +223,7 @@ func (s *Session) setHandler(args []string, sess *Session) error {
 	key := args[0]
 	value := args[1]
 
-	if value == "\"\"" {
+	if value == "\"\"" || value == "''" {
 		value = ""
 	}
 
@@ -240,7 +240,7 @@ func (s *Session) readHandler(args []string, sess *Session) error {
 
 	value, _ := reader.ReadString('\n')
 	value = str.Trim(value)
-	if value == "\"\"" {
+	if value == "\"\"" || value == "''" {
 		value = ""
 	}
 

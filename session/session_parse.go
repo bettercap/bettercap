@@ -16,6 +16,7 @@ func ParseCommands(line string) []string {
 	finish := false
 
 	line = strings.Replace(line, `""`, `"<empty>"`, -1)
+	line = strings.Replace(line, `''`, `"<empty>"`, -1)
 	for _, c := range line {
 		switch c {
 		case ';':
