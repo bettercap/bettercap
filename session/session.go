@@ -154,6 +154,51 @@ func (s *Session) Unlock() {
 	s.WiFi.Unlock()
 }
 
+func (s *Session) LANCompleter(prefix string) []string {
+	macs := []string{""}
+	s.Lan.EachHost(func(mac string, e *network.Endpoint) {
+		if prefix == "" || strings.HasPrefix(mac, prefix) {
+			macs = append(macs, mac)
+		}
+	})
+	return macs
+}
+
+func (s *Session) WiFiCompleter(prefix string) []string {
+	macs := []string{""}
+	s.WiFi.EachAccessPoint(func(mac string, ap *network.AccessPoint) {
+		if prefix == "" || strings.HasPrefix(mac, prefix) {
+			macs = append(macs, mac)
+		}
+	})
+	return macs
+}
+
+func (s *Session) WiFiCompleterFull(prefix string) []string {
+	macs := []string{""}
+	s.WiFi.EachAccessPoint(func(mac string, ap *network.AccessPoint) {
+		if prefix == "" || strings.HasPrefix(mac, prefix) {
+			macs = append(macs, mac)
+		}
+		ap.EachClient(func(mac string, c *network.Station) {
+			if prefix == "" || strings.HasPrefix(mac, prefix) {
+				macs = append(macs, mac)
+			}
+		})
+	})
+	return macs
+}
+
+func (s *Session) BLECompleter(prefix string) []string {
+	macs := []string{""}
+	s.BLE.EachDevice(func(mac string, dev *network.BLEDevice) {
+		if prefix == "" || strings.HasPrefix(mac, prefix) {
+			macs = append(macs, mac)
+		}
+	})
+	return macs
+}
+
 func (s *Session) Module(name string) (err error, mod Module) {
 	for _, m := range s.Modules {
 		if m.Name() == name {

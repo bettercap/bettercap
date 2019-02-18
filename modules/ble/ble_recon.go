@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	golog "log"
-	"strings"
 	"time"
 
 	"github.com/bettercap/bettercap/modules/utils"
@@ -77,7 +76,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 			return mod.enumAllTheThings(network.NormalizeMac(args[0]))
 		})
 
-	enum.Complete("ble.enum", mod.macCompleter)
+	enum.Complete("ble.enum", s.BLECompleter)
 
 	mod.AddHandler(enum)
 
@@ -97,7 +96,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 			return mod.writeBuffer(mac, uuid, data)
 		})
 
-	write.Complete("ble.write", mod.macCompleter)
+	write.Complete("ble.write", s.BLECompleter)
 
 	mod.AddHandler(write)
 
@@ -114,16 +113,6 @@ func (mod BLERecon) Description() string {
 
 func (mod BLERecon) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
-}
-
-func (mod *BLERecon) macCompleter(prefix string) []string {
-	macs := []string{""}
-	mod.Session.BLE.EachDevice(func(mac string, dev *network.BLEDevice) {
-		if prefix == "" || strings.HasPrefix(mac, prefix) {
-			macs = append(macs, mac)
-		}
-	})
-	return macs
 }
 
 func (mod *BLERecon) isEnumerating() bool {

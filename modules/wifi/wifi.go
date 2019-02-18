@@ -115,7 +115,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"-200",
 		"Minimum WiFi signal strength in dBm."))
 
-	mod.AddHandler(session.NewModuleHandler("wifi.deauth BSSID", `wifi\.deauth ((?:[a-fA-F0-9:]{11,})|all|\*)`,
+	deauth := session.NewModuleHandler("wifi.deauth BSSID", `wifi\.deauth ((?:[a-fA-F0-9:]{11,})|all|\*)`,
 		"Start a 802.11 deauth attack, if an access point BSSID is provided, every client will be deauthenticated, otherwise only the selected client. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate every access point with at least one client and start a deauth attack for each one.",
 		func(args []string) error {
 			if args[0] == "all" || args[0] == "*" {
@@ -126,7 +126,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				return err
 			}
 			return mod.startDeauth(bssid)
-		}))
+		})
+
+	deauth.Complete("wifi.deauth", s.WiFiCompleterFull)
+
+	mod.AddHandler(deauth)
 
 	mod.AddParam(session.NewStringParameter("wifi.deauth.skip",
 		"",
@@ -141,7 +145,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"true",
 		"Send wifi deauth packets to open networks."))
 
-	mod.AddHandler(session.NewModuleHandler("wifi.assoc BSSID", `wifi\.assoc ((?:[a-fA-F0-9:]{11,})|all|\*)`,
+	assoc := session.NewModuleHandler("wifi.assoc BSSID", `wifi\.assoc ((?:[a-fA-F0-9:]{11,})|all|\*)`,
 		"Send an association request to the selected BSSID in order to receive a RSN PMKID key. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate for every access point.",
 		func(args []string) error {
 			if args[0] == "all" || args[0] == "*" {
@@ -152,7 +156,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				return err
 			}
 			return mod.startAssoc(bssid)
-		}))
+		})
+
+	assoc.Complete("wifi.assoc", s.WiFiCompleter)
+
+	mod.AddHandler(assoc)
 
 	mod.AddParam(session.NewStringParameter("wifi.assoc.skip",
 		"",
