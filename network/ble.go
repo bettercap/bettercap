@@ -95,3 +95,12 @@ func (b *BLE) Devices() (devices []*BLEDevice) {
 	}
 	return
 }
+
+func (b *BLE) EachDevice(cb func(mac string, d *BLEDevice)) {
+	b.Lock()
+	defer b.Unlock()
+
+	for m, dev := range b.devices {
+		cb(m, dev)
+	}
+}

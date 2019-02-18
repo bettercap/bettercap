@@ -38,17 +38,21 @@ func (s *Session) setupReadline() (err error) {
 	tree := make(map[string][]string)
 	for _, m := range s.Modules {
 		for _, h := range m.Handlers() {
-			parts := strings.Split(h.Name, " ")
-			name := parts[0]
+			if h.Completer == nil {
+				parts := strings.Split(h.Name, " ")
+				name := parts[0]
 
-			if _, found := tree[name]; !found {
-				tree[name] = []string{}
-			}
+				if _, found := tree[name]; !found {
+					tree[name] = []string{}
+				}
 
-			var appendedOption = strings.Join(parts[1:], " ")
+				var appendedOption = strings.Join(parts[1:], " ")
 
-			if len(appendedOption) > 0 && !containsCapitals(appendedOption) {
-				tree[name] = append(tree[name], appendedOption)
+				if len(appendedOption) > 0 && !containsCapitals(appendedOption) {
+					tree[name] = append(tree[name], appendedOption)
+				}
+			} else {
+				prefixCompleters = append(prefixCompleters, h.Completer)
 			}
 		}
 	}

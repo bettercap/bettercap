@@ -6,7 +6,10 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
+
+	"github.com/bettercap/readline"
 )
 
 const IPv4Validator = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`
@@ -16,6 +19,7 @@ type ModuleHandler struct {
 	Description string
 	Parser      *regexp.Regexp
 	Exec        func(args []string) error
+	Completer   *readline.PrefixCompleter
 }
 
 func NewModuleHandler(name string, expr string, desc string, exec func(args []string) error) ModuleHandler {
@@ -31,6 +35,13 @@ func NewModuleHandler(name string, expr string, desc string, exec func(args []st
 	}
 
 	return h
+}
+
+func (h *ModuleHandler) Complete(name string, cb func(prefix string) []string) {
+	h.Completer = readline.PcItem(name, readline.PcItemDynamic(func(prefix string) []string {
+		prefix = str.Trim(prefix[len(name):])
+		return cb(prefix)
+	}))
 }
 
 func (h *ModuleHandler) Help(padding int) string {
