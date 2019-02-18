@@ -116,6 +116,13 @@ func NewEventsStream(s *session.Session) *EventsStream {
 			return nil
 		}))
 
+	mod.AddHandler(session.NewModuleHandler("events.filters.clear", "",
+		"Clear the list of filters passed with the events.ignore command.",
+		func(args []string) error {
+			mod.ignoreList = NewIgnoreList()
+			return nil
+		}))
+
 	mod.AddHandler(session.NewModuleHandler("events.clear", "",
 		"Clear events stream.",
 		func(args []string) error {
