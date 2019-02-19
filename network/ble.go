@@ -104,3 +104,9 @@ func (b *BLE) EachDevice(cb func(mac string, d *BLEDevice)) {
 		cb(m, dev)
 	}
 }
+
+func (b *BLE) Clear() {
+	b.Lock()
+	defer b.Unlock()
+	b.devices = make(map[string]*BLEDevice)
+}

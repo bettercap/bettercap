@@ -57,6 +57,13 @@ func NewBLERecon(s *session.Session) *BLERecon {
 			return mod.Stop()
 		}))
 
+	mod.AddHandler(session.NewModuleHandler("ble.clear", "",
+		"Clear all devices collected by the BLE discovery module.",
+		func(args []string) error {
+			mod.Session.BLE.Clear()
+			return nil
+		}))
+
 	mod.AddHandler(session.NewModuleHandler("ble.show", "",
 		"Show discovered Bluetooth Low Energy devices.",
 		func(args []string) error {
