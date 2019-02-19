@@ -1,0 +1,30 @@
+language: go
+dist: trusty
+
+go:
+  - 1.7.x
+  - 1.8.x
+  - 1.9.x
+  - 1.10.x
+  - tip
+
+addons:
+  apt:
+    packages:
+      libusb-1.0-0-dev
+
+install:
+  - go get golang.org/x/tools/cmd/cover
+  # Golint requires Go 1.9 or later.
+  - if ! [[ "$TRAVIS_GO_VERSION" =~ ^1\.7\.([0-9]+|x)$ || "$TRAVIS_GO_VERSION" =~ ^1\.8\.([0-9]+|x)$ ]]; then go get golang.org/x/lint/golint; fi
+  - go get github.com/mattn/goveralls
+
+script:
+  # a workaround for go test not supporting coverage for multiple packages in a single invocation.
+  # If goveralls upload fails, ignore the result.
+  # Golint requires Go 1.9 or later.
+  - if ! [[ "$TRAVIS_GO_VERSION" =~ ^1\.7\.([0-9]+|x)+$ || "$TRAVIS_GO_VERSION" =~ ^1\.8\.([0-9]+|x)$ ]]; then $HOME/gopath/bin/golint ./...; fi
+  - |-
+    echo 'mode: count' > coverage.merged && go list ./... | xargs -n1 -I{} sh -c ': > coverage.tmp; go test -v -covermode=count -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.merged' && rm coverage.tmp
+  - |-
+    $HOME/gopath/bin/goveralls -coverprofile=coverage.merged -service=travis-ci -ignore libusb.go,error.go || true

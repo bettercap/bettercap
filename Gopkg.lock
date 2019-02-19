@@ -27,6 +27,14 @@
   revision = "1353e80bee488dc02d1f7e42759c1352492bf18b"
 
 [[projects]]
+  branch = "master"
+  digest = "1:c93fdd8820c13c2e2000d3064c510dde1397edca5ca1533fd15943402dab92b0"
+  name = "github.com/bettercap/nrf24"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "aa37e6d0e0eb125cee9ec71ed694db2ad58b509a"
+
+[[projects]]
   digest = "1:b95738a1e6ace058b5b8544303c0871fc01d224ef0d672f778f696265d0f2917"
   name = "github.com/bettercap/readline"
   packages = ["."]
@@ -119,6 +127,14 @@
   ]
   pruneopts = "UT"
   revision = "v1.1.16"
+
+[[projects]]
+  branch = "master"
+  digest = "1:2ef895ea08a0af10ad6f1e1faf631c82fa5413dcf0ada93eb62ab5ad02df4979"
+  name = "github.com/google/gousb"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d0c05ab7f70d6f6dc60ecd184517cb5e25860657"
 
 [[projects]]
   digest = "1:ca59b1175189b3f0e9f1793d2c350114be36eaabbe5b9f554b35edee1de50aea"
@@ -277,6 +293,7 @@
   input-imports = [
     "github.com/adrianmo/go-nmea",
     "github.com/bettercap/gatt",
+    "github.com/bettercap/nrf24",
     "github.com/bettercap/readline",
     "github.com/chifflier/nfqueue-go/nfqueue",
     "github.com/dustin/go-humanize",
