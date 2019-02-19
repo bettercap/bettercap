@@ -30,6 +30,13 @@ func NewDiscovery(s *session.Session) *Discovery {
 			return mod.Stop()
 		}))
 
+	mod.AddHandler(session.NewModuleHandler("net.clear", "",
+		"Clear all endpoints collected by the hosts discovery module.",
+		func(args []string) error {
+			mod.Session.Lan.Clear()
+			return nil
+		}))
+
 	mod.AddParam(session.NewBoolParameter("net.show.meta",
 		"false",
 		"If true, the net.show command will show all metadata collected about each endpoint."))

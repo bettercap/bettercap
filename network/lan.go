@@ -229,3 +229,10 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 func (lan *LAN) GetAlias(mac string) string {
 	return lan.aliases.GetOr(mac, "")
 }
+
+func (lan *LAN) Clear() {
+	lan.Lock()
+	defer lan.Unlock()
+	lan.hosts = make(map[string]*Endpoint)
+	lan.ttl = make(map[string]uint)
+}
