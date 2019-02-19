@@ -264,11 +264,29 @@ func FindInterface(name string) (*Endpoint, error) {
 	return nil, ErrNoIfaces
 }
 
+func SetWiFiRegion(region string) error {
+	if out, err := core.Exec("iw", []string{"reg", "set", region}); err != nil {
+		return err
+	} else if out != "" {
+		return fmt.Errorf("unexpected output while setting WiFi region %s: %s", region, out)
+	}
+	return nil
+}
+
 func ActivateInterface(name string) error {
 	if out, err := core.Exec("ifconfig", []string{name, "up"}); err != nil {
 		return err
 	} else if out != "" {
 		return fmt.Errorf("unexpected output while activating interface %s: %s", name, out)
+	}
+	return nil
+}
+
+func SetInterfaceTxPower(name string, txpower int) error {
+	if out, err := core.ExecSilent("iwconfig", []string{name, "txpower", fmt.Sprintf("%d", txpower)}); err != nil {
+		return err
+	} else if out != "" {
+		return fmt.Errorf("unexpected output while setting txpower to %d for interface %s: %s", txpower, name, out)
 	}
 	return nil
 }

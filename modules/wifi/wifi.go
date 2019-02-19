@@ -28,6 +28,8 @@ type WiFiModule struct {
 
 	handle              *pcap.Handle
 	source              string
+	region              string
+	txPower             int
 	minRSSI             int
 	channel             int
 	hopPeriod           time.Duration
@@ -168,6 +170,15 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	assoc.Complete("wifi.assoc", s.WiFiCompleter)
 
 	mod.AddHandler(assoc)
+
+	mod.AddParam(session.NewStringParameter("wifi.region",
+		"BO",
+		"",
+		"Set the WiFi region to this value before activating the interface."))
+
+	mod.AddParam(session.NewIntParameter("wifi.txpower",
+		"30",
+		"Set WiFi transmission power to this value before activating the interface."))
 
 	mod.AddParam(session.NewStringParameter("wifi.assoc.skip",
 		"",
@@ -310,7 +321,13 @@ func (mod *WiFiModule) Configure() error {
 	var hopPeriod int
 	var err error
 
-	if err, mod.source = mod.StringParam("wifi.source.file"); err != nil {
+	if err, mod.region = mod.StringParam("wifi.region"); err != nil {
+		return err
+	} else if err, mod.txPower = mod.IntParam("wifi.txpower"); err != nil {
+		return err
+	} else if err, mod.source = mod.StringParam("wifi.source.file"); err != nil {
+		return err
+	} else if err, mod.minRSSI = mod.IntParam("wifi.rssi.min"); err != nil {
 		return err
 	}
 
@@ -322,17 +339,28 @@ func (mod *WiFiModule) Configure() error {
 		}
 	}
 
-	if err, mod.minRSSI = mod.IntParam("wifi.rssi.min"); err != nil {
-		return err
-	}
-
 	ifName := mod.Session.Interface.Name()
-
 	if mod.source != "" {
 		if mod.handle, err = pcap.OpenOffline(mod.source); err != nil {
 			return fmt.Errorf("error while opening file %s: %s", mod.source, err)
 		}
 	} else {
+		if mod.region != "" {
+			if err := network.SetWiFiRegion(mod.region); err != nil {
+				return err
+			} else {
+				mod.Info("WiFi region set to '%s'", mod.region)
+			}
+		}
+
+		if mod.txPower > 0 {
+			if err := network.SetInterfaceTxPower(ifName, mod.txPower); err != nil {
+				mod.Warning("could not set interface %s txpower to %d, 'Set Tx Power' requests not supported", ifName, mod.txPower)
+			} else {
+				mod.Info("interface %s txpower set to %d", ifName, mod.txPower)
+			}
+		}
+
 		for retry := 0; ; retry++ {
 			ihandle, err := pcap.NewInactiveHandle(ifName)
 			if err != nil {
