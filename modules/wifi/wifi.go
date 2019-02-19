@@ -87,6 +87,13 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			return mod.Stop()
 		}))
 
+	mod.AddHandler(session.NewModuleHandler("wifi.clear", "",
+		"Clear all access points collected by the WiFi discovery module.",
+		func(args []string) error {
+			mod.Session.WiFi.Clear()
+			return nil
+		}))
+
 	mod.AddHandler(session.NewModuleHandler("wifi.recon MAC", "wifi.recon ((?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2}))",
 		"Set 802.11 base station address to filter for.",
 		func(args []string) error {

@@ -179,9 +179,10 @@ func (w *WiFi) GetClient(mac string) (*Station, bool) {
 	return nil, false
 }
 
-func (w *WiFi) Clear() error {
+func (w *WiFi) Clear() {
+	w.Lock()
+	defer w.Unlock()
 	w.aps = make(map[string]*AccessPoint)
-	return nil
 }
 
 func (w *WiFi) NumHandshakes() int {
