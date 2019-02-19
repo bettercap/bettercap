@@ -81,6 +81,7 @@ type Session struct {
 	Lan       *network.LAN      `json:"lan"`
 	WiFi      *network.WiFi     `json:"wifi"`
 	BLE       *network.BLE      `json:"ble"`
+	HID       *network.HID      `json:"hid"`
 	Queue     *packets.Queue    `json:"packets"`
 	StartedAt time.Time         `json:"started_at"`
 	Active    bool              `json:"active"`
@@ -199,6 +200,16 @@ func (s *Session) BLECompleter(prefix string) []string {
 	return macs
 }
 
+func (s *Session) HIDCompleter(prefix string) []string {
+	macs := []string{""}
+	s.HID.EachDevice(func(mac string, dev *network.HIDDevice) {
+		if prefix == "" || strings.HasPrefix(mac, prefix) {
+			macs = append(macs, mac)
+		}
+	})
+	return macs
+}
+
 func (s *Session) Module(name string) (err error, mod Module) {
 	for _, m := range s.Modules {
 		if m.Name() == name {
@@ -291,6 +302,12 @@ func (s *Session) Start() error {
 	}
 
 	s.Firewall = firewall.Make(s.Interface)
+
+	s.HID = network.NewHID(func(dev *network.HIDDevice) {
+		s.Events.Add("hid.device.new", dev)
+	}, func(dev *network.HIDDevice) {
+		s.Events.Add("hid.device.lost", dev)
+	})
 
 	s.BLE = network.NewBLE(func(dev *network.BLEDevice) {
 		s.Events.Add("ble.device.new", dev)

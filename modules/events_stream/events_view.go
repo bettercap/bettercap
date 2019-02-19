@@ -160,6 +160,8 @@ func (mod *EventsStream) View(e session.Event, refresh bool) {
 		mod.viewWiFiEvent(e)
 	} else if strings.HasPrefix(e.Tag, "ble.") {
 		mod.viewBLEEvent(e)
+	} else if strings.HasPrefix(e.Tag, "hid.") {
+		mod.viewHIDEvent(e)
 	} else if strings.HasPrefix(e.Tag, "mod.") {
 		mod.viewModuleEvent(e)
 	} else if strings.HasPrefix(e.Tag, "net.sniff.") {
