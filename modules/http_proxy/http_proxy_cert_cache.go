@@ -11,23 +11,21 @@ var (
 	certLock  = &sync.Mutex{}
 )
 
-func getCachedCert(domain string, port int) *tls.Certificate {
-	key := fmt.Sprintf("%s:%d", domain, port)
+func keyFor(domain string, port int) string {
+	return fmt.Sprintf("%s:%d", domain, port)
+}
 
+func getCachedCert(domain string, port int) *tls.Certificate {
 	certLock.Lock()
 	defer certLock.Unlock()
-
-	if cert, found := certCache[key]; found {
+	if cert, found := certCache[keyFor(domain, port)]; found {
 		return cert
 	}
 	return nil
 }
 
 func setCachedCert(domain string, port int, cert *tls.Certificate) {
-	key := fmt.Sprintf("%s:%d", domain, port)
-
 	certLock.Lock()
 	defer certLock.Unlock()
-
-	certCache[key] = cert
+	certCache[keyFor(domain, port)] = cert
 }

@@ -211,7 +211,7 @@ func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *
 
 		cert := getCachedCert(hostname, port)
 		if cert == nil {
-			p.Debug("creating spoofed certificate for %s:%d", tui.Yellow(hostname), port)
+			p.Info("creating spoofed certificate for %s:%d", tui.Yellow(hostname), port)
 			cert, err = btls.SignCertificateForHost(ca, hostname, port)
 			if err != nil {
 				p.Warning("cannot sign host certificate with provided CA: %s", err)
@@ -219,6 +219,8 @@ func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *
 			}
 
 			setCachedCert(hostname, port, cert)
+		} else {
+			p.Debug("serving spoofed certificate for %s:%d", tui.Yellow(hostname), port)
 		}
 
 		config := tls.Config{
