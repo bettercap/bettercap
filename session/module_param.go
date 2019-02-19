@@ -115,11 +115,6 @@ func (p ModuleParam) Get(s *Session) (error, interface{}) {
 	return p.Validate(v)
 }
 
-func (p ModuleParam) Dump(padding int) string {
-	return fmt.Sprintf("  "+tui.YELLOW+"%"+strconv.Itoa(padding)+"s"+tui.RESET+
-		" : %s\n", p.Name, p.Value)
-}
-
 func (p ModuleParam) Help(padding int) string {
 	return fmt.Sprintf("  "+tui.YELLOW+"%"+strconv.Itoa(padding)+"s"+tui.RESET+
 		" : "+
