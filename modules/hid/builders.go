@@ -10,4 +10,5 @@ type FrameBuilder interface {
 
 var FrameBuilders = map[network.HIDType]FrameBuilder{
 	network.HIDTypeLogitech: LogitechBuilder{},
+	network.HIDTypeAmazon:   AmazonBuilder{},
 }

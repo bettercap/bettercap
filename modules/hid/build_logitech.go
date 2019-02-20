@@ -1,7 +1,7 @@
 package hid
 
 const (
-	frameDelay = 12
+	ltFrameDelay = 12
 )
 
 var (
@@ -31,7 +31,7 @@ func (b LogitechBuilder) BuildFrames(commands []*Command) error {
 	numCommands := len(commands)
 	for i, cmd := range commands {
 		if i == 0 {
-			cmd.AddFrame(helloData, frameDelay)
+			cmd.AddFrame(helloData, ltFrameDelay)
 		}
 
 		next := (*Command)(nil)
@@ -40,7 +40,7 @@ func (b LogitechBuilder) BuildFrames(commands []*Command) error {
 		}
 
 		if cmd.IsHID() {
-			cmd.AddFrame(b.frameFor(cmd), frameDelay)
+			cmd.AddFrame(b.frameFor(cmd), ltFrameDelay)
 			cmd.AddFrame(keepAliveData, 0)
 			if next == nil || cmd.HID == next.HID || next.IsSleep() {
 				cmd.AddFrame(b.frameFor(&Command{}), 0)
