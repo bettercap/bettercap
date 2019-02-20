@@ -1,5 +1,9 @@
 package hid
 
+import (
+	"github.com/bettercap/bettercap/network"
+)
+
 const (
 	ltFrameDelay = 12
 )
@@ -27,15 +31,15 @@ func (b LogitechBuilder) frameFor(cmd *Command) []byte {
 	return data
 }
 
-func (b LogitechBuilder) BuildFrames(commands []*Command) error {
-	numCommands := len(commands)
+func (b LogitechBuilder) BuildFrames(dev *network.HIDDevice, commands []*Command) error {
+	last := len(commands) - 1
 	for i, cmd := range commands {
 		if i == 0 {
 			cmd.AddFrame(helloData, ltFrameDelay)
 		}
 
 		next := (*Command)(nil)
-		if i < numCommands-1 {
+		if i < last {
 			next = commands[i+1]
 		}
 

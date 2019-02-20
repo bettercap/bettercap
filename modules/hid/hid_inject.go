@@ -73,7 +73,7 @@ func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
 	mod.Info("%s loaded ...", mod.scriptPath)
 
 	// build the protocol specific frames to send
-	if err := builder.BuildFrames(cmds); err != nil {
+	if err := builder.BuildFrames(dev, cmds); err != nil {
 		return err, nil, nil
 	}
 

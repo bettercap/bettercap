@@ -147,6 +147,17 @@ func (dev *HIDDevice) AddPayload(payload []byte) {
 	}
 }
 
+func (dev *HIDDevice) EachPayload(cb func([]byte) bool) {
+	dev.Lock()
+	defer dev.Unlock()
+
+	for _, payload := range dev.payloads {
+		if done := cb(payload); done {
+			break
+		}
+	}
+}
+
 func (dev *HIDDevice) NumPayloads() int {
 	dev.Lock()
 	defer dev.Unlock()
