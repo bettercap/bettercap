@@ -35,6 +35,15 @@ type HIDRecon struct {
 	selector     *utils.ViewSelector
 }
 
+/*
+TODO:
+
+- parse all Durations as parameters
+- make session.Session.HID JSON serializable for the API
+- fix compilation for unsupported platforms
+- update docs
+- test test test
+*/
 func NewHIDRecon(s *session.Session) *HIDRecon {
 	mod := &HIDRecon{
 		SessionModule: session.NewSessionModule("hid", s),
