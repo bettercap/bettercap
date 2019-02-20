@@ -1,17 +1,13 @@
 package hid_recon
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/bettercap/bettercap/modules/utils"
-	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/bettercap/nrf24"
-
-	"github.com/evilsocket/islazy/tui"
 )
 
 type HIDRecon struct {
@@ -31,7 +27,8 @@ type HIDRecon struct {
 	pingPayload  []byte
 	inSniffMode  bool
 	inPromMode   bool
-	keyMap       string
+	inInjectMode bool
+	keyLayout    string
 	selector     *utils.ViewSelector
 }
 
@@ -51,8 +48,9 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		sniffAddr:     "",
 		inSniffMode:   false,
 		inPromMode:    false,
+		inInjectMode:  false,
 		pingPayload:   []byte{0x0f, 0x0f, 0x0f, 0x0f},
-		keyMap:        "us",
+		keyLayout:     "US",
 	}
 
 	mod.AddHandler(session.NewModuleHandler("hid.recon on", "",
@@ -82,6 +80,16 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		func(args []string) error {
 			return mod.Show()
 		}))
+
+	inject := session.NewModuleHandler("hid.inject ADDRESS", `(?i)^hid\.inject ([a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2})$`,
+		"TODO TODO",
+		func(args []string) error {
+			return mod.setInjectionMode(args[0])
+		})
+
+	inject.Complete("hid.inject", s.HIDCompleter)
+
+	mod.AddHandler(inject)
 
 	mod.selector = utils.ViewSelectorFor(&mod.SessionModule, "hid.show", []string{"mac", "seen"}, "mac desc")
 
@@ -119,33 +127,6 @@ func (mod *HIDRecon) Configure() error {
 	return nil
 }
 
-func (mod *HIDRecon) setSniffMode(mode string) error {
-	mod.sniffLock.Lock()
-	defer mod.sniffLock.Unlock()
-
-	mod.inSniffMode = false
-	if mode == "clear" {
-		mod.Debug("restoring recon mode")
-		mod.sniffAddrRaw = nil
-		mod.sniffAddr = ""
-	} else {
-		if err, raw := nrf24.ConvertAddress(mode); err != nil {
-			return err
-		} else {
-			mod.Info("sniffing device %s ...", tui.Bold(mode))
-			mod.sniffAddr = network.NormalizeHIDAddress(mode)
-			mod.sniffAddrRaw = raw
-		}
-	}
-	return nil
-}
-
-func (mod *HIDRecon) isSniffing() bool {
-	mod.sniffLock.Lock()
-	defer mod.sniffLock.Unlock()
-	return mod.sniffAddrRaw != nil
-}
-
 func (mod *HIDRecon) doHopping() {
 	if mod.inPromMode == false {
 		if err := mod.dongle.EnterPromiscMode(); err != nil {
@@ -153,7 +134,7 @@ func (mod *HIDRecon) doHopping() {
 		} else {
 			mod.inSniffMode = false
 			mod.inPromMode = true
-			mod.Info("device entered promiscuous mode")
+			mod.Debug("device entered promiscuous mode")
 		}
 	}
 
@@ -170,103 +151,6 @@ func (mod *HIDRecon) doHopping() {
 	}
 }
 
-func (mod *HIDRecon) doPing() {
-	if mod.inSniffMode == false {
-		if err := mod.dongle.EnterSnifferModeFor(mod.sniffAddrRaw); err != nil {
-			mod.Error("error entering sniffer mode for %s: %v", mod.sniffAddr, err)
-		} else {
-			mod.inSniffMode = true
-			mod.inPromMode = false
-			mod.Info("device entered sniffer mode for %s", mod.sniffAddr)
-		}
-	}
-
-	if time.Since(mod.lastPing) >= mod.pingPeriod {
-		// try on the current channel first
-		if err := mod.dongle.TransmitPayload(mod.pingPayload, 250, 1); err != nil {
-			for mod.channel = 1; mod.channel <= nrf24.TopChannel; mod.channel++ {
-				if err := mod.dongle.SetChannel(mod.channel); err != nil {
-					mod.Error("error setting channel %d: %v", mod.channel, err)
-				} else if err = mod.dongle.TransmitPayload(mod.pingPayload, 250, 1); err == nil {
-					mod.lastPing = time.Now()
-					return
-				}
-			}
-		}
-	}
-
-	dev, found := mod.Session.HID.Get(mod.sniffAddr)
-	if found == false {
-		mod.Warning("could not find HID device %s", mod.sniffAddr)
-		return
-	}
-
-	builder, found := FrameBuilders[dev.Type]
-	if found == false {
-		mod.Warning("HID frame injection is not supported for device type %s", dev.Type.String())
-		return
-	}
-
-	str := "hello world"
-	cmds := make([]Command, 0)
-	keyMap := KeyMapFor(mod.keyMap)
-	if keyMap == nil {
-		mod.Warning("could not find keymap for '%s' layout", mod.keyMap)
-		return
-	}
-
-	for _, c := range str {
-		ch := fmt.Sprintf("%c", c)
-		if m, found := keyMap[ch]; found {
-			cmds = append(cmds, Command{
-				Char: ch,
-				HID:  m.HID,
-				Mode: m.Mode,
-			})
-		} else {
-			mod.Warning("could not find HID command for '%c'", ch)
-			return
-		}
-	}
-
-	builder.BuildFrames(cmds)
-
-	mod.Info("injecting %d HID commands ...", len(cmds))
-
-	numFrames := 0
-	szFrames := 0
-
-	for i, cmd := range cmds {
-		for j, frame := range cmd.Frames {
-			numFrames++
-			if err := mod.dongle.TransmitPayload(frame, 250, 1); err != nil {
-				mod.Error("error sending frame #%d of HID command #%d: %v", j, i, err)
-				return
-			} else if cmd.Sleep > 0 {
-				szFrames += len(frame)
-				mod.Debug("sleeping %dms after frame #%d of command #%d ...", cmd.Sleep, j, i)
-				time.Sleep(time.Duration(cmd.Sleep) * time.Millisecond)
-			}
-		}
-	}
-
-	mod.Info("send %d frames for %d bytes total", numFrames, szFrames)
-}
-
-func (mod *HIDRecon) onSniffedBuffer(buf []byte) {
-	if sz := len(buf); sz > 0 && buf[0] == 0x00 {
-		buf = buf[1:]
-		mod.Debug("sniffed payload %x for %s", buf, mod.sniffAddr)
-		if dev, found := mod.Session.HID.Get(mod.sniffAddr); found {
-			dev.LastSeen = time.Now()
-			dev.AddPayload(buf)
-			dev.AddChannel(mod.channel)
-		} else {
-			mod.Warning("got a payload for unknown device %s", mod.sniffAddr)
-		}
-	}
-}
-
 func (mod *HIDRecon) onDeviceDetected(buf []byte) {
 	if sz := len(buf); sz >= 5 {
 		addr, payload := buf[0:5], buf[5:]
@@ -274,17 +158,20 @@ func (mod *HIDRecon) onDeviceDetected(buf []byte) {
 		if isNew, dev := mod.Session.HID.AddIfNew(addr, mod.channel, payload); isNew {
 			// sniff for a while in order to detect the device type
 			go func() {
-				defer func() {
-					mod.sniffLock.Unlock()
-					mod.setSniffMode("clear")
-				}()
+				if err := mod.setSniffMode(dev.Address); err == nil {
+					mod.Debug("detecting device type ...")
+					defer func() {
+						mod.sniffLock.Unlock()
+						mod.setSniffMode("clear")
+					}()
+					// make sure nobody can sniff to another
+					// address until we're not done here...
+					mod.sniffLock.Lock()
 
-				mod.setSniffMode(dev.Address)
-				// make sure nobody can sniff to another
-				// address until we're not done here...
-				mod.sniffLock.Lock()
-
-				time.Sleep(mod.sniffPeriod)
+					time.Sleep(mod.sniffPeriod)
+				} else {
+					mod.Warning("error while sniffing %s: %v", dev.Address, err)
+				}
 			}()
 		}
 	}
@@ -305,6 +192,12 @@ func (mod *HIDRecon) Start() error {
 				mod.doPing()
 			} else {
 				mod.doHopping()
+			}
+
+			if mod.isInjecting() {
+				mod.doInjection()
+				mod.setInjectionMode("clear")
+				continue
 			}
 
 			buf, err := mod.dongle.ReceivePayload()
