@@ -140,7 +140,7 @@ func (mod *HIDRecon) Configure() error {
 
 	if mod.useLNA {
 		if err = mod.dongle.EnableLNA(); err != nil {
-			return err
+			return fmt.Errorf("make sure your device supports LNA, otherwise set hid.lna to false and retry: %s", err)
 		}
 		mod.Debug("LNA enabled")
 	}

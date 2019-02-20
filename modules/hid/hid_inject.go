@@ -27,7 +27,7 @@ func (mod *HIDRecon) setInjectionMode(address string) error {
 }
 
 func errNoDevice(addr string) error {
-	return fmt.Errorf("HID device %s not found, make sure that hid.recon is on and that device has been discovered", addr)
+	return fmt.Errorf("HID device %s not found, make sure that hid.recon is on and that this device has been discovered", addr)
 }
 
 func errNoType(addr string) error {
