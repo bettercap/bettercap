@@ -1,6 +1,7 @@
 package hid_recon
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -30,6 +31,7 @@ type HIDRecon struct {
 	pingPayload  []byte
 	inSniffMode  bool
 	inPromMode   bool
+	keyMap       string
 	selector     *utils.ViewSelector
 }
 
@@ -50,6 +52,7 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		inSniffMode:   false,
 		inPromMode:    false,
 		pingPayload:   []byte{0x0f, 0x0f, 0x0f, 0x0f},
+		keyMap:        "us",
 	}
 
 	mod.AddHandler(session.NewModuleHandler("hid.recon on", "",
@@ -137,6 +140,12 @@ func (mod *HIDRecon) setSniffMode(mode string) error {
 	return nil
 }
 
+func (mod *HIDRecon) isSniffing() bool {
+	mod.sniffLock.Lock()
+	defer mod.sniffLock.Unlock()
+	return mod.sniffAddrRaw != nil
+}
+
 func (mod *HIDRecon) doHopping() {
 	if mod.inPromMode == false {
 		if err := mod.dongle.EnterPromiscMode(); err != nil {
@@ -185,6 +194,100 @@ func (mod *HIDRecon) doPing() {
 			}
 		}
 	}
+
+	dev, found := mod.Session.HID.Get(mod.sniffAddr)
+	if found == false {
+		mod.Warning("could not find HID device %s", mod.sniffAddr)
+		return
+	}
+
+	builder, found := FrameBuilders[dev.Type]
+	if found == false {
+		mod.Warning("HID frame injection is not supported for device type %s", dev.Type.String())
+		return
+	}
+
+	str := "hello world"
+	cmds := make([]Command, 0)
+	keyMap := KeyMapFor(mod.keyMap)
+	if keyMap == nil {
+		mod.Warning("could not find keymap for '%s' layout", mod.keyMap)
+		return
+	}
+
+	for _, c := range str {
+		ch := fmt.Sprintf("%c", c)
+		if m, found := keyMap[ch]; found {
+			cmds = append(cmds, Command{
+				Char: ch,
+				HID:  m.HID,
+				Mode: m.Mode,
+			})
+		} else {
+			mod.Warning("could not find HID command for '%c'", ch)
+			return
+		}
+	}
+
+	builder.BuildFrames(cmds)
+
+	mod.Info("injecting %d HID commands ...", len(cmds))
+
+	numFrames := 0
+	szFrames := 0
+
+	for i, cmd := range cmds {
+		for j, frame := range cmd.Frames {
+			numFrames++
+			if err := mod.dongle.TransmitPayload(frame, 250, 1); err != nil {
+				mod.Error("error sending frame #%d of HID command #%d: %v", j, i, err)
+				return
+			} else if cmd.Sleep > 0 {
+				szFrames += len(frame)
+				mod.Debug("sleeping %dms after frame #%d of command #%d ...", cmd.Sleep, j, i)
+				time.Sleep(time.Duration(cmd.Sleep) * time.Millisecond)
+			}
+		}
+	}
+
+	mod.Info("send %d frames for %d bytes total", numFrames, szFrames)
+}
+
+func (mod *HIDRecon) onSniffedBuffer(buf []byte) {
+	if sz := len(buf); sz > 0 && buf[0] == 0x00 {
+		buf = buf[1:]
+		mod.Debug("sniffed payload %x for %s", buf, mod.sniffAddr)
+		if dev, found := mod.Session.HID.Get(mod.sniffAddr); found {
+			dev.LastSeen = time.Now()
+			dev.AddPayload(buf)
+			dev.AddChannel(mod.channel)
+		} else {
+			mod.Warning("got a payload for unknown device %s", mod.sniffAddr)
+		}
+	}
+}
+
+func (mod *HIDRecon) onDeviceDetected(buf []byte) {
+	if sz := len(buf); sz >= 5 {
+		addr, payload := buf[0:5], buf[5:]
+		mod.Debug("detected device %x on channel %d (payload:%x)\n", addr, mod.channel, payload)
+		if isNew, dev := mod.Session.HID.AddIfNew(addr, mod.channel, payload); isNew {
+			// sniff for a while in order to detect the device type
+			go func() {
+				defer func() {
+					mod.sniffLock.Unlock()
+					mod.setSniffMode("clear")
+				}()
+
+				mod.setSniffMode(dev.Address)
+				// make sure nobody can sniff to another
+				// address until we're not done here...
+				mod.sniffLock.Lock()
+
+				time.Sleep(mod.sniffPeriod)
+			}()
+		}
+	}
 }
 
 func (mod *HIDRecon) Start() error {
@@ -198,11 +301,10 @@ func (mod *HIDRecon) Start() error {
 
 		mod.Info("hopping on %d channels every %s", nrf24.TopChannel, mod.hopPeriod)
 		for mod.Running() {
-			isSniffing := mod.sniffAddrRaw != nil
-			if !isSniffing {
-				mod.doHopping()
-			} else {
+			if mod.isSniffing() {
 				mod.doPing()
+			} else {
+				mod.doHopping()
 			}
 
 			buf, err := mod.dongle.ReceivePayload()
@@ -211,41 +313,10 @@ func (mod *HIDRecon) Start() error {
 				continue
 			}
 
-			sz := len(buf)
-			if isSniffing {
-				if sz > 0 && buf[0] == 0x00 {
-					buf = buf[1:]
-					mod.Debug("sniffed payload %x for %s", buf, mod.sniffAddr)
-
-					if dev, found := mod.Session.HID.Get(mod.sniffAddr); found {
-						dev.LastSeen = time.Now()
-						dev.AddPayload(buf)
-						dev.AddChannel(mod.channel)
-					} else {
-						mod.Warning("got a payload for unknown device %s", mod.sniffAddr)
-					}
-				}
+			if mod.isSniffing() {
+				mod.onSniffedBuffer(buf)
 			} else {
-				if sz >= 5 {
-					addr, payload := buf[0:5], buf[5:]
-					mod.Debug("detected device %x on channel %d (payload:%x)\n", addr, mod.channel, payload)
-					if isNew, dev := mod.Session.HID.AddIfNew(addr, mod.channel, payload); isNew {
-						// sniff for a while in order to detect the device type
-						go func() {
-							defer func() {
-								mod.sniffLock.Unlock()
-								mod.setSniffMode("clear")
-							}()
-
-							mod.setSniffMode(dev.Address)
-							// make sure nobody can sniff to another
-							// address until we're not done here...
-							mod.sniffLock.Lock()
-
-							time.Sleep(mod.sniffPeriod)
-						}()
-					}
-				}
+				mod.onDeviceDetected(buf)
 			}
 		}
 
