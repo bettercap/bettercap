@@ -1,4 +1,4 @@
-package hid_recon
+package hid
 
 import (
 	"sort"

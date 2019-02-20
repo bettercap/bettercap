@@ -1,4 +1,4 @@
-package hid_recon
+package hid
 
 import (
 	"fmt"
@@ -43,11 +43,13 @@ func errNoKeyMap(layout string) error {
 }
 
 func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
+	// we can only inject onto visible connections
 	dev, found := mod.Session.HID.Get(mod.sniffAddr)
 	if found == false {
 		return errNoDevice(mod.sniffAddr), nil, nil
 	}
 
+	// get the device specific protocol handler
 	builder, found := FrameBuilders[dev.Type]
 	if found == false {
 		if dev.Type == network.HIDTypeUnknown {
@@ -56,24 +58,21 @@ func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
 		return errNotSupported(dev), nil, nil
 	}
 
-	keyLayout := KeyMapFor(mod.keyLayout)
-	if keyLayout == nil {
+	// get the keymap from the selected layout
+	keyMap := KeyMapFor(mod.keyLayout)
+	if keyMap == nil {
 		return errNoKeyMap(mod.keyLayout), nil, nil
 	}
 
-	str := "hello world from bettercap ^_^"
-	cmds := make([]*Command, 0)
-	for _, c := range str {
-		if m, found := keyLayout[string(c)]; found {
-			cmds = append(cmds, &Command{
-				HID:  m.HID,
-				Mode: m.Mode,
-			})
-		} else {
-			return fmt.Errorf("could not find HID command for '%c'", c), nil, nil
-		}
+	// parse the script into a list of Command objects
+	cmds, err := mod.parser.Parse(keyMap, mod.scriptPath)
+	if err != nil {
+		return err, nil, nil
 	}
 
+	mod.Info("%s loaded ...", mod.scriptPath)
+
+	// build the protocol specific frames to send
 	if err := builder.BuildFrames(cmds); err != nil {
 		return err, nil, nil
 	}

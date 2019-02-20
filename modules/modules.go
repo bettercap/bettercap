@@ -10,7 +10,7 @@ import (
 	"github.com/bettercap/bettercap/modules/dns_spoof"
 	"github.com/bettercap/bettercap/modules/events_stream"
 	"github.com/bettercap/bettercap/modules/gps"
-	"github.com/bettercap/bettercap/modules/hid_recon"
+	"github.com/bettercap/bettercap/modules/hid"
 	"github.com/bettercap/bettercap/modules/http_proxy"
 	"github.com/bettercap/bettercap/modules/http_server"
 	"github.com/bettercap/bettercap/modules/https_proxy"
@@ -57,5 +57,5 @@ func LoadModules(sess *session.Session) {
 	sess.Register(update.NewUpdateModule(sess))
 	sess.Register(wifi.NewWiFiModule(sess))
 	sess.Register(wol.NewWOL(sess))
-	sess.Register(hid_recon.NewHIDRecon(sess))
+	sess.Register(hid.NewHIDRecon(sess))
 }

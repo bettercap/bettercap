@@ -1,6 +1,7 @@
-package hid_recon
+package hid
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -29,12 +30,14 @@ type HIDRecon struct {
 	inPromMode   bool
 	inInjectMode bool
 	keyLayout    string
+	scriptPath   string
+	parser       DuckyParser
 	selector     *utils.ViewSelector
 }
 
 func NewHIDRecon(s *session.Session) *HIDRecon {
 	mod := &HIDRecon{
-		SessionModule: session.NewSessionModule("hid.recon", s),
+		SessionModule: session.NewSessionModule("hid", s),
 		waitGroup:     &sync.WaitGroup{},
 		sniffLock:     &sync.Mutex{},
 		hopPeriod:     100 * time.Millisecond,
@@ -51,68 +54,86 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		inInjectMode:  false,
 		pingPayload:   []byte{0x0f, 0x0f, 0x0f, 0x0f},
 		keyLayout:     "US",
+		scriptPath:    "",
 	}
 
 	mod.AddHandler(session.NewModuleHandler("hid.recon on", "",
-		"Start HID recon.",
+		"Start scanning for HID devices on the 2.4Ghz spectrum.",
 		func(args []string) error {
 			return mod.Start()
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("hid.recon off", "",
-		"Stop HID recon.",
+		"Stop scanning for HID devices on the 2.4Ghz spectrum.",
 		func(args []string) error {
 			return mod.Stop()
 		}))
 
-	sniff := session.NewModuleHandler("hid.sniff ADDRESS", `(?i)^hid\.sniff ([a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}|clear)$`,
-		"TODO TODO",
-		func(args []string) error {
-			return mod.setSniffMode(args[0])
-		})
+	mod.AddParam(session.NewBoolParameter("hid.lna",
+		"true",
+		"If true, enable the LNA power amplifier for CrazyRadio devices."))
 
-	sniff.Complete("hid.sniff", s.HIDCompleter)
+	/*
+		pretty useless until i don't implement the microsoft specific keylogger
+		sniff := session.NewModuleHandler("hid.sniff ADDRESS", `(?i)^hid\.sniff ([a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}|clear)$`,
+			"TODO TODO",
+			func(args []string) error {
+				return mod.setSniffMode(args[0])
+			})
 
-	mod.AddHandler(sniff)
+		sniff.Complete("hid.sniff", s.HIDCompleter)
+
+		mod.AddHandler(sniff)
+	*/
 
 	mod.AddHandler(session.NewModuleHandler("hid.show", "",
-		"TODO TODO",
+		"Show a list of detected HID devices on the 2.4Ghz spectrum.",
 		func(args []string) error {
 			return mod.Show()
 		}))
 
-	inject := session.NewModuleHandler("hid.inject ADDRESS", `(?i)^hid\.inject ([a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2})$`,
-		"TODO TODO",
+	inject := session.NewModuleHandler("hid.inject ADDRESS LAYOUT FILENAME", `(?i)^hid\.inject ([a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2})\s+(.+)\s+(.+)$`,
+		"Parse the duckyscript FILENAME and inject it as HID frames spoofing the device ADDRESS, using the LAYOUT keyboard mapping.",
 		func(args []string) error {
-			return mod.setInjectionMode(args[0])
+			if err := mod.setInjectionMode(args[0]); err != nil {
+				return err
+			}
+			mod.keyLayout = args[1]
+			mod.scriptPath = args[2]
+			return nil
 		})
 
 	inject.Complete("hid.inject", s.HIDCompleter)
 
 	mod.AddHandler(inject)
 
+	mod.parser = DuckyParser{mod}
 	mod.selector = utils.ViewSelectorFor(&mod.SessionModule, "hid.show", []string{"mac", "seen"}, "mac desc")
 
 	return mod
 }
 
 func (mod HIDRecon) Name() string {
-	return "hid.recon"
+	return "hid"
 }
 
 func (mod HIDRecon) Description() string {
-	return "TODO TODO"
+	return "A scanner and frames injection module for HID devices on the 2.4Ghz spectrum, using Nordic Semiconductor nRF24LU1+ based USB dongles and Bastille Research RFStorm firmware."
 }
 
 func (mod HIDRecon) Author() string {
-	return "Simone Margaritelli <evilsocket@gmail.com>"
+	return "Simone Margaritelli <evilsocket@gmail.com> (this module and the nrf24 client library), Bastille Research (the rfstorm firmware and original research), phikshun and infamy for JackIt."
 }
 
 func (mod *HIDRecon) Configure() error {
 	var err error
 
-	if mod.dongle, err = nrf24.Open(); err != nil {
+	if err, mod.useLNA = mod.BoolParam("hid.lna"); err != nil {
 		return err
+	}
+
+	if mod.dongle, err = nrf24.Open(); err != nil {
+		return fmt.Errorf("make sure that a nRF24LU1+ based USB dongle is connected and running the rfstorm firmware: %s", err)
 	}
 
 	mod.Debug("using device %s", mod.dongle.String())

@@ -1,4 +1,4 @@
-package hid_recon
+package hid
 
 import (
 	"github.com/bettercap/bettercap/network"
