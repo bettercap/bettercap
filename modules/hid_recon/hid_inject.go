@@ -74,7 +74,9 @@ func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
 		}
 	}
 
-	builder.BuildFrames(cmds)
+	if err := builder.BuildFrames(cmds); err != nil {
+		return err, nil, nil
+	}
 
 	return nil, dev, cmds
 }

@@ -5,7 +5,7 @@ import (
 )
 
 type FrameBuilder interface {
-	BuildFrames([]*Command)
+	BuildFrames([]*Command) error
 }
 
 var FrameBuilders = map[network.HIDType]FrameBuilder{

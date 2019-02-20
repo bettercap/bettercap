@@ -27,7 +27,7 @@ func (b LogitechBuilder) frameFor(cmd *Command) []byte {
 	return data
 }
 
-func (b LogitechBuilder) BuildFrames(commands []*Command) {
+func (b LogitechBuilder) BuildFrames(commands []*Command) error {
 	numCommands := len(commands)
 	for i, cmd := range commands {
 		if i == 0 {
@@ -51,4 +51,6 @@ func (b LogitechBuilder) BuildFrames(commands []*Command) {
 			}
 		}
 	}
+
+	return nil
 }
