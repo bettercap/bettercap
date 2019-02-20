@@ -73,18 +73,15 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		"true",
 		"If true, enable the LNA power amplifier for CrazyRadio devices."))
 
-	/*
-		pretty useless until i don't implement the microsoft specific keylogger
-		sniff := session.NewModuleHandler("hid.sniff ADDRESS", `(?i)^hid\.sniff ([a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}|clear)$`,
-			"TODO TODO",
-			func(args []string) error {
-				return mod.setSniffMode(args[0])
-			})
+	sniff := session.NewModuleHandler("hid.sniff ADDRESS", `(?i)^hid\.sniff ([a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}|clear)$`,
+		"Start sniffing a specific ADDRESS in order to collect payloads, use 'clear' to stop collecting.",
+		func(args []string) error {
+			return mod.setSniffMode(args[0])
+		})
 
-		sniff.Complete("hid.sniff", s.HIDCompleter)
+	sniff.Complete("hid.sniff", s.HIDCompleter)
 
-		mod.AddHandler(sniff)
-	*/
+	mod.AddHandler(sniff)
 
 	mod.AddHandler(session.NewModuleHandler("hid.show", "",
 		"Show a list of detected HID devices on the 2.4Ghz spectrum.",
