@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bettercap/bettercap/network"
+
 	"github.com/evilsocket/islazy/tui"
 
 	"github.com/dustin/go-humanize"
@@ -24,42 +26,66 @@ func (mod *HIDRecon) setInjectionMode(address string) error {
 	return nil
 }
 
-func (mod *HIDRecon) doInjection() {
+func errNoDevice(addr string) error {
+	return fmt.Errorf("HID device %s not found, make sure that hid.recon is on and that device has been discovered", addr)
+}
+
+func errNoType(addr string) error {
+	return fmt.Errorf("HID frame injection requires the device type to be detected, try to 'hid.sniff %s' for a few seconds.", addr)
+}
+
+func errNotSupported(dev *network.HIDDevice) error {
+	return fmt.Errorf("HID frame injection is not supported for device type %s", dev.Type.String())
+}
+
+func errNoKeyMap(layout string) error {
+	return fmt.Errorf("could not find keymap for '%s' layout, supported layouts are: %s", layout, SupportedLayouts())
+}
+
+func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
 	dev, found := mod.Session.HID.Get(mod.sniffAddr)
 	if found == false {
-		mod.Warning("could not find HID device %s", mod.sniffAddr)
-		return
+		return errNoDevice(mod.sniffAddr), nil, nil
 	}
 
 	builder, found := FrameBuilders[dev.Type]
 	if found == false {
-		mod.Warning("HID frame injection is not supported for device type %s", dev.Type.String())
-		return
+		if dev.Type == network.HIDTypeUnknown {
+			return errNoType(mod.sniffAddr), nil, nil
+		}
+		return errNotSupported(dev), nil, nil
 	}
 
 	keyLayout := KeyMapFor(mod.keyLayout)
 	if keyLayout == nil {
-		mod.Warning("could not find keymap for '%s' layout", mod.keyLayout)
-		return
+		return errNoKeyMap(mod.keyLayout), nil, nil
 	}
 
 	str := "hello world from bettercap ^_^"
 	cmds := make([]*Command, 0)
 	for _, c := range str {
-		ch := fmt.Sprintf("%c", c)
-		if m, found := keyLayout[ch]; found {
+		if m, found := keyLayout[string(c)]; found {
 			cmds = append(cmds, &Command{
-				Char: ch,
 				HID:  m.HID,
 				Mode: m.Mode,
 			})
 		} else {
-			mod.Warning("could not find HID command for '%c'", ch)
-			return
+			return fmt.Errorf("could not find HID command for '%c'", c), nil, nil
 		}
 	}
 
 	builder.BuildFrames(cmds)
+
+	return nil, dev, cmds
+}
+
+func (mod *HIDRecon) doInjection() {
+	err, dev, cmds := mod.prepInjection()
+	if err != nil {
+		mod.Error("%v", err)
+		return
+	}
+
 	numFrames := 0
 	szFrames := 0
 	for _, cmd := range cmds {

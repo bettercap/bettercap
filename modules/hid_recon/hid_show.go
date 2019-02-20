@@ -114,7 +114,7 @@ func (mod *HIDRecon) Show() (err error) {
 	if mod.sniffAddrRaw == nil {
 		fmt.Printf("\nchannel:%d\n\n", mod.channel)
 	} else {
-		fmt.Printf("\nchannel:%d sniffing:%s\n\n", mod.channel, mod.sniffAddr)
+		fmt.Printf("\nchannel:%d sniffing:%s\n\n", mod.channel, tui.Red(mod.sniffAddr))
 	}
 
 	if len(rows) > 0 {

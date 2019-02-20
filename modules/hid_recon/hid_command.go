@@ -19,7 +19,6 @@ func NewFrame(buf []byte, delay int) Frame {
 type Command struct {
 	Mode   byte
 	HID    byte
-	Char   string
 	Sleep  int
 	Frames []Frame
 }

@@ -1,5 +1,9 @@
 package hid_recon
 
+import (
+	"sort"
+)
+
 type KeyMap map[string]Command
 
 var BaseMap = KeyMap{
@@ -2110,4 +2114,13 @@ func KeyMapFor(lang string) KeyMap {
 		return mm
 	}
 	return nil
+}
+
+func SupportedLayouts() []string {
+	maps := []string{}
+	for lang, _ := range KeyMaps {
+		maps = append(maps, lang)
+	}
+	sort.Strings(maps)
+	return maps
 }
