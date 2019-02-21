@@ -111,7 +111,7 @@ func (dev *HIDDevice) ChannelsList() []string {
 	defer dev.Unlock()
 
 	chans := []string{}
-	for ch, _ := range dev.channels {
+	for ch := range dev.channels {
 		chans = append(chans, fmt.Sprintf("%d", ch))
 	}
 

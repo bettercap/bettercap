@@ -50,7 +50,7 @@ var BaseMap = KeyMap{
 }
 
 var KeyMaps = map[string]KeyMap{
-	"BE": KeyMap{
+	"BE": {
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 48},
 		"(":         Command{HID: 34},
@@ -160,7 +160,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 39, Mode: 64},
 	},
-	"FR": KeyMap{
+	"FR": {
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 48},
 		"(":         Command{HID: 34},
@@ -258,7 +258,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 46, Mode: 64},
 	},
-	"CH": KeyMap{
+	"CH": {
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 49},
 		"(":         Command{HID: 37, Mode: 2},
@@ -366,7 +366,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 29},
 		"}":         Command{HID: 49, Mode: 64},
 	},
-	"DK": KeyMap{
+	"DK": {
 		"ð":         Command{HID: 7, Mode: 64},
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 33, Mode: 64},
@@ -480,7 +480,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 39, Mode: 64},
 	},
-	"PT": KeyMap{
+	"PT": {
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 33, Mode: 2},
 		"(":         Command{HID: 37, Mode: 2},
@@ -587,7 +587,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 39, Mode: 64},
 	},
-	"NO": KeyMap{
+	"NO": {
 		"ð":         Command{HID: 7, Mode: 64},
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 33, Mode: 64},
@@ -701,7 +701,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 39, Mode: 64},
 	},
-	"HR": KeyMap{
+	"HR": {
 		"-":  Command{HID: 56},
 		" ":  Command{HID: 44},
 		"$":  Command{HID: 33, Mode: 2},
@@ -825,7 +825,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":  Command{HID: 29},
 		"}":  Command{HID: 17, Mode: 64},
 	},
-	"CA": KeyMap{
+	"CA": {
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 33, Mode: 2},
 		"(":         Command{HID: 38, Mode: 2},
@@ -947,7 +947,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 49, Mode: 64},
 	},
-	"DE": KeyMap{
+	"DE": {
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 33, Mode: 2},
 		"(":         Command{HID: 37, Mode: 2},
@@ -1058,7 +1058,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 29},
 		"}":         Command{HID: 39, Mode: 64},
 	},
-	"TR": KeyMap{
+	"TR": {
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 33, Mode: 64},
 		"(":         Command{HID: 37, Mode: 2},
@@ -1156,7 +1156,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 39, Mode: 64},
 	},
-	"IT": KeyMap{
+	"IT": {
 		" ":  Command{HID: 44},
 		"$":  Command{HID: 33, Mode: 2},
 		"(":  Command{HID: 37, Mode: 2},
@@ -1257,7 +1257,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":  Command{HID: 28},
 		"}":  Command{HID: 48, Mode: 66},
 	},
-	"US": KeyMap{
+	"US": {
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 33, Mode: 2},
 		"(":         Command{HID: 38, Mode: 2},
@@ -1355,7 +1355,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 48, Mode: 2},
 	},
-	"SV": KeyMap{
+	"SV": {
 		"ð":         Command{HID: 7, Mode: 64},
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 33, Mode: 64},
@@ -1468,7 +1468,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 39, Mode: 64},
 	},
-	"SI": KeyMap{
+	"SI": {
 		"-":  Command{HID: 56},
 		" ":  Command{HID: 44},
 		"$":  Command{HID: 33, Mode: 2},
@@ -1592,7 +1592,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":  Command{HID: 29},
 		"}":  Command{HID: 17, Mode: 64},
 	},
-	"GB": KeyMap{
+	"GB": {
 		" ":         Command{HID: 44},
 		"$":         Command{HID: 33, Mode: 2},
 		"(":         Command{HID: 38, Mode: 2},
@@ -1698,7 +1698,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":         Command{HID: 28},
 		"}":         Command{HID: 48, Mode: 2},
 	},
-	"BR": KeyMap{
+	"BR": {
 		" ":  Command{HID: 44},
 		"$":  Command{HID: 33, Mode: 2},
 		"(":  Command{HID: 38, Mode: 2},
@@ -1800,7 +1800,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":  Command{HID: 28},
 		"}":  Command{HID: 49, Mode: 2},
 	},
-	"RU": KeyMap{
+	"RU": {
 		" ":  Command{HID: 44},
 		"$":  Command{HID: 33, Mode: 2},
 		"(":  Command{HID: 38, Mode: 2},
@@ -1891,7 +1891,7 @@ var KeyMaps = map[string]KeyMap{
 		"5":  Command{HID: 34},
 		"9":  Command{HID: 38},
 	},
-	"FI": KeyMap{
+	"FI": {
 		" ":  Command{HID: 44},
 		"$":  Command{HID: 33, Mode: 64},
 		"(":  Command{HID: 37, Mode: 2},
@@ -1997,7 +1997,7 @@ var KeyMaps = map[string]KeyMap{
 		"y":  Command{HID: 28},
 		"}":  Command{HID: 39, Mode: 64},
 	},
-	"ES": KeyMap{
+	"ES": {
 		" ":  Command{HID: 44},
 		"$":  Command{HID: 33, Mode: 2},
 		"(":  Command{HID: 37, Mode: 2},
@@ -2118,7 +2118,7 @@ func KeyMapFor(lang string) KeyMap {
 
 func SupportedLayouts() []string {
 	maps := []string{}
-	for lang, _ := range KeyMaps {
+	for lang := range KeyMaps {
 		maps = append(maps, lang)
 	}
 	sort.Strings(maps)
