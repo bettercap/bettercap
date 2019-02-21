@@ -1,6 +1,7 @@
 package hid
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/bettercap/bettercap/network"
@@ -14,6 +15,10 @@ func (mod *HIDRecon) isSniffing() bool {
 }
 
 func (mod *HIDRecon) setSniffMode(mode string) error {
+	if !mod.Running() {
+		return fmt.Errorf("please turn hid.recon on")
+	}
+
 	mod.sniffLock.Lock()
 	defer mod.sniffLock.Unlock()
 
