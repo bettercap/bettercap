@@ -48,3 +48,7 @@ func (b *BLE) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(doc)
 }
+
+func (b *BLE) EachDevice(cb func(mac string, d *BLEDevice)) {
+
+}

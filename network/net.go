@@ -265,10 +265,12 @@ func FindInterface(name string) (*Endpoint, error) {
 }
 
 func SetWiFiRegion(region string) error {
-	if out, err := core.Exec("iw", []string{"reg", "set", region}); err != nil {
-		return err
-	} else if out != "" {
-		return fmt.Errorf("unexpected output while setting WiFi region %s: %s", region, out)
+	if core.HasBinary("iw") {
+		if out, err := core.Exec("iw", []string{"reg", "set", region}); err != nil {
+			return err
+		} else if out != "" {
+			return fmt.Errorf("unexpected output while setting WiFi region %s: %s", region, out)
+		}
 	}
 	return nil
 }
@@ -283,10 +285,12 @@ func ActivateInterface(name string) error {
 }
 
 func SetInterfaceTxPower(name string, txpower int) error {
-	if out, err := core.ExecSilent("iwconfig", []string{name, "txpower", fmt.Sprintf("%d", txpower)}); err != nil {
-		return err
-	} else if out != "" {
-		return fmt.Errorf("unexpected output while setting txpower to %d for interface %s: %s", txpower, name, out)
+	if core.HasBinary("iwconfig") {
+		if out, err := core.ExecSilent("iwconfig", []string{name, "txpower", fmt.Sprintf("%d", txpower)}); err != nil {
+			return err
+		} else if out != "" {
+			return fmt.Errorf("unexpected output while setting txpower to %d for interface %s: %s", txpower, name, out)
+		}
 	}
 	return nil
 }
