@@ -40,6 +40,9 @@ func (mod *HIDRecon) setSniffMode(mode string) error {
 }
 
 func (mod *HIDRecon) doPing() {
+	mod.writeLock.Lock()
+	defer mod.writeLock.Unlock()
+
 	if mod.inSniffMode == false {
 		if err := mod.dongle.EnterSnifferModeFor(mod.sniffAddrRaw); err != nil {
 			mod.Error("error entering sniffer mode for %s: %v", mod.sniffAddr, err)

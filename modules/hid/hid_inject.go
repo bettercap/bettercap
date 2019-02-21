@@ -81,6 +81,9 @@ func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
 }
 
 func (mod *HIDRecon) doInjection() {
+	mod.writeLock.Lock()
+	defer mod.writeLock.Unlock()
+
 	err, dev, cmds := mod.prepInjection()
 	if err != nil {
 		mod.Error("%v", err)

@@ -7,6 +7,9 @@ import (
 )
 
 func (mod *HIDRecon) doHopping() {
+	mod.writeLock.Lock()
+	defer mod.writeLock.Unlock()
+
 	if mod.inPromMode == false {
 		if err := mod.dongle.EnterPromiscMode(); err != nil {
 			mod.Error("error entering promiscuous mode: %v", err)

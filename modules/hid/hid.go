@@ -23,6 +23,7 @@ type HIDRecon struct {
 	lastPing     time.Time
 	useLNA       bool
 	sniffLock    *sync.Mutex
+	writeLock    *sync.Mutex
 	sniffAddrRaw []byte
 	sniffAddr    string
 	pingPayload  []byte
@@ -47,6 +48,7 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		SessionModule: session.NewSessionModule("hid", s),
 		waitGroup:     &sync.WaitGroup{},
 		sniffLock:     &sync.Mutex{},
+		writeLock:     &sync.Mutex{},
 		hopPeriod:     100 * time.Millisecond,
 		pingPeriod:    100 * time.Millisecond,
 		sniffPeriod:   500 * time.Millisecond,
