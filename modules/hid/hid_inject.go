@@ -111,7 +111,7 @@ func (mod *HIDRecon) doInjection() {
 	for i, cmd := range cmds {
 		for j, frame := range cmd.Frames {
 			for attempt := 0; attempt < 3; attempt++ {
-				if err := mod.dongle.TransmitPayload(frame.Data, 500, 1); err != nil {
+				if err := mod.dongle.TransmitPayload(frame.Data, 500, 5); err != nil {
 					if attempt < 2 {
 						mod.Warning("error sending frame #%d of HID command #%d: %v, retrying ...", j, i, err)
 					} else {
