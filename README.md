@@ -21,7 +21,7 @@
 
 A [precompiled version is available](https://github.com/bettercap/bettercap/releases) for each release, alternatively you can use the latest version of the source code from this repository in order to build your own binary.
 
-Make sure you have a correctly configured **Go >= 1.8** environment, that `$GOPATH/bin` is in `$PATH`, that the `libpcap-dev` and `libnetfilter-queue-dev` (this one is only required on Linux) package installed for your system and then:
+Make sure you have a correctly configured **Go >= 1.8** environment, that `$GOPATH/bin` is in `$PATH`, that the `libusb-1.0`, `libpcap-dev`, `libnetfilter-queue-dev` (this one is only required on Linux) package installed for your system and then:
 
     $ go get github.com/bettercap/bettercap
     $ cd $GOPATH/src/github.com/bettercap/bettercap
