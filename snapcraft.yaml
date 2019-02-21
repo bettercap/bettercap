@@ -1,8 +1,8 @@
 name: bettercap
 version: '2.17'
-summary: 802.11, BLE and Ethernet networks reconnaissance and MITM attacks tool.
+summary: 802.11, BLE, 2.4Ghz HID and Ethernet networks reconnaissance and MITM attacks tool.
 description: |
-  The Swiss Army knife for 802.11, BLE and Ethernet networks reconnaissance and MITM attacks.
+  The Swiss Army knife for 802.11, BLE, 2.4Ghz HID and Ethernet networks reconnaissance and MITM attacks.
 grade: stable
 confinement: strict
 base: core18
@@ -15,10 +15,14 @@ parts:
       - build-essential
       - libpcap-dev
       - libnetfilter-queue-dev
+      - libusb-1.0-0-dev
+
     stage-packages:
       - libpcap0.8
       - libnfnetlink0
       - libnetfilter-queue1
+      - libusb-1.0-0
+
 apps:
   bettercap:
     command: bin/bettercap
