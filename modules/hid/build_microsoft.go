@@ -1,5 +1,4 @@
 // +build !windows
-// +build !android
 
 package hid
 

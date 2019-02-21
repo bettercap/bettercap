@@ -1,4 +1,4 @@
-// +build windows android
+// +build windows
 
 package hid
 
