@@ -103,7 +103,7 @@ func CreateCertificate(cfg CertConfig) (error, *rsa.PrivateKey, []byte) {
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
-		IsCA:                  true,
+		IsCA: true,
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
