@@ -48,6 +48,7 @@ type WiFiModule struct {
 	assocOpen           bool
 	shakesFile          string
 	apRunning           bool
+	showManuf           bool
 	apConfig            packets.Dot11ApConfig
 	writes              *sync.WaitGroup
 	reads               *sync.WaitGroup
@@ -72,6 +73,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		assocSkip:     []net.HardwareAddr{},
 		assocSilent:   false,
 		assocOpen:     false,
+		showManuf:     false,
 		writes:        &sync.WaitGroup{},
 		reads:         &sync.WaitGroup{},
 		chanLock:      &sync.Mutex{},
@@ -244,6 +246,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 	mod.selector = utils.ViewSelectorFor(&mod.SessionModule, "wifi.show",
 		[]string{"rssi", "bssid", "essid", "channel", "encryption", "clients", "seen", "sent", "rcvd"}, "rssi asc")
+
+	mod.AddParam(session.NewBoolParameter("wifi.show.manufacturer",
+		"false",
+		"If true, wifi.show will also show the devices manufacturers."))
 
 	mod.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
 		"WiFi channels (comma separated) or 'clear' for channel hopping.",

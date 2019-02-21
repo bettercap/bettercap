@@ -81,14 +81,26 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 	}
 
 	if mod.isApSelected() {
-		return []string{
-			rssi,
-			bssid,
-			strconv.Itoa(station.Channel()),
-			sent,
-			recvd,
-			seen,
-		}, include
+		if mod.showManuf {
+			return []string{
+				rssi,
+				bssid,
+				tui.Dim(station.Vendor),
+				strconv.Itoa(station.Channel()),
+				sent,
+				recvd,
+				seen,
+			}, include
+		} else {
+			return []string{
+				rssi,
+				bssid,
+				strconv.Itoa(station.Channel()),
+				sent,
+				recvd,
+				seen,
+			}, include
+		}
 	} else {
 		// this is ugly, but necessary in order to have this
 		// method handle both access point and clients
@@ -117,18 +129,34 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 			wps = tui.Dim(tui.Yellow(wps))
 		}
 
-		return []string{
-			rssi,
-			bssid,
-			ssid,
-			encryption,
-			wps,
-			strconv.Itoa(station.Channel()),
-			clients,
-			sent,
-			recvd,
-			seen,
-		}, include
+		if mod.showManuf {
+			return []string{
+				rssi,
+				bssid,
+				tui.Dim(station.Vendor),
+				ssid,
+				encryption,
+				wps,
+				strconv.Itoa(station.Channel()),
+				clients,
+				sent,
+				recvd,
+				seen,
+			}, include
+		} else {
+			return []string{
+				rssi,
+				bssid,
+				ssid,
+				encryption,
+				wps,
+				strconv.Itoa(station.Channel()),
+				clients,
+				sent,
+				recvd,
+				seen,
+			}, include
+		}
 	}
 }
 
@@ -225,9 +253,17 @@ func (mod *WiFiModule) colNames(nrows int) []string {
 	columns := []string(nil)
 
 	if !mod.isApSelected() {
-		columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "WPS", "Ch", "Clients", "Sent", "Recvd", "Seen"}
+		if mod.showManuf {
+			columns = []string{"RSSI", "BSSID", "Manufacturer", "SSID", "Encryption", "WPS", "Ch", "Clients", "Sent", "Recvd", "Seen"}
+		} else {
+			columns = []string{"RSSI", "BSSID", "SSID", "Encryption", "WPS", "Ch", "Clients", "Sent", "Recvd", "Seen"}
+		}
 	} else if nrows > 0 {
-		columns = []string{"RSSI", "BSSID", "Ch", "Sent", "Recvd", "Seen"}
+		if mod.showManuf {
+			columns = []string{"RSSI", "BSSID", "Manufacturer", "Ch", "Sent", "Recvd", "Seen"}
+		} else {
+			columns = []string{"RSSI", "BSSID", "Ch", "Sent", "Recvd", "Seen"}
+		}
 		fmt.Printf("\n%s clients:\n", mod.ap.HwAddress)
 	} else {
 		fmt.Printf("\nNo authenticated clients detected for %s.\n", mod.ap.HwAddress)
@@ -285,6 +321,10 @@ func (mod *WiFiModule) Show() (err error) {
 	var stations []*network.Station
 	if err, stations = mod.doSelection(); err != nil {
 		return
+	}
+
+	if err, mod.showManuf = mod.BoolParam("wifi.show.manufacturer"); err != nil {
+		return err
 	}
 
 	rows := make([][]string, 0)
