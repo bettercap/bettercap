@@ -1,7 +1,7 @@
 #!/bin/bash
 BUILD_FOLDER=build
 VERSION=$(cat core/banner.go | grep Version | cut -d '"' -f 2)
-CROSS_LIB=-L/tmp/libpcap-1.8.1/
+CROSS_LIB="-L/tmp/libpcap-1.8.1/ -L/tmp/libusb-1.0.22/"
 
 bin_dep() {
     BIN=$1
@@ -46,6 +46,19 @@ download_pcap() {
     tar xf libpcap-1.8.1.tar.gz
 }
 
+download_libusb() {
+    bin_dep 'wget'
+    bin_dep 'tar'
+
+    cd /tmp
+    rm -rf libusb-1.0.22.tar.bz2
+    if [ ! -f /tmp/libusb-1.0.22.tar.bz2 ]; then
+        echo "@ Downloading https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.tar.bz2 ..."
+        wget -q https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.tar.bz2 -O /tmp/libusb-1.0.22.tar.bz2
+    fi
+    tar xf libusb-1.0.22.tar.bz2
+}
+
 xcompile_pcap() {
     ARCH=$1
     HOST=$2
@@ -63,6 +76,21 @@ xcompile_pcap() {
     make CFLAGS='-w' -j4 > /dev/null
 }
 
+xcompile_libusb() {
+    ARCH=$1
+    HOST=$2
+    COMPILER=$3
+
+    bin_dep 'make'
+    bin_dep "$COMPILER"
+
+    echo "@ Cross compiling libusb for $ARCH with $COMPILER ..."
+    cd /tmp/libusb-1.0.22
+    export CC=$COMPILER
+    ./configure --host=$HOST > /dev/null
+    make CFLAGS='-w' -j4 > /dev/null
+}
+
 build_linux_amd64() {
     echo "@ Building linux/amd64 ..."
     go build -o bettercap ..
@@ -73,6 +101,8 @@ build_linux_arm7_static() {
 
     download_pcap
     xcompile_pcap 'arm' 'arm-linux-gnueabi' 'arm-linux-gnueabi-gcc'
+    download_libusb
+    xcompile_libusb 'arm' 'arm-linux-gnueabi' 'arm-linux-gnueabi-gcc'
 
     echo "@ Building linux/arm7 ..."
     cd "$OLD"
@@ -84,6 +114,8 @@ build_linux_arm7hf_static() {
 
     download_pcap
     xcompile_pcap 'arm' 'arm-linux-gnueabihf' 'arm-linux-gnueabihf-gcc'
+    download_libusb
+    xcompile_libusb 'arm' 'arm-linux-gnueabihf' 'arm-linux-gnueabihf-gcc'
 
     echo "@ Building linux/arm7hf ..."
     cd "$OLD"
@@ -95,6 +127,8 @@ build_linux_mips_static() {
 
     download_pcap
     xcompile_pcap 'mips' 'mips-linux-gnu' 'mips-linux-gnu-gcc'
+    download_libusb
+    xcompile_libusb 'mips' 'mips-linux-gnu' 'mips-linux-gnu-gcc'
 
     echo "@ Building linux/mips ..."
     cd "$OLD"
@@ -106,6 +140,8 @@ build_linux_mipsle_static() {
 
     download_pcap
     xcompile_pcap 'mipsel' 'mipsel-linux-gnu' 'mipsel-linux-gnu-gcc'
+    download_libusb
+    xcompile_libusb 'mipsel' 'mipsel-linux-gnu' 'mipsel-linux-gnu-gcc'
 
     echo "@ Building linux/mipsle ..."
     cd "$OLD"
@@ -117,6 +153,8 @@ build_linux_mips64_static() {
 
     download_pcap
     xcompile_pcap 'mips64' 'mips64-linux-gnuabi64' 'mips64-linux-gnuabi64-gcc'
+    download_libusb
+    xcompile_libusb 'mips64' 'mips64-linux-gnuabi64' 'mips64-linux-gnuabi64-gcc'
 
     echo "@ Building linux/mips64 ..."
     cd "$OLD"
@@ -128,6 +166,8 @@ build_linux_mips64le_static() {
 
     download_pcap
     xcompile_pcap 'mips64el' 'mips64el-linux-gnuabi64' 'mips64el-linux-gnuabi64-gcc'
+    download_libusb
+    xcompile_libusb 'mips64el' 'mips64el-linux-gnuabi64' 'mips64el-linux-gnuabi64-gcc'
 
     echo "@ Building linux/mips64le ..."
     cd "$OLD"
@@ -186,12 +226,12 @@ build_linux_amd64 && create_archive bettercap_linux_amd64_$VERSION.zip
 build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
 build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
 build_windows_amd64 && create_exe_archive bettercap_windows_amd64_$VERSION.zip
-build_linux_arm7_static && create_archive bettercap_linux_arm7_$VERSION.zip
+#build_linux_arm7_static && create_archive bettercap_linux_arm7_$VERSION.zip
 # build_linux_arm7hf_static && create_archive bettercap_linux_arm7hf_$VERSION.zip
-build_linux_mips_static && create_archive bettercap_linux_mips_$VERSION.zip
-build_linux_mipsle_static && create_archive bettercap_linux_mipsle_$VERSION.zip
-build_linux_mips64_static && create_archive bettercap_linux_mips64_$VERSION.zip
-build_linux_mips64le_static && create_archive bettercap_linux_mips64le_$VERSION.zip
+#build_linux_mips_static && create_archive bettercap_linux_mips_$VERSION.zip
+#build_linux_mipsle_static && create_archive bettercap_linux_mipsle_$VERSION.zip
+#build_linux_mips64_static && create_archive bettercap_linux_mips64_$VERSION.zip
+#build_linux_mips64le_static && create_archive bettercap_linux_mips64le_$VERSION.zip
 sha256sum * > checksums.txt
 
 echo
