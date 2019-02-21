@@ -1,6 +1,7 @@
 package network
 
 import (
+	"encoding/json"
 	"sync"
 	"time"
 )
@@ -15,12 +16,28 @@ type HID struct {
 	lostCb  HIDDevLostCallback
 }
 
+type hidJSON struct {
+	Devices []*HIDDevice `json:"devices"`
+}
+
 func NewHID(newcb HIDDevNewCallback, lostcb HIDDevLostCallback) *HID {
 	return &HID{
 		devices: make(map[string]*HIDDevice),
 		newCb:   newcb,
 		lostCb:  lostcb,
 	}
+}
+
+func (h *HID) MarshalJSON() ([]byte, error) {
+	doc := hidJSON{
+		Devices: make([]*HIDDevice, 0),
+	}
+
+	for _, dev := range h.devices {
+		doc.Devices = append(doc.Devices, dev)
+	}
+
+	return json.Marshal(doc)
 }
 
 func (b *HID) Get(id string) (dev *HIDDevice, found bool) {

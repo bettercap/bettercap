@@ -1,6 +1,7 @@
 package network
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -45,6 +46,13 @@ type HIDDevice struct {
 	payloadsSz uint64
 }
 
+type hidDeviceJSON struct {
+	LastSeen time.Time `json:"last_seen"`
+	Type     string    `json:"type"`
+	Address  string    `json:"address"`
+	Channels []string  `json:"channels"`
+}
+
 func NormalizeHIDAddress(address string) string {
 	parts := strings.Split(address, ":")
 	for i, p := range parts {
@@ -81,6 +89,16 @@ func NewHIDDevice(address []byte, channel int, payload []byte) *HIDDevice {
 	return dev
 }
 
+func (dev *HIDDevice) MarshalJSON() ([]byte, error) {
+	doc := hidDeviceJSON{
+		LastSeen: dev.LastSeen,
+		Type:     dev.Type.String(),
+		Address:  dev.Address,
+		Channels: dev.ChannelsList(),
+	}
+	return json.Marshal(doc)
+}
+
 func (dev *HIDDevice) AddChannel(ch int) {
 	dev.Lock()
 	defer dev.Unlock()
@@ -88,7 +106,7 @@ func (dev *HIDDevice) AddChannel(ch int) {
 	dev.channels[ch] = true
 }
 
-func (dev *HIDDevice) Channels() string {
+func (dev *HIDDevice) ChannelsList() []string {
 	dev.Lock()
 	defer dev.Unlock()
 
@@ -98,7 +116,12 @@ func (dev *HIDDevice) Channels() string {
 	}
 
 	sort.Strings(chans)
-	return strings.Join(chans, ",")
+
+	return chans
+}
+
+func (dev *HIDDevice) Channels() string {
+	return strings.Join(dev.ChannelsList(), ",")
 }
 
 // credits to https://github.com/insecurityofthings/jackit/tree/master/jackit/plugins

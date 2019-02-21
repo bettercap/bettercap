@@ -38,7 +38,6 @@ type HIDRecon struct {
 /*
 TODO:
 
-- make session.Session.HID JSON serializable for the API
 - fix compilation for unsupported platforms
 - update docs
 - test test test

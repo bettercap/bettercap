@@ -61,13 +61,26 @@ func (mod *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
 	mod.toJSON(w, session.I)
 }
 
-func (mod *RestAPI) showBle(w http.ResponseWriter, r *http.Request) {
+func (mod *RestAPI) showBLE(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
 		mod.toJSON(w, session.I.BLE)
 	} else if dev, found := session.I.BLE.Get(mac); found {
+		mod.toJSON(w, dev)
+	} else {
+		http.Error(w, "Not Found", 404)
+	}
+}
+
+func (mod *RestAPI) showHID(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	mac := strings.ToLower(params["mac"])
+
+	if mac == "" {
+		mod.toJSON(w, session.I.HID)
+	} else if dev, found := session.I.HID.Get(mac); found {
 		mod.toJSON(w, dev)
 	} else {
 		http.Error(w, "Not Found", 404)
@@ -90,7 +103,7 @@ func (mod *RestAPI) showModules(w http.ResponseWriter, r *http.Request) {
 	mod.toJSON(w, session.I.Modules)
 }
 
-func (mod *RestAPI) showLan(w http.ResponseWriter, r *http.Request) {
+func (mod *RestAPI) showLAN(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	mac := strings.ToLower(params["mac"])
 
@@ -212,7 +225,7 @@ func (mod *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 		mod.showModules(w, r)
 
 	case strings.HasPrefix(path, "/api/session/lan"):
-		mod.showLan(w, r)
+		mod.showLAN(w, r)
 
 	case path == "/api/session/options":
 		mod.showOptions(w, r)
@@ -224,7 +237,10 @@ func (mod *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 		mod.showStartedAt(w, r)
 
 	case strings.HasPrefix(path, "/api/session/ble"):
-		mod.showBle(w, r)
+		mod.showBLE(w, r)
+
+	case strings.HasPrefix(path, "/api/session/hid"):
+		mod.showHID(w, r)
 
 	case strings.HasPrefix(path, "/api/session/wifi"):
 		mod.showWiFi(w, r)
