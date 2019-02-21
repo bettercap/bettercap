@@ -39,13 +39,6 @@ type HIDRecon struct {
 	selector     *utils.ViewSelector
 }
 
-/*
-TODO:
-
-- fix compilation for unsupported platforms
-- update docs
-- test test test
-*/
 func NewHIDRecon(s *session.Session) *HIDRecon {
 	mod := &HIDRecon{
 		SessionModule: session.NewSessionModule("hid", s),
