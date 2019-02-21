@@ -17,6 +17,7 @@ package gousb
 
 // #cgo LDFLAGS: -lusb-1.0
 // #cgo CFLAGS: -I/usr/include/libusb-1.0
+// #cgo android CFLAGS: -I/data/data/com.termux/files/usr/include/libusb-1.0
 // #include <libusb.h>
 import "C"
 import "strconv"
