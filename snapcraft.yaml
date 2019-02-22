@@ -1,6 +1,6 @@
 name: bettercap
 version: '2.17'
-summary: 802.11, BLE, 2.4Ghz HID and Ethernet networks reconnaissance and MITM attacks tool.
+summary: Network reconnaissance and MITM attacks tool.
 description: |
   The Swiss Army knife for 802.11, BLE, 2.4Ghz HID and Ethernet networks reconnaissance and MITM attacks.
 grade: stable
