@@ -205,33 +205,13 @@ func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool, 
 	return
 }
 
-func isMostlyPrintable(raw []byte) bool {
-	if raw == nil {
-		return false
-	}
-
-	tot := len(raw)
-	if tot == 0 {
-		return false
-	}
-
-	pr := 0
-	for _, b := range raw {
-		if strconv.IsPrint(rune(b)) {
-			pr++
-		}
-	}
-
-	return (float32(pr) / float32(tot)) >= 0.5
-}
-
 func parseRawData(raw []byte) string {
 	s := ""
 	for _, b := range raw {
 		if strconv.IsPrint(rune(b)) {
 			s += tui.Yellow(string(b))
 		} else {
-			s += tui.Dim(fmt.Sprintf("%x", b))
+			s += tui.Dim(fmt.Sprintf("%02x", b))
 		}
 	}
 	return s
