@@ -330,8 +330,7 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 			raw := ([]byte)(nil)
 			err := error(nil)
 			if isReadable {
-				raw, err = p.ReadCharacteristic(ch)
-				if raw != nil {
+				if raw, err = p.ReadCharacteristic(ch); raw != nil {
 					sz = len(raw)
 				}
 			}
