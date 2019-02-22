@@ -326,10 +326,8 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 				}
 			}
 
-			data := ""
-			raw := ([]byte)(nil)
-			multi := ([]string)(nil)
 			sz := 0
+			raw := ([]byte)(nil)
 			err := error(nil)
 			if isReadable {
 				raw, err = p.ReadCharacteristic(ch)
@@ -338,6 +336,8 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 				}
 			}
 
+			data := ""
+			multi := ([]string)(nil)
 			if err != nil {
 				data = tui.Red(err.Error())
 			} else if ch.Name() == "Appearance" && sz >= 2 {

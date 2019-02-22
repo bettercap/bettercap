@@ -8,7 +8,7 @@ import (
 )
 
 func (mod *BLERecon) onStateChanged(dev gatt.Device, s gatt.State) {
-	mod.Info("state changed to %v", s)
+	mod.Debug("state changed to %v", s)
 
 	switch s {
 	case gatt.StatePoweredOn:

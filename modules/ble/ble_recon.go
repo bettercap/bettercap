@@ -130,7 +130,7 @@ func (mod *BLERecon) Configure() (err error) {
 	if mod.Running() {
 		return session.ErrAlreadyStarted
 	} else if mod.gattDevice == nil {
-		mod.Info("initializing device ...")
+		mod.Debug("initializing device ...")
 
 		// hey Paypal GATT library, could you please just STFU?!
 		golog.SetOutput(ioutil.Discard)
