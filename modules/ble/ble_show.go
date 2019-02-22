@@ -38,7 +38,7 @@ func (mod *BLERecon) getRow(dev *network.BLEDevice, withName bool) []string {
 		return []string{
 			rssi,
 			address,
-			dev.Name(),
+			tui.Yellow(dev.Name()),
 			vendor,
 			dev.Advertisement.Flags.String(),
 			isConnectable,

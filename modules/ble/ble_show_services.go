@@ -176,30 +176,30 @@ func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool, 
 	mask := ch.Properties()
 
 	if (mask & gatt.CharBroadcast) != 0 {
-		props = append(props, "bcast")
+		props = append(props, "BCAST")
 	}
 	if (mask & gatt.CharRead) != 0 {
 		isReadable = true
-		props = append(props, "read")
+		props = append(props, "READ")
 	}
 	if (mask&gatt.CharWriteNR) != 0 || (mask&gatt.CharWrite) != 0 {
-		props = append(props, tui.Bold("write"))
+		props = append(props, tui.Bold("WRITE"))
 		isWritable = true
 		withResponse = (mask & gatt.CharWriteNR) == 0
 	}
 	if (mask & gatt.CharNotify) != 0 {
-		props = append(props, "notify")
+		props = append(props, "NOTIFY")
 	}
 	if (mask & gatt.CharIndicate) != 0 {
-		props = append(props, "indicate")
+		props = append(props, "INDICATE")
 	}
 	if (mask & gatt.CharSignedWrite) != 0 {
-		props = append(props, tui.Yellow("*write"))
+		props = append(props, tui.Yellow("SIGN WRITE"))
 		isWritable = true
 		withResponse = true
 	}
 	if (mask & gatt.CharExtended) != 0 {
-		props = append(props, "x")
+		props = append(props, "X")
 	}
 
 	return
@@ -289,21 +289,60 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 				}
 			}
 
-			if ch.Name() == "Appearance" && raw != nil && len(raw) >= 2 {
+			sz := 0
+			if raw != nil {
+				sz = len(raw)
+			}
+			multi := ([]string)(nil)
+
+			if ch.Name() == "Appearance" && sz >= 2 {
+				// org.bluetooth.characteristic.gap.appearance
 				app := binary.LittleEndian.Uint16(raw[0:2])
 				if appName, found := appearances[app]; found {
 					data = tui.Green(appName)
 				}
+			} else if ch.Name() == "PnP ID" && sz >= 7 {
+				// org.bluetooth.characteristic.pnp_id
+				src := ""
+				vendorIdSrc := byte(raw[0])
+				vendorId := binary.LittleEndian.Uint16(raw[1:3])
+				prodId := binary.LittleEndian.Uint16(raw[3:5])
+				prodVer := binary.LittleEndian.Uint16(raw[5:7])
+
+				if vendorIdSrc == 1 {
+					src = " (Bluetooth SIG assigned Company Identifier)"
+				} else if vendorIdSrc == 2 {
+					src = " (USB Implementer’s Forum assigned Vendor ID value)"
+				}
+
+				multi = []string{
+					tui.Green("Vendor ID") + fmt.Sprintf(": 0x%04x%s", vendorId, tui.Dim(src)),
+					tui.Green("Product ID") + fmt.Sprintf(": 0x%04x", prodId),
+					tui.Green("Product Version") + fmt.Sprintf(": 0x%04x", prodVer),
+				}
 			}
 
-			row := []string{
-				fmt.Sprintf("%04x", ch.Handle()),
-				name,
-				strings.Join(props, ", "),
-				data,
+			if multi == nil {
+				rows = append(rows, []string{
+					fmt.Sprintf("%04x", ch.Handle()),
+					name,
+					strings.Join(props, ", "),
+					data,
+				})
+			} else {
+				for i, m := range multi {
+					if i == 0 {
+						rows = append(rows, []string{
+							fmt.Sprintf("%04x", ch.Handle()),
+							name,
+							strings.Join(props, ", "),
+							m,
+						})
+					} else {
+						rows = append(rows, []string{"", "", "", m})
+					}
+				}
 			}
-
-			rows = append(rows, row)
 		}
 	}
 
