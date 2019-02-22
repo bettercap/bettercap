@@ -120,7 +120,7 @@ func Error(format string, args ...interface{}) {
 	do(ERROR, format, args...)
 }
 
-// Fata emits a fatal error message and calls the log.OnFatal callback.
+// Fatal emits a fatal error message and calls the log.OnFatal callback.
 func Fatal(format string, args ...interface{}) {
 	do(FATAL, format, args...)
 	OnFatal()

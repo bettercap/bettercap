@@ -58,6 +58,43 @@ func padded(s string, maxLen int, align alignment) string {
 	return fmt.Sprintf("%s%s%s", strings.Repeat(" ", lPad), s, strings.Repeat(" ", rPad))
 }
 
+func lineSeparator(num int, columns []string, rows [][]string) string {
+	lineSep := ""
+	first := ""
+	div := ""
+	end := ""
+
+	if num == 0 {
+		first = "┌"
+		div = "┬"
+		end = "┐"
+	} else if num == 1 {
+		first = "├"
+		div = "┼"
+		end = "┤"
+	} else if num == 2 {
+		first = "└"
+		div = "┴"
+		end = "┘"
+	}
+
+	for colIndex, colHeader := range columns {
+		column := []string{colHeader}
+		for _, row := range rows {
+			column = append(column, row[colIndex])
+		}
+		mLen := maxLen(column)
+		if colIndex == 0 {
+			lineSep += fmt.Sprintf(first+"%s", strings.Repeat("─", mLen+1))
+		} else {
+			lineSep += fmt.Sprintf(div+"%s", strings.Repeat("─", mLen+1))
+		}
+	}
+	lineSep += end
+
+	return lineSep
+}
+
 // Table accepts a slice of column labels and a 2d slice of rows
 // and prints on the writer an ASCII based datagrid of such
 // data.
@@ -73,7 +110,6 @@ func Table(w io.Writer, columns []string, rows [][]string) {
 	}
 
 	colPaddings := make([]int, 0)
-	lineSep := ""
 	for colIndex, colHeader := range columns {
 		column := []string{colHeader}
 		for _, row := range rows {
@@ -81,30 +117,29 @@ func Table(w io.Writer, columns []string, rows [][]string) {
 		}
 		mLen := maxLen(column)
 		colPaddings = append(colPaddings, mLen)
-		lineSep += fmt.Sprintf("+%s", strings.Repeat("-", mLen+1))
 	}
-	lineSep += "+"
 
-	table := ""
+	table := "\n"
 
 	// header
-	table += fmt.Sprintf("%s\n", lineSep)
+	table += fmt.Sprintf("%s\n", lineSeparator(0, columns, rows))
 	for colIndex, colHeader := range columns {
-		table += fmt.Sprintf("|%s", padded(colHeader, colPaddings[colIndex], alignCenter))
+		table += fmt.Sprintf("│%s", padded(colHeader, colPaddings[colIndex], alignCenter))
 	}
-	table += fmt.Sprintf("|\n")
-	table += fmt.Sprintf("%s\n", lineSep)
+	table += fmt.Sprintf("│\n")
+
+	table += fmt.Sprintf("%s\n", lineSeparator(1, columns, rows))
 
 	// rows
 	for _, row := range rows {
 		for colIndex, cell := range row {
-			table += fmt.Sprintf("|%s", padded(cell, colPaddings[colIndex], alignLeft))
+			table += fmt.Sprintf("│%s", padded(cell, colPaddings[colIndex], alignLeft))
 		}
-		table += fmt.Sprintf("|\n")
+		table += fmt.Sprintf("│\n")
 	}
 
 	// footer
-	table += lineSep
+	table += fmt.Sprintf("%s\n", lineSeparator(2, columns, rows))
 
-	fmt.Fprintf(w, "\n%s\n", table)
+	fmt.Fprintf(w, "%s", table)
 }

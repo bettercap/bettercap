@@ -168,13 +168,6 @@ type Config struct {
 	NoCumulativeStats bool
 }
 
-// htons converts a short (uint16) from host-to-network byte order.
-// Thanks to mikioh for this neat trick:
-// https://github.com/mikioh/-stdyng/blob/master/afpacket.go
-func htons(i uint16) uint16 {
-	return (i<<8)&0xff00 | i>>8
-}
-
 // Copyright (c) 2012 The Go Authors. All rights reserved.
 // Source code in this file is based on src/net/interface_linux.go,
 // from the Go standard library.  The Go license can be found here:

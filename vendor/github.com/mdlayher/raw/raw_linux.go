@@ -53,6 +53,13 @@ type socket interface {
 	SetTimeout(time.Duration) error
 }
 
+// htons converts a short (uint16) from host-to-network byte order.
+// Thanks to mikioh for this neat trick:
+// https://github.com/mikioh/-stdyng/blob/master/afpacket.go
+func htons(i uint16) uint16 {
+	return (i<<8)&0xff00 | i>>8
+}
+
 // listenPacket creates a net.PacketConn which can be used to send and receive
 // data at the device driver level.
 func listenPacket(ifi *net.Interface, proto uint16, cfg Config) (*packetConn, error) {
@@ -124,7 +131,7 @@ func (p *packetConn) ReadFrom(b []byte) (int, net.Addr, error) {
 
 	for {
 		if !deadline.IsZero() {
-			timeout = deadline.Sub(time.Now())
+			timeout = time.Until(deadline)
 			if timeout > readTimeout {
 				timeout = readTimeout
 			}

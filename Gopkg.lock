@@ -67,7 +67,7 @@
   revision = "2ce16c963a8ac5bd6af851d4877e38701346983f"
 
 [[projects]]
-  digest = "1:c706034658cd03896bcde87e0770048bb1443378d18932d5897c3d7f3e44133b"
+  digest = "1:cbae049ade5f135f52da4cc6e3fd6aca532dffbde65160ad1510dee6c3e8dc4f"
   name = "github.com/evilsocket/islazy"
   packages = [
     "data",
@@ -80,8 +80,8 @@
     "zip",
   ]
   pruneopts = "UT"
-  revision = "268495ba2f4621f397a274dc33b9296553db855d"
-  version = "v1.10.0"
+  revision = "949884336bbf7e535e4e0e6a3f75af89091488e5"
+  version = "v1.10.1"
 
 [[projects]]
   branch = "master"
@@ -206,11 +206,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:450f3a64f7a76d3f229ff33a30f0a889629dde46b0f82ece7c53404528316665"
+  digest = "1:34fe44dd2bbe5723068e0a7a266847965a88297d383fe611e0358e556d82de09"
   name = "github.com/mdlayher/raw"
   packages = ["."]
   pruneopts = "UT"
-  revision = "fa5ef3332ca961deab5782da07b1616fea8a9dd8"
+  revision = "480b93709cce56651807d3fdeb260a5a7c4e2d5f"
 
 [[projects]]
   branch = "master"
@@ -270,11 +270,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8207c052fb873f83c61a5aa16f6add5feb9881eda2112b56f69fd3b9e7f55c3f"
+  digest = "1:7a8067e267a25694dd7bdde6e5016053a3f61bb7141448bf8e0025a84eb7d11c"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "983097b1a8a340cd1cc7df17d735154d89e10b1a"
+  revision = "a9d3bda3a223baa6bba6ef412cb273f0fd163c05"
 
 [[projects]]
   digest = "1:9935525a8c49b8434a0b0a54e1980e94a6fae73aaff45c5d33ba8dff69de123e"
