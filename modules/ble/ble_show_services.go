@@ -185,7 +185,6 @@ func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool, 
 	if (mask&gatt.CharWriteNR) != 0 || (mask&gatt.CharWrite) != 0 {
 		props = append(props, tui.Bold("WRITE"))
 		isWritable = true
-		isReadable = true
 		withResponse = (mask & gatt.CharWriteNR) == 0
 	}
 	if (mask & gatt.CharNotify) != 0 {
@@ -265,7 +264,7 @@ func parseConnectionParams(raw []byte) []string {
 // org.bluetooth.characteristic.gap.peripheral_privacy_flag
 func parsePrivacyFlag(raw []byte) string {
 	if raw[0] == 0x0 {
-		return tui.Green("Privacy Diabled")
+		return tui.Green("Privacy Disabled")
 	}
 	return tui.Red("Privacy Enabled")
 }
