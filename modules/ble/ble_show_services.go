@@ -220,6 +220,50 @@ func parseRawData(raw []byte) string {
 	return tui.Yellow(s)
 }
 
+// org.bluetooth.characteristic.gap.appearance
+func parseAppearance(raw []byte) string {
+	app := binary.LittleEndian.Uint16(raw[0:2])
+	if appName, found := appearances[app]; found {
+		return tui.Green(appName)
+	}
+	return fmt.Sprintf("0x%x", app)
+}
+
+// org.bluetooth.characteristic.pnp_id
+func parsePNPID(raw []byte) []string {
+	vendorIdSrc := byte(raw[0])
+	vendorId := binary.LittleEndian.Uint16(raw[1:3])
+	prodId := binary.LittleEndian.Uint16(raw[3:5])
+	prodVer := binary.LittleEndian.Uint16(raw[5:7])
+
+	src := ""
+	if vendorIdSrc == 1 {
+		src = " (Bluetooth SIG assigned Company Identifier)"
+	} else if vendorIdSrc == 2 {
+		src = " (USB Implementer’s Forum assigned Vendor ID value)"
+	}
+
+	return []string{
+		tui.Green("Vendor ID") + fmt.Sprintf(": 0x%04x%s", vendorId, tui.Dim(src)),
+		tui.Green("Product ID") + fmt.Sprintf(": 0x%04x", prodId),
+		tui.Green("Product Version") + fmt.Sprintf(": 0x%04x", prodVer),
+	}
+}
+
+// org.bluetooth.characteristic.gap.peripheral_preferred_connection_parameters
+func parseConnectionParams(raw []byte) []string {
+	minConInt := binary.LittleEndian.Uint16(raw[0:2])
+	maxConInt := binary.LittleEndian.Uint16(raw[2:4])
+	slaveLat := binary.LittleEndian.Uint16(raw[4:6])
+	conTimeMul := binary.LittleEndian.Uint16(raw[6:8])
+
+	return []string{
+		tui.Green("Connection Interval") + fmt.Sprintf(": %d -> %d", minConInt, maxConInt),
+		tui.Green("Slave Latency") + fmt.Sprintf(": %d", slaveLat),
+		tui.Green("Connection Supervision Timeout Multiplier") + fmt.Sprintf(": %d", conTimeMul),
+	}
+}
+
 func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 	columns := []string{"Handles", "Service > Characteristics", "Properties", "Data"}
 	rows := make([][]string, 0)
@@ -296,30 +340,11 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 			multi := ([]string)(nil)
 
 			if ch.Name() == "Appearance" && sz >= 2 {
-				// org.bluetooth.characteristic.gap.appearance
-				app := binary.LittleEndian.Uint16(raw[0:2])
-				if appName, found := appearances[app]; found {
-					data = tui.Green(appName)
-				}
+				data = parseAppearance(raw)
 			} else if ch.Name() == "PnP ID" && sz >= 7 {
-				// org.bluetooth.characteristic.pnp_id
-				src := ""
-				vendorIdSrc := byte(raw[0])
-				vendorId := binary.LittleEndian.Uint16(raw[1:3])
-				prodId := binary.LittleEndian.Uint16(raw[3:5])
-				prodVer := binary.LittleEndian.Uint16(raw[5:7])
-
-				if vendorIdSrc == 1 {
-					src = " (Bluetooth SIG assigned Company Identifier)"
-				} else if vendorIdSrc == 2 {
-					src = " (USB Implementer’s Forum assigned Vendor ID value)"
-				}
-
-				multi = []string{
-					tui.Green("Vendor ID") + fmt.Sprintf(": 0x%04x%s", vendorId, tui.Dim(src)),
-					tui.Green("Product ID") + fmt.Sprintf(": 0x%04x", prodId),
-					tui.Green("Product Version") + fmt.Sprintf(": 0x%04x", prodVer),
-				}
+				multi = parsePNPID(raw)
+			} else if ch.Name() == "Peripheral Preferred Connection Parameters" && sz >= 8 {
+				multi = parseConnectionParams(raw)
 			}
 
 			if multi == nil {
