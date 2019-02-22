@@ -205,19 +205,36 @@ func parseProperties(ch *gatt.Characteristic) (props []string, isReadable bool, 
 	return
 }
 
-func parseRawData(raw []byte) string {
-	s := ""
+func isMostlyPrintable(raw []byte) bool {
+	if raw == nil {
+		return false
+	}
+
+	tot := len(raw)
+	if tot == 0 {
+		return false
+	}
+
+	pr := 0
 	for _, b := range raw {
-		if b != 00 && !strconv.IsPrint(rune(b)) {
-			return fmt.Sprintf("%x", raw)
-		} else if b == 0 {
-			break
-		} else {
-			s += fmt.Sprintf("%c", b)
+		if strconv.IsPrint(rune(b)) {
+			pr++
 		}
 	}
 
-	return tui.Yellow(s)
+	return (float32(pr) / float32(tot)) >= 0.5
+}
+
+func parseRawData(raw []byte) string {
+	s := ""
+	for _, b := range raw {
+		if strconv.IsPrint(rune(b)) {
+			s += tui.Yellow(string(b))
+		} else {
+			s += tui.Dim(fmt.Sprintf("%x", b))
+		}
+	}
+	return s
 }
 
 // org.bluetooth.characteristic.gap.appearance
@@ -262,6 +279,14 @@ func parseConnectionParams(raw []byte) []string {
 		tui.Green("Slave Latency") + fmt.Sprintf(": %d", slaveLat),
 		tui.Green("Connection Supervision Timeout Multiplier") + fmt.Sprintf(": %d", conTimeMul),
 	}
+}
+
+// org.bluetooth.characteristic.gap.peripheral_privacy_flag
+func parsePrivacyFlag(raw []byte) string {
+	if raw[0] == 0x0 {
+		return tui.Green("Privacy Diabled")
+	}
+	return tui.Red("Privacy Enabled")
 }
 
 func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
@@ -316,35 +341,35 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 					mod.Warning("attempt to write %d bytes to non writable characteristics %s ...", len(mod.writeData), mod.writeUUID)
 				}
 
-				err := p.WriteCharacteristic(ch, mod.writeData, !withResponse)
-				if err != nil {
+				if err := p.WriteCharacteristic(ch, mod.writeData, !withResponse); err != nil {
 					mod.Error("error while writing: %s", err)
 				}
 			}
 
 			data := ""
 			raw := ([]byte)(nil)
+			multi := ([]string)(nil)
+			sz := 0
 			err := error(nil)
 			if isReadable {
-				if raw, err = p.ReadCharacteristic(ch); err != nil {
-					data = tui.Red(err.Error())
-				} else {
-					data = parseRawData(raw)
+				raw, err = p.ReadCharacteristic(ch)
+				if raw != nil {
+					sz = len(raw)
 				}
 			}
 
-			sz := 0
-			if raw != nil {
-				sz = len(raw)
-			}
-			multi := ([]string)(nil)
-
-			if ch.Name() == "Appearance" && sz >= 2 {
+			if err != nil {
+				data = tui.Red(err.Error())
+			} else if ch.Name() == "Appearance" && sz >= 2 {
 				data = parseAppearance(raw)
 			} else if ch.Name() == "PnP ID" && sz >= 7 {
 				multi = parsePNPID(raw)
 			} else if ch.Name() == "Peripheral Preferred Connection Parameters" && sz >= 8 {
 				multi = parseConnectionParams(raw)
+			} else if ch.Name() == "Peripheral Privacy Flag" && sz >= 1 {
+				data = parsePrivacyFlag(raw)
+			} else {
+				data = parseRawData(raw)
 			}
 
 			if multi == nil {
