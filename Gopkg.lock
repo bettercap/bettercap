@@ -11,6 +11,22 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:1d692605b66a4fbe2a3de27131619e8e2c88ccf142ee43a7a8c902339942e0cc"
+  name = "github.com/antchfx/jsonquery"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a2896be8c82bb2229d1cf26204863180e34b2b31"
+
+[[projects]]
+  branch = "master"
+  digest = "1:7e4a9eaa42cb3b4cd48bd0cd2072a029fe25a47af20cfac529ea8c365f8559ac"
+  name = "github.com/antchfx/xpath"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c8489ed3251e7d55ec2b7f18a2bc3a9a7222f0af"
+
+[[projects]]
+  branch = "master"
   digest = "1:c309b41787813f80ec393023471014b0be16346bba6e16bf5fa01ce1d310a4ea"
   name = "github.com/bettercap/gatt"
   packages = [
@@ -292,6 +308,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/adrianmo/go-nmea",
+    "github.com/antchfx/jsonquery",
     "github.com/bettercap/gatt",
     "github.com/bettercap/nrf24",
     "github.com/bettercap/readline",

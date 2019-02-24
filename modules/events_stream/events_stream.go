@@ -29,6 +29,7 @@ type EventsStream struct {
 	output        *os.File
 	rotation      rotation
 	ignoreList    *IgnoreList
+	triggerList   *TriggerList
 	waitFor       string
 	waitChan      chan *session.Event
 	eventListener <-chan session.Event
@@ -45,6 +46,7 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		waitChan:      make(chan *session.Event),
 		waitFor:       "",
 		ignoreList:    NewIgnoreList(),
+		triggerList:   NewTriggerList(),
 	}
 
 	mod.AddHandler(session.NewModuleHandler("events.stream on", "",
@@ -68,6 +70,38 @@ func NewEventsStream(s *session.Session) *EventsStream {
 				limit, _ = strconv.Atoi(arg)
 			}
 			return mod.Show(limit)
+		}))
+
+	on := session.NewModuleHandler("events.on TAG COMMANDS", `events\.on ([^\s]+) (.+)`,
+		"Run COMMANDS when an event with the specified TAG is triggered.",
+		func(args []string) error {
+			return mod.addTrigger(args[0], args[1])
+		})
+
+	on.Complete("events.on", s.EventsCompleter)
+
+	mod.AddHandler(on)
+
+	mod.AddHandler(session.NewModuleHandler("events.triggers", "",
+		"Show the list of event triggers created by the events.on command.",
+		func(args []string) error {
+			return mod.showTriggers()
+		}))
+
+	onClear := session.NewModuleHandler("events.trigger.delete TRIGGER_ID", `events\.trigger\.delete ([^\s]+)`,
+		"Remove an event trigger given its TRIGGER_ID (use events.triggers to see the list of triggers).",
+		func(args []string) error {
+			return mod.clearTrigger(args[0])
+		})
+
+	onClear.Complete("events.trigger.delete", mod.triggerList.Completer)
+
+	mod.AddHandler(onClear)
+
+	mod.AddHandler(session.NewModuleHandler("events.triggers.clear", "",
+		"Remove all event triggers (use events.triggers to see the list of triggers).",
+		func(args []string) error {
+			return mod.clearTrigger("")
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("events.waitfor TAG TIMEOUT?", `events.waitfor ([^\s]+)([\s\d]*)`,
@@ -241,6 +275,10 @@ func (mod *EventsStream) Start() error {
 				if !mod.ignoreList.Ignored(e) {
 					mod.View(e, true)
 				}
+
+				// this could generate sys.log events and lock the whole
+				// events.stream, make it async
+				go mod.dispatchTriggers(e)
 
 			case <-mod.quit:
 				return
