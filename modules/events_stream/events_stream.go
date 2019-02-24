@@ -88,17 +88,25 @@ func NewEventsStream(s *session.Session) *EventsStream {
 			return mod.startWaitingFor(tag, timeout)
 		}))
 
-	mod.AddHandler(session.NewModuleHandler("events.ignore FILTER", "events.ignore ([^\\s]+)",
+	ignore := session.NewModuleHandler("events.ignore FILTER", "events.ignore ([^\\s]+)",
 		"Events with an identifier matching this filter will not be shown (use multiple times to add more filters).",
 		func(args []string) error {
 			return mod.ignoreList.Add(args[0])
-		}))
+		})
 
-	mod.AddHandler(session.NewModuleHandler("events.include FILTER", "events.include ([^\\s]+)",
+	ignore.Complete("events.ignore", s.EventsCompleter)
+
+	mod.AddHandler(ignore)
+
+	include := session.NewModuleHandler("events.include FILTER", "events.include ([^\\s]+)",
 		"Used to remove filters passed with the events.ignore command.",
 		func(args []string) error {
 			return mod.ignoreList.Remove(args[0])
-		}))
+		})
+
+	include.Complete("events.include", s.EventsCompleter)
+
+	mod.AddHandler(include)
 
 	mod.AddHandler(session.NewModuleHandler("events.filters", "",
 		"Print the list of filters used to ignore events.",

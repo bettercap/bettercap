@@ -210,6 +210,62 @@ func (s *Session) HIDCompleter(prefix string) []string {
 	return macs
 }
 
+func (s *Session) EventsCompleter(prefix string) []string {
+	events := []string{""}
+	all := []string{
+		"sys.log",
+		"session.started",
+		"session.closing",
+		"update.available",
+		"mod.started",
+		"mod.stopped",
+		"endpoint.new",
+		"endpoint.lost",
+		"wifi.client.lost",
+		"wifi.client.probe",
+		"wifi.client.new",
+		"wifi.client.handshake",
+		"wifi.ap.new",
+		"wifi.ap.lost",
+		"ble.device.service.discovered",
+		"ble.device.characteristic.discovered",
+		"ble.device.connected",
+		"ble.device.new",
+		"ble.device.lost",
+		"ble.connection.timeout",
+		"hid.device.new",
+		"hid.device.lost",
+		"http.spoofed-request",
+		"http.spoofed-response",
+		"https.spoofed-request",
+		"https.spoofed-response",
+		"syn.scan",
+		"net.sniff.mdns",
+		"net.sniff.mdns",
+		"net.sniff.dot11",
+		"net.sniff.tcp",
+		"net.sniff.upnp",
+		"net.sniff.ntlm",
+		"net.sniff.ftp",
+		"net.sniff.udp",
+		"net.sniff.krb5",
+		"net.sniff.dns",
+		"net.sniff.teamviewer",
+		"net.sniff.http.request",
+		"net.sniff.http.response",
+		"net.sniff.sni",
+	}
+
+	for _, e := range all {
+		if prefix == "" || strings.HasPrefix(e, prefix) {
+			events = append(events, e)
+		}
+
+	}
+
+	return events
+}
+
 func (s *Session) Module(name string) (err error, mod Module) {
 	for _, m := range s.Modules {
 		if m.Name() == name {
