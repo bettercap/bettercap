@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"sort"
-	"time"
 
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
@@ -116,9 +115,6 @@ func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 
 					mod.onChannel(ap.Channel(), func() {
 						mod.sendAssocPacket(ap)
-						// let's stick to this channel for a while in order
-						// to capture key material from the AP
-						time.Sleep(mod.hopPeriod * 2)
 					})
 				}
 			}

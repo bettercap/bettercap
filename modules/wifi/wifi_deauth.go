@@ -141,9 +141,6 @@ func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 
 					mod.onChannel(ap.Channel(), func() {
 						mod.sendDeauthPacket(ap.HW, client.HW)
-						// let's stick to this channel for a while in order
-						// to capture key material from the AP
-						time.Sleep(mod.hopPeriod * 2)
 					})
 				}
 			}
