@@ -92,7 +92,6 @@ func (l *TriggerList) Dispatch(e session.Event) (ident string, cmd string, err e
 
 	for id, t := range l.triggers {
 		if e.Tag == t.For {
-
 			// this is ugly but it's also the only way to allow
 			// the user to do this easily - since each event Data
 			// field is an interface and type casting is not possible
