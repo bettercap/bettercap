@@ -27,6 +27,9 @@ func NewAccessPoint(essid, bssid string, frequency int, rssi int8) *AccessPoint 
 }
 
 func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
+	ap.Lock()
+	defer ap.Unlock()
+
 	doc := apJSON{
 		Station: ap.Station,
 		Clients: make([]*Station, 0),

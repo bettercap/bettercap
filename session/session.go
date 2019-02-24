@@ -11,6 +11,7 @@ import (
 	"runtime/pprof"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/bettercap/readline"
@@ -94,6 +95,8 @@ type Session struct {
 	Events         *EventPool               `json:"-"`
 	UnkCmdCallback UnknownCommandCallback   `json:"-"`
 	Firewall       firewall.FirewallManager `json:"-"`
+
+	cmdLock sync.Mutex
 }
 
 func New() (*Session, error) {
@@ -118,6 +121,8 @@ func New() (*Session, error) {
 		Modules:        make([]Module, 0),
 		Events:         nil,
 		UnkCmdCallback: nil,
+
+		cmdLock: sync.Mutex{},
 	}
 
 	if *s.Options.CpuProfile != "" {
@@ -386,6 +391,9 @@ func parseCapletCommand(line string) (is bool, caplet *caplets.Caplet, argv []st
 }
 
 func (s *Session) Run(line string) error {
+	s.cmdLock.Lock()
+	defer s.cmdLock.Unlock()
+
 	line = str.TrimRight(line)
 	// remove extra spaces after the first command
 	// so that 'arp.spoof      on' is normalized
