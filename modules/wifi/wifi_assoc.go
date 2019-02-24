@@ -97,7 +97,7 @@ func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 		// association request, let's sort by channel so we do the minimum
 		// amount of hops possible
 		sort.Slice(toAssoc, func(i, j int) bool {
-			return toAssoc[i].Channel() < toAssoc[j].Channel()
+			return toAssoc[i].Channel < toAssoc[j].Channel
 		})
 
 		// send the association request frames
@@ -111,9 +111,9 @@ func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 				if ap.IsOpen() && !mod.doAssocOpen() {
 					mod.Debug("skipping association for open network %s (wifi.assoc.open is false)", ap.ESSID())
 				} else {
-					logger("sending association request to AP %s (channel:%d encryption:%s)", ap.ESSID(), ap.Channel(), ap.Encryption)
+					logger("sending association request to AP %s (channel:%d encryption:%s)", ap.ESSID(), ap.Channel, ap.Encryption)
 
-					mod.onChannel(ap.Channel(), func() {
+					mod.onChannel(ap.Channel, func() {
 						mod.sendAssocPacket(ap)
 					})
 				}

@@ -121,7 +121,7 @@ func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 		// deauth packet, let's sort by channel so we do the minimum
 		// amount of hops possible
 		sort.Slice(toDeauth, func(i, j int) bool {
-			return toDeauth[i].Ap.Channel() < toDeauth[j].Ap.Channel()
+			return toDeauth[i].Ap.Channel < toDeauth[j].Ap.Channel
 		})
 
 		// send the deauth frames
@@ -137,9 +137,9 @@ func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 				if ap.IsOpen() && !mod.doDeauthOpen() {
 					mod.Debug("skipping deauth for open network %s (wifi.deauth.open is false)", ap.ESSID())
 				} else {
-					logger("deauthing client %s from AP %s (channel:%d encryption:%s)", client.String(), ap.ESSID(), ap.Channel(), ap.Encryption)
+					logger("deauthing client %s from AP %s (channel:%d encryption:%s)", client.String(), ap.ESSID(), ap.Channel, ap.Encryption)
 
-					mod.onChannel(ap.Channel(), func() {
+					mod.onChannel(ap.Channel, func() {
 						mod.sendDeauthPacket(ap.HW, client.HW)
 					})
 				}

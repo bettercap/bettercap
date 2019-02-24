@@ -106,7 +106,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				return err
 			} else if ap, found := mod.Session.WiFi.Get(bssid.String()); found {
 				mod.ap = ap
-				mod.stickChan = ap.Channel()
+				mod.stickChan = ap.Channel
 				return nil
 			}
 			return fmt.Errorf("Could not find station with BSSID %s", args[0])
