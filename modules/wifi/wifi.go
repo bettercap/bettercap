@@ -174,7 +174,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	mod.AddHandler(assoc)
 
 	mod.AddParam(session.NewStringParameter("wifi.region",
-		"BO",
+		"",
 		"",
 		"Set the WiFi region to this value before activating the interface."))
 
