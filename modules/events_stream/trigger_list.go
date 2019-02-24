@@ -92,8 +92,7 @@ func (l *TriggerList) Dispatch(e session.Event) (ident string, cmd string, err e
 
 	for id, t := range l.triggers {
 		if e.Tag == t.For {
-			found = true
-			ident = id
+
 			// this is ugly but it's also the only way to allow
 			// the user to do this easily - since each event Data
 			// field is an interface and type casting is not possible
@@ -102,9 +101,11 @@ func (l *TriggerList) Dispatch(e session.Event) (ident string, cmd string, err e
 			// user to access it in the command via JSON-Query, example:
 			//
 			// events.on wifi.client.new "wifi.deauth {{Client\mac}}"
+			cmd = t.Action
+			found = true
+			ident = id
 			buf := ([]byte)(nil)
 			doc := (*jsonquery.Node)(nil)
-			cmd = t.Action
 			// parse each {EXPR}
 			for _, m := range reQueryCapture.FindAllString(t.Action, -1) {
 				// parse the event Data field as a JSON objects once
