@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"sync"
 
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
@@ -15,11 +16,13 @@ import (
 const IPv4Validator = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`
 
 type ModuleHandler struct {
+	sync.Mutex
+
 	Name        string
 	Description string
 	Parser      *regexp.Regexp
-	Exec        func(args []string) error
 	Completer   *readline.PrefixCompleter
+	exec        func(args []string) error
 }
 
 func NewModuleHandler(name string, expr string, desc string, exec func(args []string) error) ModuleHandler {
@@ -27,7 +30,7 @@ func NewModuleHandler(name string, expr string, desc string, exec func(args []st
 		Name:        name,
 		Description: desc,
 		Parser:      nil,
-		Exec:        exec,
+		exec:        exec,
 	}
 
 	if expr != "" {
@@ -60,6 +63,12 @@ func (h *ModuleHandler) Parse(line string) (bool, []string) {
 		return true, result[1:]
 	}
 	return false, nil
+}
+
+func (h *ModuleHandler) Exec(args []string) error {
+	h.Lock()
+	defer h.Unlock()
+	return h.exec(args)
 }
 
 type JSONModuleHandler struct {

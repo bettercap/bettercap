@@ -3,14 +3,16 @@ package session
 import (
 	"github.com/bettercap/readline"
 	"regexp"
+	"sync"
 )
 
 type CommandHandler struct {
+	sync.Mutex
 	Name        string
 	Description string
 	Completer   *readline.PrefixCompleter
 	Parser      *regexp.Regexp
-	Exec        func(args []string, s *Session) error
+	exec        func(args []string, s *Session) error
 }
 
 func NewCommandHandler(name string, expr string, desc string, exec func(args []string, s *Session) error) CommandHandler {
@@ -19,7 +21,7 @@ func NewCommandHandler(name string, expr string, desc string, exec func(args []s
 		Description: desc,
 		Completer:   nil,
 		Parser:      regexp.MustCompile(expr),
-		Exec:        exec,
+		exec:        exec,
 	}
 }
 
@@ -30,4 +32,10 @@ func (h *CommandHandler) Parse(line string) (bool, []string) {
 	} else {
 		return false, nil
 	}
+}
+
+func (h *CommandHandler) Exec(args []string, s *Session) error {
+	h.Lock()
+	defer h.Unlock()
+	return h.exec(args, s)
 }
