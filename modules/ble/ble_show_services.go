@@ -353,7 +353,7 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 
 			if multi == nil {
 				rows = append(rows, []string{
-					fmt.Sprintf("%04x", ch.Handle()),
+					fmt.Sprintf("%04x", ch.VHandle()),
 					name,
 					strings.Join(props, ", "),
 					data,
@@ -362,7 +362,7 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 				for i, m := range multi {
 					if i == 0 {
 						rows = append(rows, []string{
-							fmt.Sprintf("%04x", ch.Handle()),
+							fmt.Sprintf("%04x", ch.VHandle()),
 							name,
 							strings.Join(props, ", "),
 							m,
@@ -373,6 +373,8 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 				}
 			}
 		}
+		// blank row after every service, bleah style
+		rows = append(rows, []string{"", "", "", ""})
 	}
 
 	if wantsToWrite && !foundToWrite {
