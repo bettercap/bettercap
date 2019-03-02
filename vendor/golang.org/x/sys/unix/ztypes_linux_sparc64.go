@@ -580,6 +580,7 @@ const (
 	SizeofIfAddrmsg      = 0x8
 	SizeofRtMsg          = 0xc
 	SizeofRtNexthop      = 0x8
+	SizeofNdUseroptmsg   = 0x10
 )
 
 type NlMsghdr struct {
@@ -643,6 +644,17 @@ type RtNexthop struct {
 	Flags   uint8
 	Hops    uint8
 	Ifindex int32
+}
+
+type NdUseroptmsg struct {
+	Family    uint8
+	Pad1      uint8
+	Opts_len  uint16
+	Ifindex   int32
+	Icmp_type uint8
+	Icmp_code uint8
+	Pad2      uint16
+	Pad3      uint32
 }
 
 const (

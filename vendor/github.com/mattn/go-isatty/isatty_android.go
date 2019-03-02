@@ -1,12 +1,10 @@
-// +build linux
-// +build ppc64 ppc64le
+// +build android
 
 package isatty
 
 import (
+	"syscall"
 	"unsafe"
-
-	syscall "golang.org/x/sys/unix"
 )
 
 const ioctlReadTermios = syscall.TCGETS

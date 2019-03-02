@@ -1,4 +1,5 @@
 // +build arm mipsle mips 386
+// +build !linux
 
 package raw
 

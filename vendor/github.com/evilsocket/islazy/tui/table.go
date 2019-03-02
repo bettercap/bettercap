@@ -99,20 +99,23 @@ func lineSeparator(num int, columns []string, rows [][]string) string {
 // and prints on the writer an ASCII based datagrid of such
 // data.
 func Table(w io.Writer, columns []string, rows [][]string) {
+	headers := make([]string, len(columns))
 	for i, col := range columns {
-		columns[i] = fmt.Sprintf(" %s", col)
+		headers[i] = fmt.Sprintf(" %s", col)
 	}
 
+	cells := make([][]string, len(rows))
 	for i, row := range rows {
+		cells[i] = make([]string, len(row))
 		for j, cell := range row {
-			rows[i][j] = fmt.Sprintf(" %s", cell)
+			cells[i][j] = fmt.Sprintf(" %s", cell)
 		}
 	}
 
 	colPaddings := make([]int, 0)
-	for colIndex, colHeader := range columns {
+	for colIndex, colHeader := range headers {
 		column := []string{colHeader}
-		for _, row := range rows {
+		for _, row := range cells {
 			column = append(column, row[colIndex])
 		}
 		mLen := maxLen(column)
@@ -122,16 +125,16 @@ func Table(w io.Writer, columns []string, rows [][]string) {
 	table := "\n"
 
 	// header
-	table += fmt.Sprintf("%s\n", lineSeparator(0, columns, rows))
-	for colIndex, colHeader := range columns {
+	table += fmt.Sprintf("%s\n", lineSeparator(0, headers, cells))
+	for colIndex, colHeader := range headers {
 		table += fmt.Sprintf("│%s", padded(colHeader, colPaddings[colIndex], alignCenter))
 	}
 	table += fmt.Sprintf("│\n")
 
-	table += fmt.Sprintf("%s\n", lineSeparator(1, columns, rows))
+	table += fmt.Sprintf("%s\n", lineSeparator(1, headers, cells))
 
 	// rows
-	for _, row := range rows {
+	for _, row := range cells {
 		for colIndex, cell := range row {
 			table += fmt.Sprintf("│%s", padded(cell, colPaddings[colIndex], alignLeft))
 		}
@@ -139,7 +142,7 @@ func Table(w io.Writer, columns []string, rows [][]string) {
 	}
 
 	// footer
-	table += fmt.Sprintf("%s\n", lineSeparator(2, columns, rows))
+	table += fmt.Sprintf("%s\n", lineSeparator(2, headers, cells))
 
 	fmt.Fprintf(w, "%s", table)
 }

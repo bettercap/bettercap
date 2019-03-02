@@ -10,12 +10,6 @@ import (
 	"golang.org/x/net/bpf"
 )
 
-const (
-	// Maximum read timeout per syscall.
-	// It is required because read/recvfrom won't be interrupted on closing of the file descriptor.
-	readTimeout = 200 * time.Millisecond
-)
-
 var (
 	// ErrNotImplemented is returned when certain functionality is not yet
 	// implemented for the host operating system.
@@ -149,17 +143,6 @@ type Config struct {
 	// Has no effect on other operating systems.
 	LinuxSockDGRAM bool
 
-	// Experimental: Linux only (for now, but can be ported to BSD):
-	// disables repeated socket reads due to internal timeouts, at the expense
-	// of losing the ability to cancel a ReadFrom operation by calling the Close
-	// method of the net.PacketConn.
-	//
-	// Not recommended for programs which may need to open and close multiple
-	// sockets during program runs.  This may save some CPU time by avoiding a
-	// busy loop for programs which do not need timeouts, or programs which keep
-	// a single socket open for the entire duration of the program.
-	NoTimeouts bool
-
 	// Linux only: do not accumulate packet socket statistic counters.  Packet
 	// socket statistics are reset on each call to retrieve them via getsockopt,
 	// but this package's default behavior is to continue accumulating the
@@ -167,16 +150,3 @@ type Config struct {
 	// resetting statistics on each call to Stats, set this value to true.
 	NoCumulativeStats bool
 }
-
-// Copyright (c) 2012 The Go Authors. All rights reserved.
-// Source code in this file is based on src/net/interface_linux.go,
-// from the Go standard library.  The Go license can be found here:
-// https://golang.org/LICENSE.
-
-// Taken from:
-// https://github.com/golang/go/blob/master/src/net/net.go#L417-L421.
-type timeoutError struct{}
-
-func (e *timeoutError) Error() string   { return "i/o timeout" }
-func (e *timeoutError) Timeout() bool   { return true }
-func (e *timeoutError) Temporary() bool { return true }

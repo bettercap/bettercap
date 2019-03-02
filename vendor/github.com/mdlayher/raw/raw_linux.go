@@ -5,8 +5,8 @@ package raw
 import (
 	"net"
 	"os"
-	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 	"unsafe"
 
@@ -26,18 +26,11 @@ type packetConn struct {
 	s   socket
 	pbe uint16
 
-	// Should timeouts be set at all?
-	noTimeouts bool
-
 	// Should stats be accumulated instead of reset on each call?
 	noCumulativeStats bool
 
 	// Internal storage for cumulative stats.
 	stats Stats
-
-	// Timeouts set via Set{Read,}Deadline, guarded by mutex.
-	timeoutMu sync.RWMutex
-	rtimeout  time.Time
 }
 
 // socket is an interface which enables swapping out socket syscalls for
@@ -45,12 +38,13 @@ type packetConn struct {
 type socket interface {
 	Bind(unix.Sockaddr) error
 	Close() error
-	FD() int
 	GetSockopt(level, name int, v unsafe.Pointer, l uintptr) error
 	Recvfrom([]byte, int) (int, unix.Sockaddr, error)
 	Sendto([]byte, int, unix.Sockaddr) error
 	SetSockopt(level, name int, v unsafe.Pointer, l uint32) error
-	SetTimeout(time.Duration) error
+	SetDeadline(time.Time) error
+	SetReadDeadline(time.Time) error
+	SetWriteDeadline(time.Time) error
 }
 
 // htons converts a short (uint16) from host-to-network byte order.
@@ -66,9 +60,11 @@ func listenPacket(ifi *net.Interface, proto uint16, cfg Config) (*packetConn, er
 	// Convert proto to big endian.
 	pbe := htons(proto)
 
+	filename := "eth-packet-socket"
 	// Enabling overriding the socket type via config.
 	typ := unix.SOCK_RAW
 	if cfg.LinuxSockDGRAM {
+		filename = "packet-socket"
 		typ = unix.SOCK_DGRAM
 	}
 
@@ -78,13 +74,28 @@ func listenPacket(ifi *net.Interface, proto uint16, cfg Config) (*packetConn, er
 		return nil, err
 	}
 
-	// Wrap raw socket in socket interface.
-	pc, err := newPacketConn(ifi, &sysSocket{fd: sock}, pbe)
+	if err := unix.SetNonblock(sock, true); err != nil {
+		return nil, err
+	}
+
+	// When using Go 1.12+, the SetNonblock call we just did puts the file
+	// descriptor into non-blocking mode. In that case, os.NewFile
+	// registers the file descriptor with the runtime poller, which is then
+	// used for all subsequent operations.
+	//
+	// See also: https://golang.org/pkg/os/#NewFile
+	f := os.NewFile(uintptr(sock), filename)
+	sc, err := f.SyscallConn()
 	if err != nil {
 		return nil, err
 	}
 
-	pc.noTimeouts = cfg.NoTimeouts
+	// Wrap raw socket in socket interface.
+	pc, err := newPacketConn(ifi, &sysSocket{f: f, rc: sc}, pbe)
+	if err != nil {
+		return nil, err
+	}
+
 	pc.noCumulativeStats = cfg.NoCumulativeStats
 	return pc, nil
 }
@@ -115,51 +126,10 @@ func newPacketConn(ifi *net.Interface, s socket, pbe uint16) (*packetConn, error
 
 // ReadFrom implements the net.PacketConn.ReadFrom method.
 func (p *packetConn) ReadFrom(b []byte) (int, net.Addr, error) {
-	p.timeoutMu.Lock()
-	deadline := p.rtimeout
-	p.timeoutMu.Unlock()
-
-	var (
-		// Information returned by unix.Recvfrom.
-		n    int
-		addr unix.Sockaddr
-		err  error
-
-		// Timeout for a single loop iteration.
-		timeout = readTimeout
-	)
-
-	for {
-		if !deadline.IsZero() {
-			timeout = time.Until(deadline)
-			if timeout > readTimeout {
-				timeout = readTimeout
-			}
-		}
-
-		// Set a timeout for this iteration if configured to do so.
-		if !p.noTimeouts {
-			if err := p.s.SetTimeout(timeout); err != nil {
-				return 0, nil, err
-			}
-		}
-
-		// Attempt to receive on socket
-		// The recvfrom sycall will NOT be interrupted by closing of the socket
-		n, addr, err = p.s.Recvfrom(b, 0)
-		switch err {
-		case nil:
-			// Got data, break this loop shortly.
-		case unix.EAGAIN:
-			// Hit a timeout, keep looping.
-			continue
-		default:
-			// Return on any other error.
-			return n, nil, err
-		}
-
-		// Got data, exit the loop.
-		break
+	// Attempt to receive on socket
+	n, addr, err := p.s.Recvfrom(b, 0)
+	if err != nil {
+		return n, nil, err
 	}
 
 	// Retrieve hardware address and other information from addr.
@@ -223,20 +193,17 @@ func (p *packetConn) LocalAddr() net.Addr {
 
 // SetDeadline implements the net.PacketConn.SetDeadline method.
 func (p *packetConn) SetDeadline(t time.Time) error {
-	return p.SetReadDeadline(t)
+	return p.s.SetDeadline(t)
 }
 
 // SetReadDeadline implements the net.PacketConn.SetReadDeadline method.
 func (p *packetConn) SetReadDeadline(t time.Time) error {
-	p.timeoutMu.Lock()
-	p.rtimeout = t
-	p.timeoutMu.Unlock()
-	return nil
+	return p.s.SetReadDeadline(t)
 }
 
 // SetWriteDeadline implements the net.PacketConn.SetWriteDeadline method.
 func (p *packetConn) SetWriteDeadline(t time.Time) error {
-	return nil
+	return p.s.SetWriteDeadline(t)
 }
 
 // SetBPF attaches an assembled BPF program to a raw net.PacketConn.
@@ -255,7 +222,6 @@ func (p *packetConn) SetBPF(filter []bpf.RawInstruction) error {
 	if err != nil {
 		return os.NewSyscallError("setsockopt", err)
 	}
-
 	return nil
 }
 
@@ -310,38 +276,91 @@ func (p *packetConn) handleStats(s unix.TpacketStats) *Stats {
 // sysSocket is the default socket implementation.  It makes use of
 // Linux-specific system calls to handle raw socket functionality.
 type sysSocket struct {
-	fd int
+	f  *os.File
+	rc syscall.RawConn
 }
 
-// Method implementations simply invoke the syscall of the same name, but pass
-// the file descriptor stored in the sysSocket as the socket to use.
-func (s *sysSocket) Bind(sa unix.Sockaddr) error { return unix.Bind(s.fd, sa) }
-func (s *sysSocket) Close() error                { return unix.Close(s.fd) }
-func (s *sysSocket) FD() int                     { return s.fd }
-func (s *sysSocket) GetSockopt(level, name int, v unsafe.Pointer, l uintptr) error {
-	_, _, err := unix.Syscall6(unix.SYS_GETSOCKOPT, uintptr(s.fd), uintptr(level), uintptr(name), uintptr(v), uintptr(unsafe.Pointer(&l)), 0)
-	if err != 0 {
-		return unix.Errno(err)
-	}
-	return nil
+func (s *sysSocket) SetDeadline(t time.Time) error {
+	return s.f.SetDeadline(t)
 }
-func (s *sysSocket) Recvfrom(p []byte, flags int) (int, unix.Sockaddr, error) {
-	return unix.Recvfrom(s.fd, p, flags)
+
+func (s *sysSocket) SetReadDeadline(t time.Time) error {
+	return s.f.SetReadDeadline(t)
 }
-func (s *sysSocket) Sendto(p []byte, flags int, to unix.Sockaddr) error {
-	return unix.Sendto(s.fd, p, flags, to)
+
+func (s *sysSocket) SetWriteDeadline(t time.Time) error {
+	return s.f.SetWriteDeadline(t)
 }
-func (s *sysSocket) SetSockopt(level, name int, v unsafe.Pointer, l uint32) error {
-	_, _, err := unix.Syscall6(unix.SYS_SETSOCKOPT, uintptr(s.fd), uintptr(level), uintptr(name), uintptr(v), uintptr(l), 0)
-	if err != 0 {
-		return unix.Errno(err)
-	}
-	return nil
-}
-func (s *sysSocket) SetTimeout(timeout time.Duration) error {
-	tv, err := newTimeval(timeout)
+
+func (s *sysSocket) Bind(sa unix.Sockaddr) error {
+	var err error
+	cerr := s.rc.Control(func(fd uintptr) {
+		err = unix.Bind(int(fd), sa)
+	})
 	if err != nil {
 		return err
 	}
-	return unix.SetsockoptTimeval(s.fd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, tv)
+	return cerr
+}
+
+func (s *sysSocket) Close() error {
+	return s.f.Close()
+}
+
+func (s *sysSocket) GetSockopt(level, name int, v unsafe.Pointer, l uintptr) error {
+	var err error
+	cerr := s.rc.Control(func(fd uintptr) {
+		_, _, errno := unix.Syscall6(unix.SYS_GETSOCKOPT, fd, uintptr(level), uintptr(name), uintptr(v), uintptr(unsafe.Pointer(&l)), 0)
+		if errno != 0 {
+			err = os.NewSyscallError("getsockopt", errno)
+		}
+	})
+	if err != nil {
+		return err
+	}
+	return cerr
+}
+
+func (s *sysSocket) Recvfrom(p []byte, flags int) (n int, addr unix.Sockaddr, err error) {
+	cerr := s.rc.Read(func(fd uintptr) bool {
+		n, addr, err = unix.Recvfrom(int(fd), p, flags)
+		// When the socket is in non-blocking mode, we might see EAGAIN
+		// and end up here. In that case, return false to let the
+		// poller wait for readiness. See the source code for
+		// internal/poll.FD.RawRead for more details.
+		//
+		// If the socket is in blocking mode, EAGAIN should never occur.
+		return err != unix.EAGAIN
+	})
+	if err != nil {
+		return n, addr, err
+	}
+	return n, addr, cerr
+}
+
+func (s *sysSocket) Sendto(p []byte, flags int, to unix.Sockaddr) error {
+	var err error
+	cerr := s.rc.Write(func(fd uintptr) bool {
+		err = unix.Sendto(int(fd), p, flags, to)
+		// See comment in Recvfrom.
+		return err != unix.EAGAIN
+	})
+	if err != nil {
+		return err
+	}
+	return cerr
+}
+
+func (s *sysSocket) SetSockopt(level, name int, v unsafe.Pointer, l uint32) error {
+	var err error
+	cerr := s.rc.Control(func(fd uintptr) {
+		_, _, errno := unix.Syscall6(unix.SYS_SETSOCKOPT, fd, uintptr(level), uintptr(name), uintptr(v), uintptr(l), 0)
+		if errno != 0 {
+			err = os.NewSyscallError("setsockopt", errno)
+		}
+	})
+	if err != nil {
+		return err
+	}
+	return cerr
 }
