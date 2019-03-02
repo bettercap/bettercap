@@ -107,7 +107,7 @@ func (p DuckyParser) Parse(kmap KeyMap, path string) (cmds []*Command, err error
 	}
 
 	cmds = make([]*Command, 0)
-	for lineno, line := range source {
+	for _, line := range source {
 		cmd := &Command{}
 		if p.lineIs(line, "CTRL", "CONTROL") {
 			if cmd, err = p.parseModifier(line, kmap, 1); err != nil {
@@ -177,8 +177,8 @@ func (p DuckyParser) Parse(kmap KeyMap, path string) (cmds []*Command, err error
 			}
 
 			continue
-		} else {
-			err = fmt.Errorf("can't parse line %d ('%s') of %s", lineno+1, line, path)
+		} else if cmd, err = p.parseLiteral(line, kmap); err != nil {
+			err = fmt.Errorf("error parsing '%s': %s", line, err)
 			return
 		}
 
