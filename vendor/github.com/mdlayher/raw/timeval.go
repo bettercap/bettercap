@@ -1,4 +1,4 @@
-// +build !darwin,!arm,!windows,!mipsle,!mips,!386,!linux
+// +build !darwin,!arm,!windows,!mipsle,!mips,!386
 
 package raw
 

@@ -222,11 +222,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7b8a07084a265123ced4a06172044402febe04f9f7d39d7269901d556cbd769e"
+  digest = "1:34fe44dd2bbe5723068e0a7a266847965a88297d383fe611e0358e556d82de09"
   name = "github.com/mdlayher/raw"
   packages = ["."]
   pruneopts = "UT"
-  revision = "81144197cf93eb7382abd04a6a15154cfce2e65c"
+  revision = "480b93709cce56651807d3fdeb260a5a7c4e2d5f"
 
 [[projects]]
   branch = "master"
