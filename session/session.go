@@ -73,6 +73,11 @@ func (mm ModuleList) MarshalJSON() ([]byte, error) {
 	return json.Marshal(mods)
 }
 
+type GPS struct {
+	GNGGA nmea.GNGGA
+	GPGGA nmea.GPGGA
+}
+
 type Session struct {
 	Options   core.Options      `json:"options"`
 	Interface *network.Endpoint `json:"interface"`
@@ -85,7 +90,7 @@ type Session struct {
 	Queue     *packets.Queue    `json:"packets"`
 	StartedAt time.Time         `json:"started_at"`
 	Active    bool              `json:"active"`
-	GPS       nmea.GNGGA        `json:"gps"`
+	GPS       GPS               `json:"gps"`
 	Modules   ModuleList        `json:"modules"`
 
 	Input          *readline.Instance       `json:"-"`

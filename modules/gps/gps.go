@@ -106,12 +106,21 @@ func (mod *GPS) readLine() (line string, err error) {
 }
 
 func (mod *GPS) Show() error {
-	fmt.Printf("latitude:%f longitude:%f quality:%s satellites:%d altitude:%f\n",
-		mod.Session.GPS.Latitude,
-		mod.Session.GPS.Longitude,
-		mod.Session.GPS.FixQuality,
-		mod.Session.GPS.NumSatellites,
-		mod.Session.GPS.Altitude)
+	if mod.Session.GPS.GNGGA.Time.Valid {
+		fmt.Printf("latitude:%f longitude:%f quality:%s satellites:%d altitude:%f\n",
+			mod.Session.GPS.GNGGA.Latitude,
+			mod.Session.GPS.GNGGA.Longitude,
+			mod.Session.GPS.GNGGA.FixQuality,
+			mod.Session.GPS.GNGGA.NumSatellites,
+			mod.Session.GPS.GNGGA.Altitude)
+	} else {
+		fmt.Printf("latitude:%f longitude:%f quality:%s satellites:%d altitude:%f\n",
+			mod.Session.GPS.GPGGA.Latitude,
+			mod.Session.GPS.GPGGA.Longitude,
+			mod.Session.GPS.GPGGA.FixQuality,
+			mod.Session.GPS.GPGGA.NumSatellites,
+			mod.Session.GPS.GPGGA.Altitude)
+	}
 
 	mod.Session.Refresh()
 
@@ -132,7 +141,9 @@ func (mod *GPS) Start() error {
 				if s, err := nmea.Parse(line); err == nil {
 					// http://aprs.gids.nl/nmea/#gga
 					if m, ok := s.(nmea.GNGGA); ok {
-						mod.Session.GPS = m
+						mod.Session.GPS.GNGGA = m
+					} else if m, ok := s.(nmea.GPGGA); ok {
+						mod.Session.GPS.GPGGA = m
 					}
 				} else {
 					mod.Debug("error parsing line '%s': %s", line, err)
