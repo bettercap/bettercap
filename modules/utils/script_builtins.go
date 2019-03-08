@@ -20,6 +20,33 @@ func errOtto(format string, args ...interface{}) otto.Value {
 }
 
 func init() {
+	// used to read a directory (returns string array)
+	plugin.Defines["readDir"] = func(call otto.FunctionCall) otto.Value {
+		argv := call.ArgumentList
+		argc := len(argv)
+		if argc != 1 {
+			return errOtto("readDir: expected 1 argument, %d given instead.", argc)
+		}
+
+		path := argv[0].String()
+		dir, err := ioutil.ReadDir(path)
+		if err != nil {
+			return errOtto("Could not read directory %s: %s", path, err)
+		}
+
+		entry_list := []string{}
+		for _, file := range dir {
+			entry_list = append( entry_list, file.Name() )
+		}
+
+		v, err := otto.Otto.ToValue(*call.Otto, entry_list)
+		if err != nil {
+			return errOtto("Could not convert to array: %s", err)
+		}
+
+		return v
+	}
+
 	// used to read a file ... doh
 	plugin.Defines["readFile"] = func(call otto.FunctionCall) otto.Value {
 		argv := call.ArgumentList
@@ -31,7 +58,7 @@ func init() {
 		filename := argv[0].String()
 		raw, err := ioutil.ReadFile(filename)
 		if err != nil {
-			return errOtto("Could not read %s: %s", filename, err)
+			return errOtto("Could not read file %s: %s", filename, err)
 		}
 
 		v, err := otto.ToValue(string(raw))
