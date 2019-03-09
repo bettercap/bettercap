@@ -11,7 +11,7 @@ Please, before creating this issue make sure that you read the [README](https://
 
 Please provide:
 
-* Bettercap version you are using.
+* Bettercap version you are using ( `bettercap -version` ).
 * OS version and architecture you are using.
 * Go version if building from sources.
 * Command line arguments you are using.
