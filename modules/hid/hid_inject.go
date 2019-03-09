@@ -54,7 +54,7 @@ func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
 
 	dev, found := mod.Session.HID.Get(mod.sniffAddr)
 	if found == false {
-		mod.Warning("device %s is not visible, will use HID type %s", tui.Yellow(mod.sniffType))
+		mod.Warning("device %s is not visible, will use HID type %s", mod.sniffAddr, tui.Yellow(mod.sniffType))
 	}
 
 	var builder FrameBuilder
@@ -130,7 +130,7 @@ func (mod *HIDRecon) doInjection() {
 			for attempt := 0; attempt < 3; attempt++ {
 				if err := mod.dongle.TransmitPayload(frame.Data, 500, 5); err != nil {
 					if attempt < 2 {
-						mod.Warning("error sending frame #%d of HID command #%d: %v, retrying ...", j, i, err)
+						mod.Debug("error sending frame #%d of HID command #%d: %v, retrying ...", j, i, err)
 					} else {
 						mod.Error("error sending frame #%d of HID command #%d: %v", j, i, err)
 					}
