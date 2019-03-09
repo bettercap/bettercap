@@ -67,11 +67,12 @@ build_windows_amd64() {
 
 build_android_arm() {
     host_dep 'shield'
-
-    THEPATH="/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/usr/bin/applets:/system/xbin:/system/bin"
-    LPATH="/data/data/com.termux/files/usr/lib"
-    GPATH=/data/data/com.termux/files/home/go
-    DIR=/data/data/com.termux/files/home/go/src/github.com/bettercap/bettercap
+    
+    BASE=/data/data/com.termux/files
+    THEPATH="$BASE/usr/bin:$BASE/usr/bin/applets:/system/xbin:/system/bin"
+    LPATH="$BASE/usr/lib"
+    GPATH=$BASE/home/go
+    DIR=$GPATH/src/github.com/bettercap/bettercap
 
     echo "@ Updating repo on Android host ..."
     ssh -p 8022 root@shield "su -c 'export PATH=$THEPATH && export LD_LIBRARY_PATH="$LPATH" && cd "$DIR" && rm -rf bettercap* && git pull && export GOPATH=$GPATH && go get ./...'"
@@ -87,10 +88,28 @@ rm -rf $BUILD_FOLDER
 mkdir $BUILD_FOLDER
 cd $BUILD_FOLDER
 
-build_linux_amd64 && create_archive bettercap_linux_amd64_$VERSION.zip
-build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
-build_windows_amd64 && create_exe_archive bettercap_windows_amd64_$VERSION.zip
-build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
+if [ -z "$1" ]
+  then
+      WHAT=all
+  else
+      WHAT="$1"
+fi
+
+printf "@ Building for $WHAT ...\n\n"
+
+case "$WHAT" in
+    all|linux)
+        build_linux_amd64 && create_archive bettercap_linux_amd64_$VERSION.zip
+    ;;
+    all|osx|mac|macos)
+        build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
+    ;;
+    all|windows|win)
+        build_windows_amd64 && create_exe_archive bettercap_windows_amd64_$VERSION.zip
+    ;;
+    all|android)
+        build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
+esac
 
 sha256sum * > checksums.txt
 
