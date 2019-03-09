@@ -124,7 +124,7 @@ func (mod *EventsStream) viewHttpRequest(e session.Event) {
 	req := se.Data.(net_sniff.HTTPRequest)
 
 	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
-		e.Time.Format(eventTimeFormat),
+		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		se.Message)
 
@@ -162,7 +162,7 @@ func (mod *EventsStream) viewHttpResponse(e session.Event) {
 	res := se.Data.(net_sniff.HTTPResponse)
 
 	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
-		e.Time.Format(eventTimeFormat),
+		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		se.Message)
 

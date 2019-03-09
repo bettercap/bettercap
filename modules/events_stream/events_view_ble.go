@@ -25,7 +25,7 @@ func (mod *EventsStream) viewBLEEvent(e session.Event) {
 		}
 
 		fmt.Fprintf(mod.output, "[%s] [%s] new BLE device%s detected as %s%s %s.\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			name,
 			dev.Device.ID(),
@@ -43,14 +43,14 @@ func (mod *EventsStream) viewBLEEvent(e session.Event) {
 		}
 
 		fmt.Fprintf(mod.output, "[%s] [%s] BLE device%s %s%s lost.\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			name,
 			dev.Device.ID(),
 			vend)
 	} /* else {
 		fmt.Fprintf(s.output,"[%s] [%s]\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag))
 	} */
 }

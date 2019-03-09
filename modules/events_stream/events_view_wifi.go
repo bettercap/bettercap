@@ -24,7 +24,7 @@ func (mod *EventsStream) viewWiFiApEvent(e session.Event) {
 
 	if e.Tag == "wifi.ap.new" {
 		fmt.Fprintf(mod.output, "[%s] [%s] wifi access point %s%s detected as %s%s.\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			tui.Bold(ap.ESSID()),
 			tui.Dim(tui.Yellow(rssi)),
@@ -32,13 +32,13 @@ func (mod *EventsStream) viewWiFiApEvent(e session.Event) {
 			tui.Dim(vend))
 	} else if e.Tag == "wifi.ap.lost" {
 		fmt.Fprintf(mod.output, "[%s] [%s] wifi access point %s (%s) lost.\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			tui.Red(ap.ESSID()),
 			ap.BSSID())
 	} else {
 		fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			ap.String())
 	}
@@ -58,7 +58,7 @@ func (mod *EventsStream) viewWiFiClientProbeEvent(e session.Event) {
 	}
 
 	fmt.Fprintf(mod.output, "[%s] [%s] station %s%s is probing for SSID %s%s\n",
-		e.Time.Format(eventTimeFormat),
+		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		probe.FromAddr.String(),
 		tui.Dim(desc),
@@ -83,7 +83,7 @@ func (mod *EventsStream) viewWiFiHandshakeEvent(e session.Event) {
 	}
 
 	fmt.Fprintf(mod.output, "[%s] [%s] captured %s -> %s %s to %s\n",
-		e.Time.Format(eventTimeFormat),
+		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		from,
 		to,
@@ -98,14 +98,14 @@ func (mod *EventsStream) viewWiFiClientEvent(e session.Event) {
 
 	if e.Tag == "wifi.client.new" {
 		fmt.Fprintf(mod.output, "[%s] [%s] new station %s detected for %s (%s)\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			ce.Client.String(),
 			tui.Bold(ce.AP.ESSID()),
 			tui.Dim(ce.AP.BSSID()))
 	} else if e.Tag == "wifi.client.lost" {
 		fmt.Fprintf(mod.output, "[%s] [%s] station %s disconnected from %s (%s)\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			ce.Client.String(),
 			tui.Bold(ce.AP.ESSID()),
@@ -123,6 +123,6 @@ func (mod *EventsStream) viewWiFiEvent(e session.Event) {
 	} else if e.Tag == "wifi.client.new" || e.Tag == "wifi.client.lost" {
 		mod.viewWiFiClientEvent(e)
 	} else {
-		fmt.Fprintf(mod.output, "[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), tui.Green(e.Tag), e)
+		fmt.Fprintf(mod.output, "[%s] [%s] %v\n", e.Time.Format(mod.timeFormat), tui.Green(e.Tag), e)
 	}
 }

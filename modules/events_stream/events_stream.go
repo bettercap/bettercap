@@ -25,6 +25,7 @@ type rotation struct {
 
 type EventsStream struct {
 	session.SessionModule
+	timeFormat    string
 	outputName    string
 	output        *os.File
 	rotation      rotation
@@ -42,6 +43,7 @@ func NewEventsStream(s *session.Session) *EventsStream {
 	mod := &EventsStream{
 		SessionModule: session.NewSessionModule("events.stream", s),
 		output:        os.Stdout,
+		timeFormat:    "15:04:05",
 		quit:          make(chan bool),
 		waitChan:      make(chan *session.Event),
 		waitFor:       "",
@@ -177,6 +179,11 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		"",
 		"If not empty, events will be written to this file instead of the standard output."))
 
+	mod.AddParam(session.NewStringParameter("events.stream.time.format",
+		mod.timeFormat,
+		"",
+		"Date and time format to use for events reporting."))
+
 	mod.AddParam(session.NewBoolParameter("events.stream.output.rotate",
 		"true",
 		"If true will enable log rotation."))
@@ -234,6 +241,8 @@ func (mod *EventsStream) Configure() (err error) {
 	}
 
 	if err, mod.rotation.Enabled = mod.BoolParam("events.stream.output.rotate"); err != nil {
+		return err
+	} else if err, mod.timeFormat = mod.StringParam("events.stream.time.format"); err != nil {
 		return err
 	} else if err, mod.rotation.Compress = mod.BoolParam("events.stream.output.rotate.compress"); err != nil {
 		return err

@@ -18,11 +18,9 @@ import (
 	"github.com/evilsocket/islazy/zip"
 )
 
-const eventTimeFormat = "15:04:05"
-
 func (mod *EventsStream) viewLogEvent(e session.Event) {
 	fmt.Fprintf(mod.output, "[%s] [%s] [%s] %s\n",
-		e.Time.Format(eventTimeFormat),
+		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		e.Label(),
 		e.Data.(session.LogMessage).Message)
@@ -45,7 +43,7 @@ func (mod *EventsStream) viewEndpointEvent(e session.Event) {
 
 	if e.Tag == "endpoint.new" {
 		fmt.Fprintf(mod.output, "[%s] [%s] endpoint %s%s detected as %s%s.\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			tui.Bold(t.IpAddress),
 			tui.Dim(name),
@@ -53,7 +51,7 @@ func (mod *EventsStream) viewEndpointEvent(e session.Event) {
 			tui.Dim(vend))
 	} else if e.Tag == "endpoint.lost" {
 		fmt.Fprintf(mod.output, "[%s] [%s] endpoint %s%s %s%s lost.\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			tui.Red(t.IpAddress),
 			tui.Dim(name),
@@ -61,7 +59,7 @@ func (mod *EventsStream) viewEndpointEvent(e session.Event) {
 			tui.Dim(vend))
 	} else {
 		fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			t.String())
 	}
@@ -69,7 +67,7 @@ func (mod *EventsStream) viewEndpointEvent(e session.Event) {
 
 func (mod *EventsStream) viewModuleEvent(e session.Event) {
 	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
-		e.Time.Format(eventTimeFormat),
+		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		e.Data)
 }
@@ -79,7 +77,7 @@ func (mod *EventsStream) viewSnifferEvent(e session.Event) {
 		mod.viewHttpEvent(e)
 	} else {
 		fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
-			e.Time.Format(eventTimeFormat),
+			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			e.Data.(net_sniff.SnifferEvent).Message)
 	}
@@ -88,7 +86,7 @@ func (mod *EventsStream) viewSnifferEvent(e session.Event) {
 func (mod *EventsStream) viewSynScanEvent(e session.Event) {
 	se := e.Data.(syn_scan.SynScanEvent)
 	fmt.Fprintf(mod.output, "[%s] [%s] found open port %d for %s\n",
-		e.Time.Format(eventTimeFormat),
+		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		se.Port,
 		tui.Bold(se.Address))
@@ -98,7 +96,7 @@ func (mod *EventsStream) viewUpdateEvent(e session.Event) {
 	update := e.Data.(*github.RepositoryRelease)
 
 	fmt.Fprintf(mod.output, "[%s] [%s] an update to version %s is available at %s\n",
-		e.Time.Format(eventTimeFormat),
+		e.Time.Format(mod.timeFormat),
 		tui.Bold(tui.Yellow(e.Tag)),
 		tui.Bold(*update.TagName),
 		*update.HTMLURL)
@@ -152,6 +150,12 @@ func (mod *EventsStream) doRotation() {
 }
 
 func (mod *EventsStream) View(e session.Event, refresh bool) {
+	var err error
+	if err, mod.timeFormat = mod.StringParam("events.stream.time.format"); err != nil {
+		fmt.Fprintf(mod.output, "%v", err)
+		mod.timeFormat = "15:04:05"
+	}
+
 	if e.Tag == "sys.log" {
 		mod.viewLogEvent(e)
 	} else if strings.HasPrefix(e.Tag, "endpoint.") {
@@ -171,7 +175,7 @@ func (mod *EventsStream) View(e session.Event, refresh bool) {
 	} else if e.Tag == "update.available" {
 		mod.viewUpdateEvent(e)
 	} else {
-		fmt.Fprintf(mod.output, "[%s] [%s] %v\n", e.Time.Format(eventTimeFormat), tui.Green(e.Tag), e)
+		fmt.Fprintf(mod.output, "[%s] [%s] %v\n", e.Time.Format(mod.timeFormat), tui.Green(e.Tag), e)
 	}
 
 	if refresh && mod.output == os.Stdout {
