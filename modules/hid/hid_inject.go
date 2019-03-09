@@ -46,19 +46,30 @@ func errNoKeyMap(layout string) error {
 }
 
 func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
-	// we can only inject onto visible connections
-	dev, found := mod.Session.HID.Get(mod.sniffAddr)
-	if found == false {
-		return errNoDevice(mod.sniffAddr), nil, nil
+	var err error
+
+	if err, mod.sniffType = mod.StringParam("hid.force.type"); err != nil {
+		return err, nil, nil
 	}
 
-	// get the device specific protocol handler
-	builder, found := FrameBuilders[dev.Type]
+	dev, found := mod.Session.HID.Get(mod.sniffAddr)
 	if found == false {
-		if dev.Type == network.HIDTypeUnknown {
-			return errNoType(mod.sniffAddr), nil, nil
+		mod.Warning("device %s is not visible, will use HID type %s", tui.Yellow(mod.sniffType))
+	}
+
+	var builder FrameBuilder
+	if found {
+		// get the device specific protocol handler
+		builder, found = FrameBuilders[dev.Type]
+		if found == false {
+			if dev.Type == network.HIDTypeUnknown {
+				return errNoType(mod.sniffAddr), nil, nil
+			}
+			return errNotSupported(dev), nil, nil
 		}
-		return errNotSupported(dev), nil, nil
+	} else {
+		// get the device protocol handler from the hid.force.type parameter
+		builder = builderFromName(mod.sniffType)
 	}
 
 	// get the keymap from the selected layout
@@ -102,11 +113,16 @@ func (mod *HIDRecon) doInjection() {
 		}
 	}
 
+	devType := mod.sniffType
+	if dev != nil {
+		devType = dev.Type.String()
+	}
+
 	mod.Info("sending %d (%s) HID frames to %s (type:%s layout:%s) ...",
 		numFrames,
 		humanize.Bytes(uint64(szFrames)),
 		tui.Bold(mod.sniffAddr),
-		tui.Yellow(dev.Type.String()),
+		tui.Yellow(devType),
 		tui.Yellow(mod.keyLayout))
 
 	for i, cmd := range cmds {

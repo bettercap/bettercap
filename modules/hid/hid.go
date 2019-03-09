@@ -5,6 +5,7 @@ package hid
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,6 +30,7 @@ type HIDRecon struct {
 	writeLock    *sync.Mutex
 	sniffAddrRaw []byte
 	sniffAddr    string
+	sniffType    string
 	pingPayload  []byte
 	inSniffMode  bool
 	inPromMode   bool
@@ -120,6 +122,13 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 	mod.AddParam(session.NewIntParameter("hid.sniff.period",
 		"500",
 		"Time in milliseconds to automatically sniff payloads from a device, once it's detected, in order to determine its type."))
+
+	builders := availBuilders()
+
+	mod.AddParam(session.NewStringParameter("hid.force.type",
+		"logitech",
+		fmt.Sprintf("(%s)", strings.Join(builders, "|")),
+		fmt.Sprintf("If the device is not visible or its type has not being detected, force the device type to this value. Accepted values: %s", strings.Join(builders, ", "))))
 
 	mod.parser = DuckyParser{mod}
 	mod.selector = utils.ViewSelectorFor(&mod.SessionModule, "hid.show", []string{"mac", "seen"}, "mac desc")

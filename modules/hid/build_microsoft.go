@@ -36,6 +36,10 @@ func (b MicrosoftBuilder) frameFor(template []byte, cmd *Command) []byte {
 }
 
 func (b MicrosoftBuilder) BuildFrames(dev *network.HIDDevice, commands []*Command) error {
+	if dev == nil {
+		return fmt.Errorf("the microsoft frame injection requires the device to be visible")
+	}
+
 	tpl := ([]byte)(nil)
 	dev.EachPayload(func(p []byte) bool {
 		if len(p) == 19 {
