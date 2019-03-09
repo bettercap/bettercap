@@ -97,19 +97,21 @@ fi
 
 printf "@ Building for $WHAT ...\n\n"
 
-case "$WHAT" in
-    all|linux)
-        build_linux_amd64 && create_archive bettercap_linux_amd64_$VERSION.zip
-    ;;
-    all|osx|mac|macos)
-        build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
-    ;;
-    all|windows|win)
-        build_windows_amd64 && create_exe_archive bettercap_windows_amd64_$VERSION.zip
-    ;;
-    all|android)
-        build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
-esac
+if [[ "$WHAT" == "all" || "$WHAT" == "linux" ]]; then
+    build_linux_amd64 && create_archive bettercap_linux_amd64_$VERSION.zip
+fi
+
+if [[ "$WHAT" == "all" || "$WHAT" == "osx" || "$WHAT" == "mac" || "$WHAT" == "macos" ]]; then
+    build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
+fi
+
+if [[ "$WHAT" == "all" || "$WHAT" == "win" || "$WHAT" == "windows" ]]; then
+    build_windows_amd64 && create_exe_archive bettercap_windows_amd64_$VERSION.zip
+fi 
+
+if [[ "$WHAT" == "all" || "$WHAT" == "android" ]]; then
+    build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
+fi
 
 sha256sum * > checksums.txt
 
