@@ -4,7 +4,6 @@
 CURRENT_VERSION=$(cat core/banner.go | grep Version | cut -d '"' -f 2)
 TO_UPDATE=(
     core/banner.go
-    snapcraft.yaml
 )
 
 echo -n "Current version is $CURRENT_VERSION, select new version: "
