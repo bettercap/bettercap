@@ -106,21 +106,12 @@ func (mod *GPS) readLine() (line string, err error) {
 }
 
 func (mod *GPS) Show() error {
-	if mod.Session.GPS.GNGGA.Time.Valid {
-		fmt.Printf("latitude:%f longitude:%f quality:%s satellites:%d altitude:%f\n",
-			mod.Session.GPS.GNGGA.Latitude,
-			mod.Session.GPS.GNGGA.Longitude,
-			mod.Session.GPS.GNGGA.FixQuality,
-			mod.Session.GPS.GNGGA.NumSatellites,
-			mod.Session.GPS.GNGGA.Altitude)
-	} else {
-		fmt.Printf("latitude:%f longitude:%f quality:%s satellites:%d altitude:%f\n",
-			mod.Session.GPS.GPGGA.Latitude,
-			mod.Session.GPS.GPGGA.Longitude,
-			mod.Session.GPS.GPGGA.FixQuality,
-			mod.Session.GPS.GPGGA.NumSatellites,
-			mod.Session.GPS.GPGGA.Altitude)
-	}
+	fmt.Printf("latitude:%f longitude:%f quality:%s satellites:%d altitude:%f\n",
+		mod.Session.GPS.Latitude,
+		mod.Session.GPS.Longitude,
+		mod.Session.GPS.FixQuality,
+		mod.Session.GPS.NumSatellites,
+		mod.Session.GPS.Altitude)
 
 	mod.Session.Refresh()
 
@@ -133,7 +124,6 @@ func (mod *GPS) Start() error {
 	}
 
 	return mod.SetRunning(true, func() {
-
 		defer mod.serial.Close()
 
 		for mod.Running() {
@@ -141,9 +131,21 @@ func (mod *GPS) Start() error {
 				if s, err := nmea.Parse(line); err == nil {
 					// http://aprs.gids.nl/nmea/#gga
 					if m, ok := s.(nmea.GNGGA); ok {
-						mod.Session.GPS.GNGGA = m
+						mod.Session.GPS.Latitude = m.Latitude
+						mod.Session.GPS.Longitude = m.Longitude
+						mod.Session.GPS.FixQuality = m.FixQuality
+						mod.Session.GPS.NumSatellites = m.NumSatellites
+						mod.Session.GPS.HDOP = m.HDOP
+						mod.Session.GPS.Altitude = m.Altitude
+						mod.Session.GPS.Separation = m.Separation
 					} else if m, ok := s.(nmea.GPGGA); ok {
-						mod.Session.GPS.GPGGA = m
+						mod.Session.GPS.Latitude = m.Latitude
+						mod.Session.GPS.Longitude = m.Longitude
+						mod.Session.GPS.FixQuality = m.FixQuality
+						mod.Session.GPS.NumSatellites = m.NumSatellites
+						mod.Session.GPS.HDOP = m.HDOP
+						mod.Session.GPS.Altitude = m.Altitude
+						mod.Session.GPS.Separation = m.Separation
 					}
 				} else {
 					mod.Debug("error parsing line '%s': %s", line, err)

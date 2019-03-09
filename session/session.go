@@ -21,8 +21,6 @@ import (
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 
-	"github.com/adrianmo/go-nmea"
-
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/islazy/ops"
@@ -74,8 +72,13 @@ func (mm ModuleList) MarshalJSON() ([]byte, error) {
 }
 
 type GPS struct {
-	GNGGA nmea.GNGGA
-	GPGGA nmea.GPGGA
+	Latitude      float64 // Latitude.
+	Longitude     float64 // Longitude.
+	FixQuality    string  // Quality of fix.
+	NumSatellites int64   // Number of satellites in use.
+	HDOP          float64 // Horizontal dilution of precision.
+	Altitude      float64 // Altitude.
+	Separation    float64 // Geoidal separation
 }
 
 type Session struct {
