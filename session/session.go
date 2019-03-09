@@ -173,6 +173,10 @@ func (s *Session) Module(name string) (err error, mod Module) {
 }
 
 func (s *Session) Close() {
+	if *s.Options.PrintVersion {
+		return
+	}
+
 	if *s.Options.Debug {
 		fmt.Printf("\nStopping modules and cleaning session state ...\n")
 		s.Events.Add("session.closing", nil)

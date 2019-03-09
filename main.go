@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"runtime"
+
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/modules"
@@ -31,9 +33,15 @@ func main() {
 		}
 	}
 
-	appName := fmt.Sprintf("%s v%s", core.Name, core.Version)
+	if *sess.Options.PrintVersion {
+		fmt.Printf("%s v%s (built for %s %s with %s)\n", core.Name, core.Version, runtime.GOOS, runtime.GOARCH, runtime.Version())
+		return
+	}
 
-	fmt.Printf("%s (type '%s' for a list of commands)\n\n", tui.Bold(appName), tui.Bold("help"))
+	appName := fmt.Sprintf("%s v%s", core.Name, core.Version)
+	appBuild := fmt.Sprintf("(built for %s %s with %s)", runtime.GOOS, runtime.GOARCH, runtime.Version())
+
+	fmt.Printf("%s %s [type '%s' for a list of commands]\n\n", tui.Bold(appName), tui.Dim(appBuild), tui.Bold("help"))
 
 	// Load all modules
 	modules.LoadModules(sess)

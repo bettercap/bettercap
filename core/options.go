@@ -11,6 +11,7 @@ type Options struct {
 	Silent        *bool
 	NoColors      *bool
 	NoHistory     *bool
+	PrintVersion  *bool
 	EnvFile       *string
 	Commands      *string
 	CpuProfile    *string
@@ -24,6 +25,7 @@ func ParseOptions() (Options, error) {
 		AutoStart:     flag.String("autostart", "events.stream, net.recon", "Comma separated list of modules to auto start."),
 		Caplet:        flag.String("caplet", "", "Read commands from this file and execute them in the interactive session."),
 		Debug:         flag.Bool("debug", false, "Print debug messages."),
+		PrintVersion:  flag.Bool("version", false, "Print the version and exit."),
 		Silent:        flag.Bool("silent", false, "Suppress all logs which are not errors."),
 		NoColors:      flag.Bool("no-colors", false, "Disable output color effects."),
 		NoHistory:     flag.Bool("no-history", false, "Disable interactive session history file."),
