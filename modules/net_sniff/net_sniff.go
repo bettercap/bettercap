@@ -82,7 +82,7 @@ func NewSniffer(s *session.Session) *Sniffer {
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("net.fuzz on", "",
-		"Enable fuzzing for every sniffed packet containing the sapecified layers.",
+		"Enable fuzzing for every sniffed packet containing the specified layers.",
 		func(args []string) error {
 			return mod.StartFuzzing()
 		}))
