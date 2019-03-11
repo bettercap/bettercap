@@ -19,11 +19,13 @@ type BLEDevice struct {
 }
 
 type bleDeviceJSON struct {
-	LastSeen time.Time `json:"last_seen"`
-	Name     string    `json:"name"`
-	MAC      string    `json:"mac"`
-	Vendor   string    `json:"vendor"`
-	RSSI     int       `json:"rssi"`
+	LastSeen    time.Time `json:"last_seen"`
+	Name        string    `json:"name"`
+	MAC         string    `json:"mac"`
+	Vendor      string    `json:"vendor"`
+	RSSI        int       `json:"rssi"`
+	Connectable bool      `json:"connectable"`
+	Flags       string    `json:"flags"`
 }
 
 func NewBLEDevice(p gatt.Peripheral, a *gatt.Advertisement, rssi int) *BLEDevice {
@@ -50,11 +52,13 @@ func (d *BLEDevice) Name() string {
 
 func (d *BLEDevice) MarshalJSON() ([]byte, error) {
 	doc := bleDeviceJSON{
-		LastSeen: d.LastSeen,
-		Name:     d.Name(),
-		MAC:      d.Device.ID(),
-		Vendor:   d.Vendor,
-		RSSI:     d.RSSI,
+		LastSeen:    d.LastSeen,
+		Name:        d.Name(),
+		MAC:         d.Device.ID(),
+		Vendor:      d.Vendor,
+		RSSI:        d.RSSI,
+		Connectable: d.Advertisement.Connectable,
+		Flags:       d.Advertisement.Flags.String(),
 	}
 	return json.Marshal(doc)
 }
