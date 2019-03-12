@@ -172,6 +172,8 @@ func (mod *RestAPI) Configure() error {
 
 	router := mux.NewRouter()
 
+	router.Methods("OPTIONS").HandlerFunc(mod.corsRoute)
+
 	router.HandleFunc("/api/events", mod.eventsRoute)
 	router.HandleFunc("/api/session", mod.sessionRoute)
 	router.HandleFunc("/api/session/ble", mod.sessionRoute)

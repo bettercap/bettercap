@@ -41,7 +41,10 @@ func (mod *RestAPI) setSecurityHeaders(w http.ResponseWriter) {
 	w.Header().Add("X-Content-Type-Options", "nosniff")
 	w.Header().Add("X-XSS-Protection", "1; mode=block")
 	w.Header().Add("Referrer-Policy", "same-origin")
+
 	w.Header().Set("Access-Control-Allow-Origin", mod.allowOrigin)
+	w.Header().Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 }
 
 func (mod *RestAPI) checkAuth(r *http.Request) bool {
@@ -188,6 +191,11 @@ func (mod *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 
 func (mod *RestAPI) clearEvents(w http.ResponseWriter, r *http.Request) {
 	session.I.Events.Clear()
+}
+
+func (mod *RestAPI) corsRoute(w http.ResponseWriter, r *http.Request) {
+	mod.setSecurityHeaders(w)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (mod *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
