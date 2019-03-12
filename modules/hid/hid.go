@@ -151,6 +151,10 @@ func (mod *HIDRecon) Configure() error {
 	var err error
 	var n int
 
+	if mod.Running() {
+		return session.ErrAlreadyStarted
+	}
+
 	if err, mod.useLNA = mod.BoolParam("hid.lna"); err != nil {
 		return err
 	}
