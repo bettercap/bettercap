@@ -218,20 +218,18 @@ func (mod *ArpSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 			continue
 		}
 		// do we have this ip mac address?
-		if hw, err := mod.Session.FindMAC(ip, probe); err != nil {
-			mod.Debug("could not find hardware address for %s", ip.String())
-		} else {
+		if hw, err := mod.Session.FindMAC(ip, probe); err == nil {
 			targets[ip.String()] = hw
 		}
 	}
 	// add targets specified by MAC address
 	for _, hw := range mod.macs {
-		if ip, err := network.ArpInverseLookup(mod.Session.Interface.Name(), hw.String(), false); err != nil {
-			mod.Warning("could not find IP address for %s", hw.String())
-		} else if mod.Session.Skip(net.ParseIP(ip)) {
-			mod.Debug("skipping address %s from arp spoofing.", ip)
-		} else {
-			targets[ip] = hw
+		if ip, err := network.ArpInverseLookup(mod.Session.Interface.Name(), hw.String(), false); err == nil {
+			if mod.Session.Skip(net.ParseIP(ip)) {
+				mod.Debug("skipping address %s from arp spoofing.", ip)
+			} else {
+				targets[ip] = hw
+			}
 		}
 	}
 
