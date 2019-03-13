@@ -75,6 +75,13 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 			return mod.Stop()
 		}))
 
+	mod.AddHandler(session.NewModuleHandler("hid.clear", "",
+		"Clear all devices collected by the HID discovery module.",
+		func(args []string) error {
+			mod.Session.HID.Clear()
+			return nil
+		}))
+
 	sniff := session.NewModuleHandler("hid.sniff ADDRESS", `(?i)^hid\.sniff ([a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}|clear)$`,
 		"Start sniffing a specific ADDRESS in order to collect payloads, use 'clear' to stop collecting.",
 		func(args []string) error {
