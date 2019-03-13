@@ -293,6 +293,7 @@ func (mod *ArpSpoofer) arpSpoofTargets(saddr net.IP, smac net.HardwareAddr, chec
 			}
 
 			if gwPacket != nil {
+				mod.Debug("sending %d bytes of ARP packet to the gateway", len(gwPacket))
 				if err = mod.Session.Queue.Send(gwPacket); err != nil {
 					mod.Error("error while sending packet: %v", err)
 				}
