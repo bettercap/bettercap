@@ -6,7 +6,6 @@ package ble
 import (
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	golog "log"
 	"time"
 
@@ -15,6 +14,8 @@ import (
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/bettercap/gatt"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 type BLERecon struct {
@@ -126,15 +127,25 @@ func (mod *BLERecon) isEnumerating() bool {
 	return mod.currDevice != nil
 }
 
+type dummyWriter struct {
+	mod *BLERecon
+}
+
+func (w dummyWriter) Write(p []byte) (n int, err error) {
+	w.mod.Debug("[gatt.log] %s", str.Trim(string(p)))
+	return len(p), nil
+}
+
 func (mod *BLERecon) Configure() (err error) {
 	if mod.Running() {
 		return session.ErrAlreadyStarted
 	} else if mod.gattDevice == nil {
 		mod.Debug("initializing device ...")
 
-		// hey Paypal GATT library, could you please just STFU?!
-		golog.SetOutput(ioutil.Discard)
+		golog.SetFlags(0)
+		golog.SetOutput(dummyWriter{mod})
 		if mod.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
+			mod.Debug("error while creating new gatt device: %v", err)
 			return err
 		}
 
@@ -162,7 +173,17 @@ func (mod *BLERecon) Start() error {
 
 		mod.Info("stopping scan ...")
 
-		mod.gattDevice.StopScanning()
+		if mod.currDevice != nil && mod.currDevice.Device != nil && mod.gattDevice != nil {
+			mod.Debug("resetting connection with %v", mod.currDevice.Device)
+			mod.gattDevice.CancelConnection(mod.currDevice.Device)
+		}
+
+		mod.Debug("stopping device")
+		if err := mod.gattDevice.Stop(); err != nil {
+			mod.Warning("error while stopping device: %v", err)
+		} else {
+			mod.Debug("gatt device closed")
+		}
 
 		mod.done <- true
 	})
@@ -172,6 +193,9 @@ func (mod *BLERecon) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.quit <- true
 		<-mod.done
+		mod.Debug("module stopped, cleaning state")
+		mod.gattDevice = nil
+		mod.setCurrentDevice(nil)
 	})
 }
 

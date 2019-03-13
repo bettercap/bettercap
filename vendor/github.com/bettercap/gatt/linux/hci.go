@@ -26,7 +26,8 @@ type HCI struct {
 	bufCnt  chan struct{}
 	bufSize int
 
-	pool *util.BytePool
+	pool     *util.BytePool
+	loopDone chan bool
 
 	maxConn int
 	connsmu *sync.Mutex
@@ -68,7 +69,8 @@ func NewHCI(devID int, chk bool, maxConn int) (*HCI, error) {
 		bufCnt:  make(chan struct{}, 15-1),
 		bufSize: 27,
 
-		pool: util.NewBytePool(4096, 16),
+		pool:     util.NewBytePool(4096, 16),
+		loopDone: make(chan bool),
 
 		maxConn: maxConn,
 		connsmu: &sync.Mutex{},
@@ -89,9 +91,15 @@ func NewHCI(devID int, chk bool, maxConn int) (*HCI, error) {
 }
 
 func (h *HCI) Close() error {
+	log.Printf("hci.Close()")
+	h.pool.Put(nil)
+	<-h.loopDone
+	log.Printf("mainLoop exited")
 	for _, c := range h.conns {
+		log.Printf("closing connection %v", c)
 		c.Close()
 	}
+	log.Printf("closing %v", h.d)
 	return h.d.Close()
 }
 
@@ -151,7 +159,10 @@ func (h *HCI) Connect(pd *PlatData) error {
 }
 
 func (h *HCI) CancelConnection(pd *PlatData) error {
-	return pd.Conn.Close()
+	if pd != nil && pd.Conn != nil {
+		return pd.Conn.Close()
+	}
+	return nil
 }
 
 func (h *HCI) SendRawCommand(c cmd.CmdParam) ([]byte, error) {
@@ -166,19 +177,33 @@ func btoi(b bool) uint8 {
 }
 
 func (h *HCI) mainLoop() {
+	log.Printf("hci.mainLoop started")
+	defer func() {
+		h.loopDone <- true
+	}()
+
 	for {
+		// log.Printf("hci.mainLoop pool.Get")
 		b := h.pool.Get()
+		if b == nil {
+			log.Printf("got nil buffer, breaking mainLoop")
+			break
+		}
+		// log.Printf("hci.mainLoop Read(%d)", len(b))
 		n, err := h.d.Read(b)
 		if err != nil {
-			fmt.Sprintf("mainloop err: %v\n", err)
+			log.Printf("mainloop err: %v", err)
 			return
 		}
 		if n == 0 {
-			println("mainLoop failed to read")
+			log.Printf("mainLoop failed to read")
 			return
 		}
+
+		// log.Printf("hci.mainLoop -> handlePacket")
 		h.handlePacket(b, n)
 	}
+	log.Printf("hci.mainLoop stopped")
 }
 
 func (h *HCI) handlePacket(buf []byte, n int) {

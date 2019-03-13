@@ -156,7 +156,7 @@ func (c *conn) Close() error {
 	defer h.connsmu.Unlock()
 	_, found := h.conns[hh]
 	if !found {
-		// log.Printf("l2conn: 0x%04x already disconnected", hh)
+		log.Printf("l2conn: 0x%04x already disconnected", hh)
 		return nil
 	}
 	if err, _ := h.c.Send(cmd.Disconnect{ConnectionHandle: hh, Reason: 0x13}); err != nil {

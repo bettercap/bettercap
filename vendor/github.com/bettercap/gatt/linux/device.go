@@ -22,6 +22,7 @@ type device struct {
 func newDevice(n int, chk bool) (*device, error) {
 	fd, err := socket.Socket(socket.AF_BLUETOOTH, syscall.SOCK_RAW, socket.BTPROTO_HCI)
 	if err != nil {
+		log.Printf("could not create AF_BLUETOOTH raw socket")
 		return nil, err
 	}
 	if n != -1 {
@@ -30,13 +31,17 @@ func newDevice(n int, chk bool) (*device, error) {
 
 	req := devListRequest{devNum: hciMaxDevices}
 	if err := gioctl.Ioctl(uintptr(fd), hciGetDeviceList, uintptr(unsafe.Pointer(&req))); err != nil {
+		log.Printf("hciGetDeviceList failed")
 		return nil, err
 	}
+	log.Printf("got %d devices", req.devNum)
 	for i := 0; i < int(req.devNum); i++ {
 		d, err := newSocket(fd, i, chk)
 		if err == nil {
 			log.Printf("dev: %s opened", d.name)
 			return d, err
+		} else {
+			log.Printf("error while opening device %d: %v", i, err)
 		}
 	}
 	return nil, errors.New("no supported devices available")
@@ -45,6 +50,7 @@ func newDevice(n int, chk bool) (*device, error) {
 func newSocket(fd, n int, chk bool) (*device, error) {
 	i := hciDevInfo{id: uint16(n)}
 	if err := gioctl.Ioctl(uintptr(fd), hciGetDeviceInfo, uintptr(unsafe.Pointer(&i))); err != nil {
+		log.Printf("hciGetDeviceInfo failed")
 		return nil, err
 	}
 	name := string(i.name[:])
@@ -61,6 +67,7 @@ func newSocket(fd, n int, chk bool) (*device, error) {
 		}
 		log.Printf("dev: %s reset", name)
 		if err := gioctl.Ioctl(uintptr(fd), hciResetDevice, uintptr(n)); err != nil {
+			log.Printf("hciResetDevice failed")
 			return nil, err
 		}
 	}
@@ -105,5 +112,6 @@ func (d device) Write(b []byte) (int, error) {
 }
 
 func (d device) Close() error {
+	log.Printf("linux.device.Close()")
 	return syscall.Close(d.fd)
 }

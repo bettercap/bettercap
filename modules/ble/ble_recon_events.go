@@ -15,8 +15,12 @@ func (mod *BLERecon) onStateChanged(dev gatt.Device, s gatt.State) {
 		if mod.currDevice == nil {
 			mod.Info("starting discovery ...")
 			dev.Scan([]gatt.UUID{}, true)
+		} else {
+			mod.Debug("current device was not cleaned: %v", mod.currDevice)
 		}
 	case gatt.StatePoweredOff:
+		mod.Debug("resetting device instance")
+		mod.gattDevice.StopScanning()
 		mod.setCurrentDevice(nil)
 		mod.gattDevice = nil
 
@@ -51,6 +55,7 @@ func (mod *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
 	defer func(per gatt.Peripheral) {
 		mod.Info("disconnecting from %s ...", per.ID())
 		per.Device().CancelConnection(per)
+		mod.setCurrentDevice(nil)
 	}(p)
 
 	mod.Session.Events.Add("ble.device.connected", mod.currDevice)

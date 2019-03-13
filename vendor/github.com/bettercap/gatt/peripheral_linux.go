@@ -407,7 +407,6 @@ func (p *peripheral) loop() {
 					if rspOp == attRspFor[reqOp] || (rspOp == attOpError && r[1] == reqOp) {
 						req.rspc <- r
 						break
-
 					}
 					log.Printf("Request 0x%02x got a mismatched response: 0x%02x", reqOp, rspOp)
 					p.l2c.Write(attErrorRsp(rspOp, 0x0000, AttEcodeReqNotSupp))
@@ -434,6 +433,7 @@ func (p *peripheral) loop() {
 		copy(b, buf)
 
 		if (b[0] != attOpHandleNotify) && (b[0] != attOpHandleInd) {
+			log.Printf("response 0x%x", b[0])
 			rspc <- b
 			continue
 		}
