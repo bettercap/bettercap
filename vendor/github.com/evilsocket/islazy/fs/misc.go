@@ -12,16 +12,20 @@ var (
 	cwdLock = sync.Mutex{}
 )
 
-// Expand will expand a path with ~ to a full path of the current user.
+// Expand will expand a path with ~ to the $HOME of the current user.
 func Expand(path string) (string, error) {
 	if path == "" {
 		return path, nil
 	}
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
+	home := os.Getenv("HOME")
+	if home == "" {
+		usr, err := user.Current()
+		if err != nil {
+			return "", err
+		}
+		home = usr.HomeDir
 	}
-	return filepath.Abs(strings.Replace(path, "~", usr.HomeDir, 1))
+	return filepath.Abs(strings.Replace(path, "~", home, 1))
 }
 
 // Exists returns true if the path exists.
