@@ -13,7 +13,7 @@ func (mod *WiFiModule) onChannel(channel int, cb func()) {
 	prev := mod.stickChan
 	mod.stickChan = channel
 
-	if err := network.SetInterfaceChannel(mod.Session.Interface.Name(), channel); err != nil {
+	if err := network.SetInterfaceChannel(mod.iface.Name(), channel); err != nil {
 		mod.Warning("error while hopping to channel %d: %s", channel, err)
 	} else {
 		mod.Debug("hopped on channel %d", channel)
@@ -53,7 +53,7 @@ func (mod *WiFiModule) channelHopper() {
 			mod.Debug("hopping on channel %d", channel)
 
 			mod.chanLock.Lock()
-			if err := network.SetInterfaceChannel(mod.Session.Interface.Name(), channel); err != nil {
+			if err := network.SetInterfaceChannel(mod.iface.Name(), channel); err != nil {
 				mod.Warning("error while hopping to channel %d: %s", channel, err)
 			}
 			mod.chanLock.Unlock()

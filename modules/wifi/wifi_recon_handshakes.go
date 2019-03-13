@@ -33,7 +33,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		// (Reference about PMKID https://hashcat.net/forum/thread-7717.html)
 		// In this case, we need to add ourselves as a client station of the AP
 		// in order to have a consistent association of AP, client and handshakes.
-		staIsUs := bytes.Equal(staMac, mod.Session.Interface.HW)
+		staIsUs := bytes.Equal(staMac, mod.iface.HW)
 		station, found := ap.Get(staMac.String())
 		if !found {
 			station, _ = ap.AddClientIfNew(staMac.String(), ap.Frequency, ap.RSSI)

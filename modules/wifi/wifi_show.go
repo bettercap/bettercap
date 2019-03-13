@@ -300,7 +300,7 @@ func (mod *WiFiModule) showStatusBar() {
 	defer mod.Session.Queue.Stats.RUnlock()
 
 	parts := []string{
-		fmt.Sprintf("%s (ch. %d)", mod.Session.Interface.Name(), network.GetInterfaceChannel(mod.Session.Interface.Name())),
+		fmt.Sprintf("%s (ch. %d)", mod.iface.Name(), network.GetInterfaceChannel(mod.iface.Name())),
 		fmt.Sprintf("%s %s", tui.Red("↑"), humanize.Bytes(mod.Session.Queue.Stats.Sent)),
 		fmt.Sprintf("%s %s", tui.Green("↓"), humanize.Bytes(mod.Session.Queue.Stats.Received)),
 		fmt.Sprintf("%d pkts", mod.Session.Queue.Stats.PktReceived),

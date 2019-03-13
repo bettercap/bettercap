@@ -11,13 +11,13 @@ import (
 )
 
 func (mod *WiFiModule) sendAssocPacket(ap *network.AccessPoint) {
-	if err, pkt := packets.NewDot11Auth(mod.Session.Interface.HW, ap.HW, 1); err != nil {
+	if err, pkt := packets.NewDot11Auth(mod.iface.HW, ap.HW, 1); err != nil {
 		mod.Error("cloud not create auth packet: %s", err)
 	} else {
 		mod.injectPacket(pkt)
 	}
 
-	if err, pkt := packets.NewDot11AssociationRequest(mod.Session.Interface.HW, ap.HW, ap.ESSID(), 1); err != nil {
+	if err, pkt := packets.NewDot11AssociationRequest(mod.iface.HW, ap.HW, ap.ESSID(), 1); err != nil {
 		mod.Error("cloud not create association request packet: %s", err)
 	} else {
 		mod.injectPacket(pkt)
