@@ -12,11 +12,11 @@ type ClientEvent struct {
 }
 
 type ProbeEvent struct {
-	FromAddr   net.HardwareAddr
-	FromVendor string
-	FromAlias  string
-	SSID       string
-	RSSI       int8
+	FromAddr   string `json:"mac"`
+	FromVendor string `json:"vendor"`
+	FromAlias  string `json:"alias"`
+	SSID       string `json:"essid"`
+	RSSI       int8   `json:"rssi"`
 }
 
 type HandshakeEvent struct {

@@ -108,7 +108,7 @@ func (mod *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.D
 	}
 
 	mod.Session.Events.Add("wifi.client.probe", ProbeEvent{
-		FromAddr:   dot11.Address2,
+		FromAddr:   dot11.Address2.String(),
 		FromVendor: network.ManufLookup(dot11.Address2.String()),
 		FromAlias:  mod.Session.Lan.GetAlias(dot11.Address2.String()),
 		SSID:       string(req.Contents[2 : 2+size]),

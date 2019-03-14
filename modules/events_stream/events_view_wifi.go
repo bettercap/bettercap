@@ -60,7 +60,7 @@ func (mod *EventsStream) viewWiFiClientProbeEvent(e session.Event) {
 	fmt.Fprintf(mod.output, "[%s] [%s] station %s%s is probing for SSID %s%s\n",
 		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
-		probe.FromAddr.String(),
+		probe.FromAddr,
 		tui.Dim(desc),
 		tui.Bold(probe.SSID),
 		tui.Yellow(rssi))
