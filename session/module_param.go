@@ -97,8 +97,7 @@ const ParamIfaceAddress = "<interface address>"
 const ParamSubnet = "<entire subnet>"
 const ParamRandomMAC = "<random mac>"
 
-func (p ModuleParam) Get(s *Session) (error, interface{}) {
-	_, v := s.Env.Get(p.Name)
+func (p ModuleParam) parse(s *Session, v string) string {
 	switch v {
 	case ParamIfaceName:
 		v = s.Interface.Name()
@@ -111,7 +110,18 @@ func (p ModuleParam) Get(s *Session) (error, interface{}) {
 		rand.Read(hw)
 		v = net.HardwareAddr(hw).String()
 	}
+	return v
 
+}
+
+func (p ModuleParam) getUnlocked(s *Session) string {
+	_, v := s.Env.GetUnlocked(p.Name)
+	return p.parse(s, v)
+}
+
+func (p ModuleParam) Get(s *Session) (error, interface{}) {
+	_, v := s.Env.Get(p.Name)
+	v = p.parse(s, v)
 	return p.Validate(v)
 }
 
@@ -130,6 +140,7 @@ type JSONModuleParam struct {
 	Type        ParamType `json:"type"`
 	Description string    `json:"description"`
 	Value       string    `json:"default_value"`
+	Current     string    `json:"current_value"`
 	Validator   string    `json:"validator"`
 }
 
@@ -139,6 +150,7 @@ func (p ModuleParam) MarshalJSON() ([]byte, error) {
 		Type:        p.Type,
 		Description: p.Description,
 		Value:       p.Value,
+		Current:     p.getUnlocked(I), // if we're here, Env is already locked
 	}
 	if p.Validator != nil {
 		j.Validator = p.Validator.String()

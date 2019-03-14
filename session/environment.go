@@ -99,15 +99,17 @@ func (env *Environment) Set(name, value string) string {
 	return old
 }
 
-func (env *Environment) Get(name string) (bool, string) {
-	env.Lock()
-	defer env.Unlock()
-
+func (env *Environment) GetUnlocked(name string) (bool, string) {
 	if value, found := env.Data[name]; found {
 		return true, value
 	}
-
 	return false, ""
+}
+
+func (env *Environment) Get(name string) (bool, string) {
+	env.Lock()
+	defer env.Unlock()
+	return env.GetUnlocked(name)
 }
 
 func (env *Environment) GetInt(name string) (error, int) {
