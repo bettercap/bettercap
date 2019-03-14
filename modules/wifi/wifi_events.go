@@ -1,8 +1,6 @@
 package wifi
 
 import (
-	"net"
-
 	"github.com/bettercap/bettercap/network"
 )
 
@@ -20,9 +18,9 @@ type ProbeEvent struct {
 }
 
 type HandshakeEvent struct {
-	File       string
-	NewPackets int
-	AP         net.HardwareAddr
-	Station    net.HardwareAddr
-	PMKID      []byte
+	File       string `json:"file"`
+	NewPackets int    `json:"new_packets"`
+	AP         string `json:"ap"`
+	Station    string `json:"station"`
+	PMKID      []byte `json:"pmkid"`
 }

@@ -88,8 +88,8 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 			mod.Session.Events.Add("wifi.client.handshake", HandshakeEvent{
 				File:       mod.shakesFile,
 				NewPackets: numUnsaved,
-				AP:         apMac,
-				Station:    staMac,
+				AP:         apMac.String(),
+				Station:    staMac.String(),
 				PMKID:      rawPMKID,
 			})
 			// make sure the info that we have key material for this AP
