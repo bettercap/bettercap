@@ -3,12 +3,15 @@
 package hid
 
 import (
+	"encoding/hex"
 	"fmt"
 	"time"
 
 	"github.com/bettercap/bettercap/network"
 
 	"github.com/bettercap/nrf24"
+
+	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 )
 
@@ -16,7 +19,7 @@ func (mod *HIDRecon) isSniffing() bool {
 	return mod.sniffAddrRaw != nil
 }
 
-func (mod *HIDRecon) setSniffMode(mode string) error {
+func (mod *HIDRecon) setSniffMode(mode string, silent bool) error {
 	if !mod.Running() {
 		return fmt.Errorf("please turn hid.recon on")
 	}
@@ -24,11 +27,13 @@ func (mod *HIDRecon) setSniffMode(mode string) error {
 	mod.sniffLock.Lock()
 	defer mod.sniffLock.Unlock()
 
+	mod.sniffSilent = silent
 	mod.inSniffMode = false
 	if mode == "clear" {
 		mod.Debug("restoring recon mode")
 		mod.sniffAddrRaw = nil
 		mod.sniffAddr = ""
+		mod.sniffSilent = true
 	} else {
 		if err, raw := nrf24.ConvertAddress(mode); err != nil {
 			return err
@@ -73,13 +78,20 @@ func (mod *HIDRecon) doPing() {
 func (mod *HIDRecon) onSniffedBuffer(buf []byte) {
 	if sz := len(buf); sz > 0 && buf[0] == 0x00 {
 		buf = buf[1:]
-		mod.Debug("sniffed payload %x for %s", buf, mod.sniffAddr)
+		lf := mod.Info
+		if mod.sniffSilent {
+			lf = mod.Debug
+		}
+		lf("payload for %s : %s", tui.Bold(mod.sniffAddr), str.Trim(hex.Dump(buf)))
 		if dev, found := mod.Session.HID.Get(mod.sniffAddr); found {
 			dev.LastSeen = time.Now()
 			dev.AddPayload(buf)
 			dev.AddChannel(mod.channel)
 		} else {
-			mod.Warning("got a payload for unknown device %s", mod.sniffAddr)
+			if lf = mod.Warning; mod.sniffSilent == false {
+				lf = mod.Debug
+			}
+			lf("got a payload for unknown device %s", mod.sniffAddr)
 		}
 	}
 }

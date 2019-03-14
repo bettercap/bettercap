@@ -32,6 +32,7 @@ type HIDRecon struct {
 	sniffType    string
 	pingPayload  []byte
 	inSniffMode  bool
+	sniffSilent  bool
 	inPromMode   bool
 	inInjectMode bool
 	keyLayout    string
@@ -58,6 +59,7 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		inSniffMode:   false,
 		inPromMode:    false,
 		inInjectMode:  false,
+		sniffSilent:   true,
 		pingPayload:   []byte{0x0f, 0x0f, 0x0f, 0x0f},
 		keyLayout:     "US",
 		scriptPath:    "",
@@ -85,7 +87,7 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 	sniff := session.NewModuleHandler("hid.sniff ADDRESS", `(?i)^hid\.sniff ([a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}|clear)$`,
 		"Start sniffing a specific ADDRESS in order to collect payloads, use 'clear' to stop collecting.",
 		func(args []string) error {
-			return mod.setSniffMode(args[0])
+			return mod.setSniffMode(args[0], false)
 		})
 
 	sniff.Complete("hid.sniff", s.HIDCompleter)

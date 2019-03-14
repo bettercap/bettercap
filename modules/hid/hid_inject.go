@@ -18,7 +18,7 @@ func (mod *HIDRecon) isInjecting() bool {
 }
 
 func (mod *HIDRecon) setInjectionMode(address string) error {
-	if err := mod.setSniffMode(address); err != nil {
+	if err := mod.setSniffMode(address, true); err != nil {
 		return err
 	} else if address == "clear" {
 		mod.inInjectMode = false

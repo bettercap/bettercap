@@ -42,11 +42,13 @@ func (mod *HIDRecon) onDeviceDetected(buf []byte) {
 		if isNew, dev := mod.Session.HID.AddIfNew(addr, mod.channel, payload); isNew {
 			// sniff for a while in order to detect the device type
 			go func() {
-				if err := mod.setSniffMode(dev.Address); err == nil {
+				prevSilent := mod.sniffSilent
+
+				if err := mod.setSniffMode(dev.Address, true); err == nil {
 					mod.Debug("detecting device type ...")
 					defer func() {
 						mod.sniffLock.Unlock()
-						mod.setSniffMode("clear")
+						mod.setSniffMode("clear", prevSilent)
 					}()
 					// make sure nobody can sniff to another
 					// address until we're not done here...
