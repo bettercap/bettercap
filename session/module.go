@@ -186,12 +186,10 @@ func (m *SessionModule) SetRunning(running bool, cb func()) error {
 	m.Started = running
 	m.StatusLock.Unlock()
 
-	if *m.Session.Options.Debug {
-		if running {
-			m.Session.Events.Add("mod.started", m.Name)
-		} else {
-			m.Session.Events.Add("mod.stopped", m.Name)
-		}
+	if running {
+		m.Session.Events.Add("mod.started", m.Name)
+	} else {
+		m.Session.Events.Add("mod.stopped", m.Name)
 	}
 
 	if cb != nil {

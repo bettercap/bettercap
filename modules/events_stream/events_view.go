@@ -66,10 +66,12 @@ func (mod *EventsStream) viewEndpointEvent(e session.Event) {
 }
 
 func (mod *EventsStream) viewModuleEvent(e session.Event) {
-	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
-		e.Time.Format(mod.timeFormat),
-		tui.Green(e.Tag),
-		e.Data)
+	if *mod.Session.Options.Debug {
+		fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
+			e.Time.Format(mod.timeFormat),
+			tui.Green(e.Tag),
+			e.Data)
+	}
 }
 
 func (mod *EventsStream) viewSnifferEvent(e session.Event) {
