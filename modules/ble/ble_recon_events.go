@@ -34,6 +34,7 @@ func (mod *BLERecon) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement
 }
 
 func (mod *BLERecon) onPeriphDisconnected(p gatt.Peripheral, err error) {
+	mod.Session.Events.Add("ble.device.disconnected", mod.currDevice)
 	mod.setCurrentDevice(nil)
 	if mod.Running() {
 		mod.Info("device disconnected, restoring discovery.")
