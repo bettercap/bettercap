@@ -16,7 +16,8 @@ type AccessPoint struct {
 
 type apJSON struct {
 	*Station
-	Clients []*Station `json:"clients"`
+	Clients   []*Station `json:"clients"`
+	Handshake bool       `json:"handshake"`
 }
 
 func NewAccessPoint(essid, bssid string, frequency int, rssi int8) *AccessPoint {
@@ -31,8 +32,9 @@ func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
 	defer ap.Unlock()
 
 	doc := apJSON{
-		Station: ap.Station,
-		Clients: make([]*Station, 0),
+		Station:   ap.Station,
+		Clients:   make([]*Station, 0),
+		Handshake: ap.withKeyMaterial,
 	}
 
 	for _, c := range ap.clients {
