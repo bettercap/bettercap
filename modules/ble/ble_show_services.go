@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/gatt"
 
 	"github.com/evilsocket/islazy/tui"
@@ -276,7 +277,17 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 	wantsToWrite := mod.writeUUID != nil
 	foundToWrite := false
 
+	mod.currDevice.Services = make([]network.BLEService, 0)
+
 	for _, svc := range services {
+		service := network.BLEService{
+			UUID:            svc.UUID().String(),
+			Name:            svc.Name(),
+			Handle:          svc.Handle(),
+			EndHandle:       svc.EndHandle(),
+			Characteristics: make([]network.BLECharacteristic, 0),
+		}
+
 		mod.Session.Events.Add("ble.device.service.discovered", svc)
 
 		name := svc.Name()
@@ -298,83 +309,95 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 		chars, err := p.DiscoverCharacteristics(nil, svc)
 		if err != nil {
 			mod.Error("error while enumerating chars for service %s: %s", svc.UUID(), err)
-			continue
-		}
+		} else {
+			for _, ch := range chars {
+				props, isReadable, isWritable, withResponse := parseProperties(ch)
 
-		for _, ch := range chars {
-			mod.Session.Events.Add("ble.device.characteristic.discovered", ch)
+				char := network.BLECharacteristic{
+					UUID:       ch.UUID().String(),
+					Name:       ch.Name(),
+					Handle:     ch.VHandle(),
+					Properties: props,
+				}
 
-			name = ch.Name()
-			if name == "" {
-				name = "    " + ch.UUID().String()
-			} else {
-				name = fmt.Sprintf("    %s (%s)", tui.Green(name), tui.Dim(ch.UUID().String()))
-			}
+				mod.Session.Events.Add("ble.device.characteristic.discovered", ch)
 
-			props, isReadable, isWritable, withResponse := parseProperties(ch)
-
-			if wantsToWrite && mod.writeUUID.Equal(ch.UUID()) {
-				foundToWrite = true
-				if isWritable {
-					mod.Info("writing %d bytes to characteristics %s ...", len(mod.writeData), mod.writeUUID)
+				name = ch.Name()
+				if name == "" {
+					name = "    " + ch.UUID().String()
 				} else {
-					mod.Warning("attempt to write %d bytes to non writable characteristics %s ...", len(mod.writeData), mod.writeUUID)
+					name = fmt.Sprintf("    %s (%s)", tui.Green(name), tui.Dim(ch.UUID().String()))
 				}
 
-				if err := p.WriteCharacteristic(ch, mod.writeData, !withResponse); err != nil {
-					mod.Error("error while writing: %s", err)
-				}
-			}
-
-			sz := 0
-			raw := ([]byte)(nil)
-			err := error(nil)
-			if isReadable {
-				if raw, err = p.ReadCharacteristic(ch); raw != nil {
-					sz = len(raw)
-				}
-			}
-
-			data := ""
-			multi := ([]string)(nil)
-			if err != nil {
-				data = tui.Red(err.Error())
-			} else if ch.Name() == "Appearance" && sz >= 2 {
-				data = parseAppearance(raw)
-			} else if ch.Name() == "PnP ID" && sz >= 7 {
-				multi = parsePNPID(raw)
-			} else if ch.Name() == "Peripheral Preferred Connection Parameters" && sz >= 8 {
-				multi = parseConnectionParams(raw)
-			} else if ch.Name() == "Peripheral Privacy Flag" && sz >= 1 {
-				data = parsePrivacyFlag(raw)
-			} else {
-				data = parseRawData(raw)
-			}
-
-			if multi == nil {
-				rows = append(rows, []string{
-					fmt.Sprintf("%04x", ch.VHandle()),
-					name,
-					strings.Join(props, ", "),
-					data,
-				})
-			} else {
-				for i, m := range multi {
-					if i == 0 {
-						rows = append(rows, []string{
-							fmt.Sprintf("%04x", ch.VHandle()),
-							name,
-							strings.Join(props, ", "),
-							m,
-						})
+				if wantsToWrite && mod.writeUUID.Equal(ch.UUID()) {
+					foundToWrite = true
+					if isWritable {
+						mod.Info("writing %d bytes to characteristics %s ...", len(mod.writeData), mod.writeUUID)
 					} else {
-						rows = append(rows, []string{"", "", "", m})
+						mod.Warning("attempt to write %d bytes to non writable characteristics %s ...", len(mod.writeData), mod.writeUUID)
+					}
+
+					if err := p.WriteCharacteristic(ch, mod.writeData, !withResponse); err != nil {
+						mod.Error("error while writing: %s", err)
 					}
 				}
+
+				sz := 0
+				raw := ([]byte)(nil)
+				err := error(nil)
+				if isReadable {
+					if raw, err = p.ReadCharacteristic(ch); raw != nil {
+						sz = len(raw)
+					}
+				}
+
+				data := ""
+				multi := ([]string)(nil)
+				if err != nil {
+					data = tui.Red(err.Error())
+				} else if ch.Name() == "Appearance" && sz >= 2 {
+					data = parseAppearance(raw)
+				} else if ch.Name() == "PnP ID" && sz >= 7 {
+					multi = parsePNPID(raw)
+				} else if ch.Name() == "Peripheral Preferred Connection Parameters" && sz >= 8 {
+					multi = parseConnectionParams(raw)
+				} else if ch.Name() == "Peripheral Privacy Flag" && sz >= 1 {
+					data = parsePrivacyFlag(raw)
+				} else {
+					data = parseRawData(raw)
+				}
+
+				if multi == nil {
+					char.Data = data
+					rows = append(rows, []string{
+						fmt.Sprintf("%04x", ch.VHandle()),
+						name,
+						strings.Join(props, ", "),
+						data,
+					})
+				} else {
+					char.Data = multi
+					for i, m := range multi {
+						if i == 0 {
+							rows = append(rows, []string{
+								fmt.Sprintf("%04x", ch.VHandle()),
+								name,
+								strings.Join(props, ", "),
+								m,
+							})
+						} else {
+							rows = append(rows, []string{"", "", "", m})
+						}
+					}
+				}
+
+				service.Characteristics = append(service.Characteristics, char)
 			}
+			// blank row after every service, bleah style
+			rows = append(rows, []string{"", "", "", ""})
 		}
-		// blank row after every service, bleah style
-		rows = append(rows, []string{"", "", "", ""})
+
+		mod.currDevice.Services = append(mod.currDevice.Services, service)
 	}
 
 	if wantsToWrite && !foundToWrite {

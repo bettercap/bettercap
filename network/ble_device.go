@@ -10,22 +10,40 @@ import (
 	"github.com/bettercap/gatt"
 )
 
+type BLECharacteristic struct {
+	UUID       string      `json:"uuid"`
+	Name       string      `json:"name"`
+	Handle     uint16      `json:"handle"`
+	Properties []string    `json:"properties"`
+	Data       interface{} `json:"data"`
+}
+
+type BLEService struct {
+	UUID            string              `json:"uuid"`
+	Name            string              `json:"name"`
+	Handle          uint16              `json:"handle"`
+	EndHandle       uint16              `json:"end_handle"`
+	Characteristics []BLECharacteristic `json:"characteristics"`
+}
+
 type BLEDevice struct {
 	LastSeen      time.Time
 	Vendor        string
 	RSSI          int
 	Device        gatt.Peripheral
 	Advertisement *gatt.Advertisement
+	Services      []BLEService
 }
 
 type bleDeviceJSON struct {
-	LastSeen    time.Time `json:"last_seen"`
-	Name        string    `json:"name"`
-	MAC         string    `json:"mac"`
-	Vendor      string    `json:"vendor"`
-	RSSI        int       `json:"rssi"`
-	Connectable bool      `json:"connectable"`
-	Flags       string    `json:"flags"`
+	LastSeen    time.Time    `json:"last_seen"`
+	Name        string       `json:"name"`
+	MAC         string       `json:"mac"`
+	Vendor      string       `json:"vendor"`
+	RSSI        int          `json:"rssi"`
+	Connectable bool         `json:"connectable"`
+	Flags       string       `json:"flags"`
+	Services    []BLEService `json:"services"`
 }
 
 func NewBLEDevice(p gatt.Peripheral, a *gatt.Advertisement, rssi int) *BLEDevice {
@@ -39,6 +57,7 @@ func NewBLEDevice(p gatt.Peripheral, a *gatt.Advertisement, rssi int) *BLEDevice
 		Vendor:        vendor,
 		Advertisement: a,
 		RSSI:          rssi,
+		Services:      make([]BLEService, 0),
 	}
 }
 
@@ -59,6 +78,7 @@ func (d *BLEDevice) MarshalJSON() ([]byte, error) {
 		RSSI:        d.RSSI,
 		Connectable: d.Advertisement.Connectable,
 		Flags:       d.Advertisement.Flags.String(),
+		Services:    d.Services,
 	}
 	return json.Marshal(doc)
 }
