@@ -21,6 +21,7 @@ type DNSSpoofer struct {
 	Handle        *pcap.Handle
 	Hosts         Hosts
 	All           bool
+	ProxyDNS      bool
 	waitGroup     *sync.WaitGroup
 	pktSourceChan chan gopacket.Packet
 }
@@ -52,7 +53,11 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 	mod.AddParam(session.NewBoolParameter("dns.spoof.all",
 		"false",
 		"If true the module will reply to every DNS request, otherwise it will only reply to the one targeting the local pc."))
-
+	
+	mod.AddParam(session.NewBoolParameter("dns.spoof.proxy",
+		"false",
+		"If true the module will reply to every DNS request, with faked entries for selected domains and real ones for non-selected domains."))
+	
 	mod.AddHandler(session.NewModuleHandler("dns.spoof on", "",
 		"Start the DNS spoofer in the background.",
 		func(args []string) error {
@@ -99,6 +104,8 @@ func (mod *DNSSpoofer) Configure() error {
 	} else if err, domains = mod.ListParam("dns.spoof.domains"); err != nil {
 		return err
 	} else if err, hostsFile = mod.StringParam("dns.spoof.hosts"); err != nil {
+		return err
+	} else if err, mod.ProxyDNS = mod.BoolParam("dns.spoof.proxy"); err != nil {
 		return err
 	}
 
@@ -264,6 +271,15 @@ func (mod *DNSSpoofer) onPacket(pkt gopacket.Packet) {
 				qName := string(q.Name)
 				if address := mod.Hosts.Resolve(qName); address != nil {
 					mod.dnsReply(pkt, eth, udp, qName, address, dns, eth.SrcMAC)
+					break
+				} else if mod.ProxyDNS {
+					mod.Debug("proxying dns query %s", qName)
+					addr, err := net.LookupHost(qName)
+					if err != nil || len(addr) == 0 {
+						mod.Debug("could not resolve domain %s", qName)
+						break
+					}
+					mod.dnsReply(pkt, eth, udp, qName, net.ParseIP(addr[0]), dns, eth.SrcMAC)
 					break
 				} else {
 					mod.Debug("skipping domain %s", qName)

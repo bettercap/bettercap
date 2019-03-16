@@ -66,7 +66,7 @@ func HostsFromFile(filename string) (err error, entries []HostEntry) {
 			domain := parts[1]
 			entries = append(entries, NewHostEntry(domain, address))
 		} else {
-			return fmt.Errorf("'%s' invalid hosts line", line), nil
+			entries = append(entries, NewHostEntry(line, address))
 		}
 	}
 
