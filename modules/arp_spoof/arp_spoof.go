@@ -214,7 +214,6 @@ func (mod *ArpSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 	// add targets specified by IP address
 	for _, ip := range mod.addresses {
 		if mod.Session.Skip(ip) {
-			mod.Debug("skipping IP %s from arp spoofing.", ip)
 			continue
 		}
 		// do we have this ip mac address?
@@ -226,10 +225,9 @@ func (mod *ArpSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 	for _, hw := range mod.macs {
 		if ip, err := network.ArpInverseLookup(mod.Session.Interface.Name(), hw.String(), false); err == nil {
 			if mod.Session.Skip(net.ParseIP(ip)) {
-				mod.Debug("skipping address %s from arp spoofing.", ip)
-			} else {
-				targets[ip] = hw
+				continue
 			}
+			targets[ip] = hw
 		}
 	}
 
