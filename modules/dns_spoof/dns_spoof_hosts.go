@@ -2,7 +2,6 @@ package dns_spoof
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"os"
 	"regexp"
@@ -47,7 +46,7 @@ func NewHostEntry(host string, address net.IP) HostEntry {
 	return entry
 }
 
-func HostsFromFile(filename string) (err error, entries []HostEntry) {
+func HostsFromFile(filename string,defaultAddress net.IP) (err error, entries []HostEntry) {
 	input, err := os.Open(filename)
 	if err != nil {
 		return
@@ -66,7 +65,7 @@ func HostsFromFile(filename string) (err error, entries []HostEntry) {
 			domain := parts[1]
 			entries = append(entries, NewHostEntry(domain, address))
 		} else {
-			return fmt.Errorf("'%s' invalid hosts line", line), nil
+			entries = append(entries, NewHostEntry(line, defaultAddress))
 		}
 	}
 
