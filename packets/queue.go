@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"sync"
@@ -21,15 +22,15 @@ type Activity struct {
 }
 
 type Traffic struct {
-	Sent     uint64
-	Received uint64
+	Sent     uint64 `json:"sent"`
+	Received uint64 `json:"received"`
 }
 
 type Stats struct {
-	Sent        uint64
-	Received    uint64
-	PktReceived uint64
-	Errors      uint64
+	Sent        uint64 `json:"sent"`
+	Received    uint64 `json:"received"`
+	PktReceived uint64 `json:"pkts_received"`
+	Errors      uint64 `json:"errors"`
 }
 
 type PacketCallback func(pkt gopacket.Packet)
@@ -37,7 +38,7 @@ type PacketCallback func(pkt gopacket.Packet)
 type Queue struct {
 	sync.RWMutex
 
-	Activities chan Activity `json:"-"`
+	Activities chan Activity
 	Stats      Stats
 	Protos     sync.Map
 	Traffic    sync.Map
@@ -49,6 +50,12 @@ type Queue struct {
 	writes     *sync.WaitGroup
 	pktCb      PacketCallback
 	active     bool
+}
+
+type queueJSON struct {
+	Stats   Stats               `json:"stats"`
+	Protos  map[string]int      `json:"protos"`
+	Traffic map[string]*Traffic `json:"traffic"`
 }
 
 func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
@@ -74,6 +81,28 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 	}
 
 	return
+}
+
+func (q *Queue) MarshalJSON() ([]byte, error) {
+	q.Lock()
+	defer q.Unlock()
+	doc := queueJSON{
+		Stats:   q.Stats,
+		Protos:  make(map[string]int),
+		Traffic: make(map[string]*Traffic),
+	}
+
+	q.Protos.Range(func(k, v interface{}) bool {
+		doc.Protos[k.(string)] = v.(int)
+		return true
+	})
+
+	q.Traffic.Range(func(k, v interface{}) bool {
+		doc.Traffic[k.(string)] = v.(*Traffic)
+		return true
+	})
+
+	return json.Marshal(doc)
 }
 
 func (q *Queue) OnPacket(cb PacketCallback) {
