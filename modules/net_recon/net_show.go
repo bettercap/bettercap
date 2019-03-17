@@ -61,8 +61,11 @@ func (mod *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 
 	var traffic *packets.Traffic
 	var found bool
-	if traffic, found = mod.Session.Queue.Traffic[e.IpAddress]; !found {
+	var v interface{}
+	if v, found = mod.Session.Queue.Traffic.Load(e.IpAddress); !found {
 		traffic = &packets.Traffic{}
+	} else {
+		traffic = v.(*packets.Traffic)
 	}
 
 	seen := e.LastSeen.Format("15:04:05")
@@ -203,9 +206,6 @@ func (mod *Discovery) colNames(hasMeta bool) []string {
 }
 
 func (mod *Discovery) showStatusBar() {
-	mod.Session.Queue.Stats.RLock()
-	defer mod.Session.Queue.Stats.RUnlock()
-
 	parts := []string{
 		fmt.Sprintf("%s %s", tui.Red("↑"), humanize.Bytes(mod.Session.Queue.Stats.Sent)),
 		fmt.Sprintf("%s %s", tui.Green("↓"), humanize.Bytes(mod.Session.Queue.Stats.Received)),
