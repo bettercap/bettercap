@@ -367,6 +367,10 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 					data = parseRawData(raw)
 				}
 
+				if ch.Name() == "Device Name" && data != "" && mod.currDevice.DeviceName == "" {
+					mod.currDevice.DeviceName = data
+				}
+
 				if multi == nil {
 					char.Data = data
 					rows = append(rows, []string{
