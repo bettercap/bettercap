@@ -296,9 +296,6 @@ func (mod *WiFiModule) colNames(nrows int) []string {
 }
 
 func (mod *WiFiModule) showStatusBar() {
-	mod.Session.Queue.Stats.RLock()
-	defer mod.Session.Queue.Stats.RUnlock()
-
 	parts := []string{
 		fmt.Sprintf("%s (ch. %d)", mod.iface.Name(), network.GetInterfaceChannel(mod.iface.Name())),
 		fmt.Sprintf("%s %s", tui.Red("↑"), humanize.Bytes(mod.Session.Queue.Stats.Sent)),

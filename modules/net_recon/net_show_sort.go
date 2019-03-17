@@ -41,24 +41,19 @@ func (a BySeenSorter) Less(i, j int) bool { return a[i].LastSeen.Before(a[j].Las
 
 type BySentSorter []*network.Endpoint
 
+func trafficOf(ip string) *packets.Traffic {
+	if v, found := session.I.Queue.Traffic.Load(ip); !found {
+		return &packets.Traffic{}
+	} else {
+		return v.(*packets.Traffic)
+	}
+}
+
 func (a BySentSorter) Len() int      { return len(a) }
 func (a BySentSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a BySentSorter) Less(i, j int) bool {
-	session.I.Queue.Lock()
-	defer session.I.Queue.Unlock()
-
-	var found bool = false
-	var aTraffic *packets.Traffic = nil
-	var bTraffic *packets.Traffic = nil
-
-	if aTraffic, found = session.I.Queue.Traffic[a[i].IpAddress]; !found {
-		aTraffic = &packets.Traffic{}
-	}
-
-	if bTraffic, found = session.I.Queue.Traffic[a[j].IpAddress]; !found {
-		bTraffic = &packets.Traffic{}
-	}
-
+	aTraffic := trafficOf(a[i].IpAddress)
+	bTraffic := trafficOf(a[j].IpAddress)
 	return bTraffic.Sent > aTraffic.Sent
 }
 
@@ -67,20 +62,7 @@ type ByRcvdSorter []*network.Endpoint
 func (a ByRcvdSorter) Len() int      { return len(a) }
 func (a ByRcvdSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a ByRcvdSorter) Less(i, j int) bool {
-	session.I.Queue.Lock()
-	defer session.I.Queue.Unlock()
-
-	var found bool = false
-	var aTraffic *packets.Traffic = nil
-	var bTraffic *packets.Traffic = nil
-
-	if aTraffic, found = session.I.Queue.Traffic[a[i].IpAddress]; !found {
-		aTraffic = &packets.Traffic{}
-	}
-
-	if bTraffic, found = session.I.Queue.Traffic[a[j].IpAddress]; !found {
-		bTraffic = &packets.Traffic{}
-	}
-
+	aTraffic := trafficOf(a[i].IpAddress)
+	bTraffic := trafficOf(a[j].IpAddress)
 	return bTraffic.Received > aTraffic.Received
 }

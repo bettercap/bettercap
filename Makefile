@@ -6,6 +6,9 @@ all: deps build
 deps: godep golint gofmt gomegacheck
 	@dep ensure
 
+build_with_race_detector: resources
+	@go build -race -o $(TARGET) .
+
 build: resources
 	@go build -o $(TARGET) .
 

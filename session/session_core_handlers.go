@@ -274,12 +274,8 @@ func (s *Session) shHandler(args []string, sess *Session) error {
 func (s *Session) aliasHandler(args []string, sess *Session) error {
 	mac := args[0]
 	alias := str.Trim(args[1])
-
-	if s.Lan.SetAliasFor(mac, alias) {
-		return nil
-	} else {
-		return fmt.Errorf("Could not find endpoint %s", mac)
-	}
+	s.Lan.SetAliasFor(mac, alias)
+	return nil
 }
 
 func (s *Session) addHandler(h CommandHandler, c *readline.PrefixCompleter) {

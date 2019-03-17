@@ -68,8 +68,8 @@ func (lan *LAN) SetAliasFor(mac, alias string) bool {
 	defer lan.Unlock()
 
 	mac = NormalizeMac(mac)
+	lan.aliases.Set(mac, alias)
 	if e, found := lan.hosts[mac]; found {
-		lan.aliases.Set(mac, alias)
 		e.Alias = alias
 		return true
 	}

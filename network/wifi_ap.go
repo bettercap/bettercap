@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"sync"
 	"time"
+
+	"github.com/evilsocket/islazy/data"
 )
 
 type AccessPoint struct {
@@ -65,7 +67,7 @@ func (ap *AccessPoint) RemoveClient(mac string) {
 	}
 }
 
-func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8) (*Station, bool) {
+func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8, aliases *data.UnsortedKV) (*Station, bool) {
 	ap.Lock()
 	defer ap.Unlock()
 
@@ -77,10 +79,17 @@ func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8) (*
 		s.RSSI = rssi
 		s.LastSeen = time.Now()
 
+		if aliases != nil {
+			s.Alias = aliases.GetOr(bssid, "")
+		}
+
 		return s, false
 	}
 
 	s := NewStation("", bssid, frequency, rssi)
+	if aliases != nil {
+		s.Alias = aliases.GetOr(bssid, "")
+	}
 	ap.clients[bssid] = s
 
 	return s, true
