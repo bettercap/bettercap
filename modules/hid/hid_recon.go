@@ -61,6 +61,25 @@ func (mod *HIDRecon) onDeviceDetected(buf []byte) {
 	}
 }
 
+var maxDeviceTTL = 10 * time.Minute
+
+func (mod *HIDRecon) devPruner() {
+	mod.waitGroup.Add(1)
+	defer mod.waitGroup.Done()
+
+	mod.Debug("devices pruner started.")
+	for mod.Running() {
+		for _, dev := range mod.Session.HID.Devices() {
+			sinceLastSeen := time.Since(dev.LastSeen)
+			if sinceLastSeen > maxDeviceTTL {
+				mod.Debug("device %s not seen in %s, removing.", dev.Address, sinceLastSeen)
+				mod.Session.HID.Remove(dev.Address)
+			}
+		}
+		time.Sleep(30 * time.Second)
+	}
+}
+
 func (mod *HIDRecon) Start() error {
 	if err := mod.Configure(); err != nil {
 		return err
@@ -69,6 +88,8 @@ func (mod *HIDRecon) Start() error {
 	return mod.SetRunning(true, func() {
 		mod.waitGroup.Add(1)
 		defer mod.waitGroup.Done()
+
+		go mod.devPruner()
 
 		mod.Info("hopping on %d channels every %s", nrf24.TopChannel, mod.hopPeriod)
 		for mod.Running() {
