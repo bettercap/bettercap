@@ -109,7 +109,7 @@ func (mod *DNSSpoofer) Configure() error {
 
 	if hostsFile != "" {
 		mod.Info("loading hosts from file %s ...", hostsFile)
-		if err, hosts := HostsFromFile(hostsFile); err != nil {
+		if err, hosts := HostsFromFile(hostsFile, address); err != nil {
 			return fmt.Errorf("error reading hosts from file %s: %v", hostsFile, err)
 		} else {
 			mod.Hosts = append(mod.Hosts, hosts...)
