@@ -42,6 +42,8 @@ func NewBLERecon(s *session.Session) *BLERecon {
 		connected:     false,
 	}
 
+	mod.InitState("scanning")
+
 	mod.selector = utils.ViewSelectorFor(&mod.SessionModule,
 		"ble.show",
 		[]string{"rssi", "mac", "seen"}, "rssi asc")
@@ -196,6 +198,7 @@ func (mod *BLERecon) Stop() error {
 		mod.Debug("module stopped, cleaning state")
 		mod.gattDevice = nil
 		mod.setCurrentDevice(nil)
+		mod.ResetState()
 	})
 }
 
@@ -216,6 +219,7 @@ func (mod *BLERecon) pruner() {
 func (mod *BLERecon) setCurrentDevice(dev *network.BLEDevice) {
 	mod.connected = false
 	mod.currDevice = dev
+	mod.State.Store("scanning", dev)
 }
 
 func (mod *BLERecon) writeBuffer(mac string, uuid gatt.UUID, data []byte) error {

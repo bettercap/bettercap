@@ -81,6 +81,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		chanLock:      &sync.Mutex{},
 	}
 
+	mod.InitState("channels")
+
 	mod.AddParam(session.NewStringParameter("wifi.interface",
 		"",
 		"",
@@ -124,7 +126,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		func(args []string) (err error) {
 			mod.ap = nil
 			mod.stickChan = 0
-			mod.frequencies, err = network.GetSupportedFrequencies(mod.iface.Name())
+			freqs, err := network.GetSupportedFrequencies(mod.iface.Name())
+			mod.setFrequencies(freqs)
 			mod.hopChanges <- true
 			return err
 		}))
@@ -285,8 +288,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				}
 			}
 
-			mod.Debug("new frequencies: %v", freqs)
-			mod.frequencies = freqs
+			mod.setFrequencies(freqs)
 
 			// if wifi.recon is not running, this would block forever
 			if mod.Running() {
@@ -329,6 +331,17 @@ const (
 	// ref. https://github.com/google/gopacket/blob/96986c90e3e5c7e01deed713ff8058e357c0c047/pcap/pcap.go#L281
 	ErrIfaceNotUp = "Interface Not Up"
 )
+
+func (mod *WiFiModule) setFrequencies(freqs []int) {
+	mod.Debug("new frequencies: %v", freqs)
+
+	mod.frequencies = freqs
+	channels := []int{}
+	for _, freq := range freqs {
+		channels = append(channels, network.Dot11Freq2Chan(freq))
+	}
+	mod.State.Store("channels", channels)
+}
 
 func (mod *WiFiModule) Configure() error {
 	var ifName string
@@ -430,8 +443,10 @@ func (mod *WiFiModule) Configure() error {
 	if mod.source == "" {
 		// No channels setted, retrieve frequencies supported by the card
 		if len(mod.frequencies) == 0 {
-			if mod.frequencies, err = network.GetSupportedFrequencies(ifName); err != nil {
+			if freqs, err := network.GetSupportedFrequencies(ifName); err != nil {
 				return fmt.Errorf("error while getting supported frequencies of %s: %s", ifName, err)
+			} else {
+				mod.setFrequencies(freqs)
 			}
 
 			mod.Debug("wifi supported frequencies: %v", mod.frequencies)

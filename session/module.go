@@ -1,6 +1,7 @@
 package session
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
@@ -25,14 +26,21 @@ type Module interface {
 }
 
 type SessionModule struct {
-	Name       string        `json:"name"`
-	Session    *Session      `json:"-"`
-	Started    bool          `json:"started"`
-	StatusLock *sync.RWMutex `json:"-"`
+	Name       string
+	Session    *Session
+	Started    bool
+	StatusLock *sync.RWMutex
+	State      sync.Map
 
 	handlers []ModuleHandler
 	params   map[string]*ModuleParam
 	tag      string
+}
+
+type sessionModuleJSON struct {
+	Name    string                 `json:"name"`
+	Started bool                   `json:"started"`
+	State   map[string]interface{} `json:"state"`
 }
 
 func AsTag(name string) string {
@@ -52,6 +60,34 @@ func NewSessionModule(name string, s *Session) SessionModule {
 	}
 
 	return m
+}
+
+func (m *SessionModule) InitState(keys ...string) {
+	for _, key := range keys {
+		m.State.Store(key, nil)
+	}
+}
+
+func (m *SessionModule) ResetState() {
+	m.State.Range(func(k, v interface{}) bool {
+		m.State.Store(k, nil)
+		return true
+	})
+}
+
+func (m *SessionModule) MarshalJSON() ([]byte, error) {
+	doc := sessionModuleJSON{
+		Name:    m.Name,
+		Started: m.Started,
+		State:   make(map[string]interface{}),
+	}
+
+	m.State.Range(func(k, v interface{}) bool {
+		doc.State[k.(string)] = v
+		return true
+	})
+
+	return json.Marshal(doc)
 }
 
 func (m *SessionModule) Debug(format string, args ...interface{}) {
