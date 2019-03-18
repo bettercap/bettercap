@@ -22,7 +22,7 @@ type APIResponse struct {
 }
 
 func (mod *RestAPI) setAuthFailed(w http.ResponseWriter, r *http.Request) {
-	mod.Warning("Unauthorized authentication attempt from %s", r.RemoteAddr)
+	mod.Warning("Unauthorized authentication attempt from %s to %s", r.RemoteAddr, r.URL.String())
 
 	w.Header().Set("WWW-Authenticate", `Basic realm="auth"`)
 	w.WriteHeader(401)
