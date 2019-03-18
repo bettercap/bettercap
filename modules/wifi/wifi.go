@@ -261,7 +261,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"false",
 		"If true, wifi.show will also show the devices manufacturers."))
 
-	mod.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
+	mod.AddHandler(session.NewModuleHandler("wifi.recon.channel CHANNEL", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
 		"WiFi channels (comma separated) or 'clear' for channel hopping.",
 		func(args []string) (err error) {
 			freqs := []int{}

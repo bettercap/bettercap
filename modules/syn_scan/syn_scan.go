@@ -58,7 +58,7 @@ func NewSynScanner(s *session.Session) *SynScanner {
 			return mod.Stop()
 		}))
 
-	mod.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE [START-PORT] [END-PORT]", "syn.scan ([^\\s]+) ?(\\d+)?([\\s\\d]*)?",
+	mod.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE START-PORT END-PORT", "syn.scan ([^\\s]+) ?(\\d+)?([\\s\\d]*)?",
 		"Perform a syn port scanning against an IP address within the provided ports range.",
 		func(args []string) error {
 			period := 0
