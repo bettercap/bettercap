@@ -39,7 +39,7 @@ type moduleJSON struct {
 }
 
 func (mm ModuleList) MarshalJSON() ([]byte, error) {
-	mods := []moduleJSON{}
+	mods := make(map[string]moduleJSON)
 	for _, m := range mm {
 		mJSON := moduleJSON{
 			Name:        m.Name(),
@@ -50,7 +50,7 @@ func (mm ModuleList) MarshalJSON() ([]byte, error) {
 			Running:     m.Running(),
 			State:       m.Extra(),
 		}
-		mods = append(mods, mJSON)
+		mods[m.Name()] = mJSON
 	}
 	return json.Marshal(mods)
 }
