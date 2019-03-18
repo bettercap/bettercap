@@ -20,9 +20,39 @@ type Module interface {
 	Handlers() []ModuleHandler
 	Parameters() map[string]*ModuleParam
 
+	Extra() map[string]interface{}
 	Running() bool
 	Start() error
 	Stop() error
+}
+
+type ModuleList []Module
+
+type moduleJSON struct {
+	Name        string                  `json:"name"`
+	Description string                  `json:"description"`
+	Author      string                  `json:"author"`
+	Parameters  map[string]*ModuleParam `json:"parameters"`
+	Handlers    []ModuleHandler         `json:"handlers"`
+	Running     bool                    `json:"running"`
+	State       map[string]interface{}  `json:"state"`
+}
+
+func (mm ModuleList) MarshalJSON() ([]byte, error) {
+	mods := []moduleJSON{}
+	for _, m := range mm {
+		mJSON := moduleJSON{
+			Name:        m.Name(),
+			Description: m.Description(),
+			Author:      m.Author(),
+			Parameters:  m.Parameters(),
+			Handlers:    m.Handlers(),
+			Running:     m.Running(),
+			State:       m.Extra(),
+		}
+		mods = append(mods, mJSON)
+	}
+	return json.Marshal(mods)
 }
 
 type SessionModule struct {
@@ -35,12 +65,6 @@ type SessionModule struct {
 	handlers []ModuleHandler
 	params   map[string]*ModuleParam
 	tag      string
-}
-
-type sessionModuleJSON struct {
-	Name    string                 `json:"name"`
-	Started bool                   `json:"started"`
-	State   map[string]interface{} `json:"state"`
 }
 
 func AsTag(name string) string {
@@ -62,6 +86,15 @@ func NewSessionModule(name string, s *Session) SessionModule {
 	return m
 }
 
+func (m *SessionModule) Extra() map[string]interface{} {
+	extra := make(map[string]interface{})
+	m.State.Range(func(k, v interface{}) bool {
+		extra[k.(string)] = v
+		return true
+	})
+	return extra
+}
+
 func (m *SessionModule) InitState(keys ...string) {
 	for _, key := range keys {
 		m.State.Store(key, nil)
@@ -73,21 +106,6 @@ func (m *SessionModule) ResetState() {
 		m.State.Store(k, nil)
 		return true
 	})
-}
-
-func (m *SessionModule) MarshalJSON() ([]byte, error) {
-	doc := sessionModuleJSON{
-		Name:    m.Name,
-		Started: m.Started,
-		State:   make(map[string]interface{}),
-	}
-
-	m.State.Range(func(k, v interface{}) bool {
-		doc.State[k.(string)] = v
-		return true
-	})
-
-	return json.Marshal(doc)
 }
 
 func (m *SessionModule) Debug(format string, args ...interface{}) {
