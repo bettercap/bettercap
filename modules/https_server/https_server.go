@@ -159,7 +159,8 @@ func (mod *HttpsServer) Start() error {
 	return mod.SetRunning(true, func() {
 		mod.Info("starting on https://%s", mod.server.Addr)
 		if err := mod.server.ListenAndServeTLS(mod.certFile, mod.keyFile); err != nil && err != http.ErrServerClosed {
-			panic(err)
+			mod.Error("%v", err)
+			mod.Stop()
 		}
 	})
 }
