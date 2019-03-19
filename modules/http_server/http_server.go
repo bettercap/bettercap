@@ -110,7 +110,8 @@ func (mod *HttpServer) Start() error {
 		var err error
 		mod.Info("starting on http://%s", mod.server.Addr)
 		if err = mod.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			panic(err)
+			mod.Error("%v", err)
+			mod.Stop()
 		}
 	})
 }
