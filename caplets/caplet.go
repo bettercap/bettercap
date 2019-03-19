@@ -9,10 +9,19 @@ import (
 )
 
 type Caplet struct {
-	Name string
-	Path string
-	Size int64
-	Code []string
+	Name string   `json:"name"`
+	Path string   `json:"path"`
+	Size int64    `json:"size"`
+	Code []string `json:"code"`
+}
+
+func NewCaplet(name string, path string, size int64) Caplet {
+	return Caplet{
+		Name: name,
+		Path: path,
+		Size: size,
+		Code: make([]string, 0),
+	}
 }
 
 func (cap *Caplet) Eval(argv []string, lineCb func(line string) error) error {

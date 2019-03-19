@@ -1,6 +1,7 @@
 package session
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -77,6 +78,23 @@ type Session struct {
 	Firewall       firewall.FirewallManager `json:"-"`
 }
 
+type sessionJSON struct {
+	Options   core.Options      `json:"options"`
+	Interface *network.Endpoint `json:"interface"`
+	Gateway   *network.Endpoint `json:"gateway"`
+	Env       *Environment      `json:"env"`
+	Lan       *network.LAN      `json:"lan"`
+	WiFi      *network.WiFi     `json:"wifi"`
+	BLE       *network.BLE      `json:"ble"`
+	HID       *network.HID      `json:"hid"`
+	Queue     *packets.Queue    `json:"packets"`
+	StartedAt time.Time         `json:"started_at"`
+	Active    bool              `json:"active"`
+	GPS       GPS               `json:"gps"`
+	Modules   ModuleList        `json:"modules"`
+	Caplets   []*caplets.Caplet `json:"caplets"`
+}
+
 func New() (*Session, error) {
 	opts, err := core.ParseOptions()
 	if err != nil {
@@ -122,6 +140,26 @@ func New() (*Session, error) {
 	}
 
 	return s, nil
+}
+
+func (s *Session) MarshalJSON() ([]byte, error) {
+	doc := sessionJSON{
+		Options:   s.Options,
+		Interface: s.Interface,
+		Gateway:   s.Gateway,
+		Env:       s.Env,
+		Lan:       s.Lan,
+		WiFi:      s.WiFi,
+		BLE:       s.BLE,
+		HID:       s.HID,
+		Queue:     s.Queue,
+		StartedAt: s.StartedAt,
+		Active:    s.Active,
+		GPS:       s.GPS,
+		Modules:   s.Modules,
+		Caplets:   caplets.List(),
+	}
+	return json.Marshal(doc)
 }
 
 func (s *Session) Lock() {
