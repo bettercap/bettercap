@@ -52,6 +52,8 @@ func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
 	dev, found := mod.Session.HID.Get(mod.sniffAddr)
 	if found == false {
 		mod.Warning("device %s is not visible, will use HID type %s", mod.sniffAddr, tui.Yellow(mod.sniffType))
+	} else if dev.Type == network.HIDTypeUnknown {
+		mod.Warning("device %s type has not been detected yet, falling back to '%s'", mod.sniffAddr, tui.Yellow(mod.sniffType))
 	}
 
 	var builder FrameBuilder

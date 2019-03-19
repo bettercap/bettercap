@@ -61,7 +61,7 @@ func (mod *HIDRecon) onDeviceDetected(buf []byte) {
 	}
 }
 
-var maxDeviceTTL = 10 * time.Minute
+var maxDeviceTTL = 20 * time.Minute
 
 func (mod *HIDRecon) devPruner() {
 	mod.waitGroup.Add(1)
