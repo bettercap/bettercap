@@ -1,12 +1,15 @@
 package network
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 type HIDType int
@@ -47,10 +50,12 @@ type HIDDevice struct {
 }
 
 type hidDeviceJSON struct {
-	LastSeen time.Time `json:"last_seen"`
-	Type     string    `json:"type"`
-	Address  string    `json:"address"`
-	Channels []string  `json:"channels"`
+	LastSeen     time.Time `json:"last_seen"`
+	Type         string    `json:"type"`
+	Address      string    `json:"address"`
+	Channels     []string  `json:"channels"`
+	Payloads     []string  `json:"payloads"`
+	PayloadsSize uint64    `json:"payloads_size"`
 }
 
 func NormalizeHIDAddress(address string) string {
@@ -90,12 +95,27 @@ func NewHIDDevice(address []byte, channel int, payload []byte) *HIDDevice {
 }
 
 func (dev *HIDDevice) MarshalJSON() ([]byte, error) {
+	dev.Lock()
+	defer dev.Unlock()
+
 	doc := hidDeviceJSON{
-		LastSeen: dev.LastSeen,
-		Type:     dev.Type.String(),
-		Address:  dev.Address,
-		Channels: dev.ChannelsList(),
+		LastSeen:     dev.LastSeen,
+		Type:         dev.Type.String(),
+		Address:      dev.Address,
+		Channels:     dev.channelsListUnlocked(),
+		Payloads:     make([]string, 0),
+		PayloadsSize: dev.payloadsSz,
 	}
+
+	// get the latest 50 payloads
+	for i := len(dev.payloads) - 1; i >= 0; i-- {
+		data := str.Trim(hex.Dump(dev.payloads[i]))
+		doc.Payloads = append([]string{data}, doc.Payloads...)
+		if len(doc.Payloads) == 50 {
+			break
+		}
+	}
+
 	return json.Marshal(doc)
 }
 
@@ -106,10 +126,7 @@ func (dev *HIDDevice) AddChannel(ch int) {
 	dev.channels[ch] = true
 }
 
-func (dev *HIDDevice) ChannelsList() []string {
-	dev.Lock()
-	defer dev.Unlock()
-
+func (dev *HIDDevice) channelsListUnlocked() []string {
 	chans := []string{}
 	for ch := range dev.channels {
 		chans = append(chans, fmt.Sprintf("%d", ch))
@@ -118,6 +135,11 @@ func (dev *HIDDevice) ChannelsList() []string {
 	sort.Strings(chans)
 
 	return chans
+}
+func (dev *HIDDevice) ChannelsList() []string {
+	dev.Lock()
+	defer dev.Unlock()
+	return dev.channelsListUnlocked()
 }
 
 func (dev *HIDDevice) Channels() string {
