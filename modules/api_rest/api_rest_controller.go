@@ -3,7 +3,11 @@ package api_rest
 import (
 	"crypto/subtle"
 	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -258,6 +262,44 @@ func (mod *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (mod *RestAPI) readFile(fileName string, w http.ResponseWriter, r *http.Request) {
+	fp, err := os.Open(fileName)
+	if err != nil {
+		msg := fmt.Sprintf("could not open %s for reading: %s", fileName, err)
+		mod.Debug(msg)
+		http.Error(w, msg, 404)
+		return
+	}
+	defer fp.Close()
+
+	w.Header().Set("Content-type", "application/octet-stream")
+
+	io.Copy(w, fp)
+}
+
+func (mod *RestAPI) writeFile(fileName string, w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := fmt.Sprintf("invalid file upload: %s", err)
+		mod.Warning(msg)
+		http.Error(w, msg, 404)
+		return
+	}
+
+	err = ioutil.WriteFile(fileName, data, 0666)
+	if err != nil {
+		msg := fmt.Sprintf("can't write to %s: %s", fileName, err)
+		mod.Warning(msg)
+		http.Error(w, msg, 404)
+		return
+	}
+
+	mod.toJSON(w, APIResponse{
+		Success: true,
+		Message: fmt.Sprintf("%s created", fileName),
+	})
+}
+
 func (mod *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 	mod.setSecurityHeaders(w)
 
@@ -270,6 +312,25 @@ func (mod *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 		mod.showEvents(w, r)
 	} else if r.Method == "DELETE" {
 		mod.clearEvents(w, r)
+	} else {
+		http.Error(w, "Bad Request", 400)
+	}
+}
+
+func (mod *RestAPI) fileRoute(w http.ResponseWriter, r *http.Request) {
+	mod.setSecurityHeaders(w)
+
+	if !mod.checkAuth(r) {
+		mod.setAuthFailed(w, r)
+		return
+	}
+
+	fileName := r.URL.Query().Get("name")
+
+	if fileName != "" && r.Method == "GET" {
+		mod.readFile(fileName, w, r)
+	} else if fileName != "" && r.Method == "POST" {
+		mod.writeFile(fileName, w, r)
 	} else {
 		http.Error(w, "Bad Request", 400)
 	}

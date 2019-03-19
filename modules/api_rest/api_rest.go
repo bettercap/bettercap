@@ -191,6 +191,7 @@ func (mod *RestAPI) Configure() error {
 	router.HandleFunc("/api/session/started-at", mod.sessionRoute)
 	router.HandleFunc("/api/session/wifi", mod.sessionRoute)
 	router.HandleFunc("/api/session/wifi/{mac}", mod.sessionRoute)
+	router.HandleFunc("/api/file", mod.fileRoute)
 
 	mod.server.Handler = router
 
