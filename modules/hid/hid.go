@@ -63,6 +63,9 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		scriptPath:    "",
 	}
 
+	mod.State.Store("sniffing", &mod.sniffAddr)
+	mod.State.Store("injecting", &mod.inInjectMode)
+
 	mod.AddHandler(session.NewModuleHandler("hid.recon on", "",
 		"Start scanning for HID devices on the 2.4Ghz spectrum.",
 		func(args []string) error {
