@@ -55,13 +55,10 @@ func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
 	}
 
 	var builder FrameBuilder
-	if found {
+	if found && dev.Type != network.HIDTypeUnknown {
 		// get the device specific protocol handler
 		builder, found = FrameBuilders[dev.Type]
 		if found == false {
-			if dev.Type == network.HIDTypeUnknown {
-				return errNoType(mod.sniffAddr), nil, nil
-			}
 			return errNotSupported(dev), nil, nil
 		}
 	} else {
