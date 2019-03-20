@@ -79,6 +79,10 @@ type Session struct {
 }
 
 type sessionJSON struct {
+	Version   string            `json:"version"`
+	OS        string            `json:"os"`
+	Arch      string            `json:"arch"`
+	GoVersion string            `json:"goversion"`
 	Options   core.Options      `json:"options"`
 	Interface *network.Endpoint `json:"interface"`
 	Gateway   *network.Endpoint `json:"gateway"`
@@ -144,6 +148,10 @@ func New() (*Session, error) {
 
 func (s *Session) MarshalJSON() ([]byte, error) {
 	doc := sessionJSON{
+		Version:   core.Version,
+		OS:        runtime.GOOS,
+		Arch:      runtime.GOARCH,
+		GoVersion: runtime.Version(),
 		Options:   s.Options,
 		Interface: s.Interface,
 		Gateway:   s.Gateway,
