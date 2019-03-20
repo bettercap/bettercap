@@ -274,6 +274,9 @@ func (s *Session) shHandler(args []string, sess *Session) error {
 func (s *Session) aliasHandler(args []string, sess *Session) error {
 	mac := args[0]
 	alias := str.Trim(args[1])
+	if alias == "\"\"" || alias == "''" {
+		alias = ""
+	}
 	s.Lan.SetAliasFor(mac, alias)
 	return nil
 }
