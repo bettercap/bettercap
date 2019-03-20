@@ -12,12 +12,27 @@ import (
 	"github.com/bettercap/bettercap/packets"
 )
 
+var flagNames = []string{
+	"UP",
+	"BROADCAST",
+	"LOOPBACK",
+	"POINT2POINT",
+	"MULTICAST",
+}
+
+type addrJSON struct {
+	Address string `json:"address"`
+	Type    string `json:"type"`
+}
+
 type ifaceJSON struct {
-	Index int       `json:"index"`
-	MTU   int       `json:"mtu"`
-	Name  string    `json:"name"`
-	MAC   string    `json:"mac"`
-	Flags net.Flags `json:"flags"`
+	Index     int        `json:"index"`
+	MTU       int        `json:"mtu"`
+	Name      string     `json:"name"`
+	MAC       string     `json:"mac"`
+	Vendor    string     `json:"vendor"`
+	Flags     []string   `json:"flags"`
+	Addresses []addrJSON `json:"addresses"`
 }
 
 type sessionJSON struct {
@@ -71,13 +86,34 @@ func (s *Session) MarshalJSON() ([]byte, error) {
 	}
 
 	for _, iface := range ifaces {
-		doc.Interfaces = append(doc.Interfaces, ifaceJSON{
-			Index: iface.Index,
-			MTU:   iface.MTU,
-			Name:  iface.Name,
-			MAC:   iface.HardwareAddr.String(),
-			Flags: iface.Flags,
-		})
+		mac := network.NormalizeMac(iface.HardwareAddr.String())
+
+		ij := ifaceJSON{
+			Index:     iface.Index,
+			MTU:       iface.MTU,
+			Name:      iface.Name,
+			MAC:       mac,
+			Vendor:    network.ManufLookup(mac),
+			Flags:     make([]string, 0),
+			Addresses: make([]addrJSON, 0),
+		}
+
+		if addrs, err := iface.Addrs(); err == nil {
+			for _, addr := range addrs {
+				ij.Addresses = append(ij.Addresses, addrJSON{
+					Address: addr.String(),
+					Type:    addr.Network(),
+				})
+			}
+		}
+
+		for bit, name := range flagNames {
+			if iface.Flags&(1<<uint(bit)) != 0 {
+				ij.Flags = append(ij.Flags, name)
+			}
+		}
+
+		doc.Interfaces = append(doc.Interfaces, ij)
 	}
 
 	return json.Marshal(doc)
