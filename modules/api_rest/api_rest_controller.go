@@ -158,11 +158,16 @@ func (mod *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", 400)
 	} else if err = json.NewDecoder(r.Body).Decode(&cmd); err != nil {
 		http.Error(w, "Bad Request", 400)
-	} else if err = session.I.Run(cmd.Command); err != nil {
-		http.Error(w, err.Error(), 400)
-	} else {
-		mod.toJSON(w, APIResponse{Success: true})
 	}
+
+	for _, aCommand := range session.ParseCommands(cmd.Command) {
+		if err = mod.Session.Run(aCommand); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+	}
+
+	mod.toJSON(w, APIResponse{Success: true})
 }
 
 func (mod *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
