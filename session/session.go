@@ -1,7 +1,6 @@
 package session
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -56,47 +55,26 @@ type GPS struct {
 }
 
 type Session struct {
-	Options   core.Options      `json:"options"`
-	Interface *network.Endpoint `json:"interface"`
-	Gateway   *network.Endpoint `json:"gateway"`
-	Env       *Environment      `json:"env"`
-	Lan       *network.LAN      `json:"lan"`
-	WiFi      *network.WiFi     `json:"wifi"`
-	BLE       *network.BLE      `json:"ble"`
-	HID       *network.HID      `json:"hid"`
-	Queue     *packets.Queue    `json:"packets"`
-	StartedAt time.Time         `json:"started_at"`
-	Active    bool              `json:"active"`
-	GPS       GPS               `json:"gps"`
-	Modules   ModuleList        `json:"modules"`
+	Options   core.Options
+	Interface *network.Endpoint
+	Gateway   *network.Endpoint
+	Env       *Environment
+	Lan       *network.LAN
+	WiFi      *network.WiFi
+	BLE       *network.BLE
+	HID       *network.HID
+	Queue     *packets.Queue
+	StartedAt time.Time
+	Active    bool
+	GPS       GPS
+	Modules   ModuleList
 
-	Input          *readline.Instance       `json:"-"`
-	Prompt         Prompt                   `json:"-"`
-	CoreHandlers   []CommandHandler         `json:"-"`
-	Events         *EventPool               `json:"-"`
-	UnkCmdCallback UnknownCommandCallback   `json:"-"`
-	Firewall       firewall.FirewallManager `json:"-"`
-}
-
-type sessionJSON struct {
-	Version   string            `json:"version"`
-	OS        string            `json:"os"`
-	Arch      string            `json:"arch"`
-	GoVersion string            `json:"goversion"`
-	Options   core.Options      `json:"options"`
-	Interface *network.Endpoint `json:"interface"`
-	Gateway   *network.Endpoint `json:"gateway"`
-	Env       *Environment      `json:"env"`
-	Lan       *network.LAN      `json:"lan"`
-	WiFi      *network.WiFi     `json:"wifi"`
-	BLE       *network.BLE      `json:"ble"`
-	HID       *network.HID      `json:"hid"`
-	Queue     *packets.Queue    `json:"packets"`
-	StartedAt time.Time         `json:"started_at"`
-	Active    bool              `json:"active"`
-	GPS       GPS               `json:"gps"`
-	Modules   ModuleList        `json:"modules"`
-	Caplets   []*caplets.Caplet `json:"caplets"`
+	Input          *readline.Instance
+	Prompt         Prompt
+	CoreHandlers   []CommandHandler
+	Events         *EventPool
+	UnkCmdCallback UnknownCommandCallback
+	Firewall       firewall.FirewallManager
 }
 
 func New() (*Session, error) {
@@ -144,30 +122,6 @@ func New() (*Session, error) {
 	}
 
 	return s, nil
-}
-
-func (s *Session) MarshalJSON() ([]byte, error) {
-	doc := sessionJSON{
-		Version:   core.Version,
-		OS:        runtime.GOOS,
-		Arch:      runtime.GOARCH,
-		GoVersion: runtime.Version(),
-		Options:   s.Options,
-		Interface: s.Interface,
-		Gateway:   s.Gateway,
-		Env:       s.Env,
-		Lan:       s.Lan,
-		WiFi:      s.WiFi,
-		BLE:       s.BLE,
-		HID:       s.HID,
-		Queue:     s.Queue,
-		StartedAt: s.StartedAt,
-		Active:    s.Active,
-		GPS:       s.GPS,
-		Modules:   s.Modules,
-		Caplets:   caplets.List(),
-	}
-	return json.Marshal(doc)
 }
 
 func (s *Session) Lock() {
