@@ -42,7 +42,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 	}
 
 	mod.AddParam(session.NewStringParameter("api.rest.address",
-		session.ParamIfaceAddress,
+		"127.0.0.1",
 		session.IPv4Validator,
 		"Address to bind the API REST server to."))
 
