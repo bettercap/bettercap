@@ -38,6 +38,7 @@ type PacketCallback func(pkt gopacket.Packet)
 type Queue struct {
 	sync.RWMutex
 
+	// keep on top because of https://github.com/bettercap/bettercap/issues/500
 	Stats      Stats
 	Protos     sync.Map
 	Traffic    sync.Map
