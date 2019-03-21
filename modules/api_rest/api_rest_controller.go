@@ -176,7 +176,13 @@ func (mod *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 	if mod.useWebsocket {
 		mod.startStreamingEvents(w, r)
 	} else {
-		events := session.I.Events.Sorted()
+		events := make([]session.Event, 0)
+		for _, e := range session.I.Events.Sorted() {
+			if mod.Session.EventsIgnoreList.Ignored(e) == false {
+				events = append(events, e)
+			}
+		}
+
 		nevents := len(events)
 		nmax := nevents
 		n := nmax

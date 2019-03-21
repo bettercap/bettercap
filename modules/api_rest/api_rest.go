@@ -174,7 +174,10 @@ func (mod *RestAPI) Configure() error {
 
 	router.Methods("OPTIONS").HandlerFunc(mod.corsRoute)
 
+	router.HandleFunc("/api/file", mod.fileRoute)
+
 	router.HandleFunc("/api/events", mod.eventsRoute)
+
 	router.HandleFunc("/api/session", mod.sessionRoute)
 	router.HandleFunc("/api/session/ble", mod.sessionRoute)
 	router.HandleFunc("/api/session/ble/{mac}", mod.sessionRoute)
@@ -191,7 +194,6 @@ func (mod *RestAPI) Configure() error {
 	router.HandleFunc("/api/session/started-at", mod.sessionRoute)
 	router.HandleFunc("/api/session/wifi", mod.sessionRoute)
 	router.HandleFunc("/api/session/wifi/{mac}", mod.sessionRoute)
-	router.HandleFunc("/api/file", mod.fileRoute)
 
 	mod.server.Handler = router
 

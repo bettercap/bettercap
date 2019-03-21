@@ -69,12 +69,13 @@ type Session struct {
 	GPS       GPS
 	Modules   ModuleList
 
-	Input          *readline.Instance
-	Prompt         Prompt
-	CoreHandlers   []CommandHandler
-	Events         *EventPool
-	UnkCmdCallback UnknownCommandCallback
-	Firewall       firewall.FirewallManager
+	Input            *readline.Instance
+	Prompt           Prompt
+	CoreHandlers     []CommandHandler
+	Events           *EventPool
+	EventsIgnoreList *EventsIgnoreList
+	UnkCmdCallback   UnknownCommandCallback
+	Firewall         firewall.FirewallManager
 }
 
 func New() (*Session, error) {
@@ -95,10 +96,11 @@ func New() (*Session, error) {
 		Active:  false,
 		Queue:   nil,
 
-		CoreHandlers:   make([]CommandHandler, 0),
-		Modules:        make([]Module, 0),
-		Events:         nil,
-		UnkCmdCallback: nil,
+		CoreHandlers:     make([]CommandHandler, 0),
+		Modules:          make([]Module, 0),
+		Events:           nil,
+		EventsIgnoreList: NewEventsIgnoreList(),
+		UnkCmdCallback:   nil,
 	}
 
 	if *s.Options.CpuProfile != "" {
