@@ -173,18 +173,20 @@ func (mod *BLERecon) Start() error {
 
 		<-mod.quit
 
-		mod.Info("stopping scan ...")
+		if mod.gattDevice != nil {
+			mod.Info("stopping scan ...")
 
-		if mod.currDevice != nil && mod.currDevice.Device != nil && mod.gattDevice != nil {
-			mod.Debug("resetting connection with %v", mod.currDevice.Device)
-			mod.gattDevice.CancelConnection(mod.currDevice.Device)
-		}
+			if mod.currDevice != nil && mod.currDevice.Device != nil {
+				mod.Debug("resetting connection with %v", mod.currDevice.Device)
+				mod.gattDevice.CancelConnection(mod.currDevice.Device)
+			}
 
-		mod.Debug("stopping device")
-		if err := mod.gattDevice.Stop(); err != nil {
-			mod.Warning("error while stopping device: %v", err)
-		} else {
-			mod.Debug("gatt device closed")
+			mod.Debug("stopping device")
+			if err := mod.gattDevice.Stop(); err != nil {
+				mod.Warning("error while stopping device: %v", err)
+			} else {
+				mod.Debug("gatt device closed")
+			}
 		}
 
 		mod.done <- true
