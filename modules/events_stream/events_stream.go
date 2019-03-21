@@ -49,6 +49,8 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		triggerList:   NewTriggerList(),
 	}
 
+	mod.State.Store("ignoring", &mod.Session.EventsIgnoreList)
+
 	mod.AddHandler(session.NewModuleHandler("events.stream on", "",
 		"Start events stream.",
 		func(args []string) error {

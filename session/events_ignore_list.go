@@ -1,6 +1,7 @@
 package session
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -28,6 +29,12 @@ func NewEventsIgnoreList() *EventsIgnoreList {
 	return &EventsIgnoreList{
 		filters: make([]filter, 0),
 	}
+}
+
+func (l *EventsIgnoreList) MarshalJSON() ([]byte, error) {
+	l.RLock()
+	defer l.RUnlock()
+	return json.Marshal(l.filters)
 }
 
 func (l *EventsIgnoreList) checkExpression(expr string) (string, error) {
@@ -88,8 +95,8 @@ func (l *EventsIgnoreList) Remove(expr string) (err error) {
 }
 
 func (l *EventsIgnoreList) Clear() {
-	l.RLock()
-	defer l.RUnlock()
+	l.Lock()
+	defer l.Unlock()
 	l.filters = make([]filter, 0)
 }
 
