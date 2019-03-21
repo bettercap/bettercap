@@ -38,10 +38,10 @@ type PacketCallback func(pkt gopacket.Packet)
 type Queue struct {
 	sync.RWMutex
 
-	Activities chan Activity
 	Stats      Stats
 	Protos     sync.Map
 	Traffic    sync.Map
+	Activities chan Activity
 
 	iface      *network.Endpoint
 	handle     *pcap.Handle
