@@ -11,6 +11,7 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcapgo"
 
+	"github.com/evilsocket/islazy/data"
 	"github.com/evilsocket/islazy/fs"
 )
 
@@ -43,22 +44,24 @@ type APLostCallback func(ap *AccessPoint)
 type WiFi struct {
 	sync.Mutex
 
-	aps    map[string]*AccessPoint
-	iface  *Endpoint
-	newCb  APNewCallback
-	lostCb APLostCallback
+	aliases *data.UnsortedKV
+	aps     map[string]*AccessPoint
+	iface   *Endpoint
+	newCb   APNewCallback
+	lostCb  APLostCallback
 }
 
 type wifiJSON struct {
 	AccessPoints []*AccessPoint `json:"aps"`
 }
 
-func NewWiFi(iface *Endpoint, newcb APNewCallback, lostcb APLostCallback) *WiFi {
+func NewWiFi(iface *Endpoint, aliases *data.UnsortedKV, newcb APNewCallback, lostcb APLostCallback) *WiFi {
 	return &WiFi{
-		aps:    make(map[string]*AccessPoint),
-		iface:  iface,
-		newCb:  newcb,
-		lostCb: lostcb,
+		aps:     make(map[string]*AccessPoint),
+		aliases: aliases,
+		iface:   iface,
+		newCb:   newcb,
+		lostCb:  lostcb,
 	}
 }
 
@@ -134,6 +137,7 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) (*AccessPoin
 	defer w.Unlock()
 
 	mac = NormalizeMac(mac)
+	alias := w.aliases.GetOr(mac, "")
 	if ap, found := w.aps[mac]; found {
 		ap.LastSeen = time.Now()
 		if rssi != 0 {
@@ -143,10 +147,15 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) (*AccessPoin
 		if !isBogusMacESSID(ssid) {
 			ap.Hostname = ssid
 		}
+
+		if alias != "" {
+			ap.Alias = alias
+		}
 		return ap, false
 	}
 
-	newAp := NewAccessPoint(ssid, mac, frequency, rssi)
+	newAp := NewAccessPoint(ssid, mac, frequency, rssi, w.aliases)
+	newAp.Alias = alias
 	w.aps[mac] = newAp
 
 	if w.newCb != nil {

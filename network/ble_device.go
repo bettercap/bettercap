@@ -27,6 +27,7 @@ type BLEService struct {
 }
 
 type BLEDevice struct {
+	Alias         string
 	LastSeen      time.Time
 	DeviceName    string
 	Vendor        string
@@ -40,6 +41,7 @@ type bleDeviceJSON struct {
 	LastSeen    time.Time    `json:"last_seen"`
 	Name        string       `json:"name"`
 	MAC         string       `json:"mac"`
+	Alias       string       `json:"alias"`
 	Vendor      string       `json:"vendor"`
 	RSSI        int          `json:"rssi"`
 	Connectable bool         `json:"connectable"`
@@ -81,6 +83,7 @@ func (d *BLEDevice) MarshalJSON() ([]byte, error) {
 		LastSeen:    d.LastSeen,
 		Name:        d.Name(),
 		MAC:         d.Device.ID(),
+		Alias:       d.Alias,
 		Vendor:      d.Vendor,
 		RSSI:        d.RSSI,
 		Connectable: d.Advertisement.Connectable,

@@ -124,7 +124,7 @@ func (mod *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.
 			freq := int(radiotap.ChannelFrequency)
 			rssi := radiotap.DBMAntennaSignal
 
-			if station, isNew := ap.AddClientIfNew(bssid, freq, rssi, mod.Session.Lan.Aliases()); isNew {
+			if station, isNew := ap.AddClientIfNew(bssid, freq, rssi); isNew {
 				mod.Session.Events.Add("wifi.client.new", ClientEvent{
 					AP:     ap,
 					Client: station,

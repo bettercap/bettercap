@@ -12,6 +12,7 @@ type AccessPoint struct {
 	*Station
 	sync.Mutex
 
+	aliases         *data.UnsortedKV
 	clients         map[string]*Station
 	withKeyMaterial bool
 }
@@ -22,9 +23,10 @@ type apJSON struct {
 	Handshake bool       `json:"handshake"`
 }
 
-func NewAccessPoint(essid, bssid string, frequency int, rssi int8) *AccessPoint {
+func NewAccessPoint(essid, bssid string, frequency int, rssi int8, aliases *data.UnsortedKV) *AccessPoint {
 	return &AccessPoint{
 		Station: NewStation(essid, bssid, frequency, rssi),
+		aliases: aliases,
 		clients: make(map[string]*Station),
 	}
 }
@@ -67,11 +69,12 @@ func (ap *AccessPoint) RemoveClient(mac string) {
 	}
 }
 
-func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8, aliases *data.UnsortedKV) (*Station, bool) {
+func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8) (*Station, bool) {
 	ap.Lock()
 	defer ap.Unlock()
 
 	bssid = NormalizeMac(bssid)
+	alias := ap.aliases.GetOr(bssid, "")
 
 	if s, found := ap.clients[bssid]; found {
 		// update
@@ -79,17 +82,15 @@ func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8, al
 		s.RSSI = rssi
 		s.LastSeen = time.Now()
 
-		if aliases != nil {
-			s.Alias = aliases.GetOr(bssid, "")
+		if alias != "" {
+			s.Alias = alias
 		}
 
 		return s, false
 	}
 
 	s := NewStation("", bssid, frequency, rssi)
-	if aliases != nil {
-		s.Alias = aliases.GetOr(bssid, "")
-	}
+	s.Alias = alias
 	ap.clients[bssid] = s
 
 	return s, true

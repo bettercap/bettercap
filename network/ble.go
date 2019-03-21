@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/bettercap/gatt"
+
+	"github.com/evilsocket/islazy/data"
 )
 
 const BLEMacValidator = "([a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2})"
@@ -18,6 +20,7 @@ type BLEDevLostCallback func(dev *BLEDevice)
 
 type BLE struct {
 	sync.RWMutex
+	aliases *data.UnsortedKV
 	devices map[string]*BLEDevice
 	newCb   BLEDevNewCallback
 	lostCb  BLEDevLostCallback
@@ -27,9 +30,10 @@ type bleJSON struct {
 	Devices []*BLEDevice `json:"devices"`
 }
 
-func NewBLE(newcb BLEDevNewCallback, lostcb BLEDevLostCallback) *BLE {
+func NewBLE(aliases *data.UnsortedKV, newcb BLEDevNewCallback, lostcb BLEDevLostCallback) *BLE {
 	return &BLE{
 		devices: make(map[string]*BLEDevice),
+		aliases: aliases,
 		newCb:   newcb,
 		lostCb:  lostcb,
 	}
@@ -55,14 +59,19 @@ func (b *BLE) AddIfNew(id string, p gatt.Peripheral, a *gatt.Advertisement, rssi
 	defer b.Unlock()
 
 	id = NormalizeMac(id)
+	alias := b.aliases.GetOr(id, "")
 	if dev, found := b.devices[id]; found {
 		dev.LastSeen = time.Now()
 		dev.RSSI = rssi
 		dev.Advertisement = a
+		if alias != "" {
+			dev.Alias = alias
+		}
 		return dev
 	}
 
 	newDev := NewBLEDevice(p, a, rssi)
+	newDev.Alias = alias
 	b.devices[id] = newDev
 
 	if b.newCb != nil {

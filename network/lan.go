@@ -2,22 +2,17 @@ package network
 
 import (
 	"encoding/json"
-	"fmt"
 	"net"
 	"strings"
 	"sync"
 
 	"github.com/evilsocket/islazy/data"
-	"github.com/evilsocket/islazy/fs"
 )
 
 const LANDefaultttl = 10
-const LANAliasesFile = "~/bettercap.aliases"
 
 type EndpointNewCallback func(e *Endpoint)
 type EndpointLostCallback func(e *Endpoint)
-
-var aliasesFileName, _ = fs.Expand(LANAliasesFile)
 
 type LAN struct {
 	sync.Mutex
@@ -34,12 +29,7 @@ type lanJSON struct {
 	Hosts []*Endpoint `json:"hosts"`
 }
 
-func NewLAN(iface, gateway *Endpoint, newcb EndpointNewCallback, lostcb EndpointLostCallback) *LAN {
-	aliases, err := data.NewUnsortedKV(aliasesFileName, data.FlushOnEdit)
-	if err != nil {
-		fmt.Printf("error loading %s: %s", aliasesFileName, err)
-	}
-
+func NewLAN(iface, gateway *Endpoint, aliases *data.UnsortedKV, newcb EndpointNewCallback, lostcb EndpointLostCallback) *LAN {
 	return &LAN{
 		iface:   iface,
 		gateway: gateway,
@@ -61,19 +51,6 @@ func (l *LAN) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(doc)
-}
-
-func (lan *LAN) SetAliasFor(mac, alias string) bool {
-	lan.Lock()
-	defer lan.Unlock()
-
-	mac = NormalizeMac(mac)
-	lan.aliases.Set(mac, alias)
-	if e, found := lan.hosts[mac]; found {
-		e.Alias = alias
-		return true
-	}
-	return false
 }
 
 func (lan *LAN) Get(mac string) (*Endpoint, bool) {

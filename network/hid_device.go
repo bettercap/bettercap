@@ -42,6 +42,7 @@ type HIDDevice struct {
 	sync.Mutex
 	LastSeen   time.Time
 	Type       HIDType
+	Alias      string
 	Address    string
 	RawAddress []byte
 	channels   map[int]bool
@@ -53,6 +54,7 @@ type hidDeviceJSON struct {
 	LastSeen     time.Time `json:"last_seen"`
 	Type         string    `json:"type"`
 	Address      string    `json:"address"`
+	Alias        string    `json:"alias"`
 	Channels     []string  `json:"channels"`
 	Payloads     []string  `json:"payloads"`
 	PayloadsSize uint64    `json:"payloads_size"`
@@ -102,6 +104,7 @@ func (dev *HIDDevice) MarshalJSON() ([]byte, error) {
 		LastSeen:     dev.LastSeen,
 		Type:         dev.Type.String(),
 		Address:      dev.Address,
+		Alias:        dev.Alias,
 		Channels:     dev.channelsListUnlocked(),
 		Payloads:     make([]string, 0),
 		PayloadsSize: dev.payloadsSz,

@@ -36,7 +36,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		staIsUs := bytes.Equal(staMac, mod.iface.HW)
 		station, found := ap.Get(staMac.String())
 		if !found {
-			station, _ = ap.AddClientIfNew(staMac.String(), ap.Frequency, ap.RSSI, mod.Session.Lan.Aliases())
+			station, _ = ap.AddClientIfNew(staMac.String(), ap.Frequency, ap.RSSI)
 		}
 
 		rawPMKID := []byte(nil)

@@ -20,6 +20,7 @@ import (
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 
+	"github.com/evilsocket/islazy/data"
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/islazy/ops"
@@ -54,6 +55,10 @@ type GPS struct {
 	Separation    float64 // Geoidal separation
 }
 
+const AliasesFile = "~/bettercap.aliases"
+
+var aliasesFileName, _ = fs.Expand(AliasesFile)
+
 type Session struct {
 	Options   core.Options
 	Interface *network.Endpoint
@@ -68,6 +73,7 @@ type Session struct {
 	Active    bool
 	GPS       GPS
 	Modules   ModuleList
+	Aliases   *data.UnsortedKV
 
 	Input            *readline.Instance
 	Prompt           Prompt
@@ -112,6 +118,10 @@ func New() (*Session, error) {
 	}
 
 	if s.Env, err = NewEnvironment(*s.Options.EnvFile); err != nil {
+		return nil, err
+	}
+
+	if s.Aliases, err = data.NewUnsortedKV(aliasesFileName, data.FlushOnEdit); err != nil {
 		return nil, err
 	}
 
@@ -235,25 +245,25 @@ func (s *Session) Start() error {
 
 	s.Firewall = firewall.Make(s.Interface)
 
-	s.HID = network.NewHID(func(dev *network.HIDDevice) {
+	s.HID = network.NewHID(s.Aliases, func(dev *network.HIDDevice) {
 		s.Events.Add("hid.device.new", dev)
 	}, func(dev *network.HIDDevice) {
 		s.Events.Add("hid.device.lost", dev)
 	})
 
-	s.BLE = network.NewBLE(func(dev *network.BLEDevice) {
+	s.BLE = network.NewBLE(s.Aliases, func(dev *network.BLEDevice) {
 		s.Events.Add("ble.device.new", dev)
 	}, func(dev *network.BLEDevice) {
 		s.Events.Add("ble.device.lost", dev)
 	})
 
-	s.WiFi = network.NewWiFi(s.Interface, func(ap *network.AccessPoint) {
+	s.WiFi = network.NewWiFi(s.Interface, s.Aliases, func(ap *network.AccessPoint) {
 		s.Events.Add("wifi.ap.new", ap)
 	}, func(ap *network.AccessPoint) {
 		s.Events.Add("wifi.ap.lost", ap)
 	})
 
-	s.Lan = network.NewLAN(s.Interface, s.Gateway, func(e *network.Endpoint) {
+	s.Lan = network.NewLAN(s.Interface, s.Gateway, s.Aliases, func(e *network.Endpoint) {
 		s.Events.Add("endpoint.new", e)
 	}, func(e *network.Endpoint) {
 		s.Events.Add("endpoint.lost", e)
