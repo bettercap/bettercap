@@ -495,13 +495,17 @@ func (mod *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) 
 		bytes := uint64(len(packet.Data()))
 
 		dst := dot11.Address1.String()
-		if station, found := mod.Session.WiFi.Get(dst); found {
-			station.Received += bytes
+		if ap, found := mod.Session.WiFi.Get(dst); found {
+			ap.Received += bytes
+		} else if sta, found := mod.Session.WiFi.GetClient(dst); found {
+			sta.Received += bytes
 		}
 
 		src := dot11.Address2.String()
-		if station, found := mod.Session.WiFi.Get(src); found {
-			station.Sent += bytes
+		if ap, found := mod.Session.WiFi.Get(src); found {
+			ap.Sent += bytes
+		} else if sta, found := mod.Session.WiFi.GetClient(src); found {
+			sta.Sent += bytes
 		}
 	}
 }
