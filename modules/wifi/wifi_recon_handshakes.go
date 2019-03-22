@@ -37,8 +37,9 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		// in order to have a consistent association of AP, client and handshakes.
 		staIsUs := bytes.Equal(staMac, mod.iface.HW)
 		station, found := ap.Get(staMac.String())
+		staAdded := false
 		if !found {
-			station, _ = ap.AddClientIfNew(staMac.String(), ap.Frequency, ap.RSSI)
+			station, staAdded = ap.AddClientIfNew(staMac.String(), ap.Frequency, ap.RSSI)
 		}
 
 		rawPMKID := []byte(nil)
@@ -100,10 +101,10 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 			// is persisted even after stations are pruned due to inactivity
 			ap.WithKeyMaterial(true)
 		}
-
-		// if we added ourselves as a client station but we didn't get any
+		// if we're only collecting handshakes from history or  if we
+		// added ourselves as a client station but we didn't get any
 		// PMKID, just remove it from the list of clients of this AP.
-		if staIsUs && rawPMKID == nil {
+		if (readOnly && staAdded) || (staIsUs && rawPMKID == nil) {
 			ap.RemoveClient(staMac.String())
 		}
 	}
