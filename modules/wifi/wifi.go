@@ -23,21 +23,31 @@ import (
 	"github.com/evilsocket/islazy/tui"
 )
 
+type parsedShake struct {
+	Radiotap *layers.RadioTap
+	Dot11    *layers.Dot11
+	Packet   gopacket.Packet
+}
+
 type WiFiModule struct {
 	session.SessionModule
 
-	iface               *network.Endpoint
-	handle              *pcap.Handle
-	source              string
-	region              string
-	txPower             int
-	minRSSI             int
-	channel             int
-	hopPeriod           time.Duration
-	hopChanges          chan bool
-	frequencies         []int
-	ap                  *network.AccessPoint
-	stickChan           int
+	iface       *network.Endpoint
+	handle      *pcap.Handle
+	source      string
+	region      string
+	txPower     int
+	minRSSI     int
+	channel     int
+	hopPeriod   time.Duration
+	hopChanges  chan bool
+	frequencies []int
+	ap          *network.AccessPoint
+	stickChan   int
+
+	shakesFile    string
+	shakesHistory []parsedShake
+
 	skipBroken          bool
 	pktSourceChan       chan gopacket.Packet
 	pktSourceChanClosed bool
@@ -47,7 +57,6 @@ type WiFiModule struct {
 	assocSkip           []net.HardwareAddr
 	assocSilent         bool
 	assocOpen           bool
-	shakesFile          string
 	apRunning           bool
 	showManuf           bool
 	apConfig            packets.Dot11ApConfig
@@ -66,6 +75,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		stickChan:     0,
 		hopPeriod:     250 * time.Millisecond,
 		hopChanges:    make(chan bool),
+		shakesHistory: make([]parsedShake, 0),
 		ap:            nil,
 		skipBroken:    true,
 		apRunning:     false,
@@ -510,10 +520,40 @@ func (mod *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) 
 	}
 }
 
+func (mod *WiFiModule) loadHandshakes() {
+	mod.shakesHistory = make([]parsedShake, 0)
+
+	if !fs.Exists(mod.shakesFile) {
+		return
+	}
+
+	handle, err := pcap.OpenOffline(mod.shakesFile)
+	if err != nil {
+		mod.Debug("can't open handshakes file: %v", mod.shakesFile)
+		return
+	}
+	defer handle.Close()
+
+	mod.Info("loading handshakes from %s", mod.shakesFile)
+
+	src := gopacket.NewPacketSource(handle, handle.LinkType())
+	for packet := range src.Packets() {
+		if ok, radiotap, dot11 := packets.Dot11Parse(packet); ok {
+			mod.shakesHistory = append(mod.shakesHistory, parsedShake{
+				Radiotap: radiotap,
+				Dot11:    dot11,
+				Packet:   packet,
+			})
+		}
+	}
+}
+
 func (mod *WiFiModule) Start() error {
 	if err := mod.Configure(); err != nil {
 		return err
 	}
+
+	mod.loadHandshakes()
 
 	mod.SetRunning(true, func() {
 		// start channel hopper if needed
@@ -551,7 +591,7 @@ func (mod *WiFiModule) Start() error {
 				mod.discoverProbes(radiotap, dot11, packet)
 				mod.discoverAccessPoints(radiotap, dot11, packet)
 				mod.discoverClients(radiotap, dot11, packet)
-				mod.discoverHandshakes(radiotap, dot11, packet)
+				mod.discoverHandshakes(radiotap, dot11, packet, false)
 				mod.updateInfo(dot11, packet)
 				mod.updateStats(dot11, packet)
 			}
