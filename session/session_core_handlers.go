@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -249,13 +251,14 @@ func (s *Session) readHandler(args []string, sess *Session) error {
 }
 
 func (s *Session) clsHandler(args []string, sess *Session) error {
-	// fixes a weird bug which causes the screen not to be fully
-	// cleared if a "clear; net.show" commands chain is executed
-	// in the interactive session.
-	for i := 0; i < 180; i++ {
-		fmt.Println()
+	cmd := "clear"
+	if runtime.GOOS == "windows" {
+		cmd = "cls"
 	}
-	readline.ClearScreen(s.Input.Stdout())
+
+	c := exec.Command(cmd)
+	c.Stdout = os.Stdout
+	c.Run()
 	return nil
 }
 
