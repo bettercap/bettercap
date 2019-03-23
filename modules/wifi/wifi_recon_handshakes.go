@@ -18,14 +18,12 @@ func allZeros(s []byte) bool {
 	return true
 }
 
-func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet, readOnly bool) {
+func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	if ok, key, apMac, staMac := packets.Dot11ParseEAPOL(packet, dot11); ok {
 		// first, locate the AP in our list by its BSSID
 		ap, found := mod.Session.WiFi.Get(apMac.String())
 		if !found {
-			if !readOnly {
-				mod.Warning("could not find AP with BSSID %s", apMac.String())
-			}
+			mod.Warning("could not find AP with BSSID %s", apMac.String())
 			return
 		}
 
@@ -78,8 +76,8 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		// if we have unsaved packets as part of the handshake, save them.
 		numUnsaved := station.Handshake.NumUnsaved()
 		doSave := numUnsaved > 0
-		if !readOnly && doSave && mod.shakesFile != "" {
-			mod.Debug("saving handshake frames to %s", mod.shakesFile)
+		if doSave && mod.shakesFile != "" {
+			mod.Info("saving handshake frames to %s", mod.shakesFile)
 			if err := mod.Session.WiFi.SaveHandshakesTo(mod.shakesFile, mod.handle.LinkType()); err != nil {
 				mod.Error("error while saving handshake frames to %s: %s", mod.shakesFile, err)
 			}
@@ -88,23 +86,20 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		// if we had unsaved packets and either the handshake is complete
 		// or it contains the PMKID, generate a new event.
 		if doSave && (rawPMKID != nil || station.Handshake.Complete()) {
-			if !readOnly {
-				mod.Session.Events.Add("wifi.client.handshake", HandshakeEvent{
-					File:       mod.shakesFile,
-					NewPackets: numUnsaved,
-					AP:         apMac.String(),
-					Station:    staMac.String(),
-					PMKID:      rawPMKID,
-				})
-			}
+			mod.Session.Events.Add("wifi.client.handshake", HandshakeEvent{
+				File:       mod.shakesFile,
+				NewPackets: numUnsaved,
+				AP:         apMac.String(),
+				Station:    staMac.String(),
+				PMKID:      rawPMKID,
+			})
 			// make sure the info that we have key material for this AP
 			// is persisted even after stations are pruned due to inactivity
 			ap.WithKeyMaterial(true)
 		}
-		// if we're only collecting handshakes from history or  if we
-		// added ourselves as a client station but we didn't get any
+		// if we added ourselves as a client station but we didn't get any
 		// PMKID, just remove it from the list of clients of this AP.
-		if (readOnly && staAdded) || (staIsUs && rawPMKID == nil) {
+		if staAdded || (staIsUs && rawPMKID == nil) {
 			ap.RemoveClient(staMac.String())
 		}
 	}

@@ -70,12 +70,6 @@ func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *la
 					ap.EachClient(func(mac string, station *network.Station) {
 						station.Handshake.SetBeacon(packet)
 					})
-				} else {
-					// every time we detect a new ap, see if we have
-					// its handshakes in our pcap already
-					for _, h := range mod.shakesHistory {
-						mod.discoverHandshakes(h.Radiotap, h.Dot11, h.Packet, true)
-					}
 				}
 			} else {
 				mod.Debug("skipping %s with %d dBm", from.String(), radiotap.DBMAntennaSignal)
