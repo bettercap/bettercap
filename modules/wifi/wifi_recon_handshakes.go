@@ -77,7 +77,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		numUnsaved := station.Handshake.NumUnsaved()
 		doSave := numUnsaved > 0
 		if doSave && mod.shakesFile != "" {
-			mod.Info("saving handshake frames to %s", mod.shakesFile)
+			mod.Debug("saving handshake frames to %s", mod.shakesFile)
 			if err := mod.Session.WiFi.SaveHandshakesTo(mod.shakesFile, mod.handle.LinkType()); err != nil {
 				mod.Error("error while saving handshake frames to %s: %s", mod.shakesFile, err)
 			}
