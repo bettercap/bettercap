@@ -9,6 +9,7 @@ import (
 
 type BLEDevice struct {
 	LastSeen time.Time
+	Alias    string
 }
 
 func NewBLEDevice() *BLEDevice {
