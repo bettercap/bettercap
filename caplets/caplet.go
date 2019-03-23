@@ -8,19 +8,31 @@ import (
 	"github.com/evilsocket/islazy/fs"
 )
 
-type Caplet struct {
-	Name string   `json:"name"`
+type Script struct {
 	Path string   `json:"path"`
 	Size int64    `json:"size"`
 	Code []string `json:"code"`
 }
 
-func NewCaplet(name string, path string, size int64) Caplet {
-	return Caplet{
-		Name: name,
+func newScript(path string, size int64) Script {
+	return Script{
 		Path: path,
 		Size: size,
 		Code: make([]string, 0),
+	}
+}
+
+type Caplet struct {
+	Script
+	Name    string   `json:"name"`
+	Scripts []Script `json:"scripts"`
+}
+
+func NewCaplet(name string, path string, size int64) Caplet {
+	return Caplet{
+		Script:  newScript(path, size),
+		Name:    name,
+		Scripts: make([]Script, 0),
 	}
 }
 
