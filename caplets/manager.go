@@ -79,9 +79,6 @@ func Load(name string) (error, *Caplet) {
 				return fmt.Errorf("error reading caplet %s: %v", fileName, err), nil
 			} else {
 				for line := range reader {
-					if line == "" || line[0] == '#' {
-						continue
-					}
 					cap.Code = append(cap.Code, line)
 				}
 

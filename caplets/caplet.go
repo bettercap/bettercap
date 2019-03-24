@@ -44,6 +44,10 @@ func (cap *Caplet) Eval(argv []string, lineCb func(line string) error) error {
 	// temporarily change the working directory
 	return fs.Chdir(filepath.Dir(cap.Path), func() error {
 		for _, line := range cap.Code {
+			// skip empty lines and comments
+			if line == "" || line[0] == '#' {
+				continue
+			}
 			// replace $0 with argv[0], $1 with argv[1] and so on
 			for i, arg := range argv {
 				what := fmt.Sprintf("$%d", i)
