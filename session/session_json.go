@@ -51,6 +51,7 @@ type sessionJSON struct {
 	HID        *network.HID      `json:"hid"`
 	Queue      *packets.Queue    `json:"packets"`
 	StartedAt  time.Time         `json:"started_at"`
+	PolledAt   time.Time         `json:"polled_at"`
 	Active     bool              `json:"active"`
 	GPS        GPS               `json:"gps"`
 	Modules    ModuleList        `json:"modules"`
@@ -74,6 +75,7 @@ func (s *Session) MarshalJSON() ([]byte, error) {
 		HID:        s.HID,
 		Queue:      s.Queue,
 		StartedAt:  s.StartedAt,
+		PolledAt:   time.Now(),
 		Active:     s.Active,
 		GPS:        s.GPS,
 		Modules:    s.Modules,
