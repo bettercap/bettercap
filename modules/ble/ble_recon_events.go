@@ -67,7 +67,8 @@ func (mod *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
 
 	mod.Info("connected, enumerating all the things for %s!", p.ID())
 	services, err := p.DiscoverServices(nil)
-	if err != nil {
+	// https://github.com/bettercap/bettercap/issues/498
+	if err != nil && err.Error() != "success" {
 		mod.Error("error discovering services: %s", err)
 		return
 	}
