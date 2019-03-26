@@ -6,6 +6,7 @@ import (
 	"github.com/bettercap/bettercap/tls"
 
 	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/str"
 )
 
 type HttpsProxy struct {
@@ -58,6 +59,12 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"",
 		"Path of a proxy JS script."))
 
+	mod.AddParam(session.NewStringParameter("https.proxy.blacklist", "", "",
+		"Comma separated list of hostnames to skip while proxying (wildcard expressions can be used)."))
+
+	mod.AddParam(session.NewStringParameter("https.proxy.whitelist", "", "",
+		"Comma separated list of hostnames to proxy if the blacklist is used (wildcard expressions can be used)."))
+
 	mod.AddHandler(session.NewModuleHandler("https.proxy on", "",
 		"Start HTTPS proxy.",
 		func(args []string) error {
@@ -95,6 +102,8 @@ func (mod *HttpsProxy) Configure() error {
 	var keyFile string
 	var stripSSL bool
 	var jsToInject string
+	var whitelist string
+	var blacklist string
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted
@@ -118,7 +127,14 @@ func (mod *HttpsProxy) Configure() error {
 		return err
 	} else if err, jsToInject = mod.StringParam("https.proxy.injectjs"); err != nil {
 		return err
+	} else if err, blacklist = mod.StringParam("https.proxy.blacklist"); err != nil {
+		return err
+	} else if err, whitelist = mod.StringParam("https.proxy.whitelist"); err != nil {
+		return err
 	}
+
+	mod.proxy.Blacklist = str.Comma(blacklist)
+	mod.proxy.Whitelist = str.Comma(whitelist)
 
 	if !fs.Exists(certFile) || !fs.Exists(keyFile) {
 		err, cfg := tls.CertConfigFromModule("https.proxy", mod.SessionModule)
