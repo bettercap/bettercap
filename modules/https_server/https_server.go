@@ -100,7 +100,7 @@ func (mod *HttpsServer) Configure() error {
 	fileServer := http.FileServer(http.Dir(path))
 
 	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mod.Info("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		mod.Debug("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
 		fileServer.ServeHTTP(w, r)
 	}))
 
