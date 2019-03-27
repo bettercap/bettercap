@@ -230,9 +230,9 @@ func (m *SessionModule) Running() bool {
 func (m *SessionModule) SetRunning(running bool, cb func()) error {
 	if running == m.Running() {
 		if m.Started {
-			return ErrAlreadyStarted
+			return ErrAlreadyStarted(m.Name)
 		} else {
-			return ErrAlreadyStopped
+			return ErrAlreadyStopped(m.Name)
 		}
 	}
 

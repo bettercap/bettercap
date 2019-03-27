@@ -35,13 +35,19 @@ const (
 var (
 	I = (*Session)(nil)
 
-	ErrAlreadyStarted = errors.New("module is already running")
-	ErrAlreadyStopped = errors.New("module is not running")
-	ErrNotSupported   = errors.New("this component is not supported on this OS")
+	ErrNotSupported = errors.New("this component is not supported on this OS")
 
 	reCmdSpaceCleaner = regexp.MustCompile(`^([^\s]+)\s+(.+)$`)
 	reEnvVarCapture   = regexp.MustCompile(`{env\.([^}]+)}`)
 )
+
+func ErrAlreadyStarted(name string) error {
+	return fmt.Errorf("module %s is already running", name)
+}
+
+func ErrAlreadyStopped(name string) error {
+	return fmt.Errorf("module %s is not running", name)
+}
 
 type UnknownCommandCallback func(cmd string) bool
 

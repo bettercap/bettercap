@@ -89,7 +89,7 @@ func (mod *HttpProxy) Configure() error {
 	var whitelist string
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, address = mod.StringParam("http.proxy.address"); err != nil {
 		return err
 	} else if err, proxyPort = mod.IntParam("http.proxy.port"); err != nil {

@@ -126,7 +126,7 @@ func (mod *RestAPI) Configure() error {
 	var port int
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, ip = mod.StringParam("api.rest.address"); err != nil {
 		return err
 	} else if err, port = mod.IntParam("api.rest.port"); err != nil {

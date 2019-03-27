@@ -106,7 +106,7 @@ func (mod *HttpsProxy) Configure() error {
 	var blacklist string
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, address = mod.StringParam("https.proxy.address"); err != nil {
 		return err
 	} else if err, proxyPort = mod.IntParam("https.proxy.port"); err != nil {

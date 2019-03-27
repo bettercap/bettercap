@@ -71,7 +71,7 @@ func (mod *HttpServer) Configure() error {
 	var port int
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	}
 
 	if err, path = mod.StringParam("http.server.path"); err != nil {

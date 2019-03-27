@@ -80,7 +80,7 @@ func (mod *AnyProxy) Configure() error {
 	var dstAddress string
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, iface = mod.StringParam("any.proxy.iface"); err != nil {
 		return err
 	} else if err, protocol = mod.StringParam("any.proxy.protocol"); err != nil {

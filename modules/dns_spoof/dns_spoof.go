@@ -87,7 +87,7 @@ func (mod *DNSSpoofer) Configure() error {
 	var address net.IP
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if mod.Handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
 		return err
 	} else if err = mod.Handle.SetBPFFilter("udp"); err != nil {

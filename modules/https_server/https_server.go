@@ -89,7 +89,7 @@ func (mod *HttpsServer) Configure() error {
 	var keyFile string
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	}
 
 	if err, path = mod.StringParam("https.server.path"); err != nil {

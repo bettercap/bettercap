@@ -140,7 +140,7 @@ func (w dummyWriter) Write(p []byte) (n int, err error) {
 
 func (mod *BLERecon) Configure() (err error) {
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if mod.gattDevice == nil {
 		mod.Debug("initializing device ...")
 
@@ -239,7 +239,7 @@ func (mod *BLERecon) enumAllTheThings(mac string) error {
 	}
 
 	mod.setCurrentDevice(dev)
-	if err := mod.Configure(); err != nil && err != session.ErrAlreadyStarted {
+	if err := mod.Configure(); err != nil && err != session.ErrAlreadyStarted(mod.Name()) {
 		return err
 	}
 
