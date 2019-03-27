@@ -239,7 +239,7 @@ func (mod *BLERecon) enumAllTheThings(mac string) error {
 	}
 
 	mod.setCurrentDevice(dev)
-	if err := mod.Configure(); err != nil && err != session.ErrAlreadyStarted(mod.Name()) {
+	if err := mod.Configure(); err != nil && err.Error() != session.ErrAlreadyStarted("ble.recon").Error() {
 		return err
 	}
 
