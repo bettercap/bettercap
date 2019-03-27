@@ -83,7 +83,7 @@
   revision = "2ce16c963a8ac5bd6af851d4877e38701346983f"
 
 [[projects]]
-  digest = "1:da1be9af4c3f262bd385cc722b08d98d4a47ddea57731e98b85c7ba21b35bc31"
+  digest = "1:5247f5757ba31623c464db149dc272a37604516d8fbae1561b36e0d7cee070a5"
   name = "github.com/evilsocket/islazy"
   packages = [
     "data",
@@ -96,8 +96,8 @@
     "zip",
   ]
   pruneopts = "UT"
-  revision = "6ef79e84ded205e48f296d21e3bc65d1cf4f5c78"
-  version = "v1.10.3"
+  revision = "c5c7a41bb1c20e6df409825ed24af8de5fb7fb70"
+  version = "v1.10.4"
 
 [[projects]]
   branch = "master"
