@@ -15,36 +15,6 @@ import (
 	"github.com/kr/binarydist"
 )
 
-func compress(data []byte) (error, []byte) {
-	compressed := new(bytes.Buffer)
-	compress := gzip.NewWriter(compressed)
-
-	if _, err := compress.Write(data); err != nil {
-		return err, nil
-	} else if err = compress.Flush(); err != nil {
-		return err, nil
-	} else if err = compress.Close(); err != nil {
-		return err, nil
-	}
-
-	return nil, compressed.Bytes()
-}
-
-func decompress(data []byte) (error, []byte) {
-	decompress, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
-		return err, nil
-	}
-	defer decompress.Close()
-
-	raw, err := ioutil.ReadAll(decompress)
-	if err != nil {
-		return err, nil
-	}
-
-	return nil, raw
-}
-
 type patch []byte
 type frame []byte
 
@@ -109,7 +79,7 @@ func (e *RecordEntry) Reset() {
 	e.CurState = 0
 }
 
-func (e *RecordEntry) Compile() (err error) {
+func (e *RecordEntry) Compile() error {
 	e.Lock()
 	defer e.Unlock()
 
@@ -120,10 +90,7 @@ func (e *RecordEntry) Compile() (err error) {
 	e.frames = make([]frame, e.NumStates+1)
 
 	// first is the master frame
-	if err, e.frames[0] = compress(e.Data); err != nil {
-		return
-	}
-
+	e.frames[0] = frame(e.Data)
 	// precompute frames so they can be accessed by index
 	for i := 0; i < e.NumStates; i++ {
 		patch := e.States[i]
@@ -136,10 +103,7 @@ func (e *RecordEntry) Compile() (err error) {
 		}
 
 		e.Cur = newWriter.Bytes()
-
-		if err, e.frames[i+1] = compress(e.Cur); err != nil {
-			return err
-		}
+		e.frames[i+1] = e.Cur
 
 		e.progress(1)
 	}
@@ -179,15 +143,7 @@ func (e *RecordEntry) Next() []byte {
 	defer e.Unlock()
 	cur := e.CurState
 	e.CurState++
-
-	zFrame := e.frames[cur]
-
-	err, data := decompress(zFrame)
-	if err != nil {
-		panic(err)
-	}
-
-	return data
+	return e.frames[cur]
 }
 
 // the Record object represents a recorded session
@@ -231,9 +187,15 @@ func LoadRecord(fileName string, mod *session.SessionModule) (*Record, error) {
 		return nil, fmt.Errorf("error while reading %s: %s", fileName, err)
 	}
 
-	err, raw := decompress(compressed)
+	decompress, err := gzip.NewReader(bytes.NewReader(compressed))
 	if err != nil {
 		return nil, fmt.Errorf("error while reading gzip file %s: %s", fileName, err)
+	}
+	defer decompress.Close()
+
+	raw, err := ioutil.ReadAll(decompress)
+	if err != nil {
+		return nil, fmt.Errorf("error while decompressing %s: %s", fileName, err)
 	}
 
 	rec := &Record{}
@@ -282,12 +244,20 @@ func (r *Record) save() error {
 		return err
 	}
 
-	err, data := compress(buf.Bytes())
-	if err != nil {
+	data := buf.Bytes()
+
+	compressed := new(bytes.Buffer)
+	compress := gzip.NewWriter(compressed)
+
+	if _, err := compress.Write(data); err != nil {
+		return err
+	} else if err = compress.Flush(); err != nil {
+		return err
+	} else if err = compress.Close(); err != nil {
 		return err
 	}
 
-	return ioutil.WriteFile(r.fileName, data, os.ModePerm)
+	return ioutil.WriteFile(r.fileName, compressed.Bytes(), os.ModePerm)
 }
 
 func (r *Record) Flush() error {
