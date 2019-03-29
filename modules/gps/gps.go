@@ -126,6 +126,8 @@ func (mod *GPS) Start() error {
 	return mod.SetRunning(true, func() {
 		defer mod.serial.Close()
 
+		mod.Info("started on port %s ...", mod.serialPort)
+
 		for mod.Running() {
 			if line, err := mod.readLine(); err == nil {
 				if s, err := nmea.Parse(line); err == nil {
