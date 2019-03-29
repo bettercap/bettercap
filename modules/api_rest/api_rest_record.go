@@ -43,7 +43,7 @@ func (mod *RestAPI) recorder() {
 	mod.recTime = 0
 	mod.recording = true
 	mod.replaying = false
-	mod.record = NewRecord(mod.recordFileName)
+	mod.record = NewRecord(mod.recordFileName, &mod.SessionModule)
 
 	mod.Info("started recording to %s ...", mod.recordFileName)
 

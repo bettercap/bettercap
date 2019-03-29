@@ -60,7 +60,7 @@ type SessionModule struct {
 	Session    *Session
 	Started    bool
 	StatusLock *sync.RWMutex
-	State      sync.Map
+	State      *sync.Map
 
 	handlers []ModuleHandler
 	params   map[string]*ModuleParam
@@ -77,6 +77,7 @@ func NewSessionModule(name string, s *Session) SessionModule {
 		Session:    s,
 		Started:    false,
 		StatusLock: &sync.RWMutex{},
+		State:      &sync.Map{},
 
 		handlers: make([]ModuleHandler, 0),
 		params:   make(map[string]*ModuleParam),

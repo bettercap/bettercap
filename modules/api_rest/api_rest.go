@@ -60,6 +60,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 	mod.State.Store("recording", &mod.recording)
 	mod.State.Store("replaying", &mod.replaying)
 	mod.State.Store("loading", &mod.loading)
+	mod.State.Store("load_progress", 0)
 	mod.State.Store("rec_time", &mod.recTime)
 	mod.State.Store("rec_filename", &mod.recordFileName)
 	mod.State.Store("rec_frames", 0)

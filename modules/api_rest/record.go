@@ -9,12 +9,16 @@ import (
 	"os"
 	"sync"
 
+	"github.com/bettercap/bettercap/session"
+
 	"github.com/evilsocket/islazy/fs"
 	"github.com/kr/binarydist"
 )
 
 type patch []byte
 type frame []byte
+
+type progressCallback func(done int)
 
 type RecordEntry struct {
 	sync.Mutex
@@ -25,10 +29,11 @@ type RecordEntry struct {
 	NumStates int     `json:"-"`
 	CurState  int     `json:"-"`
 
-	frames []frame
+	frames   []frame
+	progress progressCallback
 }
 
-func NewRecordEntry() *RecordEntry {
+func NewRecordEntry(progress progressCallback) *RecordEntry {
 	return &RecordEntry{
 		Data:      nil,
 		Cur:       nil,
@@ -36,6 +41,7 @@ func NewRecordEntry() *RecordEntry {
 		NumStates: 0,
 		CurState:  0,
 		frames:    nil,
+		progress:  progress,
 	}
 }
 
@@ -98,7 +104,11 @@ func (e *RecordEntry) Compile() error {
 
 		e.Cur = newWriter.Bytes()
 		e.frames[i+1] = e.Cur
+
+		e.progress(1)
 	}
+
+	e.progress(1)
 
 	return nil
 }
@@ -140,20 +150,34 @@ func (e *RecordEntry) Next() []byte {
 type Record struct {
 	sync.Mutex
 
-	fileName string       `json:"-"`
-	Session  *RecordEntry `json:"session"`
-	Events   *RecordEntry `json:"events"`
+	mod      *session.SessionModule `json:"-"`
+	fileName string                 `json:"-"`
+	done     int                    `json:"-"`
+	total    int                    `json:"-"`
+	progress float64                `json:"-"`
+	Session  *RecordEntry           `json:"session"`
+	Events   *RecordEntry           `json:"events"`
 }
 
-func NewRecord(fileName string) *Record {
-	return &Record{
+func NewRecord(fileName string, mod *session.SessionModule) *Record {
+	r := &Record{
 		fileName: fileName,
-		Session:  NewRecordEntry(),
-		Events:   NewRecordEntry(),
+		mod:      mod,
 	}
+
+	r.Session = NewRecordEntry(r.onProgress)
+	r.Events = NewRecordEntry(r.onProgress)
+
+	return r
 }
 
-func LoadRecord(fileName string) (*Record, error) {
+func (r *Record) onProgress(done int) {
+	r.done += done
+	r.progress = float64(r.done) / float64(r.total) * 100.0
+	r.mod.State.Store("load_progress", r.progress)
+}
+
+func LoadRecord(fileName string, mod *session.SessionModule) (*Record, error) {
 	if !fs.Exists(fileName) {
 		return nil, fmt.Errorf("%s does not exist", fileName)
 	}
@@ -182,6 +206,16 @@ func LoadRecord(fileName string) (*Record, error) {
 	}
 
 	rec.fileName = fileName
+	rec.mod = mod
+
+	rec.Session.NumStates = len(rec.Session.States)
+	rec.Session.progress = rec.onProgress
+	rec.Events.NumStates = len(rec.Events.States)
+	rec.Events.progress = rec.onProgress
+
+	rec.done = 0
+	rec.total = rec.Session.NumStates + rec.Events.NumStates + 2
+	rec.progress = 0.0
 
 	// reset state and precompute frames
 	if err = rec.Session.Compile(); err != nil {
