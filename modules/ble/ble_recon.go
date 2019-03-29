@@ -20,6 +20,7 @@ import (
 
 type BLERecon struct {
 	session.SessionModule
+	deviceId    int
 	gattDevice  gatt.Device
 	currDevice  *network.BLEDevice
 	writeUUID   *gatt.UUID
@@ -34,6 +35,7 @@ type BLERecon struct {
 func NewBLERecon(s *session.Session) *BLERecon {
 	mod := &BLERecon{
 		SessionModule: session.NewSessionModule("ble.recon", s),
+		deviceId:      -1,
 		gattDevice:    nil,
 		quit:          make(chan bool),
 		done:          make(chan bool),
@@ -110,6 +112,10 @@ func NewBLERecon(s *session.Session) *BLERecon {
 
 	mod.AddHandler(write)
 
+	mod.AddParam(session.NewIntParameter("ble.device",
+		fmt.Sprintf("%d", mod.deviceId),
+		"Index of the HCI device to use, -1 to autodetect."))
+
 	return mod
 }
 
@@ -142,11 +148,21 @@ func (mod *BLERecon) Configure() (err error) {
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
 	} else if mod.gattDevice == nil {
-		mod.Debug("initializing device ...")
+		if err, mod.deviceId = mod.IntParam("ble.device"); err != nil {
+			return err
+		}
+
+		mod.Debug("initializing device (id:%d) ...", mod.deviceId)
 
 		golog.SetFlags(0)
 		golog.SetOutput(dummyWriter{mod})
-		if mod.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
+
+		options := []gatt.Option{
+			gatt.LnxMaxConnections(255),
+			gatt.LnxDeviceID(mod.deviceId, true),
+		}
+
+		if mod.gattDevice, err = gatt.NewDevice(options...); err != nil {
 			mod.Debug("error while creating new gatt device: %v", err)
 			return err
 		}
