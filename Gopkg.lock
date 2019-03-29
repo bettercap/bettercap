@@ -67,21 +67,6 @@
   revision = "61ca646babef3bd4dea1deb610bfb0005c0a1298"
 
 [[projects]]
-  digest = "1:d052bda13fd17bd8cf52ccae57b0a03ffeea80cffc2cffc62741235fa34f92cf"
-  name = "github.com/dsnet/compress"
-  packages = [
-    ".",
-    "bzip2",
-    "bzip2/internal/sais",
-    "internal",
-    "internal/errors",
-    "internal/prefix",
-  ]
-  pruneopts = "UT"
-  revision = "da652975a8eea9fa0735aba8056747a751db0bd3"
-  version = "v0.0.1"
-
-[[projects]]
   branch = "master"
   digest = "1:6f9339c912bbdda81302633ad7e99a28dfa5a639c864061f1929510a9a64aa74"
   name = "github.com/dustin/go-humanize"
@@ -182,20 +167,6 @@
   pruneopts = "UT"
   revision = "66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d"
   version = "v1.4.0"
-
-[[projects]]
-  digest = "1:e5cbd028e1c6f49057ceaa5012b504e7a311e1f49d411a38f2d4d02b718e423a"
-  name = "github.com/icedream/go-bsdiff"
-  packages = [
-    ".",
-    "diff",
-    "internal",
-    "internal/native",
-    "patch",
-  ]
-  pruneopts = "UT"
-  revision = "a1d297ebf5e610377602c9b33a70d0dcee9cd4f6"
-  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -368,7 +339,6 @@
     "github.com/google/gopacket/pcapgo",
     "github.com/gorilla/mux",
     "github.com/gorilla/websocket",
-    "github.com/icedream/go-bsdiff",
     "github.com/inconshreveable/go-vhost",
     "github.com/jpillora/go-tld",
     "github.com/kr/binarydist",
