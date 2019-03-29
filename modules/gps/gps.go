@@ -133,6 +133,7 @@ func (mod *GPS) Start() error {
 				if s, err := nmea.Parse(line); err == nil {
 					// http://aprs.gids.nl/nmea/#gga
 					if m, ok := s.(nmea.GNGGA); ok {
+						mod.Session.GPS.Updated = time.Now()
 						mod.Session.GPS.Latitude = m.Latitude
 						mod.Session.GPS.Longitude = m.Longitude
 						mod.Session.GPS.FixQuality = m.FixQuality
@@ -141,6 +142,7 @@ func (mod *GPS) Start() error {
 						mod.Session.GPS.Altitude = m.Altitude
 						mod.Session.GPS.Separation = m.Separation
 					} else if m, ok := s.(nmea.GPGGA); ok {
+						mod.Session.GPS.Updated = time.Now()
 						mod.Session.GPS.Latitude = m.Latitude
 						mod.Session.GPS.Longitude = m.Longitude
 						mod.Session.GPS.FixQuality = m.FixQuality

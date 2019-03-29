@@ -52,6 +52,7 @@ func ErrAlreadyStopped(name string) error {
 type UnknownCommandCallback func(cmd string) bool
 
 type GPS struct {
+	Updated       time.Time
 	Latitude      float64 // Latitude.
 	Longitude     float64 // Longitude.
 	FixQuality    string  // Quality of fix.
