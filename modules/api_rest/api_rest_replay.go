@@ -26,6 +26,10 @@ func (mod *RestAPI) startReplay(filename string) (err error) {
 	}
 
 	mod.State.Store("load_progress", 0)
+	defer func() {
+		mod.State.Store("load_progress", 100.0)
+	}()
+
 	mod.loading = true
 	defer func() {
 		mod.loading = false
