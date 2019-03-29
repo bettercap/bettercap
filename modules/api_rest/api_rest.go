@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/bettercap/bettercap/session"
@@ -26,6 +27,13 @@ type RestAPI struct {
 	useWebsocket bool
 	upgrader     websocket.Upgrader
 	quit         chan bool
+
+	recording      bool
+	recTime        int
+	replaying      bool
+	recordFileName string
+	recordWait     *sync.WaitGroup
+	record         *Record
 }
 
 func NewRestAPI(s *session.Session) *RestAPI {
@@ -39,7 +47,20 @@ func NewRestAPI(s *session.Session) *RestAPI {
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 		},
+		recording:      false,
+		recTime:        0,
+		replaying:      false,
+		recordFileName: "",
+		recordWait:     &sync.WaitGroup{},
+		record:         nil,
 	}
+
+	mod.State.Store("recording", &mod.recording)
+	mod.State.Store("replaying", &mod.replaying)
+	mod.State.Store("rec_time", &mod.recTime)
+	mod.State.Store("rec_filename", &mod.recordFileName)
+	mod.State.Store("rec_frames", 0)
+	mod.State.Store("rec_cur_frame", 0)
 
 	mod.AddParam(session.NewStringParameter("api.rest.address",
 		"127.0.0.1",
@@ -91,6 +112,30 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"Stop REST API server.",
 		func(args []string) error {
 			return mod.Stop()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("api.rest.record off", "",
+		"Stop recording the session.",
+		func(args []string) error {
+			return mod.stopRecording()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("api.rest.record FILENAME", `api\.rest\.record (.+)`,
+		"Start polling the rest API every second recording each sample as a session file that can be replayed.",
+		func(args []string) error {
+			return mod.startRecording(args[0])
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("api.rest.replay off", "",
+		"Stop replaying the recorded session.",
+		func(args []string) error {
+			return mod.stopReplay()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("api.rest.replay FILENAME", `api\.rest\.replay (.+)`,
+		"Start the rest API module in replay mode using FILENAME as the recorded session file.",
+		func(args []string) error {
+			return mod.startReplay(args[0])
 		}))
 
 	return mod
@@ -205,7 +250,9 @@ func (mod *RestAPI) Configure() error {
 }
 
 func (mod *RestAPI) Start() error {
-	if err := mod.Configure(); err != nil {
+	if mod.replaying {
+		return fmt.Errorf("the api is currently in replay mode, run api.rest.replay off before starting it")
+	} else if err := mod.Configure(); err != nil {
 		return err
 	}
 
@@ -229,6 +276,12 @@ func (mod *RestAPI) Start() error {
 }
 
 func (mod *RestAPI) Stop() error {
+	if mod.recording {
+		mod.stopRecording()
+	} else if mod.replaying {
+		mod.stopReplay()
+	}
+
 	return mod.SetRunning(false, func() {
 		go func() {
 			mod.quit <- true

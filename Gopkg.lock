@@ -67,6 +67,21 @@
   revision = "61ca646babef3bd4dea1deb610bfb0005c0a1298"
 
 [[projects]]
+  digest = "1:d052bda13fd17bd8cf52ccae57b0a03ffeea80cffc2cffc62741235fa34f92cf"
+  name = "github.com/dsnet/compress"
+  packages = [
+    ".",
+    "bzip2",
+    "bzip2/internal/sais",
+    "internal",
+    "internal/errors",
+    "internal/prefix",
+  ]
+  pruneopts = "UT"
+  revision = "da652975a8eea9fa0735aba8056747a751db0bd3"
+  version = "v0.0.1"
+
+[[projects]]
   branch = "master"
   digest = "1:6f9339c912bbdda81302633ad7e99a28dfa5a639c864061f1929510a9a64aa74"
   name = "github.com/dustin/go-humanize"
@@ -169,6 +184,20 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:e5cbd028e1c6f49057ceaa5012b504e7a311e1f49d411a38f2d4d02b718e423a"
+  name = "github.com/icedream/go-bsdiff"
+  packages = [
+    ".",
+    "diff",
+    "internal",
+    "internal/native",
+    "patch",
+  ]
+  pruneopts = "UT"
+  revision = "a1d297ebf5e610377602c9b33a70d0dcee9cd4f6"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:6480de9b8abc75bfb06947e139aa07429dfed37f95a258e90865c4c84a9e188b"
   name = "github.com/inconshreveable/go-vhost"
@@ -183,6 +212,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "f16ca3b7b383d3f0373109cac19147de3e8ae2d1"
+
+[[projects]]
+  digest = "1:7ad278b575635babef38e4ad4219500c299a58ea14b30eb21383d0efca00b369"
+  name = "github.com/kr/binarydist"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "88f551ae580780cc79d12ab4c218ba1ca346b83a"
+  version = "v0.1.0"
 
 [[projects]]
   digest = "1:4701b2acabe16722ecb1e387d39741a29269386bfc4ba6283ecda362d289eff1"
@@ -331,8 +368,10 @@
     "github.com/google/gopacket/pcapgo",
     "github.com/gorilla/mux",
     "github.com/gorilla/websocket",
+    "github.com/icedream/go-bsdiff",
     "github.com/inconshreveable/go-vhost",
     "github.com/jpillora/go-tld",
+    "github.com/kr/binarydist",
     "github.com/malfunkt/iprange",
     "github.com/mdlayher/dhcp6",
     "github.com/mdlayher/dhcp6/dhcp6opts",

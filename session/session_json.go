@@ -35,7 +35,7 @@ type ifaceJSON struct {
 	Addresses []addrJSON `json:"addresses"`
 }
 
-type sessionJSON struct {
+type SessionJSON struct {
 	Version    string            `json:"version"`
 	OS         string            `json:"os"`
 	Arch       string            `json:"arch"`
@@ -59,7 +59,7 @@ type sessionJSON struct {
 }
 
 func (s *Session) MarshalJSON() ([]byte, error) {
-	doc := sessionJSON{
+	doc := SessionJSON{
 		Version:    core.Version,
 		OS:         runtime.GOOS,
 		Arch:       runtime.GOARCH,
