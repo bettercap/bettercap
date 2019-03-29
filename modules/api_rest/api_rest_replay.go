@@ -25,6 +25,11 @@ func (mod *RestAPI) startReplay(filename string) (err error) {
 		return err
 	}
 
+	mod.loading = true
+	defer func() {
+		mod.loading = false
+	}()
+
 	mod.Info("loading %s ...", mod.recordFileName)
 
 	start := time.Now()

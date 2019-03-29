@@ -30,6 +30,7 @@ type RestAPI struct {
 
 	recording      bool
 	recTime        int
+	loading        bool
 	replaying      bool
 	recordFileName string
 	recordWait     *sync.WaitGroup
@@ -49,6 +50,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		},
 		recording:      false,
 		recTime:        0,
+		loading:        false,
 		replaying:      false,
 		recordFileName: "",
 		recordWait:     &sync.WaitGroup{},
@@ -57,6 +59,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 
 	mod.State.Store("recording", &mod.recording)
 	mod.State.Store("replaying", &mod.replaying)
+	mod.State.Store("loading", &mod.loading)
 	mod.State.Store("rec_time", &mod.recTime)
 	mod.State.Store("rec_filename", &mod.recordFileName)
 	mod.State.Store("rec_frames", 0)
