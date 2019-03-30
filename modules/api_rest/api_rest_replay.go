@@ -50,10 +50,18 @@ func (mod *RestAPI) startReplay(filename string) (err error) {
 		}
 	}
 
+	mod.recStarted = mod.record.Session.StartedAt()
+	mod.recStopped = mod.record.Session.StoppedAt()
+	duration := mod.recStopped.Sub(mod.recStarted)
+	mod.recTime = int(duration.Seconds())
 	mod.replaying = true
 	mod.recording = false
 
-	mod.Info("loaded %d frames in %s, started replaying ...", mod.record.Session.Frames(), loadedIn)
+	mod.Info("loaded %s of recording (%d frames) started at %s in %s, started replaying ...",
+		duration,
+		mod.record.Session.Frames(),
+		mod.recStarted,
+		loadedIn)
 
 	return nil
 }

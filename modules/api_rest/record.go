@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/bettercap/bettercap/session"
 
@@ -144,6 +145,36 @@ func (e *RecordEntry) Next() []byte {
 	cur := e.CurState
 	e.CurState++
 	return e.frames[cur]
+}
+
+func (e *RecordEntry) TimeOf(idx int) time.Time {
+	e.Lock()
+	defer e.Unlock()
+
+	buf := e.frames[idx]
+	frame := make(map[string]interface{})
+
+	if err := json.Unmarshal(buf, &frame); err != nil {
+		fmt.Printf("%v\n", err)
+		return time.Time{}
+	} else if tm, err := time.Parse(time.RFC3339, frame["polled_at"].(string)); err != nil {
+		fmt.Printf("%v\n", err)
+		return time.Time{}
+	} else {
+		return tm
+	}
+}
+
+func (e *RecordEntry) StartedAt() time.Time {
+	return e.TimeOf(0)
+}
+
+func (e *RecordEntry) StoppedAt() time.Time {
+	return e.TimeOf(e.NumStates)
+}
+
+func (e *RecordEntry) Duration() time.Duration {
+	return e.StoppedAt().Sub(e.StartedAt())
 }
 
 // the Record object represents a recorded session

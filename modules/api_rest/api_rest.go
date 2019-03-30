@@ -35,6 +35,8 @@ type RestAPI struct {
 	recordFileName string
 	recordWait     *sync.WaitGroup
 	record         *Record
+	recStarted     time.Time
+	recStopped     time.Time
 }
 
 func NewRestAPI(s *session.Session) *RestAPI {
@@ -65,6 +67,8 @@ func NewRestAPI(s *session.Session) *RestAPI {
 	mod.State.Store("rec_filename", &mod.recordFileName)
 	mod.State.Store("rec_frames", 0)
 	mod.State.Store("rec_cur_frame", 0)
+	mod.State.Store("rec_started", &mod.recStarted)
+	mod.State.Store("rec_stopped", &mod.recStopped)
 
 	mod.AddParam(session.NewStringParameter("api.rest.address",
 		"127.0.0.1",
