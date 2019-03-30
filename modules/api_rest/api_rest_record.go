@@ -40,17 +40,21 @@ func (mod *RestAPI) recordState() error {
 }
 
 func (mod *RestAPI) recorder() {
+	clock := time.Duration(mod.recClock) * time.Second
+
 	mod.recTime = 0
 	mod.recording = true
 	mod.replaying = false
 	mod.record = NewRecord(mod.recordFileName, &mod.SessionModule)
 
-	mod.Info("started recording to %s ...", mod.recordFileName)
+	mod.Info("started recording to %s (clock %s) ...", mod.recordFileName, clock)
 
 	mod.recordWait.Add(1)
 	defer mod.recordWait.Done()
 
 	tick := time.NewTicker(1 * time.Second)
+	lastSampled := time.Time{}
+
 	for range tick.C {
 		if !mod.recording {
 			break
@@ -58,10 +62,13 @@ func (mod *RestAPI) recorder() {
 
 		mod.recTime++
 
-		if err := mod.recordState(); err != nil {
-			mod.Error("error while recording: %s", err)
-			mod.recording = false
-			break
+		if time.Since(lastSampled) >= clock {
+			lastSampled = time.Now()
+			if err := mod.recordState(); err != nil {
+				mod.Error("error while recording: %s", err)
+				mod.recording = false
+				break
+			}
 		}
 	}
 
@@ -73,6 +80,8 @@ func (mod *RestAPI) startRecording(filename string) (err error) {
 		return mod.errAlreadyRecording()
 	} else if mod.replaying {
 		return mod.errAlreadyReplaying()
+	} else if err, mod.recClock = mod.IntParam("api.rest.record.clock"); err != nil {
+		return err
 	} else if mod.recordFileName, err = fs.Expand(filename); err != nil {
 		return err
 	}

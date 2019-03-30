@@ -28,6 +28,7 @@ type RestAPI struct {
 	upgrader     websocket.Upgrader
 	quit         chan bool
 
+	recClock       int
 	recording      bool
 	recTime        int
 	loading        bool
@@ -50,6 +51,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 		},
+		recClock:       1,
 		recording:      false,
 		recTime:        0,
 		loading:        false,
@@ -60,6 +62,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 	}
 
 	mod.State.Store("recording", &mod.recording)
+	mod.State.Store("rec_clock", &mod.recClock)
 	mod.State.Store("replaying", &mod.replaying)
 	mod.State.Store("loading", &mod.loading)
 	mod.State.Store("load_progress", 0)
@@ -122,6 +125,10 @@ func NewRestAPI(s *session.Session) *RestAPI {
 			return mod.Stop()
 		}))
 
+	mod.AddParam(session.NewIntParameter("api.rest.record.clock",
+		"1",
+		"Number of seconds to wait while recording with api.rest.record between one sample and the next one."))
+
 	mod.AddHandler(session.NewModuleHandler("api.rest.record off", "",
 		"Stop recording the session.",
 		func(args []string) error {
@@ -129,7 +136,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("api.rest.record FILENAME", `api\.rest\.record (.+)`,
-		"Start polling the rest API every second recording each sample as a session file that can be replayed.",
+		"Start polling the rest API periodically recording each sample in a compressed file that can be later replayed.",
 		func(args []string) error {
 			return mod.startRecording(args[0])
 		}))
@@ -141,7 +148,7 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("api.rest.replay FILENAME", `api\.rest\.replay (.+)`,
-		"Start the rest API module in replay mode using FILENAME as the recorded session file.",
+		"Start the rest API module in replay mode using FILENAME as the recorded session file, will revert to normal mode once the replay is over.",
 		func(args []string) error {
 			return mod.startReplay(args[0])
 		}))
