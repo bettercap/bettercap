@@ -204,11 +204,21 @@ func (mod *HIDRecon) Configure() error {
 	return nil
 }
 
+func (mod *HIDRecon) forceStop() error {
+	return mod.SetRunning(false, func() {
+		if mod.dongle != nil {
+			mod.dongle.Close()
+			mod.dongle = nil
+			mod.Debug("device closed")
+		}
+	})
+}
 func (mod *HIDRecon) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.waitGroup.Wait()
 		if mod.dongle != nil {
 			mod.dongle.Close()
+			mod.dongle = nil
 			mod.Debug("device closed")
 		}
 	})
