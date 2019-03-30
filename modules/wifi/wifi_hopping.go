@@ -1,10 +1,46 @@
 package wifi
 
 import (
+	"net"
 	"time"
 
 	"github.com/bettercap/bettercap/network"
 )
+
+func (mod *WiFiModule) isInterfaceConnected() bool {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		mod.Error("error while enumerating interfaces: %s", err)
+		return false
+	}
+
+	for _, iface := range ifaces {
+		if mod.iface.HwAddress == network.NormalizeMac(iface.HardwareAddr.String()) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (mod *WiFiModule) hop(channel int) (mustStop bool) {
+	mod.chanLock.Lock()
+	defer mod.chanLock.Unlock()
+
+	mod.Debug("hopping on channel %d", channel)
+
+	if err := network.SetInterfaceChannel(mod.iface.Name(), channel); err != nil {
+		// check if the device has been disconnected
+		if mod.isInterfaceConnected() == false {
+			mod.Error("interface %s disconnected, stopping module", mod.iface.Name())
+			mustStop = true
+		} else {
+			mod.Warning("error while hopping to channel %d: %s", channel, err)
+		}
+	}
+
+	return
+}
 
 func (mod *WiFiModule) onChannel(channel int, cb func()) {
 	mod.chanLock.Lock()
@@ -13,11 +49,7 @@ func (mod *WiFiModule) onChannel(channel int, cb func()) {
 	prev := mod.stickChan
 	mod.stickChan = channel
 
-	if err := network.SetInterfaceChannel(mod.iface.Name(), channel); err != nil {
-		mod.Warning("error while hopping to channel %d: %s", channel, err)
-	} else {
-		mod.Debug("hopped on channel %d", channel)
-	}
+	mod.hop(channel)
 
 	cb()
 
@@ -50,13 +82,10 @@ func (mod *WiFiModule) channelHopper() {
 				channel = mod.stickChan
 			}
 
-			mod.Debug("hopping on channel %d", channel)
-
-			mod.chanLock.Lock()
-			if err := network.SetInterfaceChannel(mod.iface.Name(), channel); err != nil {
-				mod.Warning("error while hopping to channel %d: %s", channel, err)
+			if stop := mod.hop(channel); stop {
+				mod.forcedStop()
+				return
 			}
-			mod.chanLock.Unlock()
 
 			select {
 			case _ = <-mod.hopChanges:

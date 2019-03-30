@@ -561,6 +561,17 @@ func (mod *WiFiModule) Start() error {
 	return nil
 }
 
+func (mod *WiFiModule) forcedStop() error {
+	return mod.SetRunning(false, func() {
+		// signal the main for loop we want to exit
+		if !mod.pktSourceChanClosed {
+			mod.pktSourceChan <- nil
+		}
+		// close the pcap handle to make the main for exit
+		mod.handle.Close()
+	})
+}
+
 func (mod *WiFiModule) Stop() error {
 	return mod.SetRunning(false, func() {
 		// wait any pending write operation
