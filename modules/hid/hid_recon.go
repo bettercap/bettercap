@@ -27,7 +27,7 @@ func (mod *HIDRecon) doHopping() {
 			mod.channel = 1
 		}
 		if err := mod.dongle.SetChannel(mod.channel); err != nil {
-			if err == gousb.ErrorNoDevice {
+			if err == gousb.ErrorNoDevice || err == gousb.TransferStall {
 				mod.Error("device disconnected, stopping module")
 				mod.forceStop()
 				return
@@ -114,7 +114,7 @@ func (mod *HIDRecon) Start() error {
 
 			buf, err := mod.dongle.ReceivePayload()
 			if err != nil {
-				if err == gousb.ErrorNoDevice {
+				if err == gousb.ErrorNoDevice || err == gousb.TransferStall {
 					mod.Error("device disconnected, stopping module")
 					mod.forceStop()
 					return
