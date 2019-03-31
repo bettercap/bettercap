@@ -38,6 +38,7 @@ type WiFiModule struct {
 	frequencies         []int
 	ap                  *network.AccessPoint
 	stickChan           int
+	shakesFile          string
 	skipBroken          bool
 	pktSourceChan       chan gopacket.Packet
 	pktSourceChanClosed bool
@@ -47,7 +48,6 @@ type WiFiModule struct {
 	assocSkip           []net.HardwareAddr
 	assocSilent         bool
 	assocOpen           bool
-	shakesFile          string
 	apRunning           bool
 	showManuf           bool
 	apConfig            packets.Dot11ApConfig
@@ -80,6 +80,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		reads:         &sync.WaitGroup{},
 		chanLock:      &sync.Mutex{},
 	}
+
+	mod.InitState("channels")
 
 	mod.AddParam(session.NewStringParameter("wifi.interface",
 		"",
@@ -124,7 +126,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		func(args []string) (err error) {
 			mod.ap = nil
 			mod.stickChan = 0
-			mod.frequencies, err = network.GetSupportedFrequencies(mod.iface.Name())
+			freqs, err := network.GetSupportedFrequencies(mod.iface.Name())
+			mod.setFrequencies(freqs)
 			mod.hopChanges <- true
 			return err
 		}))
@@ -258,7 +261,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"false",
 		"If true, wifi.show will also show the devices manufacturers."))
 
-	mod.AddHandler(session.NewModuleHandler("wifi.recon.channel", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
+	mod.AddHandler(session.NewModuleHandler("wifi.recon.channel CHANNEL", `wifi\.recon\.channel[\s]+([0-9]+(?:[, ]+[0-9]+)*|clear)`,
 		"WiFi channels (comma separated) or 'clear' for channel hopping.",
 		func(args []string) (err error) {
 			freqs := []int{}
@@ -285,8 +288,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				}
 			}
 
-			mod.Debug("new frequencies: %v", freqs)
-			mod.frequencies = freqs
+			mod.setFrequencies(freqs)
 
 			// if wifi.recon is not running, this would block forever
 			if mod.Running() {
@@ -329,6 +331,17 @@ const (
 	// ref. https://github.com/google/gopacket/blob/96986c90e3e5c7e01deed713ff8058e357c0c047/pcap/pcap.go#L281
 	ErrIfaceNotUp = "Interface Not Up"
 )
+
+func (mod *WiFiModule) setFrequencies(freqs []int) {
+	mod.Debug("new frequencies: %v", freqs)
+
+	mod.frequencies = freqs
+	channels := []int{}
+	for _, freq := range freqs {
+		channels = append(channels, network.Dot11Freq2Chan(freq))
+	}
+	mod.State.Store("channels", channels)
+}
 
 func (mod *WiFiModule) Configure() error {
 	var ifName string
@@ -428,21 +441,21 @@ func (mod *WiFiModule) Configure() error {
 	mod.hopPeriod = time.Duration(hopPeriod) * time.Millisecond
 
 	if mod.source == "" {
-		// No channels setted, retrieve frequencies supported by the card
-		if len(mod.frequencies) == 0 {
-			if mod.frequencies, err = network.GetSupportedFrequencies(ifName); err != nil {
-				return fmt.Errorf("error while getting supported frequencies of %s: %s", ifName, err)
-			}
-
-			mod.Debug("wifi supported frequencies: %v", mod.frequencies)
-
-			// we need to start somewhere, this is just to check if
-			// this OS supports switching channel programmatically.
-			if err = network.SetInterfaceChannel(ifName, 1); err != nil {
-				return fmt.Errorf("error while initializing %s to channel 1: %s", ifName, err)
-			}
-			mod.Info("started (min rssi: %d dBm)", mod.minRSSI)
+		if freqs, err := network.GetSupportedFrequencies(ifName); err != nil {
+			return fmt.Errorf("error while getting supported frequencies of %s: %s", ifName, err)
+		} else {
+			mod.setFrequencies(freqs)
 		}
+
+		mod.Debug("wifi supported frequencies: %v", mod.frequencies)
+
+		// we need to start somewhere, this is just to check if
+		// this OS supports switching channel programmatically.
+		if err = network.SetInterfaceChannel(ifName, 1); err != nil {
+			return fmt.Errorf("error while initializing %s to channel 1: %s", ifName, err)
+		}
+
+		mod.Info("started (min rssi: %d dBm)", mod.minRSSI)
 	}
 
 	return nil
@@ -480,13 +493,17 @@ func (mod *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) 
 		bytes := uint64(len(packet.Data()))
 
 		dst := dot11.Address1.String()
-		if station, found := mod.Session.WiFi.Get(dst); found {
-			station.Received += bytes
+		if ap, found := mod.Session.WiFi.Get(dst); found {
+			ap.Received += bytes
+		} else if sta, found := mod.Session.WiFi.GetClient(dst); found {
+			sta.Received += bytes
 		}
 
 		src := dot11.Address2.String()
-		if station, found := mod.Session.WiFi.Get(src); found {
-			station.Sent += bytes
+		if ap, found := mod.Session.WiFi.Get(src); found {
+			ap.Sent += bytes
+		} else if sta, found := mod.Session.WiFi.GetClient(src); found {
+			sta.Sent += bytes
 		}
 	}
 }
@@ -542,6 +559,17 @@ func (mod *WiFiModule) Start() error {
 	})
 
 	return nil
+}
+
+func (mod *WiFiModule) forcedStop() error {
+	return mod.SetRunning(false, func() {
+		// signal the main for loop we want to exit
+		if !mod.pktSourceChanClosed {
+			mod.pktSourceChan <- nil
+		}
+		// close the pcap handle to make the main for exit
+		mod.handle.Close()
+	})
 }
 
 func (mod *WiFiModule) Stop() error {

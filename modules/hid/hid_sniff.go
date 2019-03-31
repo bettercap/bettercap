@@ -41,6 +41,7 @@ func (mod *HIDRecon) setSniffMode(mode string, silent bool) error {
 			mod.sniffAddrRaw = raw
 		}
 	}
+
 	return nil
 }
 

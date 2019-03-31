@@ -127,9 +127,14 @@ func (mod *ArpSpoofer) Start() error {
 		return err
 	}
 
+	nTargets := len(mod.addresses) + len(mod.macs)
+	if nTargets == 0 {
+		mod.Warning("list of targets is empty, module not starting.")
+		return nil
+	}
+
 	return mod.SetRunning(true, func() {
 		neighbours := []net.IP{}
-		nTargets := len(mod.addresses) + len(mod.macs)
 
 		if mod.internal {
 			list, _ := iprange.ParseList(mod.Session.Interface.CIDR())

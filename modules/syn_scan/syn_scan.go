@@ -45,6 +45,9 @@ func NewSynScanner(s *session.Session) *SynScanner {
 		progressEvery: time.Duration(1) * time.Second,
 	}
 
+	mod.State.Store("scanning", &mod.addresses)
+	mod.State.Store("progress", 0.0)
+
 	mod.AddParam(session.NewIntParameter("syn.scan.show-progress-every",
 		"1",
 		"Period in seconds for the scanning progress reporting."))
@@ -58,7 +61,7 @@ func NewSynScanner(s *session.Session) *SynScanner {
 			return mod.Stop()
 		}))
 
-	mod.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE [START-PORT] [END-PORT]", "syn.scan ([^\\s]+) ?(\\d+)?([\\s\\d]*)?",
+	mod.AddHandler(session.NewModuleHandler("syn.scan IP-RANGE START-PORT END-PORT", "syn.scan ([^\\s]+) ?(\\d+)?([\\s\\d]*)?",
 		"Perform a syn port scanning against an IP address within the provided ports range.",
 		func(args []string) error {
 			period := 0
@@ -155,6 +158,7 @@ func plural(n uint64) string {
 
 func (mod *SynScanner) showProgress() error {
 	progress := 100.0 * (float64(mod.stats.doneProbes) / float64(mod.stats.totProbes))
+	mod.State.Store("progress", progress)
 	mod.Info("[%.2f%%] found %d open port%s for %d address%s, sent %d/%d packets in %s",
 		progress,
 		mod.stats.openPorts,
@@ -172,12 +176,17 @@ func (mod *SynScanner) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.waitGroup.Wait()
 		mod.showProgress()
+		mod.addresses = []net.IP{}
+		mod.State.Store("progress", 0.0)
 	})
 }
 
 func (mod *SynScanner) synScan() error {
 	mod.SetRunning(true, func() {
-		defer mod.SetRunning(false, nil)
+		defer mod.SetRunning(false, func() {
+			mod.addresses = []net.IP{}
+			mod.State.Store("progress", 0.0)
+		})
 
 		mod.waitGroup.Add(1)
 		defer mod.waitGroup.Done()
@@ -198,6 +207,8 @@ func (mod *SynScanner) synScan() error {
 		} else {
 			mod.Info("scanning %d address%s on port %d ...", mod.stats.numAddresses, plural, mod.startPort)
 		}
+
+		mod.State.Store("progress", 0.0)
 
 		// set the collector
 		mod.Session.Queue.OnPacket(mod.onPacket)

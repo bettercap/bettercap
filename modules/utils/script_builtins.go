@@ -38,7 +38,7 @@ func init() {
 
 		entry_list := []string{}
 		for _, file := range dir {
-			entry_list = append( entry_list, file.Name() )
+			entry_list = append(entry_list, file.Name())
 		}
 
 		v, err := otto.Otto.ToValue(*call.Otto, entry_list)
@@ -167,21 +167,21 @@ func init() {
 			return errOtto("gzipCompress: expected 1 argument, %d given instead.", argc)
 		}
 
-		uncompressed_bytes := []byte( argv[0].String() )
+		uncompressed_bytes := []byte(argv[0].String())
 
 		var writer_buffer bytes.Buffer
 		gzip_writer := gzip.NewWriter(&writer_buffer)
 		_, err := gzip_writer.Write(uncompressed_bytes)
 		if err != nil {
-			return errOtto( "gzipCompress: could not compress data: %s", err.Error() )
+			return errOtto("gzipCompress: could not compress data: %s", err.Error())
 		}
 		gzip_writer.Close()
 
 		compressed_bytes := writer_buffer.Bytes()
 
-		v, err := otto.ToValue( string(compressed_bytes) )
+		v, err := otto.ToValue(string(compressed_bytes))
 		if err != nil {
-			return errOtto( "Could not convert to string: %s", err.Error() )
+			return errOtto("Could not convert to string: %s", err.Error())
 		}
 
 		return v
@@ -195,24 +195,24 @@ func init() {
 			return errOtto("gzipDecompress: expected 1 argument, %d given instead.", argc)
 		}
 
-		compressed_bytes := []byte( argv[0].String() )
+		compressed_bytes := []byte(argv[0].String())
 		reader_buffer := bytes.NewBuffer(compressed_bytes)
 
 		gzip_reader, err := gzip.NewReader(reader_buffer)
 		if err != nil {
-			return errOtto( "gzipDecompress: could not create gzip reader: %s", err.Error() )
+			return errOtto("gzipDecompress: could not create gzip reader: %s", err.Error())
 		}
 
 		var decompressed_buffer bytes.Buffer
 		_, err = decompressed_buffer.ReadFrom(gzip_reader)
 		if err != nil {
-			return errOtto( "gzipDecompress: could not decompress data: %s", err.Error() )
+			return errOtto("gzipDecompress: could not decompress data: %s", err.Error())
 		}
 
 		decompressed_bytes := decompressed_buffer.Bytes()
-		v, err := otto.ToValue( string(decompressed_bytes) )
+		v, err := otto.ToValue(string(decompressed_bytes))
 		if err != nil {
-			return errOtto( "Could not convert to string: %s", err.Error() )
+			return errOtto("Could not convert to string: %s", err.Error())
 		}
 
 		return v

@@ -3,7 +3,11 @@ package api_rest
 import (
 	"crypto/subtle"
 	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -22,7 +26,7 @@ type APIResponse struct {
 }
 
 func (mod *RestAPI) setAuthFailed(w http.ResponseWriter, r *http.Request) {
-	mod.Warning("Unauthorized authentication attempt from %s", r.RemoteAddr)
+	mod.Warning("Unauthorized authentication attempt from %s to %s", r.RemoteAddr, r.URL.String())
 
 	w.Header().Set("WWW-Authenticate", `Basic realm="auth"`)
 	w.WriteHeader(401)
@@ -32,7 +36,7 @@ func (mod *RestAPI) setAuthFailed(w http.ResponseWriter, r *http.Request) {
 func (mod *RestAPI) toJSON(w http.ResponseWriter, o interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(o); err != nil {
-		mod.Error("error while encoding object to JSON: %v", err)
+		mod.Warning("error while encoding object to JSON: %v", err)
 	}
 }
 
@@ -60,8 +64,68 @@ func (mod *RestAPI) checkAuth(r *http.Request) bool {
 	return true
 }
 
+func (mod *RestAPI) patchFrame(buf []byte) (frame map[string]interface{}, err error) {
+	// this is ugly but necessary: since we're replaying, the
+	// api.rest state object is filled with *old* values (the
+	// recorded ones), but the UI needs updated values at least
+	// of that in order to understand that a replay is going on
+	// and where we are at it. So we need to parse the record
+	// back into a session object and update only the api.rest.state
+	frame = make(map[string]interface{})
+
+	if err = json.Unmarshal(buf, &frame); err != nil {
+		return
+	}
+
+	for _, i := range frame["modules"].([]interface{}) {
+		m := i.(map[string]interface{})
+		if m["name"] == "api.rest" {
+			state := m["state"].(map[string]interface{})
+			mod.State.Range(func(key interface{}, value interface{}) bool {
+				state[key.(string)] = value
+				return true
+			})
+			break
+		}
+	}
+
+	return
+}
+
 func (mod *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
-	mod.toJSON(w, session.I)
+	if mod.replaying {
+		if !mod.record.Session.Over() {
+			from := mod.record.Session.CurFrame() - 1
+			q := r.URL.Query()
+			vals := q["from"]
+			if len(vals) > 0 {
+				if n, err := strconv.Atoi(vals[0]); err == nil {
+					from = n
+				}
+			}
+			mod.record.Session.SetFrom(from)
+
+			mod.Debug("replaying session %d of %d from %s",
+				mod.record.Session.CurFrame(),
+				mod.record.Session.Frames(),
+				mod.recordFileName)
+
+			mod.State.Store("rec_frames", mod.record.Session.Frames())
+			mod.State.Store("rec_cur_frame", mod.record.Session.CurFrame())
+
+			buf := mod.record.Session.Next()
+			if frame, err := mod.patchFrame(buf); err != nil {
+				mod.Error("%v", err)
+			} else {
+				mod.toJSON(w, frame)
+				return
+			}
+		} else {
+			mod.stopReplay()
+		}
+	}
+
+	mod.toJSON(w, mod.Session)
 }
 
 func (mod *RestAPI) showBLE(w http.ResponseWriter, r *http.Request) {
@@ -69,8 +133,8 @@ func (mod *RestAPI) showBLE(w http.ResponseWriter, r *http.Request) {
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		mod.toJSON(w, session.I.BLE)
-	} else if dev, found := session.I.BLE.Get(mac); found {
+		mod.toJSON(w, mod.Session.BLE)
+	} else if dev, found := mod.Session.BLE.Get(mac); found {
 		mod.toJSON(w, dev)
 	} else {
 		http.Error(w, "Not Found", 404)
@@ -82,8 +146,8 @@ func (mod *RestAPI) showHID(w http.ResponseWriter, r *http.Request) {
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		mod.toJSON(w, session.I.HID)
-	} else if dev, found := session.I.HID.Get(mac); found {
+		mod.toJSON(w, mod.Session.HID)
+	} else if dev, found := mod.Session.HID.Get(mac); found {
 		mod.toJSON(w, dev)
 	} else {
 		http.Error(w, "Not Found", 404)
@@ -91,19 +155,19 @@ func (mod *RestAPI) showHID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (mod *RestAPI) showEnv(w http.ResponseWriter, r *http.Request) {
-	mod.toJSON(w, session.I.Env)
+	mod.toJSON(w, mod.Session.Env)
 }
 
 func (mod *RestAPI) showGateway(w http.ResponseWriter, r *http.Request) {
-	mod.toJSON(w, session.I.Gateway)
+	mod.toJSON(w, mod.Session.Gateway)
 }
 
 func (mod *RestAPI) showInterface(w http.ResponseWriter, r *http.Request) {
-	mod.toJSON(w, session.I.Interface)
+	mod.toJSON(w, mod.Session.Interface)
 }
 
 func (mod *RestAPI) showModules(w http.ResponseWriter, r *http.Request) {
-	mod.toJSON(w, session.I.Modules)
+	mod.toJSON(w, mod.Session.Modules)
 }
 
 func (mod *RestAPI) showLAN(w http.ResponseWriter, r *http.Request) {
@@ -111,8 +175,8 @@ func (mod *RestAPI) showLAN(w http.ResponseWriter, r *http.Request) {
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		mod.toJSON(w, session.I.Lan)
-	} else if host, found := session.I.Lan.Get(mac); found {
+		mod.toJSON(w, mod.Session.Lan)
+	} else if host, found := mod.Session.Lan.Get(mac); found {
 		mod.toJSON(w, host)
 	} else {
 		http.Error(w, "Not Found", 404)
@@ -120,15 +184,15 @@ func (mod *RestAPI) showLAN(w http.ResponseWriter, r *http.Request) {
 }
 
 func (mod *RestAPI) showOptions(w http.ResponseWriter, r *http.Request) {
-	mod.toJSON(w, session.I.Options)
+	mod.toJSON(w, mod.Session.Options)
 }
 
 func (mod *RestAPI) showPackets(w http.ResponseWriter, r *http.Request) {
-	mod.toJSON(w, session.I.Queue)
+	mod.toJSON(w, mod.Session.Queue)
 }
 
 func (mod *RestAPI) showStartedAt(w http.ResponseWriter, r *http.Request) {
-	mod.toJSON(w, session.I.StartedAt)
+	mod.toJSON(w, mod.Session.StartedAt)
 }
 
 func (mod *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
@@ -136,10 +200,10 @@ func (mod *RestAPI) showWiFi(w http.ResponseWriter, r *http.Request) {
 	mac := strings.ToLower(params["mac"])
 
 	if mac == "" {
-		mod.toJSON(w, session.I.WiFi)
-	} else if station, found := session.I.WiFi.Get(mac); found {
+		mod.toJSON(w, mod.Session.WiFi)
+	} else if station, found := mod.Session.WiFi.Get(mac); found {
 		mod.toJSON(w, station)
-	} else if client, found := session.I.WiFi.GetClient(mac); found {
+	} else if client, found := mod.Session.WiFi.GetClient(mac); found {
 		mod.toJSON(w, client)
 	} else {
 		http.Error(w, "Not Found", 404)
@@ -154,43 +218,84 @@ func (mod *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", 400)
 	} else if err = json.NewDecoder(r.Body).Decode(&cmd); err != nil {
 		http.Error(w, "Bad Request", 400)
-	} else if err = session.I.Run(cmd.Command); err != nil {
-		http.Error(w, err.Error(), 400)
-	} else {
-		mod.toJSON(w, APIResponse{Success: true})
 	}
+
+	for _, aCommand := range session.ParseCommands(cmd.Command) {
+		if err = mod.Session.Run(aCommand); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+	}
+
+	mod.toJSON(w, APIResponse{Success: true})
+}
+
+func (mod *RestAPI) getEvents(limit int) []session.Event {
+	events := make([]session.Event, 0)
+	for _, e := range mod.Session.Events.Sorted() {
+		if mod.Session.EventsIgnoreList.Ignored(e) == false {
+			events = append(events, e)
+		}
+	}
+
+	nevents := len(events)
+	nmax := nevents
+	n := nmax
+
+	if limit > 0 && limit < nmax {
+		n = limit
+	}
+
+	return events[nevents-n:]
 }
 
 func (mod *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
-	var err error
+	q := r.URL.Query()
+
+	if mod.replaying {
+		if !mod.record.Events.Over() {
+			from := mod.record.Events.CurFrame() - 1
+			vals := q["from"]
+			if len(vals) > 0 {
+				if n, err := strconv.Atoi(vals[0]); err == nil {
+					from = n
+				}
+			}
+			mod.record.Events.SetFrom(from)
+
+			mod.Debug("replaying events %d of %d from %s",
+				mod.record.Events.CurFrame(),
+				mod.record.Events.Frames(),
+				mod.recordFileName)
+
+			buf := mod.record.Events.Next()
+			if _, err := w.Write(buf); err != nil {
+				mod.Error("%v", err)
+			} else {
+				return
+			}
+		} else {
+			mod.stopReplay()
+		}
+	}
 
 	if mod.useWebsocket {
 		mod.startStreamingEvents(w, r)
 	} else {
-		events := session.I.Events.Sorted()
-		nevents := len(events)
-		nmax := nevents
-		n := nmax
-
-		q := r.URL.Query()
 		vals := q["n"]
+		limit := 0
 		if len(vals) > 0 {
-			n, err = strconv.Atoi(q["n"][0])
-			if err == nil {
-				if n > nmax {
-					n = nmax
-				}
-			} else {
-				n = nmax
+			if n, err := strconv.Atoi(q["n"][0]); err == nil {
+				limit = n
 			}
 		}
 
-		mod.toJSON(w, events[nevents-n:])
+		mod.toJSON(w, mod.getEvents(limit))
 	}
 }
 
 func (mod *RestAPI) clearEvents(w http.ResponseWriter, r *http.Request) {
-	session.I.Events.Clear()
+	mod.Session.Events.Clear()
 }
 
 func (mod *RestAPI) corsRoute(w http.ResponseWriter, r *http.Request) {
@@ -212,10 +317,10 @@ func (mod *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session.I.Lock()
-	defer session.I.Unlock()
+	mod.Session.Lock()
+	defer mod.Session.Unlock()
 
-	path := r.URL.String()
+	path := r.URL.Path
 	switch {
 	case path == "/api/session":
 		mod.showSession(w, r)
@@ -258,6 +363,44 @@ func (mod *RestAPI) sessionRoute(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (mod *RestAPI) readFile(fileName string, w http.ResponseWriter, r *http.Request) {
+	fp, err := os.Open(fileName)
+	if err != nil {
+		msg := fmt.Sprintf("could not open %s for reading: %s", fileName, err)
+		mod.Debug(msg)
+		http.Error(w, msg, 404)
+		return
+	}
+	defer fp.Close()
+
+	w.Header().Set("Content-type", "application/octet-stream")
+
+	io.Copy(w, fp)
+}
+
+func (mod *RestAPI) writeFile(fileName string, w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := fmt.Sprintf("invalid file upload: %s", err)
+		mod.Warning(msg)
+		http.Error(w, msg, 404)
+		return
+	}
+
+	err = ioutil.WriteFile(fileName, data, 0666)
+	if err != nil {
+		msg := fmt.Sprintf("can't write to %s: %s", fileName, err)
+		mod.Warning(msg)
+		http.Error(w, msg, 404)
+		return
+	}
+
+	mod.toJSON(w, APIResponse{
+		Success: true,
+		Message: fmt.Sprintf("%s created", fileName),
+	})
+}
+
 func (mod *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 	mod.setSecurityHeaders(w)
 
@@ -270,6 +413,25 @@ func (mod *RestAPI) eventsRoute(w http.ResponseWriter, r *http.Request) {
 		mod.showEvents(w, r)
 	} else if r.Method == "DELETE" {
 		mod.clearEvents(w, r)
+	} else {
+		http.Error(w, "Bad Request", 400)
+	}
+}
+
+func (mod *RestAPI) fileRoute(w http.ResponseWriter, r *http.Request) {
+	mod.setSecurityHeaders(w)
+
+	if !mod.checkAuth(r) {
+		mod.setAuthFailed(w, r)
+		return
+	}
+
+	fileName := r.URL.Query().Get("name")
+
+	if fileName != "" && r.Method == "GET" {
+		mod.readFile(fileName, w, r)
+	} else if fileName != "" && r.Method == "POST" {
+		mod.writeFile(fileName, w, r)
 	} else {
 		http.Error(w, "Bad Request", 400)
 	}

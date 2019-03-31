@@ -89,7 +89,7 @@ func (mod *HttpsServer) Configure() error {
 	var keyFile string
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	}
 
 	if err, path = mod.StringParam("https.server.path"); err != nil {
@@ -100,7 +100,7 @@ func (mod *HttpsServer) Configure() error {
 	fileServer := http.FileServer(http.Dir(path))
 
 	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mod.Info("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		mod.Debug("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
 		fileServer.ServeHTTP(w, r)
 	}))
 
@@ -159,7 +159,8 @@ func (mod *HttpsServer) Start() error {
 	return mod.SetRunning(true, func() {
 		mod.Info("starting on https://%s", mod.server.Addr)
 		if err := mod.server.ListenAndServeTLS(mod.certFile, mod.keyFile); err != nil && err != http.ErrServerClosed {
-			panic(err)
+			mod.Error("%v", err)
+			mod.Stop()
 		}
 	})
 }

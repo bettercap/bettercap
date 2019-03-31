@@ -79,7 +79,7 @@ func (mod *MySQLServer) Configure() error {
 	var port int
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, mod.infile = mod.StringParam("mysql.server.infile"); err != nil {
 		return err
 	} else if err, mod.outfile = mod.StringParam("mysql.server.outfile"); err != nil {

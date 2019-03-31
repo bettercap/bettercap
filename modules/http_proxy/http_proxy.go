@@ -2,6 +2,8 @@ package http_proxy
 
 import (
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/evilsocket/islazy/str"
 )
 
 type HttpProxy struct {
@@ -37,6 +39,12 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		"",
 		"",
 		"URL, path or javascript code to inject into every HTML page."))
+
+	mod.AddParam(session.NewStringParameter("http.proxy.blacklist", "", "",
+		"Comma separated list of hostnames to skip while proxying (wildcard expressions can be used)."))
+
+	mod.AddParam(session.NewStringParameter("http.proxy.whitelist", "", "",
+		"Comma separated list of hostnames to proxy if the blacklist is used (wildcard expressions can be used)."))
 
 	mod.AddParam(session.NewBoolParameter("http.proxy.sslstrip",
 		"false",
@@ -77,9 +85,11 @@ func (mod *HttpProxy) Configure() error {
 	var scriptPath string
 	var stripSSL bool
 	var jsToInject string
+	var blacklist string
+	var whitelist string
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, address = mod.StringParam("http.proxy.address"); err != nil {
 		return err
 	} else if err, proxyPort = mod.IntParam("http.proxy.port"); err != nil {
@@ -92,7 +102,14 @@ func (mod *HttpProxy) Configure() error {
 		return err
 	} else if err, jsToInject = mod.StringParam("http.proxy.injectjs"); err != nil {
 		return err
+	} else if err, blacklist = mod.StringParam("http.proxy.blacklist"); err != nil {
+		return err
+	} else if err, whitelist = mod.StringParam("http.proxy.whitelist"); err != nil {
+		return err
 	}
+
+	mod.proxy.Blacklist = str.Comma(blacklist)
+	mod.proxy.Whitelist = str.Comma(whitelist)
 
 	return mod.proxy.Configure(address, proxyPort, httpPort, scriptPath, jsToInject, stripSSL)
 }

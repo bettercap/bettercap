@@ -95,7 +95,7 @@ func (mod *TcpProxy) Configure() error {
 	var tunnelPort int
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, address = mod.StringParam("tcp.address"); err != nil {
 		return err
 	} else if err, proxyAddress = mod.StringParam("tcp.proxy.address"); err != nil {

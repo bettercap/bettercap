@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -41,6 +42,8 @@ type HTTPProxy struct {
 	Script      *HttpProxyScript
 	CertFile    string
 	KeyFile     string
+	Blacklist   []string
+	Whitelist   []string
 
 	jsHook      string
 	isTLS       bool
@@ -61,13 +64,15 @@ func stripPort(s string) string {
 
 func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	p := &HTTPProxy{
-		Name:     "http.proxy",
-		Proxy:    goproxy.NewProxyHttpServer(),
-		sess:     s,
-		stripper: NewSSLStripper(s, false),
-		isTLS:    false,
-		Server:   nil,
-		tag:      session.AsTag("http.proxy"),
+		Name:      "http.proxy",
+		Proxy:     goproxy.NewProxyHttpServer(),
+		sess:      s,
+		stripper:  NewSSLStripper(s, false),
+		isTLS:     false,
+		Server:    nil,
+		Blacklist: make([]string, 0),
+		Whitelist: make([]string, 0),
+		tag:       session.AsTag("http.proxy"),
 	}
 
 	p.Proxy.Verbose = false
@@ -111,20 +116,41 @@ func (p *HTTPProxy) Fatal(format string, args ...interface{}) {
 }
 
 func (p *HTTPProxy) doProxy(req *http.Request) bool {
-	blacklist := []string{
-		"localhost",
-		"127.0.0.1",
-	}
-
 	if req.Host == "" {
 		p.Error("got request with empty host: %v", req)
 		return false
 	}
 
-	host := strings.Split(req.Host, ":")[0]
-	for _, blacklisted := range blacklist {
-		if host == blacklisted {
-			p.Error("got request with blacklisted host: %s", req.Host)
+	hostname := strings.Split(req.Host, ":")[0]
+	for _, local := range []string{"localhost", "127.0.0.1"} {
+		if hostname == local {
+			p.Error("got request with localed host: %s", req.Host)
+			return false
+		}
+	}
+
+	return true
+}
+
+func (p *HTTPProxy) shouldProxy(req *http.Request) bool {
+	hostname := strings.Split(req.Host, ":")[0]
+
+	// check for the whitelist
+	for _, expr := range p.Whitelist {
+		if matched, err := filepath.Match(expr, hostname); err != nil {
+			p.Error("error while using proxy whitelist expression '%s': %v", expr, err)
+		} else if matched {
+			p.Debug("hostname '%s' matched whitelisted element '%s'", hostname, expr)
+			return true
+		}
+	}
+
+	// then the blacklist
+	for _, expr := range p.Blacklist {
+		if matched, err := filepath.Match(expr, hostname); err != nil {
+			p.Error("error while using proxy blacklist expression '%s': %v", expr, err)
+		} else if matched {
+			p.Debug("hostname '%s' matched blacklisted element '%s'", hostname, expr)
 			return false
 		}
 	}

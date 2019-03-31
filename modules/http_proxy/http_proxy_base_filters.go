@@ -19,32 +19,34 @@ func (p *HTTPProxy) fixRequestHeaders(req *http.Request) {
 }
 
 func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-	p.Debug("< %s %s %s%s", req.RemoteAddr, req.Method, req.Host, req.URL.Path)
+	if p.shouldProxy(req) {
+		p.Debug("< %s %s %s%s", req.RemoteAddr, req.Method, req.Host, req.URL.Path)
 
-	p.fixRequestHeaders(req)
+		p.fixRequestHeaders(req)
 
-	redir := p.stripper.Preprocess(req, ctx)
-	if redir != nil {
-		// we need to redirect the user in order to make
-		// some session cookie expire
-		return req, redir
-	}
+		redir := p.stripper.Preprocess(req, ctx)
+		if redir != nil {
+			// we need to redirect the user in order to make
+			// some session cookie expire
+			return req, redir
+		}
 
-	// do we have a proxy script?
-	if p.Script == nil {
-		return req, nil
-	}
+		// do we have a proxy script?
+		if p.Script == nil {
+			return req, nil
+		}
 
-	// run the module OnRequest callback if defined
-	jsreq, jsres := p.Script.OnRequest(req)
-	if jsreq != nil {
-		// the request has been changed by the script
-		p.logRequestAction(req, jsreq)
-		return jsreq.ToRequest(), nil
-	} else if jsres != nil {
-		// a fake response has been returned by the script
-		p.logResponseAction(req, jsres)
-		return req, jsres.ToResponse(req)
+		// run the module OnRequest callback if defined
+		jsreq, jsres := p.Script.OnRequest(req)
+		if jsreq != nil {
+			// the request has been changed by the script
+			p.logRequestAction(req, jsreq)
+			return jsreq.ToRequest(), nil
+		} else if jsres != nil {
+			// a fake response has been returned by the script
+			p.logResponseAction(req, jsres)
+			return req, jsres.ToResponse(req)
+		}
 	}
 
 	return req, nil
@@ -123,28 +125,30 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 		return nil
 	}
 
-	p.Debug("> %s %s %s%s", res.Request.RemoteAddr, res.Request.Method, res.Request.Host, res.Request.URL.Path)
+	if p.shouldProxy(res.Request) {
+		p.Debug("> %s %s %s%s", res.Request.RemoteAddr, res.Request.Method, res.Request.Host, res.Request.URL.Path)
 
-	p.fixResponseHeaders(res)
+		p.fixResponseHeaders(res)
 
-	p.stripper.Process(res, ctx)
+		p.stripper.Process(res, ctx)
 
-	// do we have a proxy script?
-	if p.Script != nil {
-		_, jsres := p.Script.OnResponse(res)
-		if jsres != nil {
-			// the response has been changed by the script
-			p.logResponseAction(res.Request, jsres)
-			return jsres.ToResponse(res.Request)
+		// do we have a proxy script?
+		if p.Script != nil {
+			_, jsres := p.Script.OnResponse(res)
+			if jsres != nil {
+				// the response has been changed by the script
+				p.logResponseAction(res.Request, jsres)
+				return jsres.ToResponse(res.Request)
+			}
 		}
-	}
 
-	// inject javascript code if specified and needed
-	if doInject, cType := p.isScriptInjectable(res); doInject {
-		if err, injectedResponse := p.doScriptInjection(res, cType); err != nil {
-			p.Error("error while injecting javascript: %s", err)
-		} else if injectedResponse != nil {
-			return injectedResponse
+		// inject javascript code if specified and needed
+		if doInject, cType := p.isScriptInjectable(res); doInject {
+			if err, injectedResponse := p.doScriptInjection(res, cType); err != nil {
+				p.Error("error while injecting javascript: %s", err)
+			} else if injectedResponse != nil {
+				return injectedResponse
+			}
 		}
 	}
 

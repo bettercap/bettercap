@@ -1981,6 +1981,13 @@ func (a *Advertisement) unmarshall(b []byte) error {
 
 	// Utility function for creating a list of uuids.
 	uuidList := func(u []UUID, d []byte, w int) []UUID {
+		// https://github.com/bettercap/gatt/issues/8
+		defer func() {
+			if recover() != nil {
+
+			}
+		}()
+
 		for len(d) > 0 {
 			u = append(u, UUID{d[:w]})
 			d = d[w:]

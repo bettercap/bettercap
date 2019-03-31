@@ -46,7 +46,7 @@ func NewHostEntry(host string, address net.IP) HostEntry {
 	return entry
 }
 
-func HostsFromFile(filename string,defaultAddress net.IP) (err error, entries []HostEntry) {
+func HostsFromFile(filename string, defaultAddress net.IP) (err error, entries []HostEntry) {
 	input, err := os.Open(filename)
 	if err != nil {
 		return

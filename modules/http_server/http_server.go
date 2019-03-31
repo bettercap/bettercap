@@ -71,7 +71,7 @@ func (mod *HttpServer) Configure() error {
 	var port int
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	}
 
 	if err, path = mod.StringParam("http.server.path"); err != nil {
@@ -82,7 +82,7 @@ func (mod *HttpServer) Configure() error {
 	fileServer := http.FileServer(http.Dir(path))
 
 	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mod.Info("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		mod.Debug("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
 		fileServer.ServeHTTP(w, r)
 	}))
 
@@ -110,7 +110,8 @@ func (mod *HttpServer) Start() error {
 		var err error
 		mod.Info("starting on http://%s", mod.server.Addr)
 		if err = mod.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			panic(err)
+			mod.Error("%v", err)
+			mod.Stop()
 		}
 	})
 }

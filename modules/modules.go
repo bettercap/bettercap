@@ -24,6 +24,7 @@ import (
 	"github.com/bettercap/bettercap/modules/syn_scan"
 	"github.com/bettercap/bettercap/modules/tcp_proxy"
 	"github.com/bettercap/bettercap/modules/ticker"
+	"github.com/bettercap/bettercap/modules/ui"
 	"github.com/bettercap/bettercap/modules/update"
 	"github.com/bettercap/bettercap/modules/wifi"
 	"github.com/bettercap/bettercap/modules/wol"
@@ -36,7 +37,6 @@ func LoadModules(sess *session.Session) {
 	sess.Register(arp_spoof.NewArpSpoofer(sess))
 	sess.Register(api_rest.NewRestAPI(sess))
 	sess.Register(ble.NewBLERecon(sess))
-	sess.Register(caplets.NewCapletsModule(sess))
 	sess.Register(dhcp6_spoof.NewDHCP6Spoofer(sess))
 	sess.Register(net_recon.NewDiscovery(sess))
 	sess.Register(dns_spoof.NewDNSSpoofer(sess))
@@ -54,8 +54,11 @@ func LoadModules(sess *session.Session) {
 	sess.Register(syn_scan.NewSynScanner(sess))
 	sess.Register(tcp_proxy.NewTcpProxy(sess))
 	sess.Register(ticker.NewTicker(sess))
-	sess.Register(update.NewUpdateModule(sess))
 	sess.Register(wifi.NewWiFiModule(sess))
 	sess.Register(wol.NewWOL(sess))
 	sess.Register(hid.NewHIDRecon(sess))
+
+	sess.Register(caplets.NewCapletsModule(sess))
+	sess.Register(update.NewUpdateModule(sess))
+	sess.Register(ui.NewUIModule(sess))
 }

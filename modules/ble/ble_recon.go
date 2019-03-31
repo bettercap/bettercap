@@ -20,6 +20,7 @@ import (
 
 type BLERecon struct {
 	session.SessionModule
+	deviceId    int
 	gattDevice  gatt.Device
 	currDevice  *network.BLEDevice
 	writeUUID   *gatt.UUID
@@ -34,6 +35,7 @@ type BLERecon struct {
 func NewBLERecon(s *session.Session) *BLERecon {
 	mod := &BLERecon{
 		SessionModule: session.NewSessionModule("ble.recon", s),
+		deviceId:      -1,
 		gattDevice:    nil,
 		quit:          make(chan bool),
 		done:          make(chan bool),
@@ -41,6 +43,8 @@ func NewBLERecon(s *session.Session) *BLERecon {
 		currDevice:    nil,
 		connected:     false,
 	}
+
+	mod.InitState("scanning")
 
 	mod.selector = utils.ViewSelectorFor(&mod.SessionModule,
 		"ble.show",
@@ -108,6 +112,10 @@ func NewBLERecon(s *session.Session) *BLERecon {
 
 	mod.AddHandler(write)
 
+	mod.AddParam(session.NewIntParameter("ble.device",
+		fmt.Sprintf("%d", mod.deviceId),
+		"Index of the HCI device to use, -1 to autodetect."))
+
 	return mod
 }
 
@@ -138,13 +146,23 @@ func (w dummyWriter) Write(p []byte) (n int, err error) {
 
 func (mod *BLERecon) Configure() (err error) {
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if mod.gattDevice == nil {
-		mod.Debug("initializing device ...")
+		if err, mod.deviceId = mod.IntParam("ble.device"); err != nil {
+			return err
+		}
+
+		mod.Debug("initializing device (id:%d) ...", mod.deviceId)
 
 		golog.SetFlags(0)
 		golog.SetOutput(dummyWriter{mod})
-		if mod.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
+
+		options := []gatt.Option{
+			gatt.LnxMaxConnections(255),
+			gatt.LnxDeviceID(mod.deviceId, true),
+		}
+
+		if mod.gattDevice, err = gatt.NewDevice(options...); err != nil {
 			mod.Debug("error while creating new gatt device: %v", err)
 			return err
 		}
@@ -171,18 +189,20 @@ func (mod *BLERecon) Start() error {
 
 		<-mod.quit
 
-		mod.Info("stopping scan ...")
+		if mod.gattDevice != nil {
+			mod.Info("stopping scan ...")
 
-		if mod.currDevice != nil && mod.currDevice.Device != nil && mod.gattDevice != nil {
-			mod.Debug("resetting connection with %v", mod.currDevice.Device)
-			mod.gattDevice.CancelConnection(mod.currDevice.Device)
-		}
+			if mod.currDevice != nil && mod.currDevice.Device != nil {
+				mod.Debug("resetting connection with %v", mod.currDevice.Device)
+				mod.gattDevice.CancelConnection(mod.currDevice.Device)
+			}
 
-		mod.Debug("stopping device")
-		if err := mod.gattDevice.Stop(); err != nil {
-			mod.Warning("error while stopping device: %v", err)
-		} else {
-			mod.Debug("gatt device closed")
+			mod.Debug("stopping device")
+			if err := mod.gattDevice.Stop(); err != nil {
+				mod.Warning("error while stopping device: %v", err)
+			} else {
+				mod.Debug("gatt device closed")
+			}
 		}
 
 		mod.done <- true
@@ -196,6 +216,7 @@ func (mod *BLERecon) Stop() error {
 		mod.Debug("module stopped, cleaning state")
 		mod.gattDevice = nil
 		mod.setCurrentDevice(nil)
+		mod.ResetState()
 	})
 }
 
@@ -216,6 +237,7 @@ func (mod *BLERecon) pruner() {
 func (mod *BLERecon) setCurrentDevice(dev *network.BLEDevice) {
 	mod.connected = false
 	mod.currDevice = dev
+	mod.State.Store("scanning", dev)
 }
 
 func (mod *BLERecon) writeBuffer(mac string, uuid gatt.UUID, data []byte) error {
@@ -233,7 +255,7 @@ func (mod *BLERecon) enumAllTheThings(mac string) error {
 	}
 
 	mod.setCurrentDevice(dev)
-	if err := mod.Configure(); err != nil && err != session.ErrAlreadyStarted {
+	if err := mod.Configure(); err != nil && err.Error() != session.ErrAlreadyStarted("ble.recon").Error() {
 		return err
 	}
 

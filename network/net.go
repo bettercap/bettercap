@@ -286,7 +286,7 @@ func ActivateInterface(name string) error {
 
 func SetInterfaceTxPower(name string, txpower int) error {
 	if core.HasBinary("iwconfig") {
-		if out, err := core.ExecSilent("iwconfig", []string{name, "txpower", fmt.Sprintf("%d", txpower)}); err != nil {
+		if out, err := core.Exec("iwconfig", []string{name, "txpower", fmt.Sprintf("%d", txpower)}); err != nil {
 			return err
 		} else if out != "" {
 			return fmt.Errorf("unexpected output while setting txpower to %d for interface %s: %s", txpower, name, out)

@@ -38,10 +38,11 @@ type PacketCallback func(pkt gopacket.Packet)
 type Queue struct {
 	sync.RWMutex
 
-	Activities chan Activity
+	// keep on top because of https://github.com/bettercap/bettercap/issues/500
 	Stats      Stats
 	Protos     sync.Map
 	Traffic    sync.Map
+	Activities chan Activity
 
 	iface      *network.Endpoint
 	handle     *pcap.Handle
@@ -62,6 +63,7 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 	q = &Queue{
 		Protos:     sync.Map{},
 		Traffic:    sync.Map{},
+		Stats:      Stats{},
 		Activities: make(chan Activity),
 
 		writes: &sync.WaitGroup{},
@@ -165,6 +167,10 @@ func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address ne
 }
 
 func (q *Queue) TrackPacket(size uint64) {
+	// https://github.com/bettercap/bettercap/issues/500
+	if q == nil {
+		panic("track packet on nil queue!")
+	}
 	atomic.AddUint64(&q.Stats.PktReceived, 1)
 	atomic.AddUint64(&q.Stats.Received, size)
 }

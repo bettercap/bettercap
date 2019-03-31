@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -249,13 +251,14 @@ func (s *Session) readHandler(args []string, sess *Session) error {
 }
 
 func (s *Session) clsHandler(args []string, sess *Session) error {
-	// fixes a weird bug which causes the screen not to be fully
-	// cleared if a "clear; net.show" commands chain is executed
-	// in the interactive session.
-	for i := 0; i < 180; i++ {
-		fmt.Println()
+	cmd := "clear"
+	if runtime.GOOS == "windows" {
+		cmd = "cls"
 	}
-	readline.ClearScreen(s.Input.Stdout())
+
+	c := exec.Command(cmd)
+	c.Stdout = os.Stdout
+	c.Run()
 	return nil
 }
 
@@ -271,10 +274,55 @@ func (s *Session) shHandler(args []string, sess *Session) error {
 	return err
 }
 
+func normalizeMac(mac string) string {
+	var parts []string
+	if strings.ContainsRune(mac, '-') {
+		parts = strings.Split(mac, "-")
+	} else {
+		parts = strings.Split(mac, ":")
+	}
+
+	for i, p := range parts {
+		if len(p) < 2 {
+			parts[i] = "0" + p
+		}
+	}
+	return strings.ToLower(strings.Join(parts, ":"))
+}
+
+func (s *Session) propagateAlias(mac, alias string) {
+	mac = normalizeMac(mac)
+
+	s.Aliases.Set(mac, alias)
+
+	if dev, found := s.BLE.Get(mac); found {
+		dev.Alias = alias
+	}
+
+	if dev, found := s.HID.Get(mac); found {
+		dev.Alias = alias
+	}
+
+	if ap, found := s.WiFi.Get(mac); found {
+		ap.Alias = alias
+	}
+
+	if sta, found := s.WiFi.GetClient(mac); found {
+		sta.Alias = alias
+	}
+
+	if host, found := s.Lan.Get(mac); found {
+		host.Alias = alias
+	}
+}
+
 func (s *Session) aliasHandler(args []string, sess *Session) error {
 	mac := args[0]
 	alias := str.Trim(args[1])
-	s.Lan.SetAliasFor(mac, alias)
+	if alias == "\"\"" || alias == "''" {
+		alias = ""
+	}
+	s.propagateAlias(mac, alias)
 	return nil
 }
 
@@ -380,7 +428,7 @@ func (s *Session) registerCoreHandlers() {
 		readline.PcItem("!"))
 
 	s.addHandler(NewCommandHandler("alias MAC NAME",
-		"^alias\\s+([a-fA-F0-9:]{17})\\s*(.*)",
+		"^alias\\s+([a-fA-F0-9:]{14,17})\\s*(.*)",
 		"Assign an alias to a given endpoint given its MAC address.",
 		s.aliasHandler),
 		readline.PcItem("alias", readline.PcItemDynamic(func(prefix string) []string {

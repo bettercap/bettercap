@@ -103,7 +103,7 @@ func (mod *MacChanger) setMac(mac net.HardwareAddr) error {
 
 func (mod *MacChanger) Start() error {
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err := mod.Configure(); err != nil {
 		return err
 	} else if err := mod.setMac(mod.fakeMac); err != nil {

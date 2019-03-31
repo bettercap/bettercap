@@ -63,6 +63,10 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		scriptPath:    "",
 	}
 
+	mod.State.Store("sniffing", &mod.sniffAddr)
+	mod.State.Store("injecting", &mod.inInjectMode)
+	mod.State.Store("layouts", SupportedLayouts())
+
 	mod.AddHandler(session.NewModuleHandler("hid.recon on", "",
 		"Start scanning for HID devices on the 2.4Ghz spectrum.",
 		func(args []string) error {
@@ -159,7 +163,7 @@ func (mod *HIDRecon) Configure() error {
 	var n int
 
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	}
 
 	if err, mod.useLNA = mod.BoolParam("hid.lna"); err != nil {
@@ -200,10 +204,20 @@ func (mod *HIDRecon) Configure() error {
 	return nil
 }
 
+func (mod *HIDRecon) forceStop() error {
+	return mod.SetRunning(false, func() {
+		if mod.dongle != nil {
+			mod.dongle.Close()
+			mod.Debug("device closed")
+		}
+	})
+}
 func (mod *HIDRecon) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.waitGroup.Wait()
-		mod.dongle.Close()
-		mod.Debug("device closed")
+		if mod.dongle != nil {
+			mod.dongle.Close()
+			mod.Debug("device closed")
+		}
 	})
 }

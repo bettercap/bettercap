@@ -29,7 +29,6 @@ type EventsStream struct {
 	outputName    string
 	output        *os.File
 	rotation      rotation
-	ignoreList    *IgnoreList
 	triggerList   *TriggerList
 	waitFor       string
 	waitChan      chan *session.Event
@@ -47,9 +46,10 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		quit:          make(chan bool),
 		waitChan:      make(chan *session.Event),
 		waitFor:       "",
-		ignoreList:    NewIgnoreList(),
 		triggerList:   NewTriggerList(),
 	}
+
+	mod.State.Store("ignoring", &mod.Session.EventsIgnoreList)
 
 	mod.AddHandler(session.NewModuleHandler("events.stream on", "",
 		"Start events stream.",
@@ -127,7 +127,7 @@ func NewEventsStream(s *session.Session) *EventsStream {
 	ignore := session.NewModuleHandler("events.ignore FILTER", "events.ignore ([^\\s]+)",
 		"Events with an identifier matching this filter will not be shown (use multiple times to add more filters).",
 		func(args []string) error {
-			return mod.ignoreList.Add(args[0])
+			return mod.Session.EventsIgnoreList.Add(args[0])
 		})
 
 	ignore.Complete("events.ignore", s.EventsCompleter)
@@ -137,7 +137,7 @@ func NewEventsStream(s *session.Session) *EventsStream {
 	include := session.NewModuleHandler("events.include FILTER", "events.include ([^\\s]+)",
 		"Used to remove filters passed with the events.ignore command.",
 		func(args []string) error {
-			return mod.ignoreList.Remove(args[0])
+			return mod.Session.EventsIgnoreList.Remove(args[0])
 		})
 
 	include.Complete("events.include", s.EventsCompleter)
@@ -147,13 +147,13 @@ func NewEventsStream(s *session.Session) *EventsStream {
 	mod.AddHandler(session.NewModuleHandler("events.filters", "",
 		"Print the list of filters used to ignore events.",
 		func(args []string) error {
-			if mod.ignoreList.Empty() {
+			if mod.Session.EventsIgnoreList.Empty() {
 				fmt.Printf("Ignore filters list is empty.\n")
 			} else {
-				mod.ignoreList.RLock()
-				defer mod.ignoreList.RUnlock()
+				mod.Session.EventsIgnoreList.RLock()
+				defer mod.Session.EventsIgnoreList.RUnlock()
 
-				for _, filter := range mod.ignoreList.Filters() {
+				for _, filter := range mod.Session.EventsIgnoreList.Filters() {
 					fmt.Printf("  '%s'\n", string(filter))
 				}
 			}
@@ -163,7 +163,7 @@ func NewEventsStream(s *session.Session) *EventsStream {
 	mod.AddHandler(session.NewModuleHandler("events.filters.clear", "",
 		"Clear the list of filters passed with the events.ignore command.",
 		func(args []string) error {
-			mod.ignoreList = NewIgnoreList()
+			mod.Session.EventsIgnoreList.Clear()
 			return nil
 		}))
 
@@ -281,7 +281,7 @@ func (mod *EventsStream) Start() error {
 					mod.waitChan <- &e
 				}
 
-				if !mod.ignoreList.Ignored(e) {
+				if !mod.Session.EventsIgnoreList.Ignored(e) {
 					mod.View(e, true)
 				}
 
@@ -303,7 +303,7 @@ func (mod *EventsStream) Show(limit int) error {
 	selected := []session.Event{}
 	for i := range events {
 		e := events[num-1-i]
-		if !mod.ignoreList.Ignored(e) {
+		if !mod.Session.EventsIgnoreList.Ignored(e) {
 			selected = append(selected, e)
 			if len(selected) == limit {
 				break

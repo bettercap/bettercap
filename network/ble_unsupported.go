@@ -5,10 +5,13 @@ package network
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/evilsocket/islazy/data"
 )
 
 type BLEDevice struct {
 	LastSeen time.Time
+	Alias    string
 }
 
 func NewBLEDevice() *BLEDevice {
@@ -21,6 +24,7 @@ type BLEDevNewCallback func(dev *BLEDevice)
 type BLEDevLostCallback func(dev *BLEDevice)
 
 type BLE struct {
+	aliases *data.UnsortedKV
 	devices map[string]*BLEDevice
 	newCb   BLEDevNewCallback
 	lostCb  BLEDevLostCallback
@@ -30,8 +34,9 @@ type bleJSON struct {
 	Devices []*BLEDevice `json:"devices"`
 }
 
-func NewBLE(newcb BLEDevNewCallback, lostcb BLEDevLostCallback) *BLE {
+func NewBLE(aliases *data.UnsortedKV, newcb BLEDevNewCallback, lostcb BLEDevLostCallback) *BLE {
 	return &BLE{
+		aliases: aliases,
 		devices: make(map[string]*BLEDevice),
 		newCb:   newcb,
 		lostCb:  lostcb,

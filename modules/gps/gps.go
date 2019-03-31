@@ -72,7 +72,7 @@ func (mod *GPS) Author() string {
 
 func (mod *GPS) Configure() (err error) {
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, mod.serialPort = mod.StringParam("gps.device"); err != nil {
 		return err
 	} else if err, mod.baudRate = mod.IntParam("gps.baudrate"); err != nil {
@@ -126,11 +126,14 @@ func (mod *GPS) Start() error {
 	return mod.SetRunning(true, func() {
 		defer mod.serial.Close()
 
+		mod.Info("started on port %s ...", mod.serialPort)
+
 		for mod.Running() {
 			if line, err := mod.readLine(); err == nil {
 				if s, err := nmea.Parse(line); err == nil {
 					// http://aprs.gids.nl/nmea/#gga
 					if m, ok := s.(nmea.GNGGA); ok {
+						mod.Session.GPS.Updated = time.Now()
 						mod.Session.GPS.Latitude = m.Latitude
 						mod.Session.GPS.Longitude = m.Longitude
 						mod.Session.GPS.FixQuality = m.FixQuality
@@ -139,6 +142,7 @@ func (mod *GPS) Start() error {
 						mod.Session.GPS.Altitude = m.Altitude
 						mod.Session.GPS.Separation = m.Separation
 					} else if m, ok := s.(nmea.GPGGA); ok {
+						mod.Session.GPS.Updated = time.Now()
 						mod.Session.GPS.Latitude = m.Latitude
 						mod.Session.GPS.Longitude = m.Longitude
 						mod.Session.GPS.FixQuality = m.FixQuality

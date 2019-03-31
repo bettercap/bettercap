@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"os/exec"
 	"sort"
 
@@ -34,7 +33,7 @@ func HasBinary(executable string) bool {
 	return true
 }
 
-func ExecSilent(executable string, args []string) (string, error) {
+func Exec(executable string, args []string) (string, error) {
 	path, err := exec.LookPath(executable)
 	if err != nil {
 		return "", err
@@ -46,12 +45,4 @@ func ExecSilent(executable string, args []string) (string, error) {
 	} else {
 		return str.Trim(string(raw)), nil
 	}
-}
-
-func Exec(executable string, args []string) (string, error) {
-	out, err := ExecSilent(executable, args)
-	if err != nil {
-		fmt.Printf("ERROR for '%s %s': %s\n", executable, args, err)
-	}
-	return out, err
 }

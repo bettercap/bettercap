@@ -48,13 +48,13 @@ func NewDiscovery(s *session.Session) *Discovery {
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("net.show ADDRESS1, ADDRESS2", `net.show (.+)`,
-		"Show information about a specific list of addresses (by IP or MAC).",
+		"Show information about a specific comma separated list of addresses (by IP or MAC).",
 		func(args []string) error {
 			return mod.Show(args[0])
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("net.show.meta ADDRESS1, ADDRESS2", `net\.show\.meta (.+)`,
-		"Show meta information about a specific list of addresses (by IP or MAC).",
+		"Show meta information about a specific comma separated list of addresses (by IP or MAC).",
 		func(args []string) error {
 			return mod.showMeta(args[0])
 		}))

@@ -190,7 +190,7 @@ func dummyCallback(payload *nfqueue.Payload) int {
 
 func (mod *PacketProxy) Start() error {
 	if mod.Running() {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	} else if err := mod.Configure(); err != nil {
 		return err
 	}

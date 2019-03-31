@@ -1,12 +1,11 @@
-package events_stream
+package session
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 	"sync"
-
-	"github.com/bettercap/bettercap/session"
 
 	"github.com/evilsocket/islazy/str"
 )
@@ -15,24 +14,30 @@ var (
 	ErrEmptyExpression = errors.New("expression can not be empty")
 )
 
-type IgnoreFilter string
+type filter string
 
-func (f IgnoreFilter) Matches(s string) bool {
+func (f filter) Matches(s string) bool {
 	return string(f) == s || strings.HasPrefix(s, string(f))
 }
 
-type IgnoreList struct {
+type EventsIgnoreList struct {
 	sync.RWMutex
-	filters []IgnoreFilter
+	filters []filter
 }
 
-func NewIgnoreList() *IgnoreList {
-	return &IgnoreList{
-		filters: make([]IgnoreFilter, 0),
+func NewEventsIgnoreList() *EventsIgnoreList {
+	return &EventsIgnoreList{
+		filters: make([]filter, 0),
 	}
 }
 
-func (l *IgnoreList) checkExpression(expr string) (string, error) {
+func (l *EventsIgnoreList) MarshalJSON() ([]byte, error) {
+	l.RLock()
+	defer l.RUnlock()
+	return json.Marshal(l.filters)
+}
+
+func (l *EventsIgnoreList) checkExpression(expr string) (string, error) {
 	expr = str.Trim(expr)
 	if expr == "" {
 		return "", ErrEmptyExpression
@@ -41,7 +46,7 @@ func (l *IgnoreList) checkExpression(expr string) (string, error) {
 	return expr, nil
 }
 
-func (l *IgnoreList) Add(expr string) (err error) {
+func (l *EventsIgnoreList) Add(expr string) (err error) {
 	if expr, err = l.checkExpression(expr); err != nil {
 		return err
 	}
@@ -57,12 +62,12 @@ func (l *IgnoreList) Add(expr string) (err error) {
 	}
 
 	// all good
-	l.filters = append(l.filters, IgnoreFilter(expr))
+	l.filters = append(l.filters, filter(expr))
 
 	return nil
 }
 
-func (l *IgnoreList) Remove(expr string) (err error) {
+func (l *EventsIgnoreList) Remove(expr string) (err error) {
 	if expr, err = l.checkExpression(expr); err != nil {
 		return err
 	}
@@ -71,8 +76,8 @@ func (l *IgnoreList) Remove(expr string) (err error) {
 	defer l.Unlock()
 
 	// build a new list with everything that does not match
-	toRemove := IgnoreFilter(expr)
-	newList := make([]IgnoreFilter, 0)
+	toRemove := filter(expr)
+	newList := make([]filter, 0)
 	for _, filter := range l.filters {
 		if !toRemove.Matches(string(filter)) {
 			newList = append(newList, filter)
@@ -89,7 +94,13 @@ func (l *IgnoreList) Remove(expr string) (err error) {
 	return nil
 }
 
-func (l *IgnoreList) Ignored(e session.Event) bool {
+func (l *EventsIgnoreList) Clear() {
+	l.Lock()
+	defer l.Unlock()
+	l.filters = make([]filter, 0)
+}
+
+func (l *EventsIgnoreList) Ignored(e Event) bool {
 	l.RLock()
 	defer l.RUnlock()
 
@@ -102,12 +113,12 @@ func (l *IgnoreList) Ignored(e session.Event) bool {
 	return false
 }
 
-func (l *IgnoreList) Empty() bool {
+func (l *EventsIgnoreList) Empty() bool {
 	l.RLock()
 	defer l.RUnlock()
 	return len(l.filters) == 0
 }
 
-func (l *IgnoreList) Filters() []IgnoreFilter {
+func (l *EventsIgnoreList) Filters() []filter {
 	return l.filters
 }

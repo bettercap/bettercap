@@ -35,7 +35,7 @@ func (mod *WiFiModule) startAp() error {
 	if !mod.Running() {
 		return errNoRecon
 	} else if mod.apRunning {
-		return session.ErrAlreadyStarted
+		return session.ErrAlreadyStarted(mod.Name())
 	}
 
 	go func() {

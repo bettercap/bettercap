@@ -73,3 +73,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/kr/binarydist"
+  version = "0.1.0"

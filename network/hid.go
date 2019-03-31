@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"sync"
 	"time"
+
+	"github.com/evilsocket/islazy/data"
 )
 
 type HIDDevNewCallback func(dev *HIDDevice)
@@ -11,6 +13,7 @@ type HIDDevLostCallback func(dev *HIDDevice)
 
 type HID struct {
 	sync.RWMutex
+	aliases *data.UnsortedKV
 	devices map[string]*HIDDevice
 	newCb   HIDDevNewCallback
 	lostCb  HIDDevLostCallback
@@ -20,9 +23,10 @@ type hidJSON struct {
 	Devices []*HIDDevice `json:"devices"`
 }
 
-func NewHID(newcb HIDDevNewCallback, lostcb HIDDevLostCallback) *HID {
+func NewHID(aliases *data.UnsortedKV, newcb HIDDevNewCallback, lostcb HIDDevLostCallback) *HID {
 	return &HID{
 		devices: make(map[string]*HIDDevice),
+		aliases: aliases,
 		newCb:   newcb,
 		lostCb:  lostcb,
 	}
@@ -52,14 +56,20 @@ func (b *HID) AddIfNew(address []byte, channel int, payload []byte) (bool, *HIDD
 	defer b.Unlock()
 
 	id := HIDAddress(address)
+	alias := b.aliases.GetOr(id, "")
+
 	if dev, found := b.devices[id]; found {
 		dev.LastSeen = time.Now()
 		dev.AddChannel(channel)
 		dev.AddPayload(payload)
+		if alias != "" {
+			dev.Alias = alias
+		}
 		return false, dev
 	}
 
 	newDev := NewHIDDevice(address, channel, payload)
+	newDev.Alias = alias
 	b.devices[id] = newDev
 
 	if b.newCb != nil {

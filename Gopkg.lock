@@ -27,7 +27,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a2c142e6c2aa1c71796c748bbe42d224e23d6638fd5b3ae153e70a4b08a8da4e"
+  digest = "1:881bb9d751b9408f038b83e9331ce3c57603710f3546f16e7d43b5c24e974f6d"
   name = "github.com/bettercap/gatt"
   packages = [
     ".",
@@ -40,7 +40,7 @@
     "xpc",
   ]
   pruneopts = "UT"
-  revision = "277ee0d0ef94d26e3190252c59fa34dde0df4f26"
+  revision = "d1a17475747afe7c0d78813596d4e95801a5d592"
 
 [[projects]]
   branch = "master"
@@ -83,7 +83,7 @@
   revision = "2ce16c963a8ac5bd6af851d4877e38701346983f"
 
 [[projects]]
-  digest = "1:da1be9af4c3f262bd385cc722b08d98d4a47ddea57731e98b85c7ba21b35bc31"
+  digest = "1:5247f5757ba31623c464db149dc272a37604516d8fbae1561b36e0d7cee070a5"
   name = "github.com/evilsocket/islazy"
   packages = [
     "data",
@@ -96,8 +96,8 @@
     "zip",
   ]
   pruneopts = "UT"
-  revision = "6ef79e84ded205e48f296d21e3bc65d1cf4f5c78"
-  version = "v1.10.3"
+  revision = "c5c7a41bb1c20e6df409825ed24af8de5fb7fb70"
+  version = "v1.10.4"
 
 [[projects]]
   branch = "master"
@@ -183,6 +183,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "f16ca3b7b383d3f0373109cac19147de3e8ae2d1"
+
+[[projects]]
+  digest = "1:7ad278b575635babef38e4ad4219500c299a58ea14b30eb21383d0efca00b369"
+  name = "github.com/kr/binarydist"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "88f551ae580780cc79d12ab4c218ba1ca346b83a"
+  version = "v0.1.0"
 
 [[projects]]
   digest = "1:4701b2acabe16722ecb1e387d39741a29269386bfc4ba6283ecda362d289eff1"
@@ -333,6 +341,7 @@
     "github.com/gorilla/websocket",
     "github.com/inconshreveable/go-vhost",
     "github.com/jpillora/go-tld",
+    "github.com/kr/binarydist",
     "github.com/malfunkt/iprange",
     "github.com/mdlayher/dhcp6",
     "github.com/mdlayher/dhcp6/dhcp6opts",
