@@ -42,6 +42,8 @@ func NewDHCP6Spoofer(s *session.Session) *DHCP6Spoofer {
 		waitGroup:     &sync.WaitGroup{},
 	}
 
+	mod.SessionModule.Requires("net.recon")
+
 	mod.AddParam(session.NewStringParameter("dhcp6.spoof.domains",
 		"microsoft.com, google.com, facebook.com, apple.com, twitter.com",
 		``,

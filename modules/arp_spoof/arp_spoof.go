@@ -38,6 +38,8 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 		waitGroup:     &sync.WaitGroup{},
 	}
 
+	mod.SessionModule.Requires("net.recon")
+
 	mod.AddParam(session.NewStringParameter("arp.spoof.targets", session.ParamSubnet, "", "Comma separated list of IP addresses, MAC addresses or aliases to spoof, also supports nmap style IP ranges."))
 
 	mod.AddParam(session.NewStringParameter("arp.spoof.whitelist", "", "", "Comma separated list of IP addresses, MAC addresses or aliases to skip while spoofing."))

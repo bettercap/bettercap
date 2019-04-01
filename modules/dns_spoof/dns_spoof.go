@@ -34,6 +34,8 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		waitGroup:     &sync.WaitGroup{},
 	}
 
+	mod.SessionModule.Requires("net.recon")
+
 	mod.AddParam(session.NewStringParameter("dns.spoof.hosts",
 		"",
 		"",

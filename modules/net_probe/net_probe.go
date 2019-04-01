@@ -30,6 +30,8 @@ func NewProber(s *session.Session) *Prober {
 		waitGroup:     &sync.WaitGroup{},
 	}
 
+	mod.SessionModule.Requires("net.recon")
+
 	mod.AddParam(session.NewBoolParameter("net.probe.nbns",
 		"true",
 		"Enable NetBIOS name service discovery probes."))

@@ -21,6 +21,7 @@ type Module interface {
 	Parameters() map[string]*ModuleParam
 
 	Extra() map[string]interface{}
+	Required() []string
 	Running() bool
 	Start() error
 	Stop() error
@@ -64,6 +65,7 @@ type SessionModule struct {
 
 	handlers []ModuleHandler
 	params   map[string]*ModuleParam
+	requires []string
 	tag      string
 }
 
@@ -79,6 +81,7 @@ func NewSessionModule(name string, s *Session) SessionModule {
 		StatusLock: &sync.RWMutex{},
 		State:      &sync.Map{},
 
+		requires: make([]string, 0),
 		handlers: make([]ModuleHandler, 0),
 		params:   make(map[string]*ModuleParam),
 		tag:      AsTag(name),
@@ -127,6 +130,14 @@ func (m *SessionModule) Error(format string, args ...interface{}) {
 
 func (m *SessionModule) Fatal(format string, args ...interface{}) {
 	m.Session.Events.Log(log.FATAL, m.tag+format, args...)
+}
+
+func (m *SessionModule) Requires(modName string) {
+	m.requires = append(m.requires, modName)
+}
+
+func (m *SessionModule) Required() []string {
+	return m.requires
 }
 
 func (m *SessionModule) Handlers() []ModuleHandler {
@@ -234,6 +245,17 @@ func (m *SessionModule) SetRunning(running bool, cb func()) error {
 			return ErrAlreadyStarted(m.Name)
 		} else {
 			return ErrAlreadyStopped(m.Name)
+		}
+	}
+
+	if running == true {
+		for _, modName := range m.Required() {
+			if m.Session.IsOn(modName) == false {
+				m.Info("starting %s as a requirement for %s", modName, m.Name)
+				if err := m.Session.Run(modName + " on"); err != nil {
+					return fmt.Errorf("error while starting module %s as a requirement for %s: %v", modName, m.Name, err)
+				}
+			}
 		}
 	}
 
