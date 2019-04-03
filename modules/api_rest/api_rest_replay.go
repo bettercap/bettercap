@@ -38,7 +38,10 @@ func (mod *RestAPI) startReplay(filename string) (err error) {
 	mod.Info("loading %s ...", mod.recordFileName)
 
 	start := time.Now()
-	if mod.record, err = LoadRecord(mod.recordFileName, &mod.SessionModule); err != nil {
+	mod.record, err = LoadRecord(mod.recordFileName, func(progress float64) {
+		mod.State.Store("load_progress", progress)
+	})
+	if err != nil {
 		return err
 	}
 	loadedIn := time.Since(start)

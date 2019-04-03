@@ -10,8 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bettercap/bettercap/session"
-
 	"github.com/evilsocket/islazy/fs"
 	"github.com/kr/binarydist"
 )
@@ -177,38 +175,40 @@ func (e *RecordEntry) Duration() time.Duration {
 	return e.StoppedAt().Sub(e.StartedAt())
 }
 
+type RecordLoadProgress func(p float64)
+
 // the Record object represents a recorded session
 type Record struct {
 	sync.Mutex
 
-	mod      *session.SessionModule `json:"-"`
-	fileName string                 `json:"-"`
-	done     int                    `json:"-"`
-	total    int                    `json:"-"`
-	progress float64                `json:"-"`
-	Session  *RecordEntry           `json:"session"`
-	Events   *RecordEntry           `json:"events"`
+	fileName   string             `json:"-"`
+	done       int                `json:"-"`
+	total      int                `json:"-"`
+	progress   float64            `json:"-"`
+	onProgress RecordLoadProgress `json:"-"`
+	Session    *RecordEntry       `json:"session"`
+	Events     *RecordEntry       `json:"events"`
 }
 
-func NewRecord(fileName string, mod *session.SessionModule) *Record {
+func NewRecord(fileName string, cb RecordLoadProgress) *Record {
 	r := &Record{
-		fileName: fileName,
-		mod:      mod,
+		fileName:   fileName,
+		onProgress: cb,
 	}
 
-	r.Session = NewRecordEntry(r.onProgress)
-	r.Events = NewRecordEntry(r.onProgress)
+	r.Session = NewRecordEntry(r.onPartialProgress)
+	r.Events = NewRecordEntry(r.onPartialProgress)
 
 	return r
 }
 
-func (r *Record) onProgress(done int) {
+func (r *Record) onPartialProgress(done int) {
 	r.done += done
 	r.progress = float64(r.done) / float64(r.total) * 100.0
-	r.mod.State.Store("load_progress", r.progress)
+	r.onProgress(r.progress)
 }
 
-func LoadRecord(fileName string, mod *session.SessionModule) (*Record, error) {
+func LoadRecord(fileName string, cb RecordLoadProgress) (*Record, error) {
 	if !fs.Exists(fileName) {
 		return nil, fmt.Errorf("%s does not exist", fileName)
 	}
@@ -236,17 +236,15 @@ func LoadRecord(fileName string, mod *session.SessionModule) (*Record, error) {
 		return nil, fmt.Errorf("error while parsing %s: %s", fileName, err)
 	}
 
-	rec.fileName = fileName
-	rec.mod = mod
-
 	rec.Session.NumStates = len(rec.Session.States)
-	rec.Session.progress = rec.onProgress
+	rec.Session.progress = rec.onPartialProgress
 	rec.Events.NumStates = len(rec.Events.States)
-	rec.Events.progress = rec.onProgress
-
-	rec.done = 0
+	rec.Events.progress = rec.onPartialProgress
+	rec.fileName = fileName
 	rec.total = rec.Session.NumStates + rec.Events.NumStates + 2
 	rec.progress = 0.0
+	rec.done = 0
+	rec.onProgress = cb
 
 	// reset state and precompute frames
 	if err = rec.Session.Compile(); err != nil {
