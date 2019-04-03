@@ -19,11 +19,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7e4a9eaa42cb3b4cd48bd0cd2072a029fe25a47af20cfac529ea8c365f8559ac"
+  digest = "1:3a4202162c0d85f2a5fed5675bd35e6686c8b379c63e40ef105bf3e7d76d97f5"
   name = "github.com/antchfx/xpath"
   packages = ["."]
   pruneopts = "UT"
-  revision = "c8489ed3251e7d55ec2b7f18a2bc3a9a7222f0af"
+  revision = "ce1d48779e67a1ddfb380995fe532b2e0015919c"
 
 [[projects]]
   branch = "master"
@@ -57,6 +57,14 @@
   pruneopts = "UT"
   revision = "62c6fe6193755f722b8b8788aa7357be55a50ff1"
   version = "v1.4"
+
+[[projects]]
+  branch = "master"
+  digest = "1:c8bc90a7d67587dda6b8a90e570c411874fa01117eb383527c5e36d4fae5158a"
+  name = "github.com/bettercap/recording"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "1396b95921b3cc1cb1cee3280c7f6be6c7f06b06"
 
 [[projects]]
   branch = "master"
@@ -209,16 +217,16 @@
   version = "v0.1.1"
 
 [[projects]]
-  digest = "1:3bb9c8451d199650bfd303e0068d86f135952fead374ad87c09a9b8a2cc4bd7c"
+  digest = "1:e150b5fafbd7607e2d638e4e5cf43aa4100124e5593385147b0a74e2733d8b0d"
   name = "github.com/mattn/go-isatty"
   packages = ["."]
   pruneopts = "UT"
-  revision = "369ecd8cea9851e459abb67eb171853e3986591e"
-  version = "v0.0.6"
+  revision = "c2a7a6ca930a4cd0bc33a3f298eb71960732a3a7"
+  version = "v0.0.7"
 
 [[projects]]
   branch = "master"
-  digest = "1:0e2c7e1de0daaa759dac2b7feb90fdc944f1d23a6e0c8c20502cb635bcd2aaba"
+  digest = "1:b2a92f887089bda5ea0b5c885d6e785581756da3e24ed86df5566c60721a70ec"
   name = "github.com/mdlayher/dhcp6"
   packages = [
     ".",
@@ -226,15 +234,15 @@
     "internal/buffer",
   ]
   pruneopts = "UT"
-  revision = "775147d26a880f77f6e06d1a28fbeb2ec4fec013"
+  revision = "2a67805d7d0b0bad6c1103058981afdea583b459"
 
 [[projects]]
   branch = "master"
-  digest = "1:34fe44dd2bbe5723068e0a7a266847965a88297d383fe611e0358e556d82de09"
+  digest = "1:34bd596081cc218eb9f14ddcc712015bed5b9b84917c6279640397f534565e72"
   name = "github.com/mdlayher/raw"
   packages = ["."]
   pruneopts = "UT"
-  revision = "480b93709cce56651807d3fdeb260a5a7c4e2d5f"
+  revision = "b0647ab7d8b35d5b8b734462042628e5af82f7f4"
 
 [[projects]]
   branch = "master"
@@ -290,15 +298,15 @@
   name = "golang.org/x/net"
   packages = ["bpf"]
   pruneopts = "UT"
-  revision = "16b79f2e4e95ea23b2bf9903c9809ff7b013ce85"
+  revision = "74de082e2cca95839e88aa0aeee5aadf6ce7710f"
 
 [[projects]]
   branch = "master"
-  digest = "1:a2bc6cb1f4e1d0b512e1d47d392ead580006b5bdade6ffde16271759fe609b34"
+  digest = "1:cd9a35e005d99871df9dc2354bc9dd8f09d186e2efa6affae6593f5ef93876b0"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "b6889370fb1098ed892bd3400d189bb6a3355813"
+  revision = "baf5eb976a8cd65845293cd814ea151018552292"
 
 [[projects]]
   digest = "1:9935525a8c49b8434a0b0a54e1980e94a6fae73aaff45c5d33ba8dff69de123e"
@@ -320,6 +328,7 @@
     "github.com/bettercap/gatt",
     "github.com/bettercap/nrf24",
     "github.com/bettercap/readline",
+    "github.com/bettercap/recording",
     "github.com/chifflier/nfqueue-go/nfqueue",
     "github.com/dustin/go-humanize",
     "github.com/elazarl/goproxy",
@@ -337,11 +346,11 @@
     "github.com/google/gopacket/layers",
     "github.com/google/gopacket/pcap",
     "github.com/google/gopacket/pcapgo",
+    "github.com/google/gousb",
     "github.com/gorilla/mux",
     "github.com/gorilla/websocket",
     "github.com/inconshreveable/go-vhost",
     "github.com/jpillora/go-tld",
-    "github.com/kr/binarydist",
     "github.com/malfunkt/iprange",
     "github.com/mdlayher/dhcp6",
     "github.com/mdlayher/dhcp6/dhcp6opts",

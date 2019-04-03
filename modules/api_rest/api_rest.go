@@ -10,6 +10,8 @@ import (
 	"github.com/bettercap/bettercap/session"
 	"github.com/bettercap/bettercap/tls"
 
+	"github.com/bettercap/recording"
+
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 
@@ -35,7 +37,7 @@ type RestAPI struct {
 	replaying      bool
 	recordFileName string
 	recordWait     *sync.WaitGroup
-	record         *Record
+	record         *recording.Archive
 	recStarted     time.Time
 	recStopped     time.Time
 }

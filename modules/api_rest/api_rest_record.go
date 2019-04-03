@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bettercap/recording"
+
 	"github.com/evilsocket/islazy/fs"
 )
 
@@ -45,7 +47,7 @@ func (mod *RestAPI) recorder() {
 	mod.recTime = 0
 	mod.recording = true
 	mod.replaying = false
-	mod.record = NewRecord(mod.recordFileName, nil)
+	mod.record = recording.New(mod.recordFileName)
 
 	mod.Info("started recording to %s (clock %s) ...", mod.recordFileName, clock)
 

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bettercap/recording"
+
 	"github.com/evilsocket/islazy/fs"
 )
 
@@ -38,7 +40,7 @@ func (mod *RestAPI) startReplay(filename string) (err error) {
 	mod.Info("loading %s ...", mod.recordFileName)
 
 	start := time.Now()
-	mod.record, err = LoadRecord(mod.recordFileName, func(progress float64) {
+	mod.record, err = recording.Load(mod.recordFileName, func(progress float64, done int, total int) {
 		mod.State.Store("load_progress", progress)
 	})
 	if err != nil {

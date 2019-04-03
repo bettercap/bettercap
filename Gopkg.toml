@@ -12,6 +12,10 @@
 
 [[constraint]]
   branch = "master"
+  name = "github.com/bettercap/recording"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/chifflier/nfqueue-go"
 
 [[constraint]]
@@ -73,7 +77,3 @@
 [prune]
   go-tests = true
   unused-packages = true
-
-[[constraint]]
-  name = "github.com/kr/binarydist"
-  version = "0.1.0"
