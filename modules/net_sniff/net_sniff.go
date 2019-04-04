@@ -29,6 +29,8 @@ func NewSniffer(s *session.Session) *Sniffer {
 		Stats:         nil,
 	}
 
+	mod.SessionModule.Requires("net.recon")
+
 	mod.AddParam(session.NewBoolParameter("net.sniff.verbose",
 		"false",
 		"If true, every captured and parsed packet will be sent to the events.stream for displaying, otherwise only the ones parsed at the application layer (sni, http, etc)."))

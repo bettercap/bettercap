@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -44,6 +45,14 @@ func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 			}
 
 			for hostname, ips := range m {
+				for _, ip := range ips {
+					if endpoint := session.I.Lan.GetByIp(ip); endpoint != nil {
+						endpoint.OnMeta(map[string]string{
+							"mdns:hostname": hostname,
+						})
+					}
+				}
+
 				NewSnifferEvent(
 					pkt.Metadata().Timestamp,
 					"mdns",
