@@ -23,10 +23,7 @@ func (mod *WiFiModule) isInterfaceConnected() bool {
 	return false
 }
 
-func (mod *WiFiModule) hop(channel int) (mustStop bool) {
-	mod.chanLock.Lock()
-	defer mod.chanLock.Unlock()
-
+func (mod *WiFiModule) hopUnlocked(channel int) (mustStop bool) {
 	mod.Debug("hopping on channel %d", channel)
 
 	if err := network.SetInterfaceChannel(mod.iface.Name(), channel); err != nil {
@@ -42,6 +39,13 @@ func (mod *WiFiModule) hop(channel int) (mustStop bool) {
 	return
 }
 
+func (mod *WiFiModule) hop(channel int) (mustStop bool) {
+	mod.chanLock.Lock()
+	defer mod.chanLock.Unlock()
+
+	return mod.hopUnlocked(channel)
+}
+
 func (mod *WiFiModule) onChannel(channel int, cb func()) {
 	mod.chanLock.Lock()
 	defer mod.chanLock.Unlock()
@@ -49,7 +53,7 @@ func (mod *WiFiModule) onChannel(channel int, cb func()) {
 	prev := mod.stickChan
 	mod.stickChan = channel
 
-	mod.hop(channel)
+	mod.hopUnlocked(channel)
 
 	cb()
 
