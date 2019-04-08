@@ -95,7 +95,7 @@ func (mod *RestAPI) patchFrame(buf []byte) (frame map[string]interface{}, err er
 func (mod *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
 	if mod.replaying {
 		if !mod.record.Session.Over() {
-			from := mod.record.Session.CurFrame() - 1
+			from := mod.record.Session.Index() - 1
 			q := r.URL.Query()
 			vals := q["from"]
 			if len(vals) > 0 {
@@ -106,12 +106,12 @@ func (mod *RestAPI) showSession(w http.ResponseWriter, r *http.Request) {
 			mod.record.Session.SetFrom(from)
 
 			mod.Debug("replaying session %d of %d from %s",
-				mod.record.Session.CurFrame(),
+				mod.record.Session.Index(),
 				mod.record.Session.Frames(),
 				mod.recordFileName)
 
 			mod.State.Store("rec_frames", mod.record.Session.Frames())
-			mod.State.Store("rec_cur_frame", mod.record.Session.CurFrame())
+			mod.State.Store("rec_cur_frame", mod.record.Session.Index())
 
 			buf := mod.record.Session.Next()
 			if frame, err := mod.patchFrame(buf); err != nil {
@@ -254,7 +254,7 @@ func (mod *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 
 	if mod.replaying {
 		if !mod.record.Events.Over() {
-			from := mod.record.Events.CurFrame() - 1
+			from := mod.record.Events.Index() - 1
 			vals := q["from"]
 			if len(vals) > 0 {
 				if n, err := strconv.Atoi(vals[0]); err == nil {
@@ -264,7 +264,7 @@ func (mod *RestAPI) showEvents(w http.ResponseWriter, r *http.Request) {
 			mod.record.Events.SetFrom(from)
 
 			mod.Debug("replaying events %d of %d from %s",
-				mod.record.Events.CurFrame(),
+				mod.record.Events.Index(),
 				mod.record.Events.Frames(),
 				mod.recordFileName)
 
