@@ -35,11 +35,21 @@ type ifaceJSON struct {
 	Addresses []addrJSON `json:"addresses"`
 }
 
+type resourcesJSON struct {
+	NumCPU       int    `json:"cpus"`
+	MaxCPU       int    `json:"max_cpus"`
+	NumGoroutine int    `json:"goroutines"`
+	Alloc        uint64 `json:"alloc"`
+	Sys          uint64 `json:"sys"`
+	NumGC        uint32 `json:"gcs"`
+}
+
 type SessionJSON struct {
 	Version    string            `json:"version"`
 	OS         string            `json:"os"`
 	Arch       string            `json:"arch"`
 	GoVersion  string            `json:"goversion"`
+	Resources  resourcesJSON     `json:"resources"`
 	Interfaces []ifaceJSON       `json:"interfaces"`
 	Options    core.Options      `json:"options"`
 	Interface  *network.Endpoint `json:"interface"`
@@ -59,11 +69,23 @@ type SessionJSON struct {
 }
 
 func (s *Session) MarshalJSON() ([]byte, error) {
+	var m runtime.MemStats
+
+	runtime.ReadMemStats(&m)
+
 	doc := SessionJSON{
-		Version:    core.Version,
-		OS:         runtime.GOOS,
-		Arch:       runtime.GOARCH,
-		GoVersion:  runtime.Version(),
+		Version:   core.Version,
+		OS:        runtime.GOOS,
+		Arch:      runtime.GOARCH,
+		GoVersion: runtime.Version(),
+		Resources: resourcesJSON{
+			NumCPU:       runtime.NumCPU(),
+			MaxCPU:       runtime.GOMAXPROCS(0),
+			NumGoroutine: runtime.NumGoroutine(),
+			Alloc:        m.Alloc,
+			Sys:          m.Sys,
+			NumGC:        m.NumGC,
+		},
 		Interfaces: make([]ifaceJSON, 0),
 		Options:    s.Options,
 		Interface:  s.Interface,
