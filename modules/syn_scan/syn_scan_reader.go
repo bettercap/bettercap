@@ -10,6 +10,13 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
+type OpenPort struct {
+	Proto   string `json:"proto"`
+	Banner  string `json:"banner"`
+	Service string `json:"service"`
+	Port    int    `json:"port"`
+}
+
 func (mod *SynScanner) isAddressInRange(ip net.IP) bool {
 	for _, a := range mod.addresses {
 		if a.Equal(ip) {
@@ -53,8 +60,16 @@ func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
 		}
 
 		if host != nil {
-			ports := host.Meta.GetIntsWith("tcp-ports", port, true)
-			host.Meta.SetInts("tcp-ports", ports)
+			ports := host.Meta.GetOr("ports", map[int]OpenPort{}).(map[int]OpenPort)
+			if _, found := ports[port]; !found {
+				ports[port] = OpenPort{
+					Proto:   "tcp",
+					Port:    port,
+					Service: network.GetServiceByPort(port, "tcp"),
+				}
+			}
+
+			host.Meta.Set("ports", ports)
 		}
 
 		NewSynScanEvent(from, host, port).Push()
