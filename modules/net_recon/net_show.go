@@ -98,7 +98,14 @@ func (mod *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 
 	metas := []string{}
 	e.Meta.Each(func(name string, value interface{}) {
-		metas = append(metas, fmt.Sprintf("%s:%s", tui.Green(name), tui.Yellow(value.(string))))
+		s := ""
+		if sv, ok := value.(string); ok {
+			s = sv
+		} else {
+			s = fmt.Sprintf("%+v", value)
+		}
+
+		metas = append(metas, fmt.Sprintf("%s:%s", tui.Green(name), tui.Yellow(s)))
 	})
 	sort.Strings(metas)
 
