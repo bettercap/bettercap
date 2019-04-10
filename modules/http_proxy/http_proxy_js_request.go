@@ -8,10 +8,12 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/bettercap/bettercap/session"
 )
 
 type JSRequest struct {
-	Client      string
+	Client      map[string]string
 	Method      string
 	Version     string
 	Scheme      string
@@ -43,8 +45,16 @@ func NewJSRequest(req *http.Request) *JSRequest {
 		}
 	}
 
+	client_ip := strings.Split(req.RemoteAddr, ":")[0]
+	client_mac := ""
+	client_alias := ""
+	if endpoint := session.I.Lan.GetByIp(client_ip); endpoint != nil {
+		client_mac = endpoint.HwAddress
+		client_alias = endpoint.Alias
+	}
+
 	jreq := &JSRequest{
-		Client:      strings.Split(req.RemoteAddr, ":")[0],
+		Client:      map[string]string{"IP": client_ip, "MAC": client_mac, "Alias": client_alias},
 		Method:      req.Method,
 		Version:     fmt.Sprintf("%d.%d", req.ProtoMajor, req.ProtoMinor),
 		Scheme:      req.URL.Scheme,
@@ -63,7 +73,7 @@ func NewJSRequest(req *http.Request) *JSRequest {
 }
 
 func (j *JSRequest) NewHash() string {
-	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s.%s.%s", j.Client, j.Method, j.Version, j.Scheme, j.Hostname, j.Path, j.Query, j.ContentType, j.Headers)
+	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s.%s.%s", j.Client["IP"], j.Method, j.Version, j.Scheme, j.Hostname, j.Path, j.Query, j.ContentType, j.Headers)
 	hash += "." + j.Body
 	return hash
 }
