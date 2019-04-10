@@ -73,7 +73,7 @@ func NewJSRequest(req *http.Request) *JSRequest {
 }
 
 func (j *JSRequest) NewHash() string {
-	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s.%s.%s", j.Client, j.Method, j.Version, j.Scheme, j.Hostname, j.Path, j.Query, j.ContentType, j.Headers)
+	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s.%s.%s", j.Client["IP"], j.Method, j.Version, j.Scheme, j.Hostname, j.Path, j.Query, j.ContentType, j.Headers)
 	hash += "." + j.Body
 	return hash
 }
