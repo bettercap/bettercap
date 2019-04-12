@@ -21,6 +21,7 @@ import (
 	"github.com/bettercap/bettercap/modules/net_recon"
 	"github.com/bettercap/bettercap/modules/net_sniff"
 	"github.com/bettercap/bettercap/modules/packet_proxy"
+	"github.com/bettercap/bettercap/modules/rdp_proxy"
 	"github.com/bettercap/bettercap/modules/syn_scan"
 	"github.com/bettercap/bettercap/modules/tcp_proxy"
 	"github.com/bettercap/bettercap/modules/ticker"
@@ -50,6 +51,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(mysql_server.NewMySQLServer(sess))
 	sess.Register(net_sniff.NewSniffer(sess))
 	sess.Register(packet_proxy.NewPacketProxy(sess))
+    sess.Register(rdp_proxy.NewRdpProxy(sess))
 	sess.Register(net_probe.NewProber(sess))
 	sess.Register(syn_scan.NewSynScanner(sess))
 	sess.Register(tcp_proxy.NewTcpProxy(sess))
