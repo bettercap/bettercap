@@ -112,15 +112,15 @@ func (p *EventPool) Add(tag string, data interface{}) {
 	// broadcast the event to every listener
 	for _, l := range p.listeners {
 		// do not block!
-		go func(ch *chan Event) {
+		go func(ch chan Event) {
 			// channel might be closed
 			defer func() {
 				if recover() != nil {
 
 				}
 			}()
-			*ch <- e
-		}(&l)
+			ch <- e
+		}(l)
 	}
 }
 
