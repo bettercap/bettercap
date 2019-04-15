@@ -1,8 +1,11 @@
 package rdp_proxy
 
+// TESTING:
+// set arp.spoof.targets '192.168.151.174'
 import (
     "fmt"
     "net"
+    "os/exec"
     "io/ioutil"
     golog "log"
     "syscall"
@@ -27,6 +30,7 @@ type RdpProxy struct {
     startPort  int
     cmd        string
     targets    string // TODO
+    active     map[string]exec.Cmd
 }
 
 var mod *RdpProxy
@@ -40,7 +44,8 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         port:          0,
         startPort:     40000,
         cmd:           "pyrdp-mitm",
-        targets:       "<All Subnet>",
+        targets:       "<All Subnets>",
+        active:        make(map[string]exec.Cmd),
     }
 
     mod.AddHandler(session.NewModuleHandler("rdp.proxy on", "", "Start the RDP proxy.",
@@ -123,38 +128,44 @@ func (mod *RdpProxy) proxy(target net.Addr) (err error) {
 }
 
 func (mod *RdpProxy) configureFirewall(enable bool) (err error) {
-    chain := []string { "-t", "nat", "-N", "BCAPRDP" }
-    nat   := []string { "-t", "nat", "-I", "1", "PREROUTING", "-j", "BCAPRDP" }
+    rules := [][]string{}
 
-    if !enable {
-        chain = []string { "-t", "nat", "-X", "BCAPRDP" }
-        nat   = []string { "-t", "nat", "-D", "PREROUTING", "-j", "BCAPRDP" }
+    if enable {
+        rules = [][]string{
+            { "-t", "nat", "-N", "BCAPRDP" },
+            { "-t", "nat", "-I", "PREROUTING", "1", "-j", "BCAPRDP" },
+            { "-t", "nat", "-A", "BCAPRDP",
+                "-p", "tcp", "-m", "tcp", "--dport", fmt.Sprintf("%d", mod.port),
+                "-j", "NFQUEUE", "--queue-num", "0", "--queue-bypass",
+            },
+        }
+    } else if !enable {
+        rules = [][]string{
+            { "-t", "nat", "-D", "PREROUTING", "-j", "BCAPRDP" },
+            { "-t", "nat", "-F", "BCAPRDP" },
+            { "-t", "nat", "-X", "BCAPRDP" },
+        }
     }
 
-    _, err = core.Exec("iptables", chain)
-    _, err = core.Exec("iptables", nat)
+    for _, rule := range rules {
+        if _, err = core.Exec("iptables", rule); err != nil {
+            return err
+        }
+    }
+
     return
 }
 
 
 func (mod *RdpProxy) Configure() (err error) {
-    //
-    // The gist of what this function does is:
-    // 1. Create a chain in the NAT table called BCAPRDP.
-    // 2. Add a fallback rule as the first PREROUTING entry that puts all new TCP connections on port `rdp.proxy.port` into an NFQUEUE.
-    // 3. Add a default PREROUTING rule to jump to BCAPRDP.
-    // During cleanup, the entire BCAPRDP chain is dropped and all pyrdp instances are terminated
-    //
     golog.SetOutput(ioutil.Discard)
     mod.destroyQueue()
 
-    if err, mod.queueNum = mod.IntParam("packet.proxy.queue.num"); err != nil {
+    if err, mod.queueNum = mod.IntParam("rdp.proxy.queue.num"); err != nil {
         return
-    // } else if err, mod.pluginPath = mod.StringParam("packet.proxy.plugin"); err != nil {
-    //     return
     }
 
-    mod.Info("Starting NFQUEUE handler...")
+    mod.Info("Starting RDP Proxy")
 
     // Create the NFQUEUE handler.
     mod.queue = new(nfqueue.Queue)
@@ -181,8 +192,8 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
 
     // 1. Determine source and target addresses.
      p := gopacket.NewPacket(payload.Data, layers.LayerTypeEthernet, gopacket.NoCopy)
-
     mod.Info("New Connection: %v", p)
+
     // 2. Check if the destination IP already has a PYRDP session active, if so, do nothing.
     // 3. Otherwise:
     //   3.1. Spawn a PYRDP instance on a fresh port
