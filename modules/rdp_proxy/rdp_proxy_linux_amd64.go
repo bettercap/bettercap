@@ -12,6 +12,8 @@ import (
     "github.com/bettercap/bettercap/session"
 
     "github.com/chifflier/nfqueue-go/nfqueue"
+    "github.com/google/gopacket"
+    "github.com/google/gopacket/layers"
 
     "github.com/evilsocket/islazy/fs"
     "github.com/evilsocket/islazy/tui"
@@ -104,7 +106,18 @@ func (mod *RdpProxy) destroyQueue() {
     mod.queue = nil
 }
 
-func (mod *RdpProxy) runRule(enable bool) (err error) {
+// Setup the proxy chain
+"iptables -t nat -N BCAPRDP" // Create RDP chain
+"iptables -t nat -X BCAPRDP" // Delete RDP chain
+"iptables -t nat -I 1 PREROUTING -j BCAPRDP" // Go to BCAPRDP immediately before anything else
+// Intercept SYNS (TODO: -m conntrack --cstate=new) ?
+"iptables -I 1 -p tcp -m tcp --dport 3389 -d 10.0.0.0/24 -j NFQUEUE --queue-num 0 --queue-bypass"
+
+
+// Starts or stops a particular proxy instances.
+func (mod *RdpProxy) doProxy(target net.IPv4, enable bool) (err error) {
+
+    // Configure the firewall.
     action := "-A"
     if !enable {
         action = "-D"
@@ -132,8 +145,14 @@ func (mod *RdpProxy) runRule(enable bool) (err error) {
 }
 
 func (mod *RdpProxy) Configure() (err error) {
+    //
+    // The gist of what this function does is:
+    // 1. Create a chain in the NAT table called BCAPRDP.
+    // 2. Add a fallback rule as the first PREROUTING entry that puts all new TCP connections on port `rdp.proxy.port` into an NFQUEUE.
+    // 3. Add a default PREROUTING rule to jump to BCAPRDP.
+    // During cleanup, the entire BCAPRDP chain is dropped and all pyrdp instances are terminated
+    //
     golog.SetOutput(ioutil.Discard)
-
     mod.destroyQueue()
 
     if err, mod.queueNum = mod.IntParam("packet.proxy.queue.num"); err != nil {
@@ -146,27 +165,12 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     }
 
-    if mod.pluginPath == "" {
-        return fmt.Errorf("The parameter %s can not be empty.", tui.Bold("packet.proxy.plugin"))
-    } else if !fs.Exists(mod.pluginPath) {
-        return fmt.Errorf("%s does not exist.", mod.pluginPath)
-    }
-
-    mod.Info("loading packet proxy plugin from %s ...", mod.pluginPath)
-
+    mod.Info("Starting NFQUEUE handler...")
     var ok bool
-    var sym plugin.Symbol
 
-    if mod.plugin, err = plugin.Open(mod.pluginPath); err != nil {
-        return
-    } else if sym, err = mod.plugin.Lookup("OnPacket"); err != nil {
-        return
-    } else if mod.queueCb, ok = sym.(func(*nfqueue.Payload) int); !ok {
-        return fmt.Errorf("Symbol OnPacket is not a valid callback function.")
-    }
-
+    // Create the NFQUEUE handler.
     mod.queue = new(nfqueue.Queue)
-    if err = mod.queue.SetCallback(dummyCallback); err != nil {
+    if err = mod.queue.SetCallback(OnRDPConnection); err != nil {
         return
     } else if err = mod.queue.Init(); err != nil {
         return
@@ -185,14 +189,21 @@ func (mod *RdpProxy) Configure() (err error) {
     return nil
 }
 
-func OnRDPConnection(payload *nfqueue.Payload) int {
+func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
     log.Info("New Connection: %v", payload)
+
+    // 1. Check if the destination IP already has a PYRDP session active, if so, do nothing.
+    // 2. Otherwise:
+    //   2.1. Spawn a PYRDP instance on a fresh port
+    //   2.2. Add a NAT rule in the firewall for this particular target IP
+    // Force a retransmit to trigger the new firewall rules.
     // TODO: Find a more efficient way to do this.
-    payload.SetVerdict(nfqueue.NF_DROP) // Force a retransmit to trigger the new firewall rules.
-    return 0
+    payload.SetVerdict(nfqueue.NF_DROP)
 }
-func dummyCallback(payload *nfqueue.Payload) int {
-    return mod.queueCb(payload)
+
+// NFQUEUE needs a raw function.
+func OnRDPConnection(payload *nfqueue.Payload) int {
+    return mod.handleRdpConnection()
 }
 
 func (mod *RdpProxy) Start() error {
