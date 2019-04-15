@@ -190,12 +190,15 @@ func (mod *RdpProxy) Configure() (err error) {
 }
 
 func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
-    log.Info("New Connection: %v", payload)
 
-    // 1. Check if the destination IP already has a PYRDP session active, if so, do nothing.
-    // 2. Otherwise:
-    //   2.1. Spawn a PYRDP instance on a fresh port
-    //   2.2. Add a NAT rule in the firewall for this particular target IP
+    // 1. Determine source and target addresses.
+     p := gopacket.NewPacket(payload, layers.LayerTypeEthernet, gopacket.NoCopy)
+
+    log.Info("New Connection: %v", payload)
+    // 2. Check if the destination IP already has a PYRDP session active, if so, do nothing.
+    // 3. Otherwise:
+    //   3.1. Spawn a PYRDP instance on a fresh port
+    //   3.2. Add a NAT rule in the firewall for this particular target IP
     // Force a retransmit to trigger the new firewall rules.
     // TODO: Find a more efficient way to do this.
     payload.SetVerdict(nfqueue.NF_DROP)
