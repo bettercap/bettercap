@@ -22,10 +22,10 @@ type RdpProxy struct {
     done       chan bool
     queue      *nfqueue.Queue
     queueNum   int
-    queueCb    nfqueue.Callback
     port       int
     start_port int
-    targets    net.IPv4[]
+    cmd        string
+    targets    string // TODO
 }
 
 var mod *RdpProxy
@@ -35,12 +35,11 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         SessionModule: session.NewSessionModule("rdp.proxy", s),
         done:          make(chan bool),
         queue:         nil,
-        queueCb:       nil,
-        port:          0,
-        start_port:    40000,
-
         queueNum:      0,
-        chainName:     "OUTPUT",
+        port:          0,
+        startPort:     40000,
+        cmd:           nil,
+        targets:       nil,
     }
 
     mod.AddHandler(session.NewModuleHandler("rdp.proxy on", "", "Start the RDP proxy.",
@@ -53,8 +52,11 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
             return mod.Stop()
         }))
 
-    mod.AddParam(session.NewIntParameter("rdp.proxy.queue.num", "0", "NFQUEUE number to bind to."))
-    mod.AddParam(session.NewIntParameter("rdp.proxy.port", "3389", "RDP port to intercept."))
+    mod.AddParam(session.NewIntParameter("rdp.proxy.queue.num",  "0",              "NFQUEUE number to bind to."))
+    mod.AddParam(session.NewIntParameter("rdp.proxy.port",       "3389",           "RDP port to intercept."))
+    mod.AddParam(session.NewIntParameter("rdp.proxy.start",      "40000",          "Starting port for pyrdp sessionss"))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm",     "The PyRDP base command to launch the man-in-the-middle."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.targets",  "<All Subnets>", "A comma delimited list of destination IPs or CIDRs to target."))
 
     /* NOTES
      * - The RDP port
@@ -76,9 +78,6 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
     // TODO: Should support comma separated subnets
     // mod.AddParam(session.NewStringParameter("rdp.proxy.targets", "3389", session.IPv4RangeValidator "RDP port to intercept."))
 
-    mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "", "Starting port for pyrdp sessionss"))
-    mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm", "The PyRDP base command to launch the man-in-the-middle."))
-    mod.AddParam(session.NewStringParameter("rdp.proxy.targets", "<All Subnets>", "A comma delimited list of destination IPs or CIDRs to target."))
 
     return mod
 }
