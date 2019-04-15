@@ -1,7 +1,7 @@
 package rdp_proxy
 
 // TESTING:
-// set arp.spoof.targets '192.168.151.174'
+//
 import (
     "fmt"
     "net"
@@ -41,7 +41,7 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         done:          make(chan bool),
         queue:         nil,
         queueNum:      0,
-        port:          0,
+        port:          3389,
         startPort:     40000,
         cmd:           "pyrdp-mitm",
         targets:       "<All Subnets>",
@@ -110,20 +110,13 @@ func (mod *RdpProxy) destroyQueue() {
     mod.queue = nil
 }
 
-// "iptables -I 1 -p tcp -m tcp --dport 3389 -d 10.0.0.0/24 -j NFQUEUE --queue-num 0 --queue-bypass"
-
-
 // Starts or stops a particular proxy instances.
-func (mod *RdpProxy) proxy(target net.Addr) (err error) {
-    args := []string{
-        "-j", "NFQUEUE",
-        "--queue-num", fmt.Sprintf("%d", mod.queueNum),
-        "--queue-bypass",
-    }
-
-    mod.Debug("iptables %s", args)
-
-    // _, err = core.Exec("iptables", args)
+func (mod *RdpProxy) pyRdp(target net.Addr) (err error) {
+    _, err = core.Exec("iptables", []string { "-t", "nat",
+        "-I",  "BCAPRDP", "1",
+        "-p" "tcp" "--dport", fmt.Sprintf("%d", mod.port),
+        "-j" "REDIRECT" "--to-ports", fmt.Sprintf("%d", mod.instancePort),
+    })
     return
 }
 
@@ -155,7 +148,6 @@ func (mod *RdpProxy) configureFirewall(enable bool) (err error) {
 
     return
 }
-
 
 func (mod *RdpProxy) Configure() (err error) {
     golog.SetOutput(ioutil.Discard)
@@ -191,8 +183,10 @@ func (mod *RdpProxy) Configure() (err error) {
 func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
 
     // 1. Determine source and target addresses.
-     p := gopacket.NewPacket(payload.Data, layers.LayerTypeEthernet, gopacket.NoCopy)
-    mod.Info("New Connection: %v", p)
+    p := gopacket.NewPacket(payload.Data, layers.LayerTypeIPv4, gopacket.Default)
+    src, sport := p.NetworkLayer().NetworkFlow().Src(), p.TransportLayer().TransportFlow().Src()
+    dst, dport := p.NetworkLayer().NetworkFlow().Dst(), p.TransportLayer().TransportFlow().Dst()
+    mod.Info("Connection [%v:%v -> %v:%v]", src, sport, dst, dport)
 
     // 2. Check if the destination IP already has a PYRDP session active, if so, do nothing.
     // 3. Otherwise:
