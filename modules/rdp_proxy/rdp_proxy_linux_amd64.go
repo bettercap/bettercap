@@ -1,11 +1,10 @@
-package packet_proxy
+package rdp_proxy
 
 import (
     "fmt"
+    "net"
     "io/ioutil"
     golog "log"
-    "plugin"
-    "strings"
     "syscall"
 
     "github.com/bettercap/bettercap/core"
@@ -15,8 +14,8 @@ import (
     "github.com/google/gopacket"
     "github.com/google/gopacket/layers"
 
-    "github.com/evilsocket/islazy/fs"
-    "github.com/evilsocket/islazy/tui"
+    // "github.com/evilsocket/islazy/fs"
+    // "github.com/evilsocket/islazy/tui"
 )
 
 type RdpProxy struct {
@@ -25,7 +24,7 @@ type RdpProxy struct {
     queue      *nfqueue.Queue
     queueNum   int
     port       int
-    start_port int
+    startPort  int
     cmd        string
     targets    string // TODO
 }
@@ -40,8 +39,8 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         queueNum:      0,
         port:          0,
         startPort:     40000,
-        cmd:           nil,
-        targets:       nil,
+        cmd:           "pyrdp-mitm",
+        targets:       "<All Subnet>",
     }
 
     mod.AddHandler(session.NewModuleHandler("rdp.proxy on", "", "Start the RDP proxy.",
@@ -57,8 +56,8 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
     mod.AddParam(session.NewIntParameter("rdp.proxy.queue.num",  "0",              "NFQUEUE number to bind to."))
     mod.AddParam(session.NewIntParameter("rdp.proxy.port",       "3389",           "RDP port to intercept."))
     mod.AddParam(session.NewIntParameter("rdp.proxy.start",      "40000",          "Starting port for pyrdp sessionss"))
-    mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm",     "The PyRDP base command to launch the man-in-the-middle."))
-    mod.AddParam(session.NewStringParameter("rdp.proxy.targets",  "<All Subnets>", "A comma delimited list of destination IPs or CIDRs to target."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm",     "", "The PyRDP base command to launch the man-in-the-middle."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.targets",  "<All Subnets>", "", "A comma delimited list of destination IPs or CIDRs to target."))
 
     /* NOTES
      * - The RDP port
@@ -106,43 +105,37 @@ func (mod *RdpProxy) destroyQueue() {
     mod.queue = nil
 }
 
-// Setup the proxy chain
-"iptables -t nat -N BCAPRDP" // Create RDP chain
-"iptables -t nat -X BCAPRDP" // Delete RDP chain
-"iptables -t nat -I 1 PREROUTING -j BCAPRDP" // Go to BCAPRDP immediately before anything else
-// Intercept SYNS (TODO: -m conntrack --cstate=new) ?
-"iptables -I 1 -p tcp -m tcp --dport 3389 -d 10.0.0.0/24 -j NFQUEUE --queue-num 0 --queue-bypass"
+// "iptables -I 1 -p tcp -m tcp --dport 3389 -d 10.0.0.0/24 -j NFQUEUE --queue-num 0 --queue-bypass"
 
 
 // Starts or stops a particular proxy instances.
-func (mod *RdpProxy) doProxy(target net.IPv4, enable bool) (err error) {
-
-    // Configure the firewall.
-    action := "-A"
-    if !enable {
-        action = "-D"
-    }
-
+func (mod *RdpProxy) proxy(target net.Addr) (err error) {
     args := []string{
-        action, mod.chainName,
-    }
-
-    if mod.rule != "" {
-        rule := strings.Split(mod.rule, " ")
-        args = append(args, rule...)
-    }
-
-    args = append(args, []string{
         "-j", "NFQUEUE",
         "--queue-num", fmt.Sprintf("%d", mod.queueNum),
         "--queue-bypass",
-    }...)
+    }
 
     mod.Debug("iptables %s", args)
 
-    _, err = core.Exec("iptables", args)
+    // _, err = core.Exec("iptables", args)
     return
 }
+
+func (mod *RdpProxy) configureFirewall(enable bool) (err error) {
+    chain := []string { "-t", "nat", "-N", "BCAPRDP" }
+    nat   := []string { "-t", "nat", "-I", "1", "PREROUTING", "-j", "BCAPRDP" }
+
+    if !enable {
+        chain = []string { "-t", "nat", "-X", "BCAPRDP" }
+        nat   = []string { "-t", "nat", "-D", "PREROUTING", "-j", "BCAPRDP" }
+    }
+
+    _, err = core.Exec("iptables", chain)
+    _, err = core.Exec("iptables", nat)
+    return
+}
+
 
 func (mod *RdpProxy) Configure() (err error) {
     //
@@ -157,16 +150,11 @@ func (mod *RdpProxy) Configure() (err error) {
 
     if err, mod.queueNum = mod.IntParam("packet.proxy.queue.num"); err != nil {
         return
-    } else if err, mod.chainName = mod.StringParam("packet.proxy.chain"); err != nil {
-        return
-    } else if err, mod.rule = mod.StringParam("packet.proxy.rule"); err != nil {
-        return
-    } else if err, mod.pluginPath = mod.StringParam("packet.proxy.plugin"); err != nil {
-        return
+    // } else if err, mod.pluginPath = mod.StringParam("packet.proxy.plugin"); err != nil {
+    //     return
     }
 
     mod.Info("Starting NFQUEUE handler...")
-    var ok bool
 
     // Create the NFQUEUE handler.
     mod.queue = new(nfqueue.Queue)
@@ -182,7 +170,7 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if err = mod.queue.SetMode(nfqueue.NFQNL_COPY_PACKET); err != nil {
         return
-    } else if err = mod.runRule(true); err != nil {
+    } else if err = mod.configureFirewall(true); err != nil {
         return
     }
 
@@ -192,9 +180,9 @@ func (mod *RdpProxy) Configure() (err error) {
 func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
 
     // 1. Determine source and target addresses.
-     p := gopacket.NewPacket(payload, layers.LayerTypeEthernet, gopacket.NoCopy)
+     p := gopacket.NewPacket(payload.Data, layers.LayerTypeEthernet, gopacket.NoCopy)
 
-    log.Info("New Connection: %v", payload)
+    mod.Info("New Connection: %v", p)
     // 2. Check if the destination IP already has a PYRDP session active, if so, do nothing.
     // 3. Otherwise:
     //   3.1. Spawn a PYRDP instance on a fresh port
@@ -202,11 +190,12 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
     // Force a retransmit to trigger the new firewall rules.
     // TODO: Find a more efficient way to do this.
     payload.SetVerdict(nfqueue.NF_DROP)
+    return 0
 }
 
 // NFQUEUE needs a raw function.
 func OnRDPConnection(payload *nfqueue.Payload) int {
-    return mod.handleRdpConnection()
+    return mod.handleRdpConnection(payload)
 }
 
 func (mod *RdpProxy) Start() error {
@@ -230,7 +219,7 @@ func (mod *RdpProxy) Start() error {
 func (mod *RdpProxy) Stop() error {
     return mod.SetRunning(false, func() {
         mod.queue.StopLoop()
-        mod.runRule(false)
+        mod.configureFirewall(false)
         <-mod.done
     })
 }
