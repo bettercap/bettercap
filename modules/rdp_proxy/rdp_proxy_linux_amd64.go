@@ -225,7 +225,9 @@ func (mod *RdpProxy) Start() error {
 }
 
 func (mod *RdpProxy) Stop() error {
-    mod.Info("Stopping!")
+    for _, cmd := range mod.active {
+        cmd.Process.Kill() // FIXME: More graceful way to shutdown?
+    }
     return mod.SetRunning(false, func() {
         mod.queue.StopLoop()
         mod.configureFirewall(false)
