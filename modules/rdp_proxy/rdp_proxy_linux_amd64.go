@@ -13,9 +13,6 @@ import (
     "github.com/chifflier/nfqueue-go/nfqueue"
     "github.com/google/gopacket"
     "github.com/google/gopacket/layers"
-
-    // "github.com/evilsocket/islazy/fs"
-    // "github.com/evilsocket/islazy/tui"
 )
 
 type RdpProxy struct {
@@ -71,16 +68,6 @@ func (mod RdpProxy) Description() string {
 
 func (mod RdpProxy) Author() string {
     return "Alexandre Beaulieu <alex@segfault.me>"
-}
-
-func (mod *RdpProxy) destroyQueue() {
-    if mod.queue == nil {
-        return
-    }
-
-    mod.queue.DestroyQueue()
-    mod.queue.Close()
-    mod.queue = nil
 }
 
 // Adds the firewall rule for proxy instance.
@@ -225,12 +212,26 @@ func (mod *RdpProxy) Start() error {
 }
 
 func (mod *RdpProxy) Stop() error {
-    for _, cmd := range mod.active {
-        cmd.Process.Kill() // FIXME: More graceful way to shutdown?
-    }
+
+
     return mod.SetRunning(false, func() {
         mod.queue.StopLoop()
         mod.configureFirewall(false)
+        for _, cmd := range mod.active {
+            cmd.Process.Kill() // FIXME: More graceful way to shutdown proxy agents?
+        }
+
         <-mod.done
     })
 }
+
+func (mod *RdpProxy) destroyQueue() {
+    if mod.queue == nil {
+        return
+    }
+
+    mod.queue.DestroyQueue()
+    mod.queue.Close()
+    mod.queue = nil
+}
+
