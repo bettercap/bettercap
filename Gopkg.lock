@@ -60,11 +60,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c8bc90a7d67587dda6b8a90e570c411874fa01117eb383527c5e36d4fae5158a"
+  digest = "1:6b01d6818554363a129a2504033feacdfd8b9ddba998831fa57781eb90e60f32"
   name = "github.com/bettercap/recording"
   packages = ["."]
   pruneopts = "UT"
-  revision = "1396b95921b3cc1cb1cee3280c7f6be6c7f06b06"
+  revision = "3ce1dcf032e391eb321311b34cdf31c6fc9523f5"
 
 [[projects]]
   branch = "master"

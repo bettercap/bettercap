@@ -52,25 +52,6 @@ func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*
 	return req, nil
 }
 
-func (p *HTTPProxy) fixResponseHeaders(res *http.Response) {
-	res.Header.Del("Content-Security-Policy-Report-Only")
-	res.Header.Del("Content-Security-Policy")
-	res.Header.Del("Strict-Transport-Security")
-	res.Header.Del("Public-Key-Pins")
-	res.Header.Del("Public-Key-Pins-Report-Only")
-	res.Header.Del("X-Frame-Options")
-	res.Header.Del("X-Content-Type-Options")
-	res.Header.Del("X-WebKit-CSP")
-	res.Header.Del("X-Content-Security-Policy")
-	res.Header.Del("X-Download-Options")
-	res.Header.Del("X-Permitted-Cross-Domain-Policies")
-	res.Header.Del("X-Xss-Protection")
-	res.Header.Set("Allow-Access-From-Same-Origin", "*")
-	res.Header.Set("Access-Control-Allow-Origin", "*")
-	res.Header.Set("Access-Control-Allow-Methods", "*")
-	res.Header.Set("Access-Control-Allow-Headers", "*")
-}
-
 func (p *HTTPProxy) getHeader(res *http.Response, header string) string {
 	header = strings.ToLower(header)
 	for name, values := range res.Header {
@@ -127,8 +108,6 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 
 	if p.shouldProxy(res.Request) {
 		p.Debug("> %s %s %s%s", res.Request.RemoteAddr, res.Request.Method, res.Request.Host, res.Request.URL.Path)
-
-		p.fixResponseHeaders(res)
 
 		p.stripper.Process(res, ctx)
 

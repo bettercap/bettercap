@@ -283,10 +283,31 @@ func (s *SSLStripper) isMaxRedirs(hostname string) bool {
 	return false
 }
 
+func (s *SSLStripper) fixResponseHeaders(res *http.Response) {
+	res.Header.Del("Content-Security-Policy-Report-Only")
+	res.Header.Del("Content-Security-Policy")
+	res.Header.Del("Strict-Transport-Security")
+	res.Header.Del("Public-Key-Pins")
+	res.Header.Del("Public-Key-Pins-Report-Only")
+	res.Header.Del("X-Frame-Options")
+	res.Header.Del("X-Content-Type-Options")
+	res.Header.Del("X-WebKit-CSP")
+	res.Header.Del("X-Content-Security-Policy")
+	res.Header.Del("X-Download-Options")
+	res.Header.Del("X-Permitted-Cross-Domain-Policies")
+	res.Header.Del("X-Xss-Protection")
+	res.Header.Set("Allow-Access-From-Same-Origin", "*")
+	res.Header.Set("Access-Control-Allow-Origin", "*")
+	res.Header.Set("Access-Control-Allow-Methods", "*")
+	res.Header.Set("Access-Control-Allow-Headers", "*")
+}
+
 func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 	if !s.enabled {
 		return
 	}
+
+	s.fixResponseHeaders(res)
 
 	// is the server redirecting us?
 	if res.StatusCode != 200 {
