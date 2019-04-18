@@ -359,10 +359,13 @@ func (h *HCI) handleConnection(b []byte) {
 		return
 	}
 	h.plistmu.Lock()
-	pd := h.plist[ep.PeerAddress]
-	h.plistmu.Unlock()
-	pd.Conn = c
-	h.AcceptSlaveHandler(pd)
+	if pd := h.plist[ep.PeerAddress]; pd != nil {
+		h.plistmu.Unlock()
+		pd.Conn = c
+		h.AcceptSlaveHandler(pd)
+	} else {
+		log.Printf("HCI: can't find data for %v", ep.PeerAddress)
+	}
 }
 
 func (h *HCI) handleDisconnectionComplete(b []byte) error {
