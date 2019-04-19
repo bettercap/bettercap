@@ -25,7 +25,7 @@ func NewGPS(s *session.Session) *GPS {
 	mod := &GPS{
 		SessionModule: session.NewSessionModule("gps", s),
 		serialPort:    "/dev/ttyUSB0",
-		baudRate:      19200,
+		baudRate:      4800,
 	}
 
 	mod.AddParam(session.NewStringParameter("gps.device",
