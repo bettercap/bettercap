@@ -123,7 +123,12 @@ func (l *TriggerList) Dispatch(e session.Event) (ident string, cmd string, err e
 				if node := jsonquery.FindOne(doc, expr); node != nil {
 					cmd = strings.Replace(cmd, m, node.InnerText(), -1)
 				} else {
-					err = fmt.Errorf("error while parsing expressionfor trigger %s: '%s' doesn't resolve any object", tui.Bold(id), expr, expr, err)
+					err = fmt.Errorf(
+						"error while parsing expressionfor trigger %s: '%s' doesn't resolve any object: %v",
+						tui.Bold(id),
+						expr,
+						err,
+					)
 					return
 				}
 			}
