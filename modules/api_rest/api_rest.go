@@ -221,7 +221,7 @@ func (mod *RestAPI) Configure() error {
 			mod.Debug("%+v", cfg)
 			mod.Info("generating TLS key to %s", mod.keyFile)
 			mod.Info("generating TLS certificate to %s", mod.certFile)
-			if err := tls.Generate(cfg, mod.certFile, mod.keyFile); err != nil {
+			if err := tls.Generate(cfg, mod.certFile, mod.keyFile, false); err != nil {
 				return err
 			}
 		} else {

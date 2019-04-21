@@ -74,7 +74,7 @@ func CertConfigFromModule(prefix string, m session.SessionModule) (err error, cf
 	return nil, cfg
 }
 
-func CreateCertificate(cfg CertConfig) (error, *rsa.PrivateKey, []byte) {
+func CreateCertificate(cfg CertConfig, ca bool) (error, *rsa.PrivateKey, []byte) {
 	priv, err := rsa.GenerateKey(rand.Reader, cfg.Bits)
 	if err != nil {
 		return err, nil, nil
@@ -103,7 +103,7 @@ func CreateCertificate(cfg CertConfig) (error, *rsa.PrivateKey, []byte) {
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
-		IsCA: true,
+		IsCA: ca,
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
@@ -114,7 +114,7 @@ func CreateCertificate(cfg CertConfig) (error, *rsa.PrivateKey, []byte) {
 	return nil, priv, cert
 }
 
-func Generate(cfg CertConfig, certPath string, keyPath string) error {
+func Generate(cfg CertConfig, certPath string, keyPath string, ca bool) error {
 	keyFile, err := os.Create(keyPath)
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func Generate(cfg CertConfig, certPath string, keyPath string) error {
 	}
 	defer certFile.Close()
 
-	err, priv, cert := CreateCertificate(cfg)
+	err, priv, cert := CreateCertificate(cfg, ca)
 	if err != nil {
 		return err
 	}

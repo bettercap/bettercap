@@ -145,7 +145,7 @@ func (mod *HttpsProxy) Configure() error {
 		mod.Debug("%+v", cfg)
 		mod.Info("generating proxy certification authority TLS key to %s", keyFile)
 		mod.Info("generating proxy certification authority TLS certificate to %s", certFile)
-		if err := tls.Generate(cfg, certFile, keyFile); err != nil {
+		if err := tls.Generate(cfg, certFile, keyFile, true); err != nil {
 			return err
 		}
 	} else {

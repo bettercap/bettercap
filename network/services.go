@@ -1,7 +1,7 @@
 package network
 
 var portServices = map[string]map[int]string{
-	"tcp": map[int]string{
+	"tcp": {
 		6566:  "sane-port",
 		1094:  "rootd",
 		4557:  "fax",
@@ -316,7 +316,7 @@ var portServices = map[string]map[int]string{
 		105:   "csnet-ns",
 		4600:  "distmp3",
 	},
-	"udp": map[int]string{
+	"udp": {
 		2086:  "gnunet",
 		3493:  "nut",
 		4373:  "remctl",

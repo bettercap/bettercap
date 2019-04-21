@@ -91,9 +91,10 @@
   revision = "9d40249d3c2f14d1a9d75e070a738362adeb5a83"
 
 [[projects]]
-  digest = "1:5247f5757ba31623c464db149dc272a37604516d8fbae1561b36e0d7cee070a5"
+  digest = "1:a6346055dbca49d489f048f55c6efb0451642c8f94e649160b50e571ac6ce738"
   name = "github.com/evilsocket/islazy"
   packages = [
+    "async",
     "data",
     "fs",
     "log",
@@ -293,9 +294,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b45576bdf553b4c64ff798345b3256e49a157f8b480d29c8c0a89f09119d6c5a"
+  digest = "1:013e964f9a85c1b16bb9d76175181681c18d369ca29d519dc4238b48099c523b"
   name = "golang.org/x/net"
-  packages = ["bpf"]
+  packages = [
+    "bpf",
+    "html",
+    "html/atom",
+  ]
   pruneopts = "UT"
   revision = "afa5a82059c6356159f699d81beff22a81842231"
 
@@ -331,6 +336,7 @@
     "github.com/chifflier/nfqueue-go/nfqueue",
     "github.com/dustin/go-humanize",
     "github.com/elazarl/goproxy",
+    "github.com/evilsocket/islazy/async",
     "github.com/evilsocket/islazy/data",
     "github.com/evilsocket/islazy/fs",
     "github.com/evilsocket/islazy/log",
@@ -356,6 +362,7 @@
     "github.com/mdlayher/raw",
     "github.com/robertkrimen/otto",
     "github.com/tarm/serial",
+    "golang.org/x/net/html",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
