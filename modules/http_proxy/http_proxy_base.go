@@ -25,6 +25,7 @@ import (
 
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/log"
+	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 )
 
@@ -62,6 +63,14 @@ func stripPort(s string) string {
 	return s[:ix]
 }
 
+type dummyLogger struct {
+	p *HTTPProxy
+}
+
+func (l dummyLogger) Printf(format string, v ...interface{}) {
+	l.p.Info("[goproxy.log] %s", str.Trim(fmt.Sprintf(format, v...)))
+}
+
 func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	p := &HTTPProxy{
 		Name:      "http.proxy",
@@ -76,7 +85,7 @@ func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	}
 
 	p.Proxy.Verbose = false
-	p.Proxy.Logger.SetOutput(ioutil.Discard)
+	p.Proxy.Logger = dummyLogger{p}
 
 	p.Proxy.NonproxyHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if p.doProxy(req) {

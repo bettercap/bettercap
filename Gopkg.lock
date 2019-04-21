@@ -84,11 +84,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f77360df85b686035d0bff3b3988b29eb7ce415328e37e82cc5ec8439822911c"
+  digest = "1:d754d24358cf013301a804cdab95cbcbe0da83902dc24ee20e98a899c4dd48e0"
   name = "github.com/elazarl/goproxy"
   packages = ["."]
   pruneopts = "UT"
-  revision = "2ce16c963a8ac5bd6af851d4877e38701346983f"
+  revision = "9d40249d3c2f14d1a9d75e070a738362adeb5a83"
 
 [[projects]]
   digest = "1:5247f5757ba31623c464db149dc272a37604516d8fbae1561b36e0d7cee070a5"
@@ -158,15 +158,15 @@
   name = "github.com/google/gousb"
   packages = ["."]
   pruneopts = "UT"
-  revision = "d0c05ab7f70d6f6dc60ecd184517cb5e25860657"
+  revision = "64d82086770b8b671e1e7f162372dd37f1f5efba"
 
 [[projects]]
-  digest = "1:ca59b1175189b3f0e9f1793d2c350114be36eaabbe5b9f554b35edee1de50aea"
+  digest = "1:d5f97fc268267ec1b61c3453058c738246fc3e746f14b1ae25161513b7367b0c"
   name = "github.com/gorilla/mux"
   packages = ["."]
   pruneopts = "UT"
-  revision = "a7962380ca08b5a188038c69871b8d3fbdf31e89"
-  version = "v1.7.0"
+  revision = "c5c6c98bc25355028a63748a498942a6398ccd22"
+  version = "v1.7.1"
 
 [[projects]]
   digest = "1:7b5c6e2eeaa9ae5907c391a91c132abfd5c9e8a784a341b5625e750c67e6825d"
@@ -297,15 +297,15 @@
   name = "golang.org/x/net"
   packages = ["bpf"]
   pruneopts = "UT"
-  revision = "74de082e2cca95839e88aa0aeee5aadf6ce7710f"
+  revision = "afa5a82059c6356159f699d81beff22a81842231"
 
 [[projects]]
   branch = "master"
-  digest = "1:cd9a35e005d99871df9dc2354bc9dd8f09d186e2efa6affae6593f5ef93876b0"
+  digest = "1:dbe12489f5cb00d492e275a29528c9e336dbe5af75ce366f81c1911faf10733e"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "baf5eb976a8cd65845293cd814ea151018552292"
+  revision = "e8e3143a4f4a00f1fafef0dd82ba78223281b01b"
 
 [[projects]]
   digest = "1:9935525a8c49b8434a0b0a54e1980e94a6fae73aaff45c5d33ba8dff69de123e"

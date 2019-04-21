@@ -100,6 +100,52 @@ return a precanned text response saying "do not waste your time".
 
 See additional examples in the examples directory.
 
+
+# Type of handlers for manipulating connect/req/resp behavior
+
+There are 3 kinds of useful handlers to manipulate the behavior, as follows:
+
+```go
+// handler called after receiving HTTP CONNECT from the client, and before proxy establish connection 
+// with destination host
+httpsHandlers   []HttpsHandler
+    
+// handler called before proxy send HTTP request to destination host
+reqHandlers     []ReqHandler 
+    
+// handler called after proxy receives HTTP Response from destination host, and before proxy forward 
+// the Response to the client.
+respHandlers    []RespHandler 
+```
+
+Depending on what you want to manipulate, the ways to add handlers to each handler list are:
+
+```go
+// Add handlers to httpsHandlers 
+proxy.OnRequest(Some ReqConditions).HandleConnect(YourHandlerFunc())
+
+// Add handlers to reqHandlers
+proxy.OnRequest(Some ReqConditions).Do(YourReqHandlerFunc())
+
+// Add handlers to respHandlers
+proxy.OnResponse(Some RespConditions).Do(YourRespHandlerFunc())
+```
+
+For example:
+
+```go
+// This rejects the HTTPS request to *.reddit.com during HTTP CONNECT phase
+proxy.OnRequest(goproxy.ReqHostMatches(regexp.MustCompile("reddit.*:443$"))).HandleConnect(goproxy.RejectConnect)
+
+// This will NOT reject the HTTPS request with URL ending with gif, due to the fact that proxy 
+// only got the URL.Hostname and URL.Port during the HTTP CONNECT phase if the scheme is HTTPS, which is
+// quiet common these days.
+proxy.OnRequest(goproxy.UrlMatches(regexp.MustCompile(`.*gif$`))).HandleConnect(goproxy.RejectConnect)
+
+// The correct way to manipulate the HTTP request using URL.Path as condition is:
+proxy.OnRequest(goproxy.UrlMatches(regexp.MustCompile(`.*gif$`))).Do(YourReqHandlerFunc())
+```
+
 # What's New
 
 1. Ability to `Hijack` CONNECT requests. See

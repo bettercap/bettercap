@@ -1,6 +1,7 @@
 package goproxy
 
 import (
+	"crypto/tls"
 	"net/http"
 	"regexp"
 )
@@ -19,12 +20,17 @@ type ProxyCtx struct {
 	// call of RespHandler
 	UserData interface{}
 	// Will connect a request to a response
-	Session int64
-	proxy   *ProxyHttpServer
+	Session   int64
+	certStore CertStorage
+	proxy     *ProxyHttpServer
 }
 
 type RoundTripper interface {
 	RoundTrip(req *http.Request, ctx *ProxyCtx) (*http.Response, error)
+}
+
+type CertStorage interface {
+	Fetch(hostname string, gen func() (*tls.Certificate, error)) (*tls.Certificate, error)
 }
 
 type RoundTripperFunc func(req *http.Request, ctx *ProxyCtx) (*http.Response, error)
