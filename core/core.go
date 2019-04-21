@@ -8,8 +8,8 @@ import (
 )
 
 func UniqueInts(a []int, sorted bool) []int {
-	tmp := make(map[int]bool)
-	uniq := make([]int, 0)
+	tmp := make(map[int]bool, len(a))
+	uniq := make([]int, 0, len(a))
 
 	for _, n := range a {
 		tmp[n] = true
