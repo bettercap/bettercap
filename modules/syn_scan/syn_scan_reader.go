@@ -1,7 +1,6 @@
 package syn_scan
 
 import (
-	"net"
 	"sync/atomic"
 
 	"github.com/bettercap/bettercap/network"
@@ -17,15 +16,6 @@ type OpenPort struct {
 	Banner  string `json:"banner"`
 	Service string `json:"service"`
 	Port    int    `json:"port"`
-}
-
-func (mod *SynScanner) isAddressInRange(ip net.IP) bool {
-	for _, a := range mod.addresses {
-		if a.Equal(ip) {
-			return true
-		}
-	}
-	return false
 }
 
 func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
@@ -46,7 +36,7 @@ func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
 		return
 	}
 
-	if mod.isAddressInRange(ip.SrcIP) && tcp.DstPort == synSourcePort && tcp.SYN && tcp.ACK {
+	if tcp.DstPort == synSourcePort && tcp.SYN && tcp.ACK {
 		atomic.AddUint64(&mod.stats.openPorts, 1)
 
 		from := ip.SrcIP.String()

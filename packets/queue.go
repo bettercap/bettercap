@@ -33,8 +33,6 @@ type Stats struct {
 	Errors      uint64 `json:"errors"`
 }
 
-type PacketCallback func(pkt gopacket.Packet)
-
 type Queue struct {
 	sync.RWMutex
 
@@ -49,7 +47,6 @@ type Queue struct {
 	source     *gopacket.PacketSource
 	srcChannel chan gopacket.Packet
 	writes     *sync.WaitGroup
-	pktCb      PacketCallback
 	active     bool
 }
 
@@ -69,7 +66,6 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 		writes: &sync.WaitGroup{},
 		iface:  iface,
 		active: !iface.IsMonitor(),
-		pktCb:  nil,
 	}
 
 	if q.active {
@@ -105,21 +101,6 @@ func (q *Queue) MarshalJSON() ([]byte, error) {
 	})
 
 	return json.Marshal(doc)
-}
-
-func (q *Queue) OnPacket(cb PacketCallback) {
-	q.Lock()
-	defer q.Unlock()
-	q.pktCb = cb
-}
-
-func (q *Queue) onPacketCallback(pkt gopacket.Packet) {
-	q.RLock()
-	defer q.RUnlock()
-
-	if q.pktCb != nil {
-		q.pktCb(pkt)
-	}
 }
 
 func (q *Queue) trackProtocols(pkt gopacket.Packet) {
@@ -206,7 +187,6 @@ func (q *Queue) worker() {
 		pktSize := uint64(len(pkt.Data()))
 
 		q.TrackPacket(pktSize)
-		q.onPacketCallback(pkt)
 
 		// decode eth and ipv4 layers
 		leth := pkt.Layer(layers.LayerTypeEthernet)

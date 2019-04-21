@@ -3,7 +3,6 @@ package syn_scan
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -11,10 +10,10 @@ import (
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
-	"github.com/malfunkt/iprange"
-
 	"github.com/evilsocket/islazy/async"
-	"github.com/evilsocket/islazy/str"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/pcap"
 )
 
 const synSourcePort = 666
@@ -33,6 +32,8 @@ type SynScanner struct {
 	addresses     []net.IP
 	startPort     int
 	endPort       int
+	handle        *pcap.Handle
+	packets       chan gopacket.Packet
 	progressEvery time.Duration
 	stats         synScannerStats
 	waitGroup     *sync.WaitGroup
@@ -97,44 +98,6 @@ func NewSynScanner(s *session.Session) *SynScanner {
 	return mod
 }
 
-func (mod *SynScanner) parseTargets(arg string) error {
-	if list, err := iprange.Parse(arg); err != nil {
-		return fmt.Errorf("error while parsing IP range '%s': %s", arg, err)
-	} else {
-		mod.addresses = list.Expand()
-	}
-	return nil
-}
-
-func (mod *SynScanner) parsePorts(args []string) (err error) {
-	argc := len(args)
-	mod.stats.totProbes = 0
-	mod.stats.doneProbes = 0
-	mod.startPort = 1
-	mod.endPort = 65535
-
-	if argc > 1 && str.Trim(args[1]) != "" {
-		if mod.startPort, err = strconv.Atoi(str.Trim(args[1])); err != nil {
-			return fmt.Errorf("invalid start port %s: %s", args[1], err)
-		} else if mod.startPort > 65535 {
-			mod.startPort = 65535
-		}
-		mod.endPort = mod.startPort
-	}
-
-	if argc > 2 && str.Trim(args[2]) != "" {
-		if mod.endPort, err = strconv.Atoi(str.Trim(args[2])); err != nil {
-			return fmt.Errorf("invalid end port %s: %s", args[2], err)
-		}
-	}
-
-	if mod.endPort < mod.startPort {
-		return fmt.Errorf("end port %d is greater than start port %d", mod.endPort, mod.startPort)
-	}
-
-	return
-}
-
 func (mod *SynScanner) Name() string {
 	return "syn.scan"
 }
@@ -147,7 +110,14 @@ func (mod *SynScanner) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (mod *SynScanner) Configure() error {
+func (mod *SynScanner) Configure() (err error) {
+	if mod.Running() {
+		return session.ErrAlreadyStarted(mod.Name())
+	} else if mod.handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+		return err
+	} else if err = mod.handle.SetBPFFilter(fmt.Sprintf("tcp dst port %d", synSourcePort)); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -180,10 +150,12 @@ func (mod *SynScanner) showProgress() error {
 func (mod *SynScanner) Stop() error {
 	mod.Info("stopping ...")
 	return mod.SetRunning(false, func() {
+		mod.packets <- nil
 		mod.waitGroup.Wait()
 		mod.showProgress()
 		mod.addresses = []net.IP{}
 		mod.State.Store("progress", 0.0)
+		mod.State.Store("scanning", &mod.addresses)
 	})
 }
 
@@ -219,14 +191,21 @@ func (mod *SynScanner) scanWorker(job async.Job) {
 }
 
 func (mod *SynScanner) synScan() error {
+	if err := mod.Configure(); err != nil {
+		return err
+	}
+
 	mod.SetRunning(true, func() {
+		mod.waitGroup.Add(1)
+		defer mod.waitGroup.Done()
+
 		defer mod.SetRunning(false, func() {
 			mod.addresses = []net.IP{}
 			mod.State.Store("progress", 0.0)
+			mod.State.Store("scanning", &mod.addresses)
+			mod.packets <- nil
+			mod.handle.Close()
 		})
-
-		mod.waitGroup.Add(1)
-		defer mod.waitGroup.Done()
 
 		mod.stats.openPorts = 0
 		mod.stats.numPorts = uint64(mod.endPort - mod.startPort + 1)
@@ -247,9 +226,20 @@ func (mod *SynScanner) synScan() error {
 
 		mod.State.Store("progress", 0.0)
 
-		// set the collector
-		mod.Session.Queue.OnPacket(mod.onPacket)
-		defer mod.Session.Queue.OnPacket(nil)
+		// start the collector
+		go func() {
+			mod.waitGroup.Add(1)
+			defer mod.waitGroup.Done()
+
+			src := gopacket.NewPacketSource(mod.handle, mod.handle.LinkType())
+			mod.packets = src.Packets()
+			for packet := range mod.packets {
+				if !mod.Running() {
+					break
+				}
+				mod.onPacket(packet)
+			}
+		}()
 
 		// start to show progress every second
 		go func() {
