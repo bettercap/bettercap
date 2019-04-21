@@ -1,6 +1,7 @@
 package syn_scan
 
 import (
+	"fmt"
 	"github.com/bettercap/bettercap/network"
 
 	"github.com/evilsocket/islazy/async"
@@ -13,13 +14,6 @@ type grabberJob struct {
 	Port *OpenPort
 }
 
-var tcpBannerGrabbers = map[int]bannerGrabberFn{
-	80:   httpGrabber,
-	8080: httpGrabber,
-	443:  httpGrabber,
-	8443: httpGrabber,
-}
-
 func (mod *SynScanner) bannerGrabber(arg async.Job) {
 	job := arg.(grabberJob)
 	if job.Port.Proto != "tcp" {
@@ -28,9 +22,11 @@ func (mod *SynScanner) bannerGrabber(arg async.Job) {
 
 	ip := job.Host.IpAddress
 	port := job.Port.Port
-	fn, found := tcpBannerGrabbers[port]
-	if !found {
-		fn = tcpGrabber
+	sport := fmt.Sprintf("%d", port)
+
+	fn := tcpGrabber
+	if port == 80 || port == 443 || sport[0] == '8' {
+		fn = httpGrabber
 	}
 
 	mod.Debug("grabbing banner for %s:%d", ip, port)

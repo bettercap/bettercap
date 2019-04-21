@@ -36,6 +36,7 @@ type SynScanner struct {
 	progressEvery time.Duration
 	stats         synScannerStats
 	waitGroup     *sync.WaitGroup
+	scanQueue     *async.WorkQueue
 	bannerQueue   *async.WorkQueue
 }
 
@@ -47,7 +48,9 @@ func NewSynScanner(s *session.Session) *SynScanner {
 		progressEvery: time.Duration(1) * time.Second,
 	}
 
+	mod.scanQueue = async.NewQueue(0, mod.scanWorker)
 	mod.bannerQueue = async.NewQueue(4, mod.bannerGrabber)
+
 	mod.State.Store("scanning", &mod.addresses)
 	mod.State.Store("progress", 0.0)
 
@@ -184,6 +187,37 @@ func (mod *SynScanner) Stop() error {
 	})
 }
 
+type scanJob struct {
+	Address net.IP
+	Mac     net.HardwareAddr
+}
+
+func (mod *SynScanner) scanWorker(job async.Job) {
+	scan := job.(scanJob)
+
+	for dstPort := mod.startPort; dstPort < mod.endPort+1; dstPort++ {
+		if !mod.Running() {
+			break
+		}
+
+		atomic.AddUint64(&mod.stats.doneProbes, 1)
+
+		err, raw := packets.NewTCPSyn(mod.Session.Interface.IP, mod.Session.Interface.HW, scan.Address, scan.Mac, synSourcePort, dstPort)
+		if err != nil {
+			mod.Error("error creating SYN packet: %s", err)
+			continue
+		}
+
+		if err := mod.Session.Queue.Send(raw); err != nil {
+			mod.Error("error sending SYN packet: %s", err)
+		} else {
+			mod.Debug("sent %d bytes of SYN packet to %s for port %d", len(raw), scan.Address.String(), dstPort)
+		}
+
+		time.Sleep(time.Duration(15) * time.Millisecond)
+	}
+}
+
 func (mod *SynScanner) synScan() error {
 	mod.SetRunning(true, func() {
 		defer mod.SetRunning(false, func() {
@@ -241,28 +275,13 @@ func (mod *SynScanner) synScan() error {
 				continue
 			}
 
-			for dstPort := mod.startPort; dstPort < mod.endPort+1; dstPort++ {
-				if !mod.Running() {
-					break
-				}
-
-				atomic.AddUint64(&mod.stats.doneProbes, 1)
-
-				err, raw := packets.NewTCPSyn(mod.Session.Interface.IP, mod.Session.Interface.HW, address, mac, synSourcePort, dstPort)
-				if err != nil {
-					mod.Error("error creating SYN packet: %s", err)
-					continue
-				}
-
-				if err := mod.Session.Queue.Send(raw); err != nil {
-					mod.Error("error sending SYN packet: %s", err)
-				} else {
-					mod.Debug("sent %d bytes of SYN packet to %s for port %d", len(raw), address.String(), dstPort)
-				}
-
-				time.Sleep(time.Duration(25) * time.Millisecond)
-			}
+			mod.scanQueue.Add(async.Job(scanJob{
+				Address: address,
+				Mac:     mac,
+			}))
 		}
+
+		mod.scanQueue.WaitDone()
 	})
 
 	return nil

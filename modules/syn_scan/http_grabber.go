@@ -38,7 +38,8 @@ func httpGrabber(mod *SynScanner, ip string, port int) string {
 		},
 	}
 
-	if port == 443 || port == 8443 {
+	sport := fmt.Sprintf("%d", port)
+	if strings.Contains(sport, "443") {
 		schema = "https"
 		client = &http.Client{
 			Timeout: timeout,
