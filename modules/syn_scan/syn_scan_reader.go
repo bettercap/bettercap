@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
+	"github.com/evilsocket/islazy/async"
 )
 
 type OpenPort struct {
@@ -60,13 +62,17 @@ func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
 		}
 
 		if host != nil {
-			ports := host.Meta.GetOr("ports", map[int]OpenPort{}).(map[int]OpenPort)
+			ports := host.Meta.GetOr("ports", map[int]*OpenPort{}).(map[int]*OpenPort)
 			if _, found := ports[port]; !found {
-				ports[port] = OpenPort{
+				openPort := &OpenPort{
 					Proto:   "tcp",
 					Port:    port,
 					Service: network.GetServiceByPort(port, "tcp"),
 				}
+
+				ports[port] = openPort
+
+				mod.bannerQueue.Add(async.Job(grabberJob{host, openPort}))
 			}
 
 			host.Meta.Set("ports", ports)

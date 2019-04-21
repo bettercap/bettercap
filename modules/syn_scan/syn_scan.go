@@ -13,6 +13,7 @@ import (
 
 	"github.com/malfunkt/iprange"
 
+	"github.com/evilsocket/islazy/async"
 	"github.com/evilsocket/islazy/str"
 )
 
@@ -35,6 +36,7 @@ type SynScanner struct {
 	progressEvery time.Duration
 	stats         synScannerStats
 	waitGroup     *sync.WaitGroup
+	bannerQueue   *async.WorkQueue
 }
 
 func NewSynScanner(s *session.Session) *SynScanner {
@@ -45,6 +47,7 @@ func NewSynScanner(s *session.Session) *SynScanner {
 		progressEvery: time.Duration(1) * time.Second,
 	}
 
+	mod.bannerQueue = async.NewQueue(4, mod.bannerGrabber)
 	mod.State.Store("scanning", &mod.addresses)
 	mod.State.Store("progress", 0.0)
 
@@ -257,7 +260,7 @@ func (mod *SynScanner) synScan() error {
 					mod.Debug("sent %d bytes of SYN packet to %s for port %d", len(raw), address.String(), dstPort)
 				}
 
-				time.Sleep(time.Duration(10) * time.Millisecond)
+				time.Sleep(time.Duration(25) * time.Millisecond)
 			}
 		}
 	})
