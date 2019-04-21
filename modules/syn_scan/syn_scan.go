@@ -113,10 +113,13 @@ func (mod *SynScanner) Author() string {
 func (mod *SynScanner) Configure() (err error) {
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
-	} else if mod.handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
-		return err
-	} else if err = mod.handle.SetBPFFilter(fmt.Sprintf("tcp dst port %d", synSourcePort)); err != nil {
-		return err
+	}
+	if mod.handle == nil {
+		if mod.handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+			return err
+		} else if err = mod.handle.SetBPFFilter(fmt.Sprintf("tcp dst port %d", synSourcePort)); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -204,7 +207,6 @@ func (mod *SynScanner) synScan() error {
 			mod.State.Store("progress", 0.0)
 			mod.State.Store("scanning", &mod.addresses)
 			mod.packets <- nil
-			mod.handle.Close()
 		})
 
 		mod.stats.openPorts = 0
