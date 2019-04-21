@@ -237,12 +237,11 @@
   revision = "2a67805d7d0b0bad6c1103058981afdea583b459"
 
 [[projects]]
-  branch = "master"
-  digest = "1:34bd596081cc218eb9f14ddcc712015bed5b9b84917c6279640397f534565e72"
+  digest = "1:34fe44dd2bbe5723068e0a7a266847965a88297d383fe611e0358e556d82de09"
   name = "github.com/mdlayher/raw"
   packages = ["."]
   pruneopts = "UT"
-  revision = "b0647ab7d8b35d5b8b734462042628e5af82f7f4"
+  revision = "480b93709cce56651807d3fdeb260a5a7c4e2d5f"
 
 [[projects]]
   branch = "master"
@@ -354,6 +353,7 @@
     "github.com/malfunkt/iprange",
     "github.com/mdlayher/dhcp6",
     "github.com/mdlayher/dhcp6/dhcp6opts",
+    "github.com/mdlayher/raw",
     "github.com/robertkrimen/otto",
     "github.com/tarm/serial",
   ]
