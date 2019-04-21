@@ -39,7 +39,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 		gattDevice:    nil,
 		quit:          make(chan bool),
 		done:          make(chan bool),
-		connTimeout:   time.Duration(10) * time.Second,
+		connTimeout:   time.Duration(5) * time.Second,
 		currDevice:    nil,
 		connected:     false,
 	}
@@ -264,6 +264,7 @@ func (mod *BLERecon) enumAllTheThings(mac string) error {
 	go func() {
 		time.Sleep(mod.connTimeout)
 		if mod.isEnumerating() && !mod.connected {
+			mod.Warning("connection timeout")
 			mod.Session.Events.Add("ble.connection.timeout", mod.currDevice)
 			mod.onPeriphDisconnected(nil, nil)
 		}

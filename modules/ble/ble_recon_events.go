@@ -13,7 +13,7 @@ func (mod *BLERecon) onStateChanged(dev gatt.Device, s gatt.State) {
 	switch s {
 	case gatt.StatePoweredOn:
 		if mod.currDevice == nil {
-			mod.Info("starting discovery ...")
+			mod.Debug("starting discovery ...")
 			dev.Scan([]gatt.UUID{}, true)
 		} else {
 			mod.Debug("current device was not cleaned: %v", mod.currDevice)
@@ -37,7 +37,7 @@ func (mod *BLERecon) onPeriphDisconnected(p gatt.Peripheral, err error) {
 	mod.Session.Events.Add("ble.device.disconnected", mod.currDevice)
 	mod.setCurrentDevice(nil)
 	if mod.Running() {
-		mod.Info("device disconnected, restoring discovery.")
+		mod.Debug("device disconnected, restoring discovery.")
 		mod.gattDevice.Scan([]gatt.UUID{}, true)
 	}
 }
@@ -54,7 +54,7 @@ func (mod *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
 	mod.connected = true
 
 	defer func(per gatt.Peripheral) {
-		mod.Info("disconnecting from %s ...", per.ID())
+		mod.Debug("disconnecting from %s ...", per.ID())
 		per.Device().CancelConnection(per)
 		mod.setCurrentDevice(nil)
 	}(p)
@@ -65,7 +65,7 @@ func (mod *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
 		mod.Warning("failed to set MTU: %s", err)
 	}
 
-	mod.Info("connected, enumerating all the things for %s!", p.ID())
+	mod.Debug("connected, enumerating all the things for %s!", p.ID())
 	services, err := p.DiscoverServices(nil)
 	// https://github.com/bettercap/bettercap/issues/498
 	if err != nil && err.Error() != "success" {
