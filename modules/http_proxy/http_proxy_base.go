@@ -68,7 +68,7 @@ type dummyLogger struct {
 }
 
 func (l dummyLogger) Printf(format string, v ...interface{}) {
-	l.p.Info("[goproxy.log] %s", str.Trim(fmt.Sprintf(format, v...)))
+	l.p.Debug("[goproxy.log] %s", str.Trim(fmt.Sprintf(format, v...)))
 }
 
 func NewHTTPProxy(s *session.Session) *HTTPProxy {
