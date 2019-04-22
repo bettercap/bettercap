@@ -7,7 +7,6 @@ import (
 	"golang.org/x/net/html"
 	"net/http"
 	"strings"
-	"time"
 )
 
 func isTitleElement(n *html.Node) bool {
@@ -30,9 +29,8 @@ func searchForTitle(n *html.Node) string {
 
 func httpGrabber(mod *SynScanner, ip string, port int) string {
 	schema := "http"
-	timeout := time.Duration(10 * time.Second)
 	client := &http.Client{
-		Timeout: timeout,
+		Timeout: bannerGrabTimeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return nil
 		},
@@ -42,7 +40,7 @@ func httpGrabber(mod *SynScanner, ip string, port int) string {
 	if strings.Contains(sport, "443") {
 		schema = "https"
 		client = &http.Client{
-			Timeout: timeout,
+			Timeout: bannerGrabTimeout,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,

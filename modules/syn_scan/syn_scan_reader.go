@@ -46,6 +46,12 @@ func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
 		from := ip.SrcIP.String()
 		port := int(tcp.SrcPort)
 
+		openPort := &OpenPort{
+			Proto:   "tcp",
+			Port:    port,
+			Service: network.GetServiceByPort(port, "tcp"),
+		}
+
 		var host *network.Endpoint
 		if ip.SrcIP.Equal(mod.Session.Interface.IP) {
 			host = mod.Session.Interface
@@ -58,19 +64,12 @@ func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
 		if host != nil {
 			ports := host.Meta.GetOr("ports", map[int]*OpenPort{}).(map[int]*OpenPort)
 			if _, found := ports[port]; !found {
-				openPort := &OpenPort{
-					Proto:   "tcp",
-					Port:    port,
-					Service: network.GetServiceByPort(port, "tcp"),
-				}
-
 				ports[port] = openPort
-
-				mod.bannerQueue.Add(async.Job(grabberJob{host, openPort}))
 			}
-
 			host.Meta.Set("ports", ports)
 		}
+
+		mod.bannerQueue.Add(async.Job(grabberJob{from, openPort}))
 
 		NewSynScanEvent(from, host, port).Push()
 	}

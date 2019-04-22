@@ -50,7 +50,7 @@ func NewSynScanner(s *session.Session) *SynScanner {
 	}
 
 	mod.scanQueue = async.NewQueue(0, mod.scanWorker)
-	mod.bannerQueue = async.NewQueue(4, mod.bannerGrabber)
+	mod.bannerQueue = async.NewQueue(0, mod.bannerGrabber)
 
 	mod.State.Store("scanning", &mod.addresses)
 	mod.State.Store("progress", 0.0)
@@ -120,6 +120,7 @@ func (mod *SynScanner) Configure() (err error) {
 		} else if err = mod.handle.SetBPFFilter(fmt.Sprintf("tcp dst port %d", synSourcePort)); err != nil {
 			return err
 		}
+		mod.packets = gopacket.NewPacketSource(mod.handle, mod.handle.LinkType()).Packets()
 	}
 	return nil
 }
@@ -155,10 +156,6 @@ func (mod *SynScanner) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.packets <- nil
 		mod.waitGroup.Wait()
-		mod.showProgress()
-		mod.addresses = []net.IP{}
-		mod.State.Store("progress", 0.0)
-		mod.State.Store("scanning", &mod.addresses)
 	})
 }
 
@@ -203,6 +200,7 @@ func (mod *SynScanner) synScan() error {
 		defer mod.waitGroup.Done()
 
 		defer mod.SetRunning(false, func() {
+			mod.showProgress()
 			mod.addresses = []net.IP{}
 			mod.State.Store("progress", 0.0)
 			mod.State.Store("scanning", &mod.addresses)
@@ -233,8 +231,6 @@ func (mod *SynScanner) synScan() error {
 			mod.waitGroup.Add(1)
 			defer mod.waitGroup.Done()
 
-			src := gopacket.NewPacketSource(mod.handle, mod.handle.LinkType())
-			mod.packets = src.Packets()
 			for packet := range mod.packets {
 				if !mod.Running() {
 					break

@@ -2,15 +2,17 @@ package syn_scan
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/network"
+	"time"
 
 	"github.com/evilsocket/islazy/async"
 )
 
+const bannerGrabTimeout = time.Duration(5) * time.Second
+
 type bannerGrabberFn func(mod *SynScanner, ip string, port int) string
 
 type grabberJob struct {
-	Host *network.Endpoint
+	IP   string
 	Port *OpenPort
 }
 
@@ -20,7 +22,7 @@ func (mod *SynScanner) bannerGrabber(arg async.Job) {
 		return
 	}
 
-	ip := job.Host.IpAddress
+	ip := job.IP
 	port := job.Port.Port
 	sport := fmt.Sprintf("%d", port)
 
