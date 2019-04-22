@@ -26,6 +26,8 @@ bettercap is a powerful, easily extensible and portable framework written in Go 
 * **A very convenient [web UI](https://www.bettercap.org/usage/#web-ui).**
 * [More!](https://www.bettercap.org/modules/)
 
+![UI](https://raw.githubusercontent.com/bettercap/media/master/ui-events.png)
+
 ## About the 1.x Legacy Version
 
 While the first version (up to 1.6.2) of bettercap was implemented in Ruby and only offered basic MITM, sniffing and proxying capabilities, the 2.x is a complete reimplementation using the [Go programming language](https://golang.org/). 
