@@ -23,7 +23,7 @@ bettercap is a powerful, easily extensible and portable framework written in Go 
 * A powerful **network sniffer** for **credentials harvesting** which can also be used as a **network protocol fuzzer**.
 * A very fast port scanner.
 * A powerful [REST API](https://www.bettercap.org/modules/core/api.rest/) with support for asynchronous events notification on websocket to orchestrate your attacks easily.
-* A very convenient [web UI](https://www.bettercap.org/usage/#web-ui).
+* **A very convenient [web UI](https://www.bettercap.org/usage/#web-ui).**
 * [More!](https://www.bettercap.org/modules/)
 
 ## About the 1.x Legacy Version
@@ -48,4 +48,4 @@ The project is documented [here](https://www.bettercap.org/).
 
 ## Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/OWASP/Amass.svg)](https://starchart.cc/OWASP/Amass)
+[![Stargazers over time](https://starchart.cc/bettercap/bettercap.svg)](https://starchart.cc/bettercap/bettercap)
