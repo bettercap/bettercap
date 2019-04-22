@@ -29,6 +29,8 @@ func (mod *SynScanner) bannerGrabber(arg async.Job) {
 	fn := tcpGrabber
 	if port == 80 || port == 443 || sport[0] == '8' {
 		fn = httpGrabber
+	} else if port == 53 || port == 5353 {
+		fn = dnsGrabber
 	}
 
 	mod.Debug("grabbing banner for %s:%d", ip, port)
