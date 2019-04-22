@@ -116,6 +116,10 @@ func (mod *Prober) Start() error {
 			mod.Fatal("%s", err)
 		}
 
+		if mod.probes.MDNS {
+			go mod.mdnsProber()
+		}
+
 		fromIP := mod.Session.Interface.IP
 		fromHW := mod.Session.Interface.HW
 		addresses := list.Expand()
