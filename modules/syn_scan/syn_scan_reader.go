@@ -19,6 +19,10 @@ type OpenPort struct {
 }
 
 func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
+	if pkt == nil || pkt.Data() == nil {
+		return
+	}
+
 	var eth layers.Ethernet
 	var ip layers.IPv4
 	var tcp layers.TCP
