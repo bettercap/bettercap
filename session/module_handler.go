@@ -13,7 +13,10 @@ import (
 	"github.com/bettercap/readline"
 )
 
-const IPv4Validator = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`
+const (
+	IPv4Validator = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`
+	IPv6Validator = `^[:a-fA-F0-9]{6,}$`
+)
 
 type ModuleHandler struct {
 	sync.Mutex

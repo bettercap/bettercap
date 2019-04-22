@@ -178,6 +178,14 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:89d41e902c8415f538d75e9d3008b286d30fe853ccf32def2dd37b82dd2ade14"
+  name = "github.com/hashicorp/mdns"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06dd1a31b32c42d4d6c2cf8dbce70597d1118f54"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   digest = "1:6480de9b8abc75bfb06947e139aa07429dfed37f95a258e90865c4c84a9e188b"
   name = "github.com/inconshreveable/go-vhost"
@@ -377,6 +385,7 @@
     "github.com/google/gousb",
     "github.com/gorilla/mux",
     "github.com/gorilla/websocket",
+    "github.com/hashicorp/mdns",
     "github.com/inconshreveable/go-vhost",
     "github.com/jpillora/go-tld",
     "github.com/malfunkt/iprange",
