@@ -19,12 +19,12 @@ import (
 const synSourcePort = 666
 
 type synScannerStats struct {
-	started      time.Time
 	numPorts     uint64
 	numAddresses uint64
 	totProbes    uint64
 	doneProbes   uint64
 	openPorts    uint64
+	started      time.Time
 }
 
 type SynScanner struct {
