@@ -36,7 +36,7 @@ func (mod *RestAPI) setAuthFailed(w http.ResponseWriter, r *http.Request) {
 func (mod *RestAPI) toJSON(w http.ResponseWriter, o interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(o); err != nil {
-		mod.Warning("error while encoding object to JSON: %v", err)
+		mod.Debug("error while encoding object to JSON: %v", err)
 	}
 }
 
