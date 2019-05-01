@@ -10,6 +10,7 @@ import (
 
 	"github.com/bettercap/bettercap/modules/net_recon"
 	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/session"
 
 	"github.com/dustin/go-humanize"
 
@@ -315,6 +316,10 @@ func (mod *WiFiModule) showStatusBar() {
 }
 
 func (mod *WiFiModule) Show() (err error) {
+	if mod.Running() == false {
+		return session.ErrAlreadyStopped(mod.Name())
+	}
+
 	var stations []*network.Station
 	if err, stations = mod.doSelection(); err != nil {
 		return
@@ -343,8 +348,11 @@ func (mod *WiFiModule) Show() (err error) {
 }
 
 func (mod *WiFiModule) ShowWPS(bssid string) (err error) {
-	toShow := []*network.Station{}
+	if mod.Running() == false {
+		return session.ErrAlreadyStopped(mod.Name())
+	}
 
+	toShow := []*network.Station{}
 	if bssid == network.BroadcastMac {
 		for _, station := range mod.Session.WiFi.List() {
 			if station.HasWPS() {
