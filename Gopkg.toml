@@ -13,8 +13,8 @@ required = ["github.com/mdlayher/raw"]
   version = "1.4.0"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/bettercap/recording"
+  revision = "3ce1dcf032e391eb321311b34cdf31c6fc9523f5"
 
 [[constraint]]
   branch = "master"
