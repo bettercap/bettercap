@@ -172,7 +172,7 @@ func (j *JSRequest) ParseForm() map[string]string {
 }
 
 func (j *JSRequest) ToRequest() (req *http.Request) {
-	url := fmt.Sprintf("%s://%s:%s%s?%s", j.Scheme, j.Hostname, j.req.URL.Port(), j.Path, j.Query)
+	url := fmt.Sprintf("%s://%s:%s%s?%s", j.Scheme, j.req.URL.Hostname(), j.req.URL.Port(), j.Path, j.Query)
 	if j.Body == "" {
 		req, _ = http.NewRequest(j.Method, url, j.req.Body)
 	} else {
