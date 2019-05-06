@@ -26,7 +26,7 @@ type RdpProxy struct {
     startPort int
     cmd       string
     active    map[string]exec.Cmd
-    addresses []net.IP
+    targets   []net.IP
 }
 
 var mod *RdpProxy
@@ -34,7 +34,7 @@ var mod *RdpProxy
 func NewRdpProxy(s *session.Session) *RdpProxy {
     mod = &RdpProxy{
         SessionModule: session.NewSessionModule("rdp.proxy", s),
-        addresses:     make([]net.IP, 0),
+        targets:       make([]net.IP, 0),
         done:          make(chan bool),
         queue:         nil,
         queueNum:      0,
@@ -77,7 +77,7 @@ func (mod RdpProxy) Author() string {
 
 func (mod *RdpProxy) isTarget(ip string) bool {
 
-    for _, addr := range mod.addresses {
+    for _, addr := range mod.targets {
         if addr.String() == ip {
             return true
         }
@@ -157,14 +157,14 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if err, targets = mod.StringParam("rdp.proxy.targets"); err != nil {
         return
-    } else if mod.addresses, _, err = network.ParseTargets(targets, mod.Session.Lan.Aliases()); err != nil {
+    } else if mod.targets, _, err = network.ParseTargets(targets, mod.Session.Lan.Aliases()); err != nil {
         return
     } else if _, err = exec.LookPath(mod.cmd); err != nil {
         return
     }
 
     mod.Info("Starting RDP Proxy")
-    mod.Debug("addresses=%v", mod.addresses)
+    mod.Debug("Targets=%v", mod.targets)
 
     // Create the NFQUEUE handler.
     mod.queue = new(nfqueue.Queue)
