@@ -14,7 +14,7 @@ func isTitleElement(n *html.Node) bool {
 }
 
 func searchForTitle(n *html.Node) string {
-	if isTitleElement(n) {
+	if isTitleElement(n) && n.FirstChild != nil {
 		return n.FirstChild.Data
 	}
 
