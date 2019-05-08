@@ -47,7 +47,7 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         port:          3389,
         startPort:     40000,
         cmd:           "pyrdp-mitm.py",
-        regexp:        "(?i)(cookie:|mstshash=|username|password|clipboard data)",
+        regexp:        "(?i)(cookie:|mstshash=|clipboard data|client info|username|password)",
         active:        make(map[string]exec.Cmd),
     }
 
@@ -67,7 +67,7 @@ mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "Starting port 
 mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm.py", "", "The PyRDP base command to launch the man-in-the-middle."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./", "", "The output directory for PyRDP artifacts."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|username|password|clipboard data)", "", "Print PyRDP logs matching this regular expression."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|username|password)", "", "Print PyRDP logs matching this regular expression."))
     return mod
 }
 
@@ -227,10 +227,9 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
     src, sport := p.NetworkLayer().NetworkFlow().Src(), p.TransportLayer().TransportFlow().Src()
     dst, dport := p.NetworkLayer().NetworkFlow().Dst(), p.TransportLayer().TransportFlow().Dst()
 
+    ips := fmt.Sprintf("[%v:%v -> %v:%v]", src, sport, dst, dport)
+
     if mod.isTarget(dst.String()) {
-        // TODO: Don't log here and connect a pipe to the process instead.
-        ips := fmt.Sprintf("[%v:%v -> %v:%v]", src, sport, dst, dport)
-        mod.Info("CONNECT %v", ips)
         target := fmt.Sprintf("%v:%v", dst, dport)
 
         // 2. Check if the destination IP already has a PyRDP session active, if so, do nothing.
@@ -260,7 +259,7 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
             mod.startPort += 1
         }
     } else {
-        mod.Info("Non-target, won't intercept [%s:%v -> %v:%v]", src, sport, dst, dport)
+        mod.Info("Non-target, won't intercept %s", ips)
 
         // Add an exception in the firewall to avoid intercepting packets to this destination and port
         mod.doReturn(dst.String(), dport, true)
