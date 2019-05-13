@@ -47,7 +47,7 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         port:          3389,
         startPort:     40000,
         cmd:           "pyrdp-mitm.py",
-        regexp:        "(?i)(cookie:|mstshash=|clipboard data|client info|username|password)",
+        regexp:        "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password)",
         active:        make(map[string]exec.Cmd),
     }
 
@@ -67,7 +67,7 @@ mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "Starting port 
 mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm.py", "", "The PyRDP base command to launch the man-in-the-middle."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./", "", "The output directory for PyRDP artifacts."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|username|password)", "", "Print PyRDP logs matching this regular expression."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password)", "", "Print PyRDP logs matching this regular expression."))
     return mod
 }
 
