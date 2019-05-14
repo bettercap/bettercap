@@ -67,7 +67,7 @@ mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "Starting port 
 mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm.py", "", "The PyRDP base command to launch the man-in-the-middle."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./", "", "The output directory for PyRDP artifacts."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password)", "", "Print PyRDP logs matching this regular expression."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)", "", "Print PyRDP logs matching this regular expression."))
     return mod
 }
 
@@ -85,13 +85,11 @@ func (mod RdpProxy) Author() string {
 }
 
 func (mod *RdpProxy) isTarget(ip string) bool {
-
     for _, addr := range mod.targets {
         if addr.String() == ip {
             return true
         }
     }
-
     return false
 }
 
@@ -166,7 +164,21 @@ func (mod *RdpProxy) configureFirewall(enable bool) (err error) {
             return err
         }
     }
+    return
+}
 
+// Fixes a bug that may come up when interrupting the application too quickly.
+func (mod *RdpProxy) repairFirewall() (err error) {
+    rules := [][]string{
+        { "-t", "nat", "-F", "BCAPRDP" },
+        { "-t", "nat", "-X", "BCAPRDP" },
+    }
+
+    for _, rule := range rules {
+        if _, err = core.Exec("iptables", rule); err != nil {
+            return err
+        }
+    }
     return
 }
 
@@ -215,7 +227,11 @@ func (mod *RdpProxy) Configure() (err error) {
     } else if err = mod.queue.SetMode(nfqueue.NFQNL_COPY_PACKET); err != nil {
         return
     } else if err = mod.configureFirewall(true); err != nil {
-        return
+        // Attempt to repair firewall, then retry once
+        mod.repairFirewall()
+        if err = mod.configureFirewall(true); err != nil {
+            return
+        }
     }
     return nil
 }
@@ -247,7 +263,15 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
             stderrPipe, _ := cmd.StderrPipe()
 
             if err := cmd.Start(); err != nil {
-                // XXX: Failed to start the rdp proxy... accept connection transparently and log?
+                // Wont't handle things like "port already in use" since it happens at runtime
+                mod.Error("PyRDP Start error : %v", err.Error())
+                mod.Info("Failed to start PyRDP, won't intercept target %s", ips)
+
+                // Add an exception in the firewall to avoid intercepting packets to this destination and port
+                mod.doReturn(dst.String(), dport, true)
+                payload.SetVerdict(nfqueue.NF_DROP)
+
+                return 0
             }
 
             // Use goroutines to keep logging each instance of PyRDP
