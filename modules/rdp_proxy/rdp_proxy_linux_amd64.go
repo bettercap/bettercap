@@ -80,9 +80,9 @@ mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet
 mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)", "", "Print PyRDP logs matching this regular expression."))
 // Optional paramaters
 mod.AddParam(session.NewStringParameter("rdp.proxy.nla.seccheck", "", "", "Path to rdp-sec-check.pl. Allows more complex exploits when NLA is enforced (optional)."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.nla.mode", "IGNORE", "(IGNORE|RELAY|REDIRECT)", "Specify how to handle connections to a NLA-enabled host. Require rdp.proxy.nla.seccheck."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.nla.redirectip", "", "", "Specify IP to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
-mod.AddParam(session.NewIntParameter("rdp.proxy.nla.redirectport", "3389", "Specify port to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
+mod.AddParam(session.NewStringParameter("rdp.proxy.nla.mode", "IGNORE", "(IGNORE|RELAY|REDIRECT)", "Specify how to handle connections to a NLA-enabled host. Either IGNORE, RELAY or REDIRECT. Require rdp.proxy.nla.seccheck."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.nla.redirect.ip", "", "", "Specify IP to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
+mod.AddParam(session.NewIntParameter("rdp.proxy.nla.redirect.port", "3389", "Specify port to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
 
     return mod
 }
@@ -110,17 +110,19 @@ func (mod *RdpProxy) isTarget(ip string) bool {
 }
 
 func (mod *RdpProxy) isNLAEnforced(target string) (nla bool, err error) {
-    if mod.secCheck != "" {
-
-        output, err := core.Exec(mod.secCheck, []string{
-            target,
-        })
-
-        // Hybrid means enforce NLA + SSL
-        if strings.Contains(output, "HYBRID_REQUIRED_BY_SERVER") {
-            return true, err
-        }
+    if mod.secCheck == "" {
+        return false, err
     }
+
+    output, err := core.Exec(mod.secCheck, []string{
+        target,
+    })
+
+    // Hybrid means enforce NLA + SSL
+    if strings.Contains(output, "HYBRID_REQUIRED_BY_SERVER") {
+        return true, err
+    }
+
     return false, err
 }
 
@@ -267,9 +269,12 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if err, mod.nlaMode = mod.StringParam("rdp.proxy.nla.mode"); err != nil {
         return
-    } else if err, mod.redirectIP = mod.IPParam("rdp.proxy.nla.redirectip"); err != nil {
+    } else if mod.nlaMode == "RELAY" {
+        mod.Info("Mode RELAY is unimplemented yet, fallbacking to mode IGNORE.")
+        mod.nlaMode = "IGNORE"
+        } else if err, mod.redirectIP = mod.IPParam("rdp.proxy.nla.redirect.ip"); err != nil {
         return
-    } else if err, mod.redirectPort = mod.IntParam("rdp.proxy.nla.redirectport"); err != nil {
+    } else if err, mod.redirectPort = mod.IntParam("rdp.proxy.nla.redirect.port"); err != nil {
         return
     } else if mod.regexp != "" {
         if mod.compiled, err = regexp.Compile(mod.regexp); err != nil {
@@ -330,8 +335,6 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
             // Only if seccheck is set
             if targetNLA {
                 switch mod.nlaMode {
-                case "RELAY":
-                    mod.Info("%s Target has NLA enabled and mode RELAY, unimplemented", ips)
                 case "REDIRECT":
                     // TODO : Find a way to disconnect user right after stealing credentials.
                     // Start a PyRDP instance to the preconfigured vulnerable host
