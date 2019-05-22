@@ -162,10 +162,7 @@ func (mod *RdpProxy) isNLAEnforced(target string) (nla bool, err error){
     return false, nil
 }
 
-func (mod *RdpProxy) startProxyInstance(src string, sport string, dst string, dport string) (err error) {
-    target := fmt.Sprintf("%s:%s", dst, dport)
-    ips := fmt.Sprintf("[%s:%s -> %s:%s]", src, sport, dst, dport)
-
+func (mod *RdpProxy) startProxyInstance(client string, target string) (err error) {
     // 3.1. Create a proxy agent and firewall rules.
     args := []string{
         "-l", fmt.Sprintf("%d", mod.startPort),
@@ -181,20 +178,21 @@ func (mod *RdpProxy) startProxyInstance(src string, sport string, dst string, dp
     if err := cmd.Start(); err != nil {
         // Wont't handle things like "port already in use" since it happens at runtime
         mod.Error("PyRDP Start error : %v", err.Error())
-        mod.Info("Failed to start PyRDP, won't intercept target %s", ips)
+
+        NewRdpProxyEvent(client, target, "Failed to start PyRDP, won't intercept target").Push()
 
         return err
     }
 
     // Use goroutines to keep logging each instance of PyRDP
-    go mod.filterLogs(ips, stderrPipe)
+    go mod.filterLogs(client, target, stderrPipe)
 
     mod.active[target] = *cmd
     return
 }
 
 // Filter PyRDP logs to only show those that matches mod.regexp
-func (mod *RdpProxy) filterLogs(prefix string, output io.ReadCloser) {
+func (mod *RdpProxy) filterLogs(src string, dst string, output io.ReadCloser) {
     scanner := bufio.NewScanner(output)
 
     // For every log in the queue
@@ -207,7 +205,7 @@ func (mod *RdpProxy) filterLogs(prefix string, output io.ReadCloser) {
             // Get last element
             data := chunks[len(chunks) - 1]
 
-            mod.Info("%s %s", prefix, data)
+            NewRdpProxyEvent(src, dst, fmt.Sprintf("%s", data)).Push()
         }
     }
 }
@@ -270,14 +268,14 @@ func (mod *RdpProxy) configureFirewall(enable bool) (err error) {
 // Fixes a bug that may come up when interrupting the application too quickly.
 func (mod *RdpProxy) repairFirewall() (err error) {
     rules := [][]string{
+        { "-t", "nat", "-D", "PREROUTING", "-j", "BCAPRDP" },
         { "-t", "nat", "-F", "BCAPRDP" },
         { "-t", "nat", "-X", "BCAPRDP" },
     }
 
+    // Force a cleaning of previous rules
     for _, rule := range rules {
-        if _, err = core.Exec("iptables", rule); err != nil {
-            return err
-        }
+        core.Exec("iptables", rule);
     }
     return
 }
@@ -352,11 +350,10 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
     src, sport := p.NetworkLayer().NetworkFlow().Src().String(), fmt.Sprintf("%s", p.TransportLayer().TransportFlow().Src())
     dst, dport := p.NetworkLayer().NetworkFlow().Dst().String(), fmt.Sprintf("%s", p.TransportLayer().TransportFlow().Dst())
 
-    // TODO : Log everything inside the events stream
-    ips := fmt.Sprintf("[%s:%s -> %s:%s]", src, sport, dst, dport)
+    client := fmt.Sprintf("%s:%s", src, sport)
+    target := fmt.Sprintf("%s:%s", dst, dport)
 
     if mod.isTarget(dst) {
-        target := fmt.Sprintf("%s:%s", dst, dport)
 
         // 2. Check if the destination IP already has a PyRDP session active, if so, do nothing.
         if _, ok :=  mod.active[target]; !ok {
@@ -368,8 +365,10 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
                     // TODO : Find a way to disconnect user right after stealing credentials.
                     // Start a PyRDP instance to the preconfigured vulnerable host
                     // and forward packets to the target to this host instead
-                    mod.Info("%s Target has NLA enabled and mode REDIRECT, forwarding to the vulnerable host...", ips)
-                    err := mod.startProxyInstance(src, sport, mod.redirectIP.String(), fmt.Sprintf("%d", mod.redirectPort))
+                    NewRdpProxyEvent(client, target, "Target has NLA enabled and mode REDIRECT, forwarding to the vulnerable host...").Push()
+
+                    redirectTarget := fmt.Sprintf("%s:%d", mod.redirectIP.String(), mod.redirectPort)
+                    err := mod.startProxyInstance(client, redirectTarget)
 
                     if err != nil {
                         // Add an exception in the firewall to avoid intercepting packets to this destination and port
@@ -383,13 +382,13 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
                     mod.startPort += 1
                 default:
                     // Add an exception in the firewall to avoid intercepting packets to this destination and port
-                    mod.Info("%s Target has NLA enabled and mode IGNORE, won't intercept", ips)
+                    NewRdpProxyEvent(client, target, "Target has NLA enabled and mode IGNORE, won't intercept").Push()
 
                     mod.doReturn(dst, dport)
                 }
             } else {
                 // Starts a PyRDP instance.
-                if err := mod.startProxyInstance(src, sport, dst, dport); err != nil {
+                if err := mod.startProxyInstance(client, target); err != nil {
                     // Add an exception in the firewall to avoid intercepting packets to this destination and port
                     mod.doReturn(dst, dport)
                     payload.SetVerdict(nfqueue.NF_DROP)
@@ -403,7 +402,8 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
             }
         }
     } else {
-        mod.Info("Non-target, won't intercept %s", ips)
+        NewRdpProxyEvent(client, target, "Non-target, won't intercept").Push()
+
 
         // Add an exception in the firewall to avoid intercepting packets to this destination and port
         mod.doReturn(dst, dport)
@@ -424,6 +424,7 @@ func (mod *RdpProxy) Start() error {
     if mod.Running() {
         return session.ErrAlreadyStarted(mod.Name())
     } else if err := mod.Configure(); err != nil {
+        mod.Error("%s", err.Error())
         return err
     }
 
