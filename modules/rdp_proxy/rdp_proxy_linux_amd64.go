@@ -3,6 +3,7 @@ package rdp_proxy
 import (
     "bufio"
     "bytes"
+    "encoding/hex"
     "fmt"
     "os/exec"
     "io"
@@ -10,7 +11,7 @@ import (
     golog "log"
     "net"
     "regexp"
-    "strings"
+    "time"
     "syscall"
 
     "github.com/bettercap/bettercap/core"
@@ -31,7 +32,6 @@ type RdpProxy struct {
     port         int
     startPort    int
     cmd          string
-    secCheck     string
     nlaMode      string
     redirectIP   net.IP
     redirectPort int
@@ -52,7 +52,6 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         port:          3389,
         startPort:     40000,
         cmd:           "pyrdp-mitm.py",
-        secCheck:      "",
         nlaMode:       "IGNORE",
         redirectIP:    make(net.IP, 0),
         redirectPort:  3389,
@@ -79,8 +78,7 @@ mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./", "", "The output d
 mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)", "", "Print PyRDP logs matching this regular expression."))
 // Optional paramaters
-mod.AddParam(session.NewStringParameter("rdp.proxy.nla.seccheck", "", "", "Path to rdp-sec-check.pl. Allows more complex exploits when NLA is enforced (optional)."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.nla.mode", "IGNORE", "(IGNORE|RELAY|REDIRECT)", "Specify how to handle connections to a NLA-enabled host. Either IGNORE, RELAY or REDIRECT. Require rdp.proxy.nla.seccheck."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.nla.mode", "IGNORE", "(IGNORE|RELAY|REDIRECT)", "Specify how to handle connections to a NLA-enabled host. Either IGNORE, RELAY or REDIRECT."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.nla.redirect.ip", "", "", "Specify IP to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
 mod.AddParam(session.NewIntParameter("rdp.proxy.nla.redirect.port", "3389", "Specify port to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
 
@@ -109,21 +107,59 @@ func (mod *RdpProxy) isTarget(ip string) bool {
     return false
 }
 
-func (mod *RdpProxy) isNLAEnforced(target string) (nla bool, err error) {
-    if mod.secCheck == "" {
-        return false, err
+// Verify if the target says anything about enforcing NLA.
+func verifyNLA(target string, payload []byte) (isNla bool, err error) {
+    var conn net.Conn
+
+    if conn, err = net.Dial("tcp", target); err != nil {
+        return true, err
+    } else if err = conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+        return true, err
     }
 
-    output, err := core.Exec(mod.secCheck, []string{
-        target,
-    })
+    defer conn.Close()
 
-    // Hybrid means enforce NLA + SSL
-    if strings.Contains(output, "HYBRID_REQUIRED_BY_SERVER") {
+    conn.Write([]byte(payload))
+
+    if _, err = conn.Write([]byte(payload)); err != nil {
+        return true, err
+    }
+
+    buffer := make([]byte, 1024)
+
+    if n, err := conn.Read(buffer[:]); n != 19 || err != nil {
+        return true, err
+    }
+
+    // If failure code is HYBRID_REQUIRED_BY_SERVER
+    if buffer[11] == 3 && buffer[15] == 5 {
         return true, err
     }
 
     return false, err
+}
+
+func (mod *RdpProxy) isNLAEnforced(target string) (nla bool, err error){
+    // TCP payloads to validate if RDP and TLS are supported.
+    // Will return a special value if NLA is enforced
+    rdpPayload, _ := hex.DecodeString("030000130ee000000000000100080000000000")
+    tlsPayload, _ := hex.DecodeString("030000130ee000000000000100080001000000")
+
+    var nlaCheck1 bool
+    var nlaCheck2 bool
+
+    if nlaCheck1, err = verifyNLA(target, rdpPayload); err != nil {
+        return true, err
+    } else if  nlaCheck2, err = verifyNLA(target, tlsPayload); err != nil {
+        return true, err
+    }
+
+    // If NLA is enforced
+    if nlaCheck1 && nlaCheck2 {
+        return true, nil
+    }
+
+    return false, nil
 }
 
 func (mod *RdpProxy) startProxyInstance(src string, sport string, dst string, dport string) (err error) {
@@ -265,8 +301,6 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if err, mod.regexp = mod.StringParam("rdp.proxy.regexp"); err != nil {
         return
-    } else if err, mod.secCheck = mod.StringParam("rdp.proxy.nla.seccheck"); err != nil {
-        return
     } else if err, mod.nlaMode = mod.StringParam("rdp.proxy.nla.mode"); err != nil {
         return
     } else if mod.nlaMode == "RELAY" {
@@ -278,10 +312,6 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if mod.regexp != "" {
         if mod.compiled, err = regexp.Compile(mod.regexp); err != nil {
-            return
-        }
-    } else if mod.secCheck != "" {
-        if _, err = exec.LookPath(mod.secCheck); err != nil {
             return
         }
     } else if _, err = exec.LookPath(mod.cmd); err != nil {
@@ -332,7 +362,6 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
         if _, ok :=  mod.active[target]; !ok {
             targetNLA, _ := mod.isNLAEnforced(target)
 
-            // Only if seccheck is set
             if targetNLA {
                 switch mod.nlaMode {
                 case "REDIRECT":
@@ -360,10 +389,7 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
                 }
             } else {
                 // Starts a PyRDP instance.
-                // Won't work if the target has NLA but rdp-sec-check isn't set
-                err := mod.startProxyInstance(src, sport, dst, dport)
-
-                if err != nil {
+                if err := mod.startProxyInstance(src, sport, dst, dport); err != nil {
                     // Add an exception in the firewall to avoid intercepting packets to this destination and port
                     mod.doReturn(dst, dport)
                     payload.SetVerdict(nfqueue.NF_DROP)
