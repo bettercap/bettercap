@@ -10,6 +10,7 @@ import (
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/bettercap/bettercap/modules/net_sniff"
+	"github.com/bettercap/bettercap/modules/rdp_proxy"
 	"github.com/bettercap/bettercap/modules/syn_scan"
 
 	"github.com/google/go-github/github"
@@ -83,6 +84,16 @@ func (mod *EventsStream) viewSnifferEvent(e session.Event) {
 			tui.Green(e.Tag),
 			e.Data.(net_sniff.SnifferEvent).Message)
 	}
+}
+func (mod *EventsStream) viewRDPEvent(e session.Event) {
+	t := e.Data.(rdp_proxy.RdpProxyEvent)
+
+	fmt.Fprintf(mod.output, "[%s] [%s] [%s -> %s] %s\n",
+		e.Time.Format(mod.timeFormat),
+		tui.Green(e.Tag),
+		tui.Bold(t.Source),
+		tui.Bold(t.Destination),
+		t.Message)
 }
 
 func (mod *EventsStream) viewSynScanEvent(e session.Event) {
@@ -172,6 +183,8 @@ func (mod *EventsStream) View(e session.Event, refresh bool) {
 		mod.viewModuleEvent(e)
 	} else if strings.HasPrefix(e.Tag, "net.sniff.") {
 		mod.viewSnifferEvent(e)
+	} else if e.Tag == "rdp.proxy" {
+		mod.viewRDPEvent(e)
 	} else if e.Tag == "syn.scan" {
 		mod.viewSynScanEvent(e)
 	} else if e.Tag == "update.available" {
