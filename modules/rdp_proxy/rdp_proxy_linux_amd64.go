@@ -32,9 +32,11 @@ type RdpProxy struct {
     port         int
     startPort    int
     cmd          string
+    outpath      string
     nlaMode      string
     redirectIP   net.IP
     redirectPort int
+    replay       string
     regexp       string
     compiled     *regexp.Regexp
     active       map[string]exec.Cmd
@@ -52,9 +54,11 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         port:          3389,
         startPort:     40000,
         cmd:           "pyrdp-mitm.py",
+        outpath:       "./",
         nlaMode:       "IGNORE",
         redirectIP:    make(net.IP, 0),
         redirectPort:  3389,
+        replay:        "1",
         regexp:        "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)",
         active:        make(map[string]exec.Cmd),
     }
@@ -74,6 +78,7 @@ mod.AddParam(session.NewIntParameter("rdp.proxy.queue.num", "0", "NFQUEUE number
 mod.AddParam(session.NewIntParameter("rdp.proxy.port", "3389", "RDP port to intercept."))
 mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "Starting port for PyRDP sessions."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm.py", "", "The PyRDP base command to launch the man-in-the-middle."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.replay", "1", "1|0", "Specify if PyRDP shoudld save replay recording."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./", "", "The output directory for PyRDP artifacts."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)", "", "Print PyRDP logs matching this regular expression."))
@@ -87,7 +92,6 @@ mod.AddParam(session.NewIntParameter("rdp.proxy.nla.redirect.port", "3389", "Spe
 
 func (mod RdpProxy) Name() string {
     return "rdp.proxy"
-
 }
 
 func (mod RdpProxy) Description() string {
@@ -166,8 +170,9 @@ func (mod *RdpProxy) startProxyInstance(client string, target string) (err error
     // 3.1. Create a proxy agent and firewall rules.
     args := []string{
         "-l", fmt.Sprintf("%d", mod.startPort),
-        // "-o", mod.outpath,
         // "-i", "-d"
+        "-o", mod.outpath,
+        mod.replay,
         target,
     }
 
@@ -291,6 +296,8 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if err, mod.cmd = mod.StringParam("rdp.proxy.command"); err != nil {
         return
+    } else if err, mod.outpath = mod.StringParam("rdp.proxy.out"); err != nil {
+        return
     } else if err, mod.queueNum = mod.IntParam("rdp.proxy.queue.num"); err != nil {
         return
     } else if err, targets = mod.StringParam("rdp.proxy.targets"); err != nil {
@@ -299,21 +306,31 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if err, mod.regexp = mod.StringParam("rdp.proxy.regexp"); err != nil {
         return
+    } else if err, mod.replay = mod.StringParam("rdp.proxy.replay"); err != nil {
+        return
     } else if err, mod.nlaMode = mod.StringParam("rdp.proxy.nla.mode"); err != nil {
         return
-    } else if mod.nlaMode == "RELAY" {
-        mod.Info("Mode RELAY is unimplemented yet, fallbacking to mode IGNORE.")
-        mod.nlaMode = "IGNORE"
-        } else if err, mod.redirectIP = mod.IPParam("rdp.proxy.nla.redirect.ip"); err != nil {
+    } else if err, mod.redirectIP = mod.IPParam("rdp.proxy.nla.redirect.ip"); err != nil {
         return
     } else if err, mod.redirectPort = mod.IntParam("rdp.proxy.nla.redirect.port"); err != nil {
         return
-    } else if mod.regexp != "" {
+    } else if _, err = exec.LookPath(mod.cmd); err != nil {
+        return
+    }
+
+    if mod.nlaMode == "RELAY" {
+        mod.Info("Mode RELAY is unimplemented yet, fallbacking to mode IGNORE.")
+        mod.nlaMode = "IGNORE"
+    }
+    if mod.regexp != "" {
         if mod.compiled, err = regexp.Compile(mod.regexp); err != nil {
             return
         }
-    } else if _, err = exec.LookPath(mod.cmd); err != nil {
-        return
+    }
+    if mod.replay == "1" {
+        mod.replay = "--no-replay"
+    } else {
+        mod.replay = ""        
     }
 
     mod.Info("Starting RDP Proxy")
