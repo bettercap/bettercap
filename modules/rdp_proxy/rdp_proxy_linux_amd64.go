@@ -4,6 +4,7 @@ import (
     "bufio"
     "bytes"
     "encoding/hex"
+    "errors"
     "fmt"
     "os/exec"
     "io"
@@ -310,12 +311,16 @@ func (mod *RdpProxy) Configure() (err error) {
     // TODO: Param validation and hydration
     if err, mod.port = mod.IntParam("rdp.proxy.port"); err != nil {
         return
+    } else if mod.port < 1 || mod.port > 65535 {
+        return errors.New("rdp.proxy.port must be between 1 and 65535")
     } else if err, mod.cmd = mod.StringParam("rdp.proxy.command"); err != nil {
         return
     } else if err, mod.outpath = mod.StringParam("rdp.proxy.out"); err != nil {
         return
     } else if err, mod.queueNum = mod.IntParam("rdp.proxy.queue.num"); err != nil {
         return
+    } else if mod.queueNum < 0 || mod.queueNum > 65535 {
+        return errors.New("rdp.proxy.queue.num must be between 0 and 65535")
     } else if err, targets = mod.StringParam("rdp.proxy.targets"); err != nil {
         return
     } else if mod.targets, _, err = network.ParseTargets(targets, mod.Session.Lan.Aliases()); err != nil {
@@ -330,6 +335,8 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if err, mod.redirectPort = mod.IntParam("rdp.proxy.nla.redirect.port"); err != nil {
         return
+    } else if mod.redirectPort < 1 || mod.redirectPort > 65535 {
+        return errors.New("rdp.proxy.nla.redirect.port must be between 1 and 65535")
     } else if _, err = exec.LookPath(mod.cmd); err != nil {
         return
     } else if _, err = mod.fileExists(mod.cmd); err != nil {
@@ -440,7 +447,6 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
         }
     } else {
         NewRdpProxyEvent(client, target, "Non-target, won't intercept.").Push()
-
 
         // Add an exception in the firewall to avoid intercepting packets to this destination and port
         mod.doReturn(dst, dport)
