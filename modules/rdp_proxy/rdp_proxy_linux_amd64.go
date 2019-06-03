@@ -127,7 +127,7 @@ func (mod *RdpProxy) verifyNLA(target string, payload []byte) (isNla bool, err e
 
     if conn, err = net.Dial("tcp", target); err != nil {
         return true, err
-    } else if err = conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+    } else if err = conn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
         return true, err
     }
 
@@ -163,8 +163,10 @@ func (mod *RdpProxy) isNLAEnforced(target string) (nla bool, err error){
     var nlaCheck2 bool
 
     if nlaCheck1, err = mod.verifyNLA(target, rdpPayload); err != nil {
+        NewRdpProxyEvent("127.0.0.1", target, "Target unreachable or timeout during NLA validation. Will handle target as NLA.").Push()
         return true, err
     } else if  nlaCheck2, err = mod.verifyNLA(target, tlsPayload); err != nil {
+        NewRdpProxyEvent("127.0.0.1", target, "Target unreachable or timeout during NLA validation. Will handle target as NLA.").Push()
         return true, err
     }
 
@@ -263,7 +265,7 @@ func (mod *RdpProxy) configureFirewall(enable bool) (err error) {
                 "-j", "NFQUEUE", "--queue-num", fmt.Sprintf("%d", mod.queueNum), "--queue-bypass",
             },
             // This rule tries to fix an optimization bug in recent versions of iptables
-            // The bug : if no rules in the nat table tries to modify the current packet, skip the nable
+            // The bug : if no rules in the nat table tries to modify the current packet, skip the nat table
             // The NFQueue doesn't count as a modification.
             { "-t", "nat", "-A", "BCAPRDP",
                 "-p", "tcp", "-m", "tcp", "-d", "127.0.0.1", "--dport", "3388",
@@ -342,7 +344,6 @@ func (mod *RdpProxy) Configure() (err error) {
     } else if _, err = mod.fileExists(mod.cmd); err != nil {
         return
     }
-
 
     if mod.nlaMode == "RELAY" {
         mod.Info("Mode RELAY is unimplemented yet, fallbacking to mode IGNORE.")
