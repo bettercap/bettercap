@@ -38,7 +38,7 @@ type RdpProxy struct {
     nlaMode      string
     redirectIP   net.IP
     redirectPort int
-    replay       string
+    replay       bool
     regexp       string
     compiled     *regexp.Regexp
     active       map[string]exec.Cmd
@@ -56,11 +56,11 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         port:          3389,
         startPort:     40000,
         cmd:           "pyrdp-mitm.py",
-        outpath:       "./",
+        outpath:       "./pyrdp_output",
         nlaMode:       "IGNORE",
         redirectIP:    make(net.IP, 0),
         redirectPort:  3389,
-        replay:        "1",
+        replay:        false,
         regexp:        "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)",
         active:        make(map[string]exec.Cmd),
     }
@@ -79,9 +79,9 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
 mod.AddParam(session.NewIntParameter("rdp.proxy.queue.num", "0", "NFQUEUE number to bind to."))
 mod.AddParam(session.NewIntParameter("rdp.proxy.port", "3389", "RDP port to intercept."))
 mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "Starting port for PyRDP sessions."))
+mod.AddParam(session.NewBoolParameter("rdp.proxy.replay", "false", "Specify if PyRDP shoudld save replay recording."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm.py", "", "The PyRDP base command to launch the man-in-the-middle."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.replay", "1", "1|0", "Specify if PyRDP shoudld save replay recording."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./", "", "The output directory for PyRDP artifacts."))
+mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./pyrdp_output", "", "The output directory for PyRDP artifacts."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
 mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)", "", "Print PyRDP logs matching this regular expression."))
 // Optional paramaters
@@ -182,11 +182,14 @@ func (mod *RdpProxy) startProxyInstance(client string, target string) (err error
     // 3.1. Create a proxy agent and firewall rules.
     args := []string{
         "-l", fmt.Sprintf("%d", mod.startPort),
-        // "-i", "-d"
         "-o", mod.outpath,
-        mod.replay,
-        target,
     }
+
+    if !mod.replay {
+        args = append(args, "--no-replay")
+    }
+
+    args = append(args, target)
 
     //   3.2. Spawn PyRDP proxy instance
     cmd := exec.Command(mod.cmd, args...)
@@ -329,7 +332,7 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if err, mod.regexp = mod.StringParam("rdp.proxy.regexp"); err != nil {
         return
-    } else if err, mod.replay = mod.StringParam("rdp.proxy.replay"); err != nil {
+    } else if err, mod.replay = mod.BoolParam("rdp.proxy.replay"); err != nil {
         return
     } else if err, mod.nlaMode = mod.StringParam("rdp.proxy.nla.mode"); err != nil {
         return
@@ -353,11 +356,6 @@ func (mod *RdpProxy) Configure() (err error) {
         if mod.compiled, err = regexp.Compile(mod.regexp); err != nil {
             return
         }
-    }
-    if mod.replay == "1" {
-        mod.replay = "--no-replay"
-    } else {
-        mod.replay = ""        
     }
 
     mod.Info("Starting RDP Proxy")
