@@ -194,6 +194,8 @@ func (j *JSRequest) ToRequest() (req *http.Request) {
 		}
 	}
 
+	req.RemoteAddr = j.Client["IP"]
+
 	if !hadType && j.ContentType != "" {
 		req.Header.Set("Content-Type", j.ContentType)
 	}
