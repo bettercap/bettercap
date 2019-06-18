@@ -36,6 +36,8 @@ type RdpProxy struct {
     cmd          string
     outpath      string
     nlaMode      string
+    playerIP     net.IP
+    playerPort   int
     redirectIP   net.IP
     redirectPort int
     replay       bool
@@ -58,6 +60,8 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
         cmd:           "pyrdp-mitm.py",
         outpath:       "./pyrdp_output",
         nlaMode:       "IGNORE",
+        playerIP:      make(net.IP, 0),
+        playerPort:    3000,
         redirectIP:    make(net.IP, 0),
         redirectPort:  3389,
         replay:        false,
@@ -75,19 +79,21 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
             return mod.Stop()
         }))
 
-// Required parameters
-mod.AddParam(session.NewIntParameter("rdp.proxy.queue.num", "0", "NFQUEUE number to bind to."))
-mod.AddParam(session.NewIntParameter("rdp.proxy.port", "3389", "RDP port to intercept."))
-mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "Starting port for PyRDP sessions."))
-mod.AddParam(session.NewBoolParameter("rdp.proxy.replay", "false", "Specify if PyRDP shoudld save replay recording."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm.py", "", "The PyRDP base command to launch the man-in-the-middle."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./pyrdp_output", "", "The output directory for PyRDP artifacts."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)", "", "Print PyRDP logs matching this regular expression."))
-// Optional paramaters
-mod.AddParam(session.NewStringParameter("rdp.proxy.nla.mode", "IGNORE", "(IGNORE|RELAY|REDIRECT)", "Specify how to handle connections to a NLA-enabled host. Either IGNORE, RELAY or REDIRECT."))
-mod.AddParam(session.NewStringParameter("rdp.proxy.nla.redirect.ip", "", "", "Specify IP to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
-mod.AddParam(session.NewIntParameter("rdp.proxy.nla.redirect.port", "3389", "Specify port to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT"))
+    // Required parameters
+    mod.AddParam(session.NewIntParameter("rdp.proxy.queue.num", "0", "NFQUEUE number to bind to."))
+    mod.AddParam(session.NewIntParameter("rdp.proxy.port", "3389", "RDP port to intercept."))
+    mod.AddParam(session.NewIntParameter("rdp.proxy.start", "40000", "Starting port for PyRDP sessions."))
+    mod.AddParam(session.NewBoolParameter("rdp.proxy.replay", "false", "Specify if PyRDP shoudld save replay recording."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.command", "pyrdp-mitm.py", "", "The PyRDP base command to launch the man-in-the-middle."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.out", "./pyrdp_output", "", "The output directory for PyRDP artifacts."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)", "", "Print PyRDP logs matching this regular expression."))
+    // Optional paramaters
+    mod.AddParam(session.NewStringParameter("rdp.proxy.nla.mode", "IGNORE", "(IGNORE|RELAY|REDIRECT)", "Specify how to handle connections to a NLA-enabled host. Either IGNORE, RELAY or REDIRECT."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.nla.redirect.ip", "", "", "Specify IP to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT."))
+    mod.AddParam(session.NewIntParameter("rdp.proxy.nla.redirect.port", "3389", "Specify port to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.player.ip", "", "", "Destination IP address of the PyRDP player."))
+    mod.AddParam(session.NewIntParameter("rdp.proxy.player.port", "3000", "Listening port of the PyRDP player."))
 
     return mod
 }
@@ -187,6 +193,15 @@ func (mod *RdpProxy) startProxyInstance(client string, target string) (err error
 
     if !mod.replay {
         args = append(args, "--no-replay")
+    }
+
+    // PyRDP Player options
+    if mod.playerIP != nil {
+        args = append(args, "-i")
+        args = append(args, mod.playerIP.String())
+
+        args = append(args, "-d")
+        args = append(args, fmt.Sprintf("%d", mod.playerPort))
     }
 
     args = append(args, target)
@@ -342,6 +357,12 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     } else if mod.redirectPort < 1 || mod.redirectPort > 65535 {
         return errors.New("rdp.proxy.nla.redirect.port must be between 1 and 65535")
+    } else if err, mod.playerIP = mod.IPParam("rdp.proxy.player.ip"); err != nil {
+        return
+    } else if err, mod.playerPort = mod.IntParam("rdp.proxy.player.port"); err != nil {
+        return
+    } else if mod.playerPort < 1 || mod.playerPort > 65535 {
+        return errors.New("rdp.proxy.player.port must be between 1 and 65535")
     } else if _, err = exec.LookPath(mod.cmd); err != nil {
         return
     } else if _, err = mod.fileExists(mod.cmd); err != nil {
