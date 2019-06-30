@@ -1,62 +1,43 @@
-TARGET=bettercap
-PACKAGES=core firewall log modules network packets session tls
+TARGET   ?= bettercap
+PACKAGES ?= core firewall log modules network packets session tls
+PREFIX   ?= /usr/local
+GO       ?= go
+GOFLAGS  ?= 
 
-all: deps build
-
-deps: godep golint gofmt gomegacheck
-	@dep ensure
-
-build_with_race_detector: resources
-	@go build -race -o $(TARGET) .
+all: build
 
 build: resources
-	@go build -o $(TARGET) .
+	$(GO) $(GOFLAGS) build -o $(TARGET) .
+
+build_with_race_detector: resources
+	$(GO) $(GOFLAGS) build -race -o $(TARGET) .
 
 resources: network/manuf.go
 
 network/manuf.go:
-	@python ./network/make_manuf.py
-
-clean:
-	@rm -rf $(TARGET)
-	@rm -rf build
+	@python3 ./network/make_manuf.py
 
 install:
-	@mkdir -p /usr/local/share/bettercap/caplets
-	@cp bettercap /usr/local/bin/
+	@mkdir -p $(PREFIX)/share/bettercap/caplets
+	@cp bettercap $(PREFIX)/bin/
 
 docker:
 	@docker build -t bettercap:latest .
 
-# Go 1.9 doesn't support test coverage on multiple packages, while
-# Go 1.10 does, let's keep it 1.9 compatible in order not to break
-# travis
-test: deps
-	@echo "mode: atomic" > coverage.profile
-	@for pkg in $(PACKAGES); do \
-		go fmt ./$$pkg ; \
-		go vet ./$$pkg ; \
-		megacheck ./$$pkg ; \
-		touch $$pkg.profile ; \
-		go test -race ./$$pkg -coverprofile=$$pkg.profile -covermode=atomic; \
-		tail -n +2 $$pkg.profile >> coverage.profile && rm -rf $$pkg.profile ; \
-	done
+test:
+	$(GO) $(GOFLAGS) test -covermode=atomic -coverprofile=cover.out ./...
 
 html_coverage: test
-	@go tool cover -html=coverage.profile -o coverage.profile.html
+	$(GO) $(GOFLAGS) tool cover -html=cover.out -o cover.out.html
 
 benchmark: server_deps
-	@go test ./... -v -run=doNotRunTests -bench=. -benchmem
+	$(GO) $(GOFLAGS) test -v -run=doNotRunTests -bench=. -benchmem ./...
 
-# tools
-godep:
-	@go get -u github.com/golang/dep/...
+fmt:
+	$(GO) fmt -s -w $(PACKAGES)
 
-golint:
-	@go get -u golang.org/x/lint/golint
+clean:
+	$(RM) $(TARGET)
+	$(RM) -r build
 
-gomegacheck:
-	@go get honnef.co/go/tools/cmd/megacheck
-
-gofmt:
-	gofmt -s -w $(PACKAGES)
+.PHONY: all build build_with_race_detector resources install docker test html_coverage benchmark fmt clean
