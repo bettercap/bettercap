@@ -2,9 +2,8 @@ sudo: false
 
 language: go
 go:
-    # - 1.9.x
-    # - 1.10.x
   - 1.11.x
+  - 1.12.x
   - master
 
 matrix:
@@ -21,15 +20,15 @@ notifications:
 git:
   depth: 3
 
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libpcap-dev libnetfilter-queue-dev
-
-install:
-  - make deps
+addons:
+  apt:
+    packages:
+    - libpcap-dev
+    - libnetfilter-queue-dev
+    - libusb-1.0-0-dev
 
 script:
-  - make test
+  - env GO111MODULE=on make test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
