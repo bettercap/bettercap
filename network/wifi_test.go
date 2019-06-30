@@ -1,9 +1,14 @@
 package network
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/evilsocket/islazy/data"
+)
 
 func buildExampleWiFi() *WiFi {
-	return NewWiFi(buildExampleEndpoint(), func(ap *AccessPoint) {}, func(ap *AccessPoint) {})
+	aliases := &data.UnsortedKV{}
+	return NewWiFi(buildExampleEndpoint(), aliases, func(ap *AccessPoint) {}, func(ap *AccessPoint) {})
 }
 
 func TestDot11Freq2Chan(t *testing.T) {
@@ -25,7 +30,8 @@ func TestDot11Chan2Freq(t *testing.T) {
 }
 
 func TestNewWiFi(t *testing.T) {
-	exampleWiFi := NewWiFi(buildExampleEndpoint(), func(ap *AccessPoint) {}, func(ap *AccessPoint) {})
+	aliases := &data.UnsortedKV{}
+	exampleWiFi := NewWiFi(buildExampleEndpoint(), aliases, func(ap *AccessPoint) {}, func(ap *AccessPoint) {})
 	if exampleWiFi == nil {
 		t.Error("unable to build net wifi struct")
 	}
@@ -44,7 +50,8 @@ func TestWiFiMarshalJSON(t *testing.T) {
 
 func TestEachAccessPoint(t *testing.T) {
 	exampleWiFi := buildExampleWiFi()
-	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	aliases := &data.UnsortedKV{}
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0), aliases)
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f1"] = exampleAP
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f2"] = exampleAP
 	count := 0
@@ -59,7 +66,8 @@ func TestEachAccessPoint(t *testing.T) {
 
 func TestStations(t *testing.T) {
 	exampleWiFi := buildExampleWiFi()
-	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	aliases := &data.UnsortedKV{}
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0), aliases)
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f1"] = exampleAP
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f2"] = exampleAP
 	exp := 2
@@ -71,7 +79,8 @@ func TestStations(t *testing.T) {
 
 func TestWiFiList(t *testing.T) {
 	exampleWiFi := buildExampleWiFi()
-	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	aliases := &data.UnsortedKV{}
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0), aliases)
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f1"] = exampleAP
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f2"] = exampleAP
 	exp := 2
@@ -83,7 +92,8 @@ func TestWiFiList(t *testing.T) {
 
 func TestWiFiRemove(t *testing.T) {
 	exampleWiFi := buildExampleWiFi()
-	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	aliases := &data.UnsortedKV{}
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0), aliases)
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f1"] = exampleAP
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f2"] = exampleAP
 	exampleWiFi.Remove("ff:ff:ff:ff:ff:f1")
@@ -96,7 +106,8 @@ func TestWiFiRemove(t *testing.T) {
 
 func TestWiFiAddIfNew(t *testing.T) {
 	exampleWiFi := buildExampleWiFi()
-	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	aliases := &data.UnsortedKV{}
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0), aliases)
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f1"] = exampleAP
 	exampleWiFi.aps["ff:ff:ff:ff:ff:f2"] = exampleAP
 	exampleWiFi.AddIfNew("my_wifi2", "ff:ff:ff:ff:ff:f3", 2472, int8(0))
@@ -109,7 +120,8 @@ func TestWiFiAddIfNew(t *testing.T) {
 
 func TestWiFiGet(t *testing.T) {
 	exampleWiFi := buildExampleWiFi()
-	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	aliases := &data.UnsortedKV{}
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0), aliases)
 	exampleWiFi.aps["ff:ff:ff:ff:ff:ff"] = exampleAP
 	_, found := exampleWiFi.Get("ff:ff:ff:ff:ff:ff")
 	if !found {
@@ -119,7 +131,8 @@ func TestWiFiGet(t *testing.T) {
 
 func TestWiFiGetClient(t *testing.T) {
 	exampleWiFi := buildExampleWiFi()
-	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	aliases := &data.UnsortedKV{}
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0), aliases)
 	exampleClient := NewStation("my_wifi", "ff:ff:ff:ff:ff:xx", 2472, int8(0))
 	exampleAP.clients["ff:ff:ff:ff:ff:xx"] = exampleClient
 	exampleWiFi.aps["ff:ff:ff:ff:ff:ff"] = exampleAP
@@ -131,7 +144,8 @@ func TestWiFiGetClient(t *testing.T) {
 
 func TestWiFiClear(t *testing.T) {
 	exampleWiFi := buildExampleWiFi()
-	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0))
+	aliases := &data.UnsortedKV{}
+	exampleAP := NewAccessPoint("my_wifi", "ff:ff:ff:ff:ff:ff", 2472, int8(0), aliases)
 	exampleWiFi.aps["ff:ff:ff:ff:ff:ff"] = exampleAP
 	exampleWiFi.Clear()
 	if len(exampleWiFi.aps) != 0 {

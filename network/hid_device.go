@@ -170,7 +170,8 @@ func (dev *HIDDevice) onEventFrame(p []byte, sz int) {
 	} else if sz == 5 && p[0] == 0x00 && p[1] == 0x40 {
 		dev.Type = HIDTypeLogitech // keepalive
 		return
-	} else if sz == 10 && p[0] == 0x00 && p[0] == 0x4f {
+		// TODO: review this condition
+	} else if sz == 10 && p[0] == 0x00 { //&& p[0] == 0x4f {
 		dev.Type = HIDTypeLogitech // sleep timer
 		return
 	}
