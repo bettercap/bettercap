@@ -372,7 +372,10 @@ func (mod *RdpProxy) Configure() (err error) {
     if mod.nlaMode == "RELAY" {
         mod.Info("Mode RELAY is unimplemented yet, fallbacking to mode IGNORE.")
         mod.nlaMode = "IGNORE"
+    } else if mod.nlaMode == "REDIRECT" && mod.redirectIP == nil {
+        return errors.New("rdp.proxy.nla.redirect.ip must be set when using mode REDIRECT")
     }
+
     if mod.regexp != "" {
         if mod.compiled, err = regexp.Compile(mod.regexp); err != nil {
             return
