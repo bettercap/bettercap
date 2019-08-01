@@ -89,12 +89,21 @@ func (mod *EventsStream) dumpGZIP(body []byte) string {
 	buffer := bytes.NewBuffer(body)
 	uncompressed := bytes.Buffer{}
 	reader, err := gzip.NewReader(buffer)
-	if err != nil {
-		return mod.dumpRaw(body)
-	} else if _, err = uncompressed.ReadFrom(reader); err != nil {
-		return mod.dumpRaw(body)
+	if mod.dumpFormatHex {
+		if err != nil {
+			return mod.dumpRaw(body)
+		} else if _, err = uncompressed.ReadFrom(reader); err != nil {
+			return mod.dumpRaw(body)
+		}
+		return mod.dumpRaw(uncompressed.Bytes())
+	} else {
+		if err != nil {
+			return mod.dumpText(body)
+		} else if _, err = uncompressed.ReadFrom(reader); err != nil {
+			return mod.dumpText(body)
+		}
+		return mod.dumpText(uncompressed.Bytes())
 	}
-	return mod.dumpRaw(uncompressed.Bytes())
 }
 
 func (mod *EventsStream) dumpJSON(body []byte) string {
@@ -149,7 +158,11 @@ func (mod *EventsStream) viewHttpRequest(e session.Event) {
 			} else if req.IsType("application/json") {
 				dump += mod.dumpJSON(req.Body)
 			} else {
-				dump += mod.dumpRaw(req.Body)
+				if mod.dumpFormatHex {
+					dump += mod.dumpRaw(req.Body)
+				} else {
+					dump += mod.dumpText(req.Body)
+				}
 			}
 		}
 
