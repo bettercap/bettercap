@@ -36,6 +36,7 @@ type EventsStream struct {
 	quit          chan bool
 	dumpHttpReqs  bool
 	dumpHttpResp  bool
+	dumpFormatHex bool
 }
 
 func NewEventsStream(s *session.Session) *EventsStream {
@@ -214,6 +215,10 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		"false",
 		"If true all HTTP responses will be dumped."))
 
+	mod.AddParam(session.NewBoolParameter("events.stream.http.format.hex",
+		"true",
+		"If true dumped HTTP bodies will be in hexadecimal format."))
+
 	return mod
 }
 
@@ -257,6 +262,8 @@ func (mod *EventsStream) Configure() (err error) {
 	if err, mod.dumpHttpReqs = mod.BoolParam("events.stream.http.request.dump"); err != nil {
 		return err
 	} else if err, mod.dumpHttpResp = mod.BoolParam("events.stream.http.response.dump"); err != nil {
+		return err
+	} else if err, mod.dumpFormatHex = mod.BoolParam("events.stream.http.format.hex"); err != nil {
 		return err
 	}
 
