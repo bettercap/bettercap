@@ -89,7 +89,7 @@ func NewRdpProxy(s *session.Session) *RdpProxy {
     mod.AddParam(session.NewStringParameter("rdp.proxy.targets", session.ParamSubnet, "", "Comma separated list of IP addresses to proxy to, also supports nmap style IP ranges."))
     mod.AddParam(session.NewStringParameter("rdp.proxy.regexp", "(?i)(cookie:|mstshash=|clipboard data|client info|credential|username|password|error)", "", "Print PyRDP logs matching this regular expression."))
     // Optional paramaters
-    mod.AddParam(session.NewStringParameter("rdp.proxy.nla.mode", "IGNORE", "(IGNORE|RELAY|REDIRECT)", "Specify how to handle connections to a NLA-enabled host. Either IGNORE, RELAY or REDIRECT."))
+    mod.AddParam(session.NewStringParameter("rdp.proxy.nla.mode", "IGNORE", "(IGNORE|REDIRECT)", "Specify how to handle connections to a NLA-enabled host. Either IGNORE or REDIRECT."))
     mod.AddParam(session.NewStringParameter("rdp.proxy.nla.redirect.ip", "", "", "Specify IP to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT."))
     mod.AddParam(session.NewIntParameter("rdp.proxy.nla.redirect.port", "3389", "Specify port to redirect clients that connects to NLA targets. Require rdp.proxy.nla.mode REDIRECT."))
     mod.AddParam(session.NewStringParameter("rdp.proxy.player.ip", "", "", "Destination IP address of the PyRDP player."))
@@ -185,7 +185,7 @@ func (mod *RdpProxy) isNLAEnforced(target string) (nla bool, err error){
 }
 
 func (mod *RdpProxy) startProxyInstance(client string, target string) (err error) {
-    // 3.1. Create a proxy agent and firewall rules.
+    // Create a proxy agent and firewall rules.
     args := []string{
         "-l", fmt.Sprintf("%d", mod.startPort),
         "-o", mod.outpath,
@@ -206,7 +206,7 @@ func (mod *RdpProxy) startProxyInstance(client string, target string) (err error
 
     args = append(args, target)
 
-    //   3.2. Spawn PyRDP proxy instance
+    // Spawn PyRDP proxy instance
     cmd := exec.Command(mod.cmd, args...)
     stderrPipe, _ := cmd.StderrPipe()
 
@@ -328,7 +328,6 @@ func (mod *RdpProxy) Configure() (err error) {
     golog.SetOutput(ioutil.Discard)
     mod.destroyQueue()
 
-    // TODO: Param validation and hydration
     if err, mod.port = mod.IntParam("rdp.proxy.port"); err != nil {
         return
     } else if mod.port < 1 || mod.port > 65535 {
@@ -369,10 +368,7 @@ func (mod *RdpProxy) Configure() (err error) {
         return
     }
 
-    if mod.nlaMode == "RELAY" {
-        mod.Info("Mode RELAY is unimplemented yet, fallbacking to mode IGNORE.")
-        mod.nlaMode = "IGNORE"
-    } else if mod.nlaMode == "REDIRECT" && mod.redirectIP == nil {
+    if mod.nlaMode == "REDIRECT" && mod.redirectIP == nil {
         return errors.New("rdp.proxy.nla.redirect.ip must be set when using mode REDIRECT")
     }
 
@@ -409,9 +405,8 @@ func (mod *RdpProxy) Configure() (err error) {
     return nil
 }
 
-// Note: It is probably a good idea to verify whether this call is serialized.
 func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
-    // 1. Determine source and target addresses.
+    // Determine source and target addresses.
     p := gopacket.NewPacket(payload.Data, layers.LayerTypeIPv4, gopacket.Default)
     src, sport := p.NetworkLayer().NetworkFlow().Src().String(), fmt.Sprintf("%s", p.TransportLayer().TransportFlow().Src())
     dst, dport := p.NetworkLayer().NetworkFlow().Dst().String(), fmt.Sprintf("%s", p.TransportLayer().TransportFlow().Dst())
@@ -421,14 +416,12 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
 
     if mod.isTarget(dst) {
 
-        // 2. Check if the destination IP already has a PyRDP session active, if so, do nothing.
+        // Check if the destination IP already has a PyRDP session active, if so, do nothing.
         if _, ok :=  mod.active[target]; !ok {
             targetNLA, _ := mod.isNLAEnforced(target)
 
             if targetNLA {
-                switch mod.nlaMode {
-                case "REDIRECT":
-                    // TODO : Find a way to disconnect user right after stealing credentials.
+                if mod.nlaMode == "REDIRECT" {
                     // Start a PyRDP instance to the preconfigured vulnerable host
                     // and forward packets to the target to this host instead
                     NewRdpProxyEvent(client, target, "Target has NLA enabled and mode REDIRECT, forwarding to the vulnerable host.").Push()
@@ -446,7 +439,7 @@ func (mod *RdpProxy) handleRdpConnection(payload *nfqueue.Payload) int {
 
                     mod.doProxy(dst, fmt.Sprintf("%d", mod.startPort))
                     mod.startPort += 1
-                default:
+                } else {
                     // Add an exception in the firewall to avoid intercepting packets to this destination and port
                     NewRdpProxyEvent(client, target, "Target has NLA enabled and mode IGNORE, won't intercept.").Push()
 
