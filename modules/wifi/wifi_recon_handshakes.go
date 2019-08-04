@@ -54,6 +54,16 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 				staMac,
 				PMKID,
 				key.Nonce)
+
+			//add the ap's station's beacon packet to be saved as part of the handshake cap file
+                       //https://github.com/ZerBea/hcxtools/issues/92
+                       //https://github.com/bettercap/bettercap/issues/592
+
+			if ap.Station.Handshake.Beacon != nil {
+				mod.Debug("adding beacon frame to handshake for %s", apMac)
+				station.Handshake.AddFrame(1, ap.Station.Handshake.Beacon)
+			}
+
 		} else if !key.Install && !key.KeyACK && key.KeyMIC && !allZeros(key.Nonce) {
 			// [2] (MIC) client is sending SNonce+MIC to the API
 			station.Handshake.AddFrame(1, packet)
