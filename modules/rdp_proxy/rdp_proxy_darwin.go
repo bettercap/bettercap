@@ -23,7 +23,7 @@ func (mod RdpProxy) Description() string {
 }
 
 func (mod RdpProxy) Author() string {
-	return "Alexandre Beaulieu <alex@segfault.me>"
+	return "Alexandre Beaulieu <alex@segfault.me> && Maxime Carbonneau <pourliver@gmail.com>"
 }
 
 func (mod *RdpProxy) Configure() (err error) {
