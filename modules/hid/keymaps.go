@@ -43,6 +43,7 @@ var BaseMap = KeyMap{
 	"LEFT":        Command{HID: 80},
 	"DOWN":        Command{HID: 81},
 	"UP":          Command{HID: 82},
+	"MENU":        Command{HID: 101},
 }
 
 var KeyMaps = map[string]KeyMap{
