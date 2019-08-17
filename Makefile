@@ -3,7 +3,7 @@ PACKAGES=core firewall log modules network packets session tls
 
 all: deps build
 
-deps: godep golint gofmt gomegacheck
+deps: godep golint gofmt
 	@dep ensure
 
 build_with_race_detector: resources
@@ -36,7 +36,6 @@ test: deps
 	@for pkg in $(PACKAGES); do \
 		go fmt ./$$pkg ; \
 		go vet ./$$pkg ; \
-		megacheck ./$$pkg ; \
 		touch $$pkg.profile ; \
 		go test -race ./$$pkg -coverprofile=$$pkg.profile -covermode=atomic; \
 		tail -n +2 $$pkg.profile >> coverage.profile && rm -rf $$pkg.profile ; \
@@ -54,9 +53,6 @@ godep:
 
 golint:
 	@go get -u golang.org/x/lint/golint
-
-gomegacheck:
-	@go get honnef.co/go/tools/cmd/megacheck
 
 gofmt:
 	gofmt -s -w $(PACKAGES)

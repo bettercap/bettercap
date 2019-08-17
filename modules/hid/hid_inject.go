@@ -142,7 +142,7 @@ func (mod *HIDRecon) doInjection() {
 		}
 		if cmd.Sleep > 0 {
 			mod.Debug("sleeping %dms after command #%d ...", cmd.Sleep, i)
-			time.Sleep(time.Duration(cmd.Sleep)*time.Millisecond)
+			time.Sleep(time.Duration(cmd.Sleep) * time.Millisecond)
 		}
 	}
 }
