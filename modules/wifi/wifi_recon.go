@@ -67,6 +67,9 @@ func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *la
 				}
 
 				if ap, isNew := mod.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal); !isNew {
+					//set beacon packet on the access point station.
+					//This is for it to be included in the saved handshake file for wifi.assoc
+					ap.Station.Handshake.Beacon = packet
 					ap.EachClient(func(mac string, station *network.Station) {
 						station.Handshake.SetBeacon(packet)
 					})
