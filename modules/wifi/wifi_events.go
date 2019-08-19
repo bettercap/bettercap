@@ -22,5 +22,7 @@ type HandshakeEvent struct {
 	NewPackets int    `json:"new_packets"`
 	AP         string `json:"ap"`
 	Station    string `json:"station"`
+	Half       bool   `json:"half"`
+	Full       bool   `json:"full"`
 	PMKID      []byte `json:"pmkid"`
 }

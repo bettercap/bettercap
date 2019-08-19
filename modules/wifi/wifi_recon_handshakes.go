@@ -102,6 +102,8 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 				AP:         apMac.String(),
 				Station:    staMac.String(),
 				PMKID:      rawPMKID,
+				Half:       station.Handshake.Half(),
+				Full:       station.Handshake.Complete(),
 			})
 			// make sure the info that we have key material for this AP
 			// is persisted even after stations are pruned due to inactivity

@@ -80,6 +80,10 @@ func (mod *EventsStream) viewWiFiHandshakeEvent(e session.Event) {
 
 	if hand.PMKID != nil {
 		what = "RSN PMKID"
+	} else if hand.Full {
+		what += " (full)"
+	} else if hand.Half {
+		what += " (half)"
 	}
 
 	fmt.Fprintf(mod.output, "[%s] [%s] captured %s -> %s %s to %s\n",
