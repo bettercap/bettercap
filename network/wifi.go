@@ -232,7 +232,8 @@ func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error
 
 	for _, ap := range w.aps {
 		for _, station := range ap.Clients() {
-			if station.Handshake.Complete() || station.Handshake.HasPMKID() {
+			// if half (which includes also complete) or has pmkid
+			if station.Handshake.Half() || station.Handshake.HasPMKID() {
 				err = nil
 				station.Handshake.EachUnsavedPacket(func(pkt gopacket.Packet) {
 					if err == nil {
