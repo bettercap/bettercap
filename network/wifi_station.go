@@ -65,9 +65,12 @@ func (s *Station) IsOpen() bool {
 }
 
 func (s *Station) PathFriendlyName() string {
-	name := strings.Replace(s.HwAddress, ":", "", -1)
+	name := ""
+	bssid := strings.Replace(s.HwAddress, ":", "", -1)
 	if essid := pathNameCleaner.ReplaceAllString(s.Hostname, ""); essid != "" {
-		name = fmt.Sprintf("%s_%s", name, essid)
+		name = fmt.Sprintf("%s_%s", essid, bssid)
+	} else {
+		name = bssid
 	}
 	return name
 }

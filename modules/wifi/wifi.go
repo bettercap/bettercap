@@ -364,14 +364,14 @@ func (mod *WiFiModule) Configure() error {
 		return err
 	}
 
-	if err, mod.shakesFile = mod.StringParam("wifi.handshakes.file"); err != nil {
+	if err, mod.shakesAggregate = mod.BoolParam("wifi.handshakes.aggregate"); err != nil {
+		return err
+	} else if err, mod.shakesFile = mod.StringParam("wifi.handshakes.file"); err != nil {
 		return err
 	} else if mod.shakesFile != "" {
 		if mod.shakesFile, err = fs.Expand(mod.shakesFile); err != nil {
 			return err
 		}
-	} else if err, mod.shakesAggregate = mod.BoolParam("wifi.handshakes.aggregate"); err != nil {
-		return err
 	}
 
 	if err, ifName = mod.StringParam("wifi.interface"); err != nil {
