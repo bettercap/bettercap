@@ -3,6 +3,7 @@ package network
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -214,8 +215,15 @@ func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error
 	w.Lock()
 	defer w.Unlock()
 
-	doHead := !fs.Exists(fileName)
+	// check if folder exists first
+	dirName := filepath.Dir(fileName)
+	if _, err := os.Stat(dirName); err != nil {
+		if err = os.MkdirAll(dirName, os.ModePerm); err != nil {
+			return err
+		}
+	}
 
+	doHead := !fs.Exists(fileName)
 	fp, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return err

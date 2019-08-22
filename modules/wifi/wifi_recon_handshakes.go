@@ -2,6 +2,8 @@ package wifi
 
 import (
 	"bytes"
+	"fmt"
+	"path"
 
 	"github.com/bettercap/bettercap/packets"
 
@@ -85,11 +87,15 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 
 		// if we have unsaved packets as part of the handshake, save them.
 		numUnsaved := station.Handshake.NumUnsaved()
+		shakesFileName := mod.shakesFile
 		doSave := numUnsaved > 0
-		if doSave && mod.shakesFile != "" {
-			mod.Debug("saving handshake frames to %s", mod.shakesFile)
-			if err := mod.Session.WiFi.SaveHandshakesTo(mod.shakesFile, mod.handle.LinkType()); err != nil {
-				mod.Error("error while saving handshake frames to %s: %s", mod.shakesFile, err)
+		if doSave && shakesFileName != "" {
+			if mod.shakesAggregate == false {
+				shakesFileName = path.Join(shakesFileName, fmt.Sprintf("%s.pcap", station.PathFriendlyName()))
+			}
+			mod.Debug("saving handshake frames to %s", shakesFileName)
+			if err := mod.Session.WiFi.SaveHandshakesTo(shakesFileName, mod.handle.LinkType()); err != nil {
+				mod.Error("error while saving handshake frames to %s: %s", shakesFileName, err)
 			}
 		}
 
@@ -97,7 +103,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		// or it contains the PMKID, generate a new event.
 		if doSave && (rawPMKID != nil || station.Handshake.Half() || station.Handshake.Complete()) {
 			mod.Session.Events.Add("wifi.client.handshake", HandshakeEvent{
-				File:       mod.shakesFile,
+				File:       shakesFileName,
 				NewPackets: numUnsaved,
 				AP:         apMac.String(),
 				Station:    staMac.String(),

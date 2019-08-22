@@ -39,6 +39,7 @@ type WiFiModule struct {
 	ap                  *network.AccessPoint
 	stickChan           int
 	shakesFile          string
+	shakesAggregate     bool
 	skipBroken          bool
 	pktSourceChan       chan gopacket.Packet
 	pktSourceChanClosed bool
@@ -59,26 +60,27 @@ type WiFiModule struct {
 
 func NewWiFiModule(s *session.Session) *WiFiModule {
 	mod := &WiFiModule{
-		SessionModule: session.NewSessionModule("wifi", s),
-		iface:         s.Interface,
-		minRSSI:       -200,
-		channel:       0,
-		stickChan:     0,
-		hopPeriod:     250 * time.Millisecond,
-		hopChanges:    make(chan bool),
-		ap:            nil,
-		skipBroken:    true,
-		apRunning:     false,
-		deauthSkip:    []net.HardwareAddr{},
-		deauthSilent:  false,
-		deauthOpen:    false,
-		assocSkip:     []net.HardwareAddr{},
-		assocSilent:   false,
-		assocOpen:     false,
-		showManuf:     false,
-		writes:        &sync.WaitGroup{},
-		reads:         &sync.WaitGroup{},
-		chanLock:      &sync.Mutex{},
+		SessionModule:   session.NewSessionModule("wifi", s),
+		iface:           s.Interface,
+		minRSSI:         -200,
+		channel:         0,
+		stickChan:       0,
+		hopPeriod:       250 * time.Millisecond,
+		hopChanges:      make(chan bool),
+		ap:              nil,
+		skipBroken:      true,
+		apRunning:       false,
+		deauthSkip:      []net.HardwareAddr{},
+		deauthSilent:    false,
+		deauthOpen:      false,
+		assocSkip:       []net.HardwareAddr{},
+		assocSilent:     false,
+		assocOpen:       false,
+		showManuf:       false,
+		shakesAggregate: true,
+		writes:          &sync.WaitGroup{},
+		reads:           &sync.WaitGroup{},
+		chanLock:        &sync.Mutex{},
 	}
 
 	mod.InitState("channels")
@@ -219,6 +221,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"~/bettercap-wifi-handshakes.pcap",
 		"",
 		"File path of the pcap file to save handshakes to."))
+
+	mod.AddParam(session.NewBoolParameter("wifi.handshakes.aggregate",
+		"true",
+		"If true, all handshakes will be saved inside a single file, otherwise a folder with per-network pcap files will be created."))
 
 	mod.AddParam(session.NewStringParameter("wifi.ap.ssid",
 		"FreeWiFi",
@@ -364,6 +370,8 @@ func (mod *WiFiModule) Configure() error {
 		if mod.shakesFile, err = fs.Expand(mod.shakesFile); err != nil {
 			return err
 		}
+	} else if err, mod.shakesAggregate = mod.BoolParam("wifi.handshakes.aggregate"); err != nil {
+		return err
 	}
 
 	if err, ifName = mod.StringParam("wifi.interface"); err != nil {
