@@ -93,7 +93,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 			if mod.shakesAggregate == false {
 				shakesFileName = path.Join(shakesFileName, fmt.Sprintf("%s.pcap", station.PathFriendlyName()))
 			}
-			mod.Debug("saving handshake frames to %s", shakesFileName)
+			mod.Debug("(aggregate %v) saving handshake frames to %s", mod.shakesAggregate, shakesFileName)
 			if err := mod.Session.WiFi.SaveHandshakesTo(shakesFileName, mod.handle.LinkType()); err != nil {
 				mod.Error("error while saving handshake frames to %s: %s", shakesFileName, err)
 			}
