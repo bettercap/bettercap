@@ -88,11 +88,11 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		// if we have unsaved packets as part of the handshake, save them.
 		numUnsaved := station.Handshake.NumUnsaved()
 		shakesFileName := mod.shakesFile
+		if mod.shakesAggregate == false {
+			shakesFileName = path.Join(shakesFileName, fmt.Sprintf("%s.pcap", station.PathFriendlyName()))
+		}
 		doSave := numUnsaved > 0
 		if doSave && shakesFileName != "" {
-			if mod.shakesAggregate == false {
-				shakesFileName = path.Join(shakesFileName, fmt.Sprintf("%s.pcap", station.PathFriendlyName()))
-			}
 			mod.Debug("(aggregate %v) saving handshake frames to %s", mod.shakesAggregate, shakesFileName)
 			if err := mod.Session.WiFi.SaveHandshakesTo(shakesFileName, mod.handle.LinkType()); err != nil {
 				mod.Error("error while saving handshake frames to %s: %s", shakesFileName, err)
