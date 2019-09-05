@@ -276,7 +276,6 @@ func init() {
 					}
 					req.Header.Add(key, v.String())
 				}
-
 			}
 		} else if err != nil {
 			return errOtto("Could create request to url %s: %s", url, err)

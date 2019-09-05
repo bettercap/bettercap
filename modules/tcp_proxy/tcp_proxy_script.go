@@ -7,9 +7,9 @@ import (
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
 
-	"github.com/robertkrimen/otto"
-
 	"github.com/evilsocket/islazy/plugin"
+
+	"github.com/robertkrimen/otto"
 )
 
 type TcpProxyScript struct {
@@ -46,12 +46,12 @@ func LoadTcpProxyScript(path string, sess *session.Session) (err error, s *TcpPr
 	return
 }
 
-func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte) []byte {
+func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte, callback func(call otto.FunctionCall) otto.Value) []byte {
 	if s.doOnData {
 		addrFrom := strings.Split(from.String(), ":")[0]
 		addrTo := strings.Split(to.String(), ":")[0]
 
-		if ret, err := s.Call("onData", addrFrom, addrTo, data); err != nil {
+		if ret, err := s.Call("onData", addrFrom, addrTo, data, callback); err != nil {
 			log.Error("error while executing onData callback: %s", err)
 			return nil
 		} else if ret != nil {
