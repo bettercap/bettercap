@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"io/ioutil"
+	"net/http"
 
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/session"
@@ -244,5 +245,68 @@ func init() {
 		}
 
 		return nullOtto
+	}
+
+	// send http request
+	plugin.Defines["httpRequest"] = func(call otto.FunctionCall) otto.Value {
+		argv := call.ArgumentList
+		argc := len(argv)
+		if argc < 2 {
+			return errOtto("httpRequest: expected 2 or more, %d given instead.", argc)
+		}
+
+		method := argv[0].String()
+		url := argv[1].String()
+
+		client := &http.Client{}
+		req, err := http.NewRequest(method, url, nil)
+		if argc >= 3 {
+			data := argv[2].String()
+			req, err = http.NewRequest(method, url, bytes.NewBuffer([]byte(data)))
+			if err != nil {
+				return errOtto("Could create request to url %s: %s", url, err)
+			}
+
+			if argc > 3 {
+				headers := argv[3].Object()
+				for _, key := range headers.Keys() {
+					v, err := headers.Get(key)
+					if err != nil {
+						return errOtto("Could add header %s to request: %s", key, err)
+					}
+					req.Header.Add(key, v.String())
+				}
+
+			}
+		} else if err != nil {
+			return errOtto("Could create request to url %s: %s", url, err)
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return errOtto("Could not request url %s: %s", url, err)
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errOtto("Could not read response: %s", err)
+		}
+
+		object, err := otto.New().Object("({})")
+		if err != nil {
+			return errOtto("Could not create response object: %s", err)
+		}
+
+		err = object.Set("body", string(body))
+		if err != nil {
+			return errOtto("Could not populate response object: %s", err)
+		}
+
+		v, err := otto.ToValue(object)
+		if err != nil {
+			return errOtto("Could not convert to object: %s", err)
+		}
+		return v
 	}
 }
