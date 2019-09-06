@@ -2,11 +2,11 @@ package caplets
 
 import (
 	"os"
-	"os/user"
 	"path/filepath"
 	"runtime"
 
 	"github.com/evilsocket/islazy/str"
+	"github.com/mitchellh/go-homedir"
 )
 
 const (
@@ -23,8 +23,8 @@ func getInstallBase() string {
 }
 
 func getUserHomeDir() string {
-	usr, _ := user.Current()
-	return usr.HomeDir
+	usr, _ := homedir.Dir()
+	return usr
 }
 
 var (
