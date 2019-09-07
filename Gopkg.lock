@@ -276,6 +276,14 @@
   version = "v1.1.9"
 
 [[projects]]
+  digest = "1:5d231480e1c64a726869bc4142d270184c419749d34f167646baa21008eb0a79"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "af06845cf3004701891bf4fdb884bfe4920b3727"
+  version = "v1.1.0"
+
+[[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -392,6 +400,7 @@
     "github.com/mdlayher/dhcp6/dhcp6opts",
     "github.com/mdlayher/raw",
     "github.com/miekg/dns",
+    "github.com/mitchellh/go-homedir",
     "github.com/robertkrimen/otto",
     "github.com/tarm/serial",
     "golang.org/x/net/html",
