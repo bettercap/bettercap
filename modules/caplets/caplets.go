@@ -120,7 +120,7 @@ func (mod *CapletsModule) Update() error {
 		}
 	}
 
-	out, err := os.Create("/tmp/caplets.zip")
+	out, err := os.Create(caplets.ArchivePath)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (mod *CapletsModule) Update() error {
 
 	mod.Info("installing caplets to %s ...", caplets.InstallPath)
 
-	if _, err = zip.Unzip("/tmp/caplets.zip", caplets.InstallBase); err != nil {
+	if _, err = zip.Unzip(caplets.ArchivePath, caplets.InstallBase); err != nil {
 		return err
 	}
 

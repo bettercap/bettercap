@@ -8,6 +8,8 @@ import (
 
 	"github.com/bettercap/bettercap/firewall"
 	"github.com/bettercap/bettercap/session"
+
+	"github.com/robertkrimen/otto"
 )
 
 type TcpProxy struct {
@@ -150,7 +152,7 @@ func (mod *TcpProxy) Configure() error {
 	return nil
 }
 
-func (mod *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.WaitGroup) {
+func (mod *TcpProxy) doPipe(from, to net.Addr, src *net.TCPConn, dst io.ReadWriter, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	buff := make([]byte, 0xffff)
@@ -165,7 +167,11 @@ func (mod *TcpProxy) doPipe(from, to net.Addr, src, dst io.ReadWriter, wg *sync.
 		b := buff[:n]
 
 		if mod.script != nil {
-			ret := mod.script.OnData(from, to, b)
+			ret := mod.script.OnData(from, to, b, func(call otto.FunctionCall) otto.Value {
+				mod.Debug("onData dropCallback called")
+				src.Close()
+				return otto.Value{}
+			})
 
 			if ret != nil {
 				nret := len(ret)

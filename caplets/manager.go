@@ -25,7 +25,7 @@ func List() []*Caplet {
 
 		for _, fileName := range append(files, files2...) {
 			if _, err := os.Stat(fileName); err == nil {
-				base := strings.Replace(fileName, searchPath+"/", "", -1)
+				base := strings.Replace(fileName, searchPath+string(os.PathSeparator), "", -1)
 				base = strings.Replace(base, Suffix, "", -1)
 
 				if err, caplet := Load(base); err != nil {
@@ -58,7 +58,7 @@ func Load(name string) (error, *Caplet) {
 		name += Suffix
 	}
 
-	if name[0] != '/' {
+	if !filepath.IsAbs(name) {
 		for _, path := range LoadPaths {
 			names = append(names, filepath.Join(path, name))
 		}
