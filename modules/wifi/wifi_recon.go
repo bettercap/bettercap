@@ -11,18 +11,19 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-var maxStationTTL = 5 * time.Minute
-
 func (mod *WiFiModule) stationPruner() {
 	mod.reads.Add(1)
 	defer mod.reads.Done()
 
-	mod.Debug("wifi stations pruner started.")
+	maxApTTL := time.Duration(mod.apTTL) * time.Second
+	maxStaTTL := time.Duration(mod.staTTL) * time.Second
+
+	mod.Debug("wifi stations pruner started (ap.ttl:%v sta.ttl:%v).", maxApTTL, maxStaTTL)
 	for mod.Running() {
 		// loop every AP
 		for _, ap := range mod.Session.WiFi.List() {
 			sinceLastSeen := time.Since(ap.LastSeen)
-			if sinceLastSeen > maxStationTTL {
+			if sinceLastSeen > maxApTTL {
 				mod.Debug("station %s not seen in %s, removing.", ap.BSSID(), sinceLastSeen)
 				mod.Session.WiFi.Remove(ap.BSSID())
 				continue
@@ -30,7 +31,7 @@ func (mod *WiFiModule) stationPruner() {
 			// loop every AP client
 			for _, c := range ap.Clients() {
 				sinceLastSeen := time.Since(c.LastSeen)
-				if sinceLastSeen > maxStationTTL {
+				if sinceLastSeen > maxStaTTL {
 					mod.Debug("client %s of station %s not seen in %s, removing.", c.String(), ap.BSSID(), sinceLastSeen)
 					ap.RemoveClient(c.BSSID())
 

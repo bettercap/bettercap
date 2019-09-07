@@ -32,6 +32,8 @@ type WiFiModule struct {
 	region              string
 	txPower             int
 	minRSSI             int
+	apTTL               int
+	staTTL              int
 	channel             int
 	hopPeriod           time.Duration
 	hopChanges          chan bool
@@ -63,6 +65,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		SessionModule:   session.NewSessionModule("wifi", s),
 		iface:           s.Interface,
 		minRSSI:         -200,
+		apTTL:           300,
+		staTTL:          300,
 		channel:         0,
 		stickChan:       0,
 		hopPeriod:       250 * time.Millisecond,
@@ -184,6 +188,14 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	assoc.Complete("wifi.assoc", s.WiFiCompleter)
 
 	mod.AddHandler(assoc)
+
+	mod.AddParam(session.NewIntParameter("wifi.ap.ttl",
+		"300",
+		"Seconds of inactivity for an access points to be considered not in range anymore."))
+
+	mod.AddParam(session.NewIntParameter("wifi.sta.ttl",
+		"300",
+		"Seconds of inactivity for a client station to be considered not in range or not connected to its access point anymore."))
 
 	mod.AddParam(session.NewStringParameter("wifi.region",
 		"",
@@ -353,6 +365,12 @@ func (mod *WiFiModule) Configure() error {
 	var ifName string
 	var hopPeriod int
 	var err error
+
+	if err, mod.apTTL = mod.IntParam("wifi.ap.ttl"); err != nil {
+		return err
+	} else if err, mod.staTTL = mod.IntParam("wifi.sta.ttl"); err != nil {
+		return err
+	}
 
 	if err, mod.region = mod.StringParam("wifi.region"); err != nil {
 		return err
