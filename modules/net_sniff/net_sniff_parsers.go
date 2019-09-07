@@ -32,6 +32,12 @@ func onUNK(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
 }
 
 func mainParser(pkt gopacket.Packet, verbose bool) bool {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Warning("error while parsing packet: %v", err)
+		}
+	}()
+
 	// simple networking sniffing mode?
 	nlayer := pkt.NetworkLayer()
 	if nlayer != nil {
