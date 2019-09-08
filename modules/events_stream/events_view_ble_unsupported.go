@@ -1,4 +1,4 @@
-// +build windows darwin
+// +build windows
 
 package events_stream
 
