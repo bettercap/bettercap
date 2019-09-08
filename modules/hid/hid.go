@@ -17,6 +17,7 @@ type HIDRecon struct {
 	dongle       *nrf24.Dongle
 	waitGroup    *sync.WaitGroup
 	channel      int
+	devTTL       int
 	hopPeriod    time.Duration
 	pingPeriod   time.Duration
 	sniffPeriod  time.Duration
@@ -45,6 +46,7 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 		waitGroup:     &sync.WaitGroup{},
 		sniffLock:     &sync.Mutex{},
 		writeLock:     &sync.Mutex{},
+		devTTL:        1200,
 		hopPeriod:     100 * time.Millisecond,
 		pingPeriod:    100 * time.Millisecond,
 		sniffPeriod:   500 * time.Millisecond,
@@ -117,6 +119,10 @@ func NewHIDRecon(s *session.Session) *HIDRecon {
 
 	mod.AddHandler(inject)
 
+	mod.AddParam(session.NewIntParameter("hid.ttl",
+		fmt.Sprintf("%d", mod.devTTL),
+		"Seconds of inactivity to consider a device as not in range."))
+
 	mod.AddParam(session.NewBoolParameter("hid.lna",
 		"true",
 		"If true, enable the LNA power amplifier for CrazyRadio devices."))
@@ -167,6 +173,10 @@ func (mod *HIDRecon) Configure() error {
 	}
 
 	if err, mod.useLNA = mod.BoolParam("hid.lna"); err != nil {
+		return err
+	}
+
+	if err, mod.devTTL = mod.IntParam("hid.ttl"); err != nil {
 		return err
 	}
 

@@ -68,13 +68,12 @@ func (mod *HIDRecon) onDeviceDetected(buf []byte) {
 	}
 }
 
-var maxDeviceTTL = 20 * time.Minute
-
 func (mod *HIDRecon) devPruner() {
 	mod.waitGroup.Add(1)
 	defer mod.waitGroup.Done()
 
-	mod.Debug("devices pruner started.")
+	maxDeviceTTL := time.Duration(mod.devTTL) * time.Second
+	mod.Debug("devices pruner started with ttl %v", maxDeviceTTL)
 	for mod.Running() {
 		for _, dev := range mod.Session.HID.Devices() {
 			sinceLastSeen := time.Since(dev.LastSeen)
