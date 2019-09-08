@@ -1,4 +1,4 @@
-// +build windows darwin
+// +build windows
 
 package ble
 
@@ -10,17 +10,6 @@ type BLERecon struct {
 	session.SessionModule
 }
 
-/*
-// darwin
-
-var defaultBLEClientOptions = []gatt.Option{
-	gatt.MacDeviceRole(gatt.CentralManager),
-}
-
-var defaultBLEServerOptions = []gatt.Option{
-	gatt.MacDeviceRole(gatt.PeripheralManager),
-}
-*/
 func NewBLERecon(s *session.Session) *BLERecon {
 	mod := &BLERecon{
 		SessionModule: session.NewSessionModule("ble.recon", s),
