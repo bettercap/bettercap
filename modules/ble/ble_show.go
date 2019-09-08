@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	bleAliveInterval   = time.Duration(5) * time.Second
-	blePresentInterval = time.Duration(30) * time.Second
+	bleAliveInterval = time.Duration(5) * time.Second
 )
 
 func (mod *BLERecon) getRow(dev *network.BLEDevice, withName bool) []string {
@@ -27,6 +26,7 @@ func (mod *BLERecon) getRow(dev *network.BLEDevice, withName bool) []string {
 	sinceSeen := time.Since(dev.LastSeen)
 	lastSeen := dev.LastSeen.Format("15:04:05")
 
+	blePresentInterval := time.Duration(mod.devTTL) * time.Second
 	if sinceSeen <= bleAliveInterval {
 		lastSeen = tui.Bold(lastSeen)
 	} else if sinceSeen > blePresentInterval {
