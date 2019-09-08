@@ -86,10 +86,6 @@ func (e *endpoint) String() string {
 }
 
 func (e *endpoint) transfer(ctx context.Context, buf []byte) (int, error) {
-	if len(buf) == 0 {
-		return 0, nil
-	}
-
 	t, err := newUSBTransfer(e.ctx, e.h, &e.Desc, len(buf))
 	if err != nil {
 		return 0, err

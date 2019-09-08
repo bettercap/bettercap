@@ -131,7 +131,11 @@ func newUSBTransfer(ctx *Context, dev *libusbDevHandle, ei *EndpointDesc, bufLen
 		if bufLen < isoPktSize {
 			isoPktSize = bufLen
 		}
-		isoPackets = bufLen / isoPktSize
+		if isoPktSize > 0 {
+			isoPackets = bufLen / isoPktSize
+		} else {
+			isoPackets = 1
+		}
 		debug.Printf("New isochronous transfer - buffer length %d, using %d packets of %d bytes each", bufLen, isoPackets, isoPktSize)
 	}
 

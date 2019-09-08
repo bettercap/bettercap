@@ -27,6 +27,12 @@ const (
 	descriptorsDiscovered      = 76
 	descriptorRead             = 79
 	descriptorWritten          = 80
+
+	peripheralDiscovered_2 = 48
+	peripheralDiscovered_3 = 51
+
+	peripheralConnected_2       = 67
+	characteristicsDiscovered_2 = 89
 )
 
 type device struct {
@@ -266,17 +272,47 @@ func (d *device) Scan(ss []UUID, dup bool) {
 			"kCBScanOptionAllowDuplicates": map[bool]int{true: 1, false: 0}[dup],
 		},
 	}
-	d.sendCmd(29, args)
+
+	msg := 29
+
+	var utsname xpc.Utsname
+	xpc.Uname(&utsname)
+
+	if utsname.Release >= "18." {
+		msg = 46
+	} else if utsname.Release >= "17." {
+		msg = 44
+	}
+
+	d.sendCmd(msg, args)
 }
 
 func (d *device) StopScanning() {
-	d.sendCmd(30, nil)
+	msg := 30
+
+	var utsname xpc.Utsname
+	xpc.Uname(&utsname)
+
+	if utsname.Release >= "18." {
+		msg = 47
+	}
+
+	d.sendCmd(msg, nil)
 }
 
 func (d *device) Connect(p Peripheral) {
+	msg := 31
+
+	var utsname xpc.Utsname
+	xpc.Uname(&utsname)
+
+	if utsname.Release >= "18." {
+		msg = 48
+	}
+
 	pp := p.(*peripheral)
 	d.plist[pp.id.String()] = pp
-	d.sendCmd(31,
+	d.sendCmd(msg,
 		xpc.Dict{
 			"kCBMsgArgDeviceUUID": pp.id,
 			"kCBMsgArgOptions": xpc.Dict{
@@ -390,7 +426,8 @@ func (d *device) HandleXpcEvent(event xpc.Dict, err error) {
 
 	switch id {
 	case // device event
-		6,  // StateChanged
+		4,  // StateChanged (new)
+		6,  // StateChanged (old)
 		16, // AdvertisingStarted
 		17, // AdvertisingStopped
 		18: // ServiceAdded
@@ -404,7 +441,9 @@ func (d *device) HandleXpcEvent(event xpc.Dict, err error) {
 		23: // Confirmation
 		d.respondToRequest(id, args)
 
-	case peripheralDiscovered:
+	case peripheralDiscovered,
+		peripheralDiscovered_2,
+		peripheralDiscovered_3:
 		xa := args.MustGetDict("kCBMsgArgAdvertisementData")
 		if len(xa) == 0 {
 			return
@@ -438,7 +477,16 @@ func (d *device) HandleXpcEvent(event xpc.Dict, err error) {
 			go d.peripheralDiscovered(&peripheral{id: xpc.UUID(u.b), d: d}, a, rssi)
 		}
 
-	case peripheralConnected:
+	case peripheralConnected, peripheralConnected_2:
+		var utsname xpc.Utsname
+		xpc.Uname(&utsname)
+
+		if utsname.Release >= "18." {
+			// this is not a connect (it doesn't have kCBMsgArgDeviceUUID,
+			// but instead has kCBAdvDataDeviceAddress)
+			break
+		}
+
 		u := UUID{args.MustGetUUID("kCBMsgArgDeviceUUID")}
 		p := &peripheral{
 			id:    xpc.UUID(u.b),
@@ -475,6 +523,7 @@ func (d *device) HandleXpcEvent(event xpc.Dict, err error) {
 		serviceDiscovered,
 		includedServicesDiscovered,
 		characteristicsDiscovered,
+		characteristicsDiscovered_2,
 		characteristicRead,
 		characteristicWritten,
 		notificationValueSet,

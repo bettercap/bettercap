@@ -332,6 +332,12 @@ func (h *HCI) handleNumberOfCompletedPkts(b []byte) error {
 }
 
 func (h *HCI) handleConnection(b []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("error while handling connectiont: %v", err)
+		}
+	}()
+
 	ep := &evt.LEConnectionCompleteEP{}
 	if err := ep.Unmarshal(b); err != nil {
 		return // FIXME
@@ -408,6 +414,12 @@ func (h *HCI) handleLTKRequest(b []byte) {
 }
 
 func (h *HCI) handleLEMeta(b []byte) error {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("error while handling meta: %v", err)
+		}
+	}()
+
 	code := evt.LEEventCode(b[0])
 	switch code {
 	case evt.LEConnectionComplete:
