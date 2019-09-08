@@ -166,12 +166,7 @@ func (mod *BLERecon) Configure() (err error) {
 		golog.SetFlags(0)
 		golog.SetOutput(dummyWriter{mod})
 
-		options := []gatt.Option{
-			gatt.LnxMaxConnections(255),
-			gatt.LnxDeviceID(mod.deviceId, true),
-		}
-
-		if mod.gattDevice, err = gatt.NewDevice(options...); err != nil {
+		if mod.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
 			mod.Debug("error while creating new gatt device: %v", err)
 			return err
 		}
