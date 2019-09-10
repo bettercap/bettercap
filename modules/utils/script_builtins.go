@@ -297,6 +297,9 @@ func init() {
 			return errOtto("Could not create response object: %s", err)
 		}
 
+		err = object.Set("status", resp.StatusCode)
+		err = object.Set("statusText", resp.Status)
+		err = object.Set("ok", resp.StatusCode >= 200 && resp.StatusCode <= 299)
 		err = object.Set("body", string(body))
 		if err != nil {
 			return errOtto("Could not populate response object: %s", err)

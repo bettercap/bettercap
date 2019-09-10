@@ -28,6 +28,7 @@ func getUserHomeDir() string {
 }
 
 var (
+	UserHomePath       = getUserHomeDir()
 	InstallBase        = getInstallBase()
 	InstallPathArchive = filepath.Join(InstallBase, "caplets-master")
 	InstallPath        = filepath.Join(InstallBase, "caplets")
@@ -37,7 +38,7 @@ var (
 		"./",
 		"./caplets/",
 		InstallPath,
-		filepath.Join(getUserHomeDir(), "caplets"),
+		filepath.Join(UserHomePath, "caplets"),
 	}
 )
 

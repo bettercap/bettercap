@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/bettercap/bettercap/caplets"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/go-github/github"
@@ -36,7 +37,7 @@ func NewUIModule(s *session.Session) *UIModule {
 	}
 
 	mod.AddParam(session.NewStringParameter("ui.basepath",
-		"/usr/local/share/bettercap/",
+		caplets.InstallBase,
 		"",
 		"UI base installation path."))
 

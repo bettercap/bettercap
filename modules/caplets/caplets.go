@@ -3,12 +3,15 @@ package caplets
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/bettercap/bettercap/caplets"
 	"github.com/bettercap/bettercap/session"
-
 	"github.com/dustin/go-humanize"
 
 	"github.com/evilsocket/islazy/fs"
@@ -41,6 +44,42 @@ func NewCapletsModule(s *session.Session) *CapletsModule {
 		"Install/updates the caplets.",
 		func(args []string) error {
 			return mod.Update()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("caplets.fixpaths", "",
+		"Fix the absolute caplets path.",
+		func(args []string) error {
+			re := regexp.MustCompile(`(~/|/usr/local/share/bettercap/)`)
+			return filepath.Walk(caplets.InstallPath,
+				func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+					if info.IsDir() || (filepath.Ext(path) != ".js" && filepath.Ext(path) != ".cap") {
+						return nil
+					}
+
+					raw, err := ioutil.ReadFile(path)
+					if err != nil {
+						return err
+					}
+
+					res := re.ReplaceAllStringFunc(string(raw), func(value string) string {
+						switch value {
+						case "~/":
+							return strings.Replace(caplets.UserHomePath, `\`, `/`, -1) + "/"
+						case "/usr/local/share/bettercap/":
+							return strings.Replace(caplets.InstallBase, `\`, `/`, -1) + "/"
+						default:
+							return value
+						}
+					})
+					err = ioutil.WriteFile(path, []byte(res), info.Mode())
+					if err != nil {
+						return err
+					}
+					return nil
+				})
 		}))
 
 	return mod
