@@ -30,6 +30,7 @@ const (
 
 	peripheralDiscovered_2 = 48
 	peripheralDiscovered_3 = 51
+	peripheralDiscovered_4 = 57
 
 	peripheralConnected_2       = 67
 	characteristicsDiscovered_2 = 89
@@ -278,7 +279,9 @@ func (d *device) Scan(ss []UUID, dup bool) {
 	var utsname xpc.Utsname
 	xpc.Uname(&utsname)
 
-	if utsname.Release >= "18." {
+	if utsname.Release >= "19." {
+		msg = 51
+	} else if utsname.Release >= "18." {
 		msg = 46
 	} else if utsname.Release >= "17." {
 		msg = 44
@@ -293,7 +296,9 @@ func (d *device) StopScanning() {
 	var utsname xpc.Utsname
 	xpc.Uname(&utsname)
 
-	if utsname.Release >= "18." {
+	if utsname.Release >= "19." {
+		msg = 52
+	} else if utsname.Release >= "18." {
 		msg = 47
 	}
 
@@ -443,7 +448,8 @@ func (d *device) HandleXpcEvent(event xpc.Dict, err error) {
 
 	case peripheralDiscovered,
 		peripheralDiscovered_2,
-		peripheralDiscovered_3:
+		peripheralDiscovered_3,
+		peripheralDiscovered_4:
 		xa := args.MustGetDict("kCBMsgArgAdvertisementData")
 		if len(xa) == 0 {
 			return

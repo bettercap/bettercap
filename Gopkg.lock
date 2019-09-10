@@ -27,7 +27,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a06ec4a20121f38957a467b3cbf800188da245a51e2821c43f4f24acf8404cff"
+  digest = "1:53170f5fc3294b1f6f8281676b17c547c7030e7513151a8d2c4b50ebdc55ee9e"
   name = "github.com/bettercap/gatt"
   packages = [
     ".",
@@ -40,7 +40,7 @@
     "xpc",
   ]
   pruneopts = "UT"
-  revision = "5d01ef3cdf3a3802f192f305b913b3adb5ed85d0"
+  revision = "3c65008f542558339ee0a45c70f4bf5c6870ca90"
 
 [[projects]]
   branch = "master"
@@ -268,12 +268,12 @@
   version = "v1"
 
 [[projects]]
-  digest = "1:554af29db5f8e97dd01a8d5a3944c6cc3e91a2578a4ae14408d48cb179557e45"
+  digest = "1:857519ede212509c0325923628682c94d837329fda0f7409164fb4862618e50d"
   name = "github.com/miekg/dns"
   packages = ["."]
   pruneopts = "UT"
-  revision = "c67445656579a3c3836047c509073f97022da0ed"
-  version = "v1.1.16"
+  revision = "2acbc9eff343291e671c1a9ba7be3201bf66dfd6"
+  version = "v1.1.17"
 
 [[projects]]
   digest = "1:5d231480e1c64a726869bc4142d270184c419749d34f167646baa21008eb0a79"
@@ -324,7 +324,7 @@
     "ed25519/internal/edwards25519",
   ]
   pruneopts = "UT"
-  revision = "71b5226ff73902d121cd9dbbdfdb67045a805845"
+  revision = "094676da4a83be5288d281081bba63a173ce6772"
 
 [[projects]]
   branch = "master"
@@ -340,18 +340,18 @@
     "ipv6",
   ]
   pruneopts = "UT"
-  revision = "ba9fcec4b297b415637633c5a6e8fa592e4a16c3"
+  revision = "a7b16738d86b947dd0fadb08ca2c2342b51958b6"
 
 [[projects]]
   branch = "master"
-  digest = "1:ee82b03e3db19a6d3ed88db62427809f5dfc18c3bd1afa30f8c2b7e56c6c7565"
+  digest = "1:30fb053552c768bb5e5edca6191b2d46526490a5e610e64ed740128ed4564898"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "d223b2b6db03988709bac9e66576ad6ec0d83695"
+  revision = "bbd175535a8b9969bb0b33f1502f681ee0b122bd"
 
 [[projects]]
   digest = "1:9935525a8c49b8434a0b0a54e1980e94a6fae73aaff45c5d33ba8dff69de123e"
