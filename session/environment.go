@@ -87,10 +87,11 @@ func (env *Environment) WithCallback(name, value string, cb EnvironmentChangedCa
 
 func (env *Environment) Set(name, value string) string {
 	env.Lock()
-	defer env.Unlock()
 
 	old := env.Data[name]
 	env.Data[name] = value
+
+	env.Unlock()
 
 	if cb, hasCallback := env.cbs[name]; hasCallback {
 		cb(value)

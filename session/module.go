@@ -233,6 +233,12 @@ func (m *SessionModule) AddParam(p *ModuleParam) *ModuleParam {
 	return p
 }
 
+func (m *SessionModule) AddObservableParam(p *ModuleParam, cb EnvironmentChangedCallback) *ModuleParam {
+	m.params[p.Name] = p
+	p.RegisterObserver(m.Session, cb)
+	return p
+}
+
 func (m *SessionModule) Running() bool {
 	m.StatusLock.RLock()
 	defer m.StatusLock.RUnlock()

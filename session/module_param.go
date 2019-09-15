@@ -62,7 +62,7 @@ func NewDecimalParameter(name string, def_value string, desc string) *ModulePara
 	return NewModuleParameter(name, def_value, FLOAT, "^[\\d]+(\\.\\d+)?$", desc)
 }
 
-func (p ModuleParam) Validate(value string) (error, interface{}) {
+func (p ModuleParam) validate(value string) (error, interface{}) {
 	if p.Validator != nil {
 		if !p.Validator.MatchString(value) {
 			return fmt.Errorf("Parameter %s not valid: '%s' does not match rule '%s'.", tui.Bold(p.Name), value, p.Validator.String()), nil
@@ -125,7 +125,7 @@ func (p ModuleParam) getUnlocked(s *Session) string {
 func (p ModuleParam) Get(s *Session) (error, interface{}) {
 	_, v := s.Env.Get(p.Name)
 	v = p.parse(s, v)
-	return p.Validate(v)
+	return p.validate(v)
 }
 
 func (p ModuleParam) Help(padding int) string {
@@ -136,6 +136,10 @@ func (p ModuleParam) Help(padding int) string {
 
 func (p ModuleParam) Register(s *Session) {
 	s.Env.Set(p.Name, p.Value)
+}
+
+func (p ModuleParam) RegisterObserver(s *Session, cb EnvironmentChangedCallback) {
+	s.Env.WithCallback(p.Name, p.Value, cb)
 }
 
 type JSONModuleParam struct {

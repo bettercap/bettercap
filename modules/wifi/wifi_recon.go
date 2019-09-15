@@ -43,6 +43,9 @@ func (mod *WiFiModule) stationPruner() {
 			}
 		}
 		time.Sleep(1 * time.Second)
+		// refresh
+		maxApTTL = time.Duration(mod.apTTL) * time.Second
+		maxStaTTL = time.Duration(mod.staTTL) * time.Second
 	}
 }
 

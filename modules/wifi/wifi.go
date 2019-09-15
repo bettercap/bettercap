@@ -138,9 +138,17 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			return err
 		}))
 
-	mod.AddParam(session.NewIntParameter("wifi.rssi.min",
+	minRSSI := session.NewIntParameter("wifi.rssi.min",
 		"-200",
-		"Minimum WiFi signal strength in dBm."))
+		"Minimum WiFi signal strength in dBm.")
+
+	mod.AddObservableParam(minRSSI, func(v string) {
+		if err, v := minRSSI.Get(s); err != nil {
+			mod.Error("%v", err)
+		} else if mod.minRSSI = v.(int); mod.Started {
+			mod.Info("wifi.rssi.min set to %d", mod.minRSSI)
+		}
+	})
 
 	deauth := session.NewModuleHandler("wifi.deauth BSSID", `wifi\.deauth ((?:[a-fA-F0-9:]{11,})|all|\*)`,
 		"Start a 802.11 deauth attack, if an access point BSSID is provided, every client will be deauthenticated, otherwise only the selected client. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate every access point with at least one client and start a deauth attack for each one.",
@@ -189,13 +197,29 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 	mod.AddHandler(assoc)
 
-	mod.AddParam(session.NewIntParameter("wifi.ap.ttl",
+	apTTL := session.NewIntParameter("wifi.ap.ttl",
 		"300",
-		"Seconds of inactivity for an access points to be considered not in range anymore."))
+		"Seconds of inactivity for an access points to be considered not in range anymore.")
 
-	mod.AddParam(session.NewIntParameter("wifi.sta.ttl",
+	mod.AddObservableParam(apTTL, func(v string) {
+		if err, v := apTTL.Get(s); err != nil {
+			mod.Error("%v", err)
+		} else if mod.apTTL = v.(int); mod.Started {
+			mod.Info("wifi.ap.ttl set to %d", mod.apTTL)
+		}
+	})
+
+	staTTL := session.NewIntParameter("wifi.sta.ttl",
 		"300",
-		"Seconds of inactivity for a client station to be considered not in range or not connected to its access point anymore."))
+		"Seconds of inactivity for a client station to be considered not in range or not connected to its access point anymore.")
+
+	mod.AddObservableParam(staTTL, func(v string) {
+		if err, v := staTTL.Get(s); err != nil {
+			mod.Error("%v", err)
+		} else if mod.staTTL = v.(int); mod.Started {
+			mod.Info("wifi.sta.ttl set to %d", mod.staTTL)
+		}
+	})
 
 	mod.AddParam(session.NewStringParameter("wifi.region",
 		"",
