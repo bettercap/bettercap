@@ -29,6 +29,8 @@ func NewMeta() *Meta {
 }
 
 func (m *Meta) MarshalJSON() ([]byte, error) {
+	m.Lock()
+	defer m.Unlock()
 	return json.Marshal(metaJSON{Values: m.m})
 }
 
