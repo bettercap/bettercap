@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
 	"sync"
 	"time"
@@ -51,6 +52,8 @@ type WiFiModule struct {
 	assocSkip           []net.HardwareAddr
 	assocSilent         bool
 	assocOpen           bool
+	filterProbeSTA      *regexp.Regexp
+	filterProbeAP       *regexp.Regexp
 	apRunning           bool
 	showManuf           bool
 	apConfig            packets.Dot11ApConfig
@@ -136,6 +139,33 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			mod.setFrequencies(freqs)
 			mod.hopChanges <- true
 			return err
+		}))
+
+
+	mod.AddHandler(session.NewModuleHandler("wifi.client.probe.sta.filter FILTER", "wifi.client.probe.sta.filter (.+)",
+		"Use this regular expression on the station address to filter client probes, 'clear' to reset the filter.",
+		func(args []string) (err error) {
+			filter := args[0]
+			if filter == "clear" {
+				mod.filterProbeSTA = nil
+				return
+			} else if mod.filterProbeSTA, err = regexp.Compile(filter); err != nil {
+				return
+			}
+			return
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("wifi.client.probe.ap.filter FILTER", "wifi.client.probe.ap.filter (.+)",
+		"Use this regular expression on the access point name to filter client probes, 'clear' to reset the filter.",
+		func(args []string) (err error) {
+			filter := args[0]
+			if filter == "clear" {
+				mod.filterProbeAP = nil
+				return
+			} else if mod.filterProbeAP, err = regexp.Compile(filter); err != nil {
+				return
+			}
+			return
 		}))
 
 	minRSSI := session.NewIntParameter("wifi.rssi.min",

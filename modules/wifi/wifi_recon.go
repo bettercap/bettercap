@@ -100,6 +100,11 @@ func (mod *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.D
 		return
 	}
 
+	clientSTA := network.NormalizeMac(dot11.Address2.String())
+	if mod.filterProbeSTA != nil && !mod.filterProbeSTA.MatchString(clientSTA) {
+		return
+	}
+
 	tot := len(req.Contents)
 	if tot < 3 {
 		return
@@ -114,11 +119,16 @@ func (mod *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.D
 		return
 	}
 
+	apSSID := string(req.Contents[2 : 2+size])
+	if mod.filterProbeAP != nil && !mod.filterProbeAP.MatchString(apSSID) {
+		return
+	}
+
 	mod.Session.Events.Add("wifi.client.probe", ProbeEvent{
-		FromAddr:   dot11.Address2.String(),
-		FromVendor: network.ManufLookup(dot11.Address2.String()),
-		FromAlias:  mod.Session.Lan.GetAlias(dot11.Address2.String()),
-		SSID:       string(req.Contents[2 : 2+size]),
+		FromAddr:   clientSTA,
+		FromVendor: network.ManufLookup(clientSTA),
+		FromAlias:  mod.Session.Lan.GetAlias(clientSTA),
+		SSID:       apSSID,
 		RSSI:       radiotap.DBMAntennaSignal,
 	})
 }
