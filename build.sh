@@ -110,7 +110,7 @@ if [[ "$WHAT" == "all" || "$WHAT" == "win" || "$WHAT" == "windows" ]]; then
 fi 
 
 if [[ "$WHAT" == "all" || "$WHAT" == "android" ]]; then
-    build_android_arm && create_archive bettercap_android_arm_$VERSION.zip
+    build_android_arm && create_archive bettercap_android_armv7l_$VERSION.zip
 fi
 
 sha256sum * > checksums.txt
