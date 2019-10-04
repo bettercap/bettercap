@@ -37,6 +37,21 @@ build_linux_amd64() {
     go build -o bettercap ..
 }
 
+
+build_linux_armv6l() {
+    host_dep 'arc.local'
+
+    DIR=/home/pi/gocode/src/github.com/bettercap/bettercap
+
+    echo "@ Updating repo on arm6l host ..."
+    ssh pi@arc.local "cd $DIR && rm -rf '$OUTPUT' && git checkout . && git checkout master && git pull" > /dev/null
+
+    echo "@ Building linux/armv6l ..."
+    ssh pi@arc.local "export GOPATH=/home/pi/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build -o bettercap ." > /dev/null
+
+    scp -C pi@arc.local:$DIR/bettercap . > /dev/null
+}
+
 build_macos_amd64() {
     host_dep 'osxvm'
 
@@ -97,8 +112,12 @@ fi
 
 printf "@ Building for $WHAT ...\n\n"
 
-if [[ "$WHAT" == "all" || "$WHAT" == "linux" ]]; then
+if [[ "$WHAT" == "all" || "$WHAT" == "linux_amd64" ]]; then
     build_linux_amd64 && create_archive bettercap_linux_amd64_$VERSION.zip
+fi
+
+if [[ "$WHAT" == "all" || "$WHAT" == "linux_armv6l" ]]; then
+    build_linux_armv6l && create_archive bettercap_linux_armv6l_$VERSION.zip
 fi
 
 if [[ "$WHAT" == "all" || "$WHAT" == "osx" || "$WHAT" == "mac" || "$WHAT" == "macos" ]]; then
