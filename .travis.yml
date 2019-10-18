@@ -147,7 +147,7 @@ matrix:
 deploy:
   provider: releases
   api_key:
-    secure: --- REQUIRES YOUR OAUTH TOKEN HERE ---
+    secure: gaQDeYOe/8lL3++jok73kSNtJVyj5Dk8RdxerjSa3hsVrL5IljsNsGGXocesCQ4ubFrnOO26RmO1FxMKmqYBpewRwQ6GKqZjc7IbwR9Cy0c0AyRRULnCsXue3NxIQBobqAwKtaaqDPHZcX1eOVgDnrheMpT5nt9YN2Xyv9zdFAmjfhUxv8K3nyv9eOMHYy0TmcKanQSXcYTHnUONt4Af5XA2NZGTtLUB+FAEf93vLqyqmmkX0EJciYu3HSZmCPFLLACi1WDSvt+e4TlozrutMpgm3JNzZ3eg6IsesRzxy/s2HeOnVJLMCadGjqap98xfSY6V00cUdCny+n8xfDgCzMljM0bEMDUhIs97AFdLXJZKPRGrNSmnurIcJ+NaVrFS5BMiLwQ2J6WiRvDaCWROVd+Vml/bWWZIUsMxVapEN5vbtw8R/gSVQyZnZUXLrArIBQxenSFlMcWDi+VMF38GrQgAB/ddlMZqWjVubpWOSN45Eity0SsLAgsAuNjH1YCeCr0zj1sG08NPsnTPSKr+661iuOTpsdgu/4crF6qcFcl/kvJsw6tyFPVLO5yzbX9q4O778vXRduzPuBeD63eFuHD8pwceGxWWxN9vnQtX6OqRKmEsrLP7aL9dkI2zgp7TOj058hNQefQ5FD25yfKNCUfp/tnxa6XrkrPzWq/SX7c=
   skip_cleanup: true
   file_glob: true
   file:
