@@ -13,7 +13,8 @@ echo "Creating version $NEW_VERSION ...\n"
 for file in "${TO_UPDATE[@]}"
 do
     echo "Patching $file ..."
-    sed -i "s/$CURRENT_VERSION/$NEW_VERSION/g" $file
+    sed -i.bak "s/$CURRENT_VERSION/$NEW_VERSION/g" "$file"
+    rm -rf "$file.bak"
     git add $file
 done
 
