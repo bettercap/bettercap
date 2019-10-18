@@ -3,6 +3,8 @@ package network
 import (
 	"net"
 	"testing"
+
+	"github.com/evilsocket/islazy/data"
 )
 
 func TestIsZeroMac(t *testing.T) {
@@ -38,7 +40,7 @@ func TestParseTargets(t *testing.T) {
 	cases := []struct {
 		Name             string
 		InputTargets     string
-		InputAliases     *Aliases
+		InputAliases     *data.UnsortedKV
 		ExpectedIPCount  int
 		ExpectedMACCount int
 		ExpectedError    bool
@@ -48,7 +50,7 @@ func TestParseTargets(t *testing.T) {
 		{
 			"empty target string causes empty return",
 			"",
-			&Aliases{},
+			&data.UnsortedKV{},
 			0,
 			0,
 			false,
@@ -56,7 +58,7 @@ func TestParseTargets(t *testing.T) {
 		{
 			"MACs are parsed",
 			"192.168.1.2, 192.168.1.3, 5c:00:0b:90:a9:f0, 6c:00:0b:90:a9:f0",
-			&Aliases{},
+			&data.UnsortedKV{},
 			2,
 			2,
 			false,

@@ -91,7 +91,7 @@ func TestModuleHandler_Help(t *testing.T) {
 				Name:        tt.fields.Name,
 				Description: tt.fields.Description,
 				Parser:      tt.fields.Parser,
-				Exec:        tt.fields.Exec,
+				exec:        tt.fields.Exec,
 			}
 			if got := h.Help(tt.args.padding); got != tt.want {
 				t.Errorf("ModuleHandler.Help() = \n%v, want\n%v", got, tt.want)
@@ -152,7 +152,7 @@ func TestModuleHandler_Parse(t *testing.T) {
 				Name:        tt.fields.Name,
 				Description: tt.fields.Description,
 				Parser:      tt.fields.Parser,
-				Exec:        tt.fields.Exec,
+				exec:        tt.fields.Exec,
 			}
 			got, got1 := h.Parse(tt.args.line)
 			if got != tt.want {
@@ -197,7 +197,7 @@ func TestModuleHandler_MarshalJSON(t *testing.T) {
 				Name:        tt.fields.Name,
 				Description: tt.fields.Description,
 				Parser:      tt.fields.Parser,
-				Exec:        tt.fields.Exec,
+				exec:        tt.fields.Exec,
 			}
 			got, err := h.MarshalJSON()
 			if (err != nil) != tt.wantErr {

@@ -5,8 +5,8 @@ go:
   - 1.13.x
 env:
   global:
-  - VERSION=$(echo ${TRAVIS_BRANCH} | sed "s/\//_/g")
-  - OUTPUT="bettercap"
+    - VERSION=$(echo ${TRAVIS_BRANCH} | sed "s/\//_/g")
+    - OUTPUT="bettercap"
 cache:
   apt: true
 
@@ -17,132 +17,132 @@ linux_deps: &linux_deps
   addons:
     apt:
       packages:
-      - p7zip-full
-      - libpcap-dev
-      - libnetfilter-queue-dev
-      - libusb-1.0-0-dev
+        - p7zip-full
+        - libpcap-dev
+        - libnetfilter-queue-dev
+        - libusb-1.0-0-dev
       update: true
 
 finish: &finish
   after_success:
-  - file "${OUTPUT}"
-  - openssl dgst -sha256 "${OUTPUT}" | tee bettercap_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256
-  - 7z a "bettercap_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.zip" "${OUTPUT}" "bettercap_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
-  - ls -la bettercap*
+    - file "${OUTPUT}"
+    - openssl dgst -sha256 "${OUTPUT}" | tee bettercap_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256
+    - 7z a "bettercap_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.zip" "${OUTPUT}" "bettercap_${TARGET_OS}_${TARGET_ARCH}_${VERSION}.sha256"
+    - ls -la bettercap*
 
 cross_deps: &cross_deps
   <<: *linux_deps
   before_install:
-  - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.1-1+b3_amd64.deb"
-  - sudo dpkg -i "qemu.deb"
+    - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.1-1+b3_amd64.deb"
+    - sudo dpkg -i "qemu.deb"
 
 normal_install: &normal_install
   install:
-  - make -e TARGET="${OUTPUT}"
+    - make -e TARGET="${OUTPUT}"
   <<: *finish
 
 cross_install: &cross_install
   install:
-  - sudo builder/arm_builder.sh bettercap make -e TARGET="${OUTPUT}"
+    - sudo builder/arm_builder.sh bettercap make -e TARGET="${OUTPUT}"
   <<: *finish
 
 # Tasks
 matrix:
   include:
-  - name: Linux - amd64
-    if: tag IS present
-    arch: amd64
-    env:
-    - TARGET_OS=linux
-    - TARGET_ARCH=amd64
-    <<: *linux_deps
-    <<: *normal_install
+    - name: Linux - amd64
+      if: tag IS present
+      arch: amd64
+      env:
+        - TARGET_OS=linux
+        - TARGET_ARCH=amd64
+      <<: *linux_deps
+      <<: *normal_install
 
-  - name: Linux - aarch64
-    if: tag IS present
-    arch: arm64
-    env:
-    - TARGET_OS=linux
-    - TARGET_ARCH=aarch64
-    - GEM_HOME=~/.ruby
-    - PATH=$PATH:~/.ruby/bin
-    <<: *linux_deps
-    <<: *normal_install
-    before_install:
-    - mkdir -p ~/.ruby
+    - name: Linux - aarch64
+      if: tag IS present
+      arch: arm64
+      env:
+        - TARGET_OS=linux
+        - TARGET_ARCH=aarch64
+        - GEM_HOME=~/.ruby
+        - PATH=$PATH:~/.ruby/bin
+      <<: *linux_deps
+      <<: *normal_install
+      before_install:
+        - mkdir -p ~/.ruby
 
-  - name: Linux - armhf
-    if: tag IS present
-    language: minimal
-    arch: amd64
-    env:
-    - TARGET_OS=linux
-    - TARGET_ARCH=armhf
-    <<: *cross_deps
-    <<: *cross_install
+    - name: Linux - armhf
+      if: tag IS present
+      language: minimal
+      arch: amd64
+      env:
+        - TARGET_OS=linux
+        - TARGET_ARCH=armhf
+      <<: *cross_deps
+      <<: *cross_install
 
-  - name: OSX - amd64
-    if: tag IS present
-    os: osx
-    arch: amd64
-    addons:
-      homebrew:
-        packages:
-        - libpcap
-        - libusb
-        - p7zip
-        update: true
-    env:
-    - TARGET_OS=darwin
-    - TARGET_ARCH=amd64
-    - PATH="/usr/local/opt/libpcap/bin:$PATH"
-    - LDFLAGS="-L/usr/local/opt/libpcap/lib $LDFLAGS"
-    - CPPFLAGS="-I/usr/local/opt/libpcap/include $CPPFLAGS"
-    - PKG_CONFIG_PATH="/usr/local/opt/libpcap/lib/pkgconfig:$PKG_CONFIG_PATH"
-    <<: *normal_install
+    - name: OSX - amd64
+      if: tag IS present
+      os: osx
+      arch: amd64
+      addons:
+        homebrew:
+          packages:
+            - libpcap
+            - libusb
+            - p7zip
+          update: true
+      env:
+        - TARGET_OS=darwin
+        - TARGET_ARCH=amd64
+        - PATH="/usr/local/opt/libpcap/bin:$PATH"
+        - LDFLAGS="-L/usr/local/opt/libpcap/lib $LDFLAGS"
+        - CPPFLAGS="-I/usr/local/opt/libpcap/include $CPPFLAGS"
+        - PKG_CONFIG_PATH="/usr/local/opt/libpcap/lib/pkgconfig:$PKG_CONFIG_PATH"
+      <<: *normal_install
 
-  - name: Windows - amd64
-    if: tag IS present
-    os: windows
-    arch: amd64
-    env:
-    - TARGET_OS=windows
-    - TARGET_ARCH=amd64
-    - PKG_CONFIG_PATH="c:/pkg-config"
-    - OUTPUT=bettercap.exe
-    - CGO_CFLAGS="-I/c/npcap/Include -I/c/libusb/include/libusb-1.0"
-    - CGO_LDFLAGS="-L/c/npcap/Lib/x64 -L/c/libusb/MinGW64/static"
-    before_install:
-    - choco install openssl.light -y
-    - choco install make -y
-    - choco install 7zip -y
-    - choco install pkgconfiglite -y
-    - mkdir /c/pkg-config
-    - choco install zadig -y
-    - curl -L "https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.7z"
-      -o "/c/libusb.7z"
-    - 7z x -y "/c/libusb.7z" -o"/c/libusb"
-    - choco install npcap --version 0.86 -y
-    - curl -L "https://nmap.org/npcap/dist/npcap-sdk-1.03.zip" -o "c:/npcap.zip"
-    - 7z x -y "/c/npcap.zip" -o"/c/npcap"
-    - cp builder/libusb.pc /c/pkg-config/libusb.pc
-    - cp builder/libusb.pc /c/pkg-config/libusb-1.0.pc
-    <<: *normal_install
+    - name: Windows - amd64
+      if: tag IS present
+      os: windows
+      arch: amd64
+      env:
+        - TARGET_OS=windows
+        - TARGET_ARCH=amd64
+        - PKG_CONFIG_PATH="c:/pkg-config"
+        - OUTPUT=bettercap.exe
+        - CGO_CFLAGS="-I/c/npcap/Include -I/c/libusb/include/libusb-1.0"
+        - CGO_LDFLAGS="-L/c/npcap/Lib/x64 -L/c/libusb/MinGW64/static"
+      before_install:
+        - choco install openssl.light -y
+        - choco install make -y
+        - choco install 7zip -y
+        - choco install pkgconfiglite -y
+        - mkdir /c/pkg-config
+        - choco install zadig -y
+        - curl -L "https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.7z"
+          -o "/c/libusb.7z"
+        - 7z x -y "/c/libusb.7z" -o"/c/libusb"
+        - choco install npcap --version 0.86 -y
+        - curl -L "https://nmap.org/npcap/dist/npcap-sdk-1.03.zip" -o "c:/npcap.zip"
+        - 7z x -y "/c/npcap.zip" -o"/c/npcap"
+        - cp builder/libusb.pc /c/pkg-config/libusb.pc
+        - cp builder/libusb.pc /c/pkg-config/libusb-1.0.pc
+      <<: *normal_install
 
-  - name: Linux - tests
-    if: tag IS blank
-    os: linux
-    arch: amd64
-    allow_failures:
-      - go: master
-    fast_finish: true
-    <<: *linux_deps
-    install:
-      - make deps
-    script:
-      - make test
-    after_success:
-      - base <(curl -s https://codecov.io/bash)
+    - name: Linux - tests
+      if: tag IS blank
+      os: linux
+      arch: amd64
+      allow_failures:
+        - go: master
+      fast_finish: true
+      <<: *linux_deps
+      install:
+        - make deps
+      script:
+        - env GO111MODULE=on make test
+      after_success:
+        - base <(curl -s https://codecov.io/bash)
 
 deploy:
   provider: releases
@@ -158,4 +158,4 @@ deploy:
     repo: bettercap/bettercap
   branches:
     only:
-    - "/^v[0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9]+?$/"
+      - "/^v[0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9]+?$/"

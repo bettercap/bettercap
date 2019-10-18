@@ -101,10 +101,10 @@ func TestCoreExec(t *testing.T) {
 		err    string
 		stdout string
 	}{
-		{"foo", []string{}, "", `exec: "foo": executable file not found in $PATH`, `ERROR for 'foo []': exec: "foo": executable file not found in $PATH`},
-		{"ps", []string{"-someinvalidflag"}, "", "exit status 1", "ERROR for 'ps [-someinvalidflag]': exit status 1"},
+		{"foo", []string{}, "", `exec: "foo": executable file not found in $PATH`, ""},
+		{"ps", []string{"-someinvalidflag"}, "", "exit status 1", ""},
 		{"true", []string{}, "", "", ""},
-		{"head", []string{"/path/to/file/that/does/not/exist"}, "", "exit status 1", "ERROR for 'head [/path/to/file/that/does/not/exist]': exit status 1"},
+		{"head", []string{"/path/to/file/that/does/not/exist"}, "", "exit status 1", ""},
 	}
 
 	for _, u := range units {
@@ -114,7 +114,7 @@ func TestCoreExec(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		gotOut, gotErr := ExecSilent(u.exec, u.args)
+		gotOut, gotErr := Exec(u.exec, u.args)
 		w.Close()
 		io.Copy(&buf, r)
 		os.Stdout = oldStdout
