@@ -141,7 +141,6 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			return err
 		}))
 
-
 	mod.AddHandler(session.NewModuleHandler("wifi.client.probe.sta.filter FILTER", "wifi.client.probe.sta.filter (.+)",
 		"Use this regular expression on the station address to filter client probes, 'clear' to reset the filter.",
 		func(args []string) (err error) {
