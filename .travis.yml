@@ -137,8 +137,6 @@ matrix:
         - go: master
       fast_finish: true
       <<: *linux_deps
-      install:
-        - make deps
       script:
         - env GO111MODULE=on make test
       after_success:
