@@ -99,9 +99,14 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 			}
 		}
 
-		// if we had unsaved packets and either the handshake is half, complete
-		// or it contains the PMKID, generate a new event.
-		if doSave && (rawPMKID != nil || station.Handshake.Half() || station.Handshake.Complete()) {
+		validPMKID := rawPMKID != nil
+		validHalfHandshake := !staIsUs && station.Handshake.Half()
+		validFullHandshake := station.Handshake.Complete()
+		// if we have unsaved packets AND
+		//   if we captured a PMKID OR
+		//   if we captured am half handshake which is not ours OR
+		//   if we captured a full handshake
+		if doSave && (validPMKID || validHalfHandshake || validFullHandshake) {
 			mod.Session.Events.Add("wifi.client.handshake", HandshakeEvent{
 				File:       shakesFileName,
 				NewPackets: numUnsaved,
