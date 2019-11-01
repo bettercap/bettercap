@@ -137,7 +137,7 @@ func (mod *EventsStream) viewHttpRequest(e session.Event) {
 		tui.Green(e.Tag),
 		se.Message)
 
-	if mod.shouldDumpHttpRequest(req) {
+	if mod.shouldDumpHttpRequest(se.Data.(net_sniff.HTTPRequest)) {
 		dump := fmt.Sprintf("%s %s %s\n", tui.Bold(req.Method), req.URL, tui.Dim(req.Proto))
 		dump += fmt.Sprintf("%s: %s\n", tui.Blue("Host"), tui.Yellow(req.Host))
 		for name, values := range req.Headers {
