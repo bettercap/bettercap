@@ -6,10 +6,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/bettercap/bettercap/modules/net_sniff"
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/bettercap/bettercap/modules/net_sniff"
 
 	"github.com/bettercap/bettercap/session"
 
@@ -130,14 +131,14 @@ func (mod *EventsStream) dumpRaw(body []byte) string {
 
 func (mod *EventsStream) viewHttpRequest(e session.Event) {
 	se := e.Data.(net_sniff.SnifferEvent)
-	req := se.Data.(net_sniff.HTTPRequest)
 
 	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
 		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		se.Message)
 
-	if mod.shouldDumpHttpRequest(req) {
+	if se.Data != nil && mod.shouldDumpHttpRequest(se.Data.(net_sniff.HTTPRequest)) {
+		req := se.Data.(net_sniff.HTTPRequest)
 		dump := fmt.Sprintf("%s %s %s\n", tui.Bold(req.Method), req.URL, tui.Dim(req.Proto))
 		dump += fmt.Sprintf("%s: %s\n", tui.Blue("Host"), tui.Yellow(req.Host))
 		for name, values := range req.Headers {
