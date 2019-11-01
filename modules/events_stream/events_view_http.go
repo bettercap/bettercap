@@ -6,11 +6,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/bettercap/bettercap/modules/net_sniff"
 	"net/url"
 	"regexp"
 	"strings"
 
+	"github.com/bettercap/bettercap/modules/net_sniff"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/evilsocket/islazy/tui"

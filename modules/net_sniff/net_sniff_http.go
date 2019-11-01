@@ -119,19 +119,39 @@ func toSerializableResponse(res *http.Response) HTTPResponse {
 func httpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	data := tcp.Payload
 	if req, err := http.ReadRequest(bufio.NewReader(bytes.NewReader(data))); err == nil {
-		NewSnifferEvent(
-			pkt.Metadata().Timestamp,
-			"http.request",
-			ip.SrcIP.String(),
-			req.Host,
-			toSerializableRequest(req),
-			"%s %s %s %s%s",
-			tui.Wrap(tui.BACKRED+tui.FOREBLACK, "http"),
-			vIP(ip.SrcIP),
-			tui.Wrap(tui.BACKLIGHTBLUE+tui.FOREBLACK, req.Method),
-			tui.Yellow(req.Host),
-			vURL(req.URL.String()),
-		).Push()
+		if user, pass, ok := req.BasicAuth(); ok {
+			NewSnifferEvent(
+				pkt.Metadata().Timestamp,
+				"http.request",
+				ip.SrcIP.String(),
+				req.Host,
+				toSerializableRequest(req),
+				"%s %s %s %s%s - %s %s, %s %s",
+				tui.Wrap(tui.BACKRED+tui.FOREBLACK, "http"),
+				vIP(ip.SrcIP),
+				tui.Wrap(tui.BACKLIGHTBLUE+tui.FOREBLACK, req.Method),
+				tui.Yellow(req.Host),
+				vURL(req.URL.String()),
+				tui.Bold("USER"),
+				tui.Red(user),
+				tui.Bold("PASS"),
+				tui.Red(pass),
+			).Push()
+		} else {
+			NewSnifferEvent(
+				pkt.Metadata().Timestamp,
+				"http.request",
+				ip.SrcIP.String(),
+				req.Host,
+				toSerializableRequest(req),
+				"%s %s %s %s%s",
+				tui.Wrap(tui.BACKRED+tui.FOREBLACK, "http"),
+				vIP(ip.SrcIP),
+				tui.Wrap(tui.BACKLIGHTBLUE+tui.FOREBLACK, req.Method),
+				tui.Yellow(req.Host),
+				vURL(req.URL.String()),
+			).Push()
+		}
 
 		return true
 	} else if res, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(data)), nil); err == nil {
