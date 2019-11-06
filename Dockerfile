@@ -8,7 +8,7 @@ RUN apk add --no-cache --update bash iptables wireless-tools build-base libpcap-
 
 WORKDIR $SRC_DIR
 ADD . $SRC_DIR
-RUN go get -u github.com/golang/dep/...
+RUN GO111MODULE=off go get -u github.com/golang/dep/...
 RUN make deps
 RUN make
 
