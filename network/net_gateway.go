@@ -25,7 +25,7 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 	for _, line := range strings.Split(output, "\n") {
 		if line = str.Trim(line); strings.Contains(line, ifName) {
 			m := IPv4RouteParser.FindStringSubmatch(line)
-			if len(m) == IPv4RouteTokens {
+			if len(m) >= IPv4RouteTokens {
 				Debug("FindGateway(%s) line '%s' matched with %v", iface.Name(), line, m)
 				return IPv4RouteIsGateway(ifName, m, func(gateway string) (*Endpoint, error) {
 					if gateway == iface.IpAddress {

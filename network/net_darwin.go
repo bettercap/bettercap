@@ -13,16 +13,15 @@ import (
 
 const airPortPath = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
-var IPv4RouteParser = regexp.MustCompile(`^([a-z]+)+\s+(\d+\.+\d+.\d.+\d)+\s+([a-zA-z]+)+\s+(\d+)+\s+(\d+)+\s+([a-zA-Z]+\d+)$`)
-var IPv4RouteTokens = 7
+var IPv4RouteParser = regexp.MustCompile(`([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+).*`)
+var IPv4RouteTokens = 5
 var IPv4RouteCmd = "netstat"
 var IPv4RouteCmdOpts = []string{"-n", "-r"}
 var WiFiChannelParser = regexp.MustCompile(`(?m)^.*Supported Channels: (.*)$`)
 
 func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (*Endpoint, error)) (*Endpoint, error) {
-	ifname2 := tokens[6]
 	flags := tokens[3]
-
+	ifname2 := tokens[4]
 	if ifname == ifname2 && flags == "UGSc" {
 		gateway := tokens[2]
 		return f(gateway)
