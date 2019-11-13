@@ -129,7 +129,7 @@ func (mod *HttpsServer) Configure() error {
 	}
 
 	if !fs.Exists(certFile) || !fs.Exists(keyFile) {
-		err, cfg := tls.CertConfigFromModule("https.server", mod.SessionModule)
+		cfg, err := tls.CertConfigFromModule("https.server", mod.SessionModule)
 		if err != nil {
 			return err
 		}

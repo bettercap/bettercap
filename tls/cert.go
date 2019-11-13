@@ -57,21 +57,21 @@ func CertConfigToModule(prefix string, m *session.SessionModule, defaults CertCo
 		"Common Name field of the generated HTTPS certificate."))
 }
 
-func CertConfigFromModule(prefix string, m session.SessionModule) (err error, cfg CertConfig) {
+func CertConfigFromModule(prefix string, m session.SessionModule) (cfg CertConfig, err error) {
 	if err, cfg.Bits = m.IntParam(prefix + ".certificate.bits"); err != nil {
-		return err, cfg
+		return cfg, err
 	} else if err, cfg.Country = m.StringParam(prefix + ".certificate.country"); err != nil {
-		return err, cfg
+		return cfg, err
 	} else if err, cfg.Locality = m.StringParam(prefix + ".certificate.locality"); err != nil {
-		return err, cfg
+		return cfg, err
 	} else if err, cfg.Organization = m.StringParam(prefix + ".certificate.organization"); err != nil {
-		return err, cfg
+		return cfg, err
 	} else if err, cfg.OrganizationalUnit = m.StringParam(prefix + ".certificate.organizationalunit"); err != nil {
-		return err, cfg
+		return cfg, err
 	} else if err, cfg.CommonName = m.StringParam(prefix + ".certificate.commonname"); err != nil {
-		return err, cfg
+		return cfg, err
 	}
-	return nil, cfg
+	return cfg, err
 }
 
 func CreateCertificate(cfg CertConfig, ca bool) (*rsa.PrivateKey, []byte, error) {

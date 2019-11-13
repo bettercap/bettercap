@@ -213,7 +213,7 @@ func (mod *RestAPI) Configure() error {
 
 	if mod.isTLS() {
 		if !fs.Exists(mod.certFile) || !fs.Exists(mod.keyFile) {
-			err, cfg := tls.CertConfigFromModule("api.rest", mod.SessionModule)
+			cfg, err := tls.CertConfigFromModule("api.rest", mod.SessionModule)
 			if err != nil {
 				return err
 			}

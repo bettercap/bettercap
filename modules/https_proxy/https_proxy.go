@@ -137,7 +137,7 @@ func (mod *HttpsProxy) Configure() error {
 	mod.proxy.Whitelist = str.Comma(whitelist)
 
 	if !fs.Exists(certFile) || !fs.Exists(keyFile) {
-		err, cfg := tls.CertConfigFromModule("https.proxy", mod.SessionModule)
+		cfg, err := tls.CertConfigFromModule("https.proxy", mod.SessionModule)
 		if err != nil {
 			return err
 		}
