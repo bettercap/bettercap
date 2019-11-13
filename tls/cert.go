@@ -74,10 +74,10 @@ func CertConfigFromModule(prefix string, m session.SessionModule) (err error, cf
 	return nil, cfg
 }
 
-func CreateCertificate(cfg CertConfig, ca bool) (error, *rsa.PrivateKey, []byte) {
+func CreateCertificate(cfg CertConfig, ca bool) (*rsa.PrivateKey, []byte, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, cfg.Bits)
 	if err != nil {
-		return err, nil, nil
+		return nil, nil, err
 	}
 
 	notBefore := time.Now()
@@ -86,7 +86,7 @@ func CreateCertificate(cfg CertConfig, ca bool) (error, *rsa.PrivateKey, []byte)
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return err, nil, nil
+		return nil, nil, err
 	}
 
 	template := x509.Certificate{
@@ -108,10 +108,10 @@ func CreateCertificate(cfg CertConfig, ca bool) (error, *rsa.PrivateKey, []byte)
 
 	cert, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	if err != nil {
-		return err, nil, nil
+		return nil, nil, err
 	}
 
-	return nil, priv, cert
+	return priv, cert, err
 }
 
 func Generate(cfg CertConfig, certPath string, keyPath string, ca bool) error {
@@ -127,7 +127,7 @@ func Generate(cfg CertConfig, certPath string, keyPath string, ca bool) error {
 	}
 	defer certFile.Close()
 
-	err, priv, cert := CreateCertificate(cfg, ca)
+	priv, cert, err := CreateCertificate(cfg, ca)
 	if err != nil {
 		return err
 	}
