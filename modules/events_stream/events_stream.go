@@ -242,6 +242,9 @@ func (mod *EventsStream) Configure() (err error) {
 			mod.output = os.Stdout
 		} else if mod.outputName, err = fs.Expand(output); err == nil {
 			mod.output, err = os.OpenFile(mod.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
