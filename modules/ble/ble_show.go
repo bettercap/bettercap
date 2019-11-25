@@ -64,7 +64,7 @@ func (mod *BLERecon) doFilter(dev *network.BLEDevice) bool {
 		mod.selector.Expression.MatchString(dev.Vendor)
 }
 
-func (mod *BLERecon) doSelection() (err error, devices []*network.BLEDevice) {
+func (mod *BLERecon) doSelection() (devices []*network.BLEDevice, err error) {
 	if err = mod.selector.Update(); err != nil {
 		return
 	}
@@ -127,7 +127,7 @@ func (mod *BLERecon) colNames(withName bool) []string {
 }
 
 func (mod *BLERecon) Show() error {
-	err, devices := mod.doSelection()
+	devices, err := mod.doSelection()
 	if err != nil {
 		return err
 	}
