@@ -325,7 +325,7 @@ func (mod *WiFiModule) Show() (err error) {
 		return
 	}
 
-	if err, mod.showManuf = mod.BoolParam("wifi.show.manufacturer"); err != nil {
+	if mod.showManuf, err = mod.BoolParam("wifi.show.manufacturer"); err != nil {
 		return err
 	}
 

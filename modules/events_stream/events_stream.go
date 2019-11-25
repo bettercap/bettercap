@@ -248,11 +248,11 @@ func (mod *EventsStream) Configure() (err error) {
 		}
 	}
 
-	if err, mod.rotation.Enabled = mod.BoolParam("events.stream.output.rotate"); err != nil {
+	if mod.rotation.Enabled, err = mod.BoolParam("events.stream.output.rotate"); err != nil {
 		return err
 	} else if err, mod.timeFormat = mod.StringParam("events.stream.time.format"); err != nil {
 		return err
-	} else if err, mod.rotation.Compress = mod.BoolParam("events.stream.output.rotate.compress"); err != nil {
+	} else if mod.rotation.Compress, err = mod.BoolParam("events.stream.output.rotate.compress"); err != nil {
 		return err
 	} else if err, mod.rotation.Format = mod.StringParam("events.stream.output.rotate.format"); err != nil {
 		return err
@@ -262,11 +262,11 @@ func (mod *EventsStream) Configure() (err error) {
 		return err
 	}
 
-	if err, mod.dumpHttpReqs = mod.BoolParam("events.stream.http.request.dump"); err != nil {
+	if mod.dumpHttpReqs, err = mod.BoolParam("events.stream.http.request.dump"); err != nil {
 		return err
-	} else if err, mod.dumpHttpResp = mod.BoolParam("events.stream.http.response.dump"); err != nil {
+	} else if mod.dumpHttpResp, err = mod.BoolParam("events.stream.http.response.dump"); err != nil {
 		return err
-	} else if err, mod.dumpFormatHex = mod.BoolParam("events.stream.http.format.hex"); err != nil {
+	} else if mod.dumpFormatHex, err = mod.BoolParam("events.stream.http.format.hex"); err != nil {
 		return err
 	}
 

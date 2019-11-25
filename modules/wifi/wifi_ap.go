@@ -24,7 +24,7 @@ func (mod *WiFiModule) parseApConfig() (err error) {
 		return
 	} else if err, mod.apConfig.Channel = mod.IntParam("wifi.ap.channel"); err != nil {
 		return
-	} else if err, mod.apConfig.Encryption = mod.BoolParam("wifi.ap.encryption"); err != nil {
+	} else if mod.apConfig.Encryption, err = mod.BoolParam("wifi.ap.encryption"); err != nil {
 		return
 	}
 	return

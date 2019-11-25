@@ -34,7 +34,7 @@ func (mod *WiFiModule) skipAssoc(to net.HardwareAddr) bool {
 }
 
 func (mod *WiFiModule) isAssocSilent() bool {
-	if err, is := mod.BoolParam("wifi.assoc.silent"); err != nil {
+	if is, err := mod.BoolParam("wifi.assoc.silent"); err != nil {
 		mod.Warning("%v", err)
 	} else {
 		mod.assocSilent = is
@@ -43,7 +43,7 @@ func (mod *WiFiModule) isAssocSilent() bool {
 }
 
 func (mod *WiFiModule) doAssocOpen() bool {
-	if err, is := mod.BoolParam("wifi.assoc.open"); err != nil {
+	if is, err := mod.BoolParam("wifi.assoc.open"); err != nil {
 		mod.Warning("%v", err)
 	} else {
 		mod.assocOpen = is

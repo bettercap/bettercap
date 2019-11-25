@@ -94,7 +94,7 @@ func (mod *DNSSpoofer) Configure() error {
 		return err
 	} else if err = mod.Handle.SetBPFFilter("udp"); err != nil {
 		return err
-	} else if err, mod.All = mod.BoolParam("dns.spoof.all"); err != nil {
+	} else if mod.All, err = mod.BoolParam("dns.spoof.all"); err != nil {
 		return err
 	} else if err, address = mod.IPParam("dns.spoof.address"); err != nil {
 		return err

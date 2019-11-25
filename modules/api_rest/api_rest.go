@@ -207,7 +207,7 @@ func (mod *RestAPI) Configure() error {
 		return err
 	} else if err, mod.password = mod.StringParam("api.rest.password"); err != nil {
 		return err
-	} else if err, mod.useWebsocket = mod.BoolParam("api.rest.websocket"); err != nil {
+	} else if mod.useWebsocket, err = mod.BoolParam("api.rest.websocket"); err != nil {
 		return err
 	}
 

@@ -85,7 +85,7 @@ func (mod *Sniffer) configureFuzzing() (err error) {
 		return
 	}
 
-	if err, mod.fuzzSilent = mod.BoolParam("net.fuzz.silent"); err != nil {
+	if mod.fuzzSilent, err = mod.BoolParam("net.fuzz.silent"); err != nil {
 		return
 	}
 

@@ -215,11 +215,11 @@ func (m SessionModule) DecParam(name string) (error, float64) {
 	}
 }
 
-func (m SessionModule) BoolParam(name string) (error, bool) {
+func (m SessionModule) BoolParam(name string) (bool, error) {
 	if v, err := m.params[name].Get(m.Session); err != nil {
-		return err, false
+		return false, err
 	} else {
-		return nil, v.(bool)
+		return v.(bool), nil
 	}
 }
 

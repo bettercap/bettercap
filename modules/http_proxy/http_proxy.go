@@ -98,7 +98,7 @@ func (mod *HttpProxy) Configure() error {
 		return err
 	} else if err, scriptPath = mod.StringParam("http.proxy.script"); err != nil {
 		return err
-	} else if err, stripSSL = mod.BoolParam("http.proxy.sslstrip"); err != nil {
+	} else if stripSSL, err = mod.BoolParam("http.proxy.sslstrip"); err != nil {
 		return err
 	} else if err, jsToInject = mod.StringParam("http.proxy.injectjs"); err != nil {
 		return err

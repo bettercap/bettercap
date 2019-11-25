@@ -113,7 +113,7 @@ func (mod *HttpsProxy) Configure() error {
 		return err
 	} else if err, httpPort = mod.IntParam("https.port"); err != nil {
 		return err
-	} else if err, stripSSL = mod.BoolParam("https.proxy.sslstrip"); err != nil {
+	} else if stripSSL, err = mod.BoolParam("https.proxy.sslstrip"); err != nil {
 		return err
 	} else if err, certFile = mod.StringParam("https.proxy.certificate"); err != nil {
 		return err

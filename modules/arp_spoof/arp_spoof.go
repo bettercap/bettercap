@@ -97,9 +97,9 @@ func (mod *ArpSpoofer) Configure() error {
 	var targets string
 	var whitelist string
 
-	if err, mod.fullDuplex = mod.BoolParam("arp.spoof.fullduplex"); err != nil {
+	if mod.fullDuplex, err = mod.BoolParam("arp.spoof.fullduplex"); err != nil {
 		return err
-	} else if err, mod.internal = mod.BoolParam("arp.spoof.internal"); err != nil {
+	} else if mod.internal, err = mod.BoolParam("arp.spoof.internal"); err != nil {
 		return err
 	} else if err, targets = mod.StringParam("arp.spoof.targets"); err != nil {
 		return err

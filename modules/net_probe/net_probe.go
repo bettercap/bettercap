@@ -83,13 +83,13 @@ func (mod *Prober) Configure() error {
 	var err error
 	if err, mod.throttle = mod.IntParam("net.probe.throttle"); err != nil {
 		return err
-	} else if err, mod.probes.NBNS = mod.BoolParam("net.probe.nbns"); err != nil {
+	} else if mod.probes.NBNS, err = mod.BoolParam("net.probe.nbns"); err != nil {
 		return err
-	} else if err, mod.probes.MDNS = mod.BoolParam("net.probe.mdns"); err != nil {
+	} else if mod.probes.MDNS, err = mod.BoolParam("net.probe.mdns"); err != nil {
 		return err
-	} else if err, mod.probes.UPNP = mod.BoolParam("net.probe.upnp"); err != nil {
+	} else if mod.probes.UPNP, err = mod.BoolParam("net.probe.upnp"); err != nil {
 		return err
-	} else if err, mod.probes.WSD = mod.BoolParam("net.probe.wsd"); err != nil {
+	} else if mod.probes.WSD, err = mod.BoolParam("net.probe.wsd"); err != nil {
 		return err
 	} else {
 		mod.Debug("Throttling packets of %d ms.", mod.throttle)

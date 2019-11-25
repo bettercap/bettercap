@@ -241,7 +241,7 @@ func (mod *Discovery) Show(arg string) (err error) {
 	}
 
 	hasMeta := false
-	if err, showMeta := mod.BoolParam("net.show.meta"); err != nil {
+	if showMeta, err := mod.BoolParam("net.show.meta"); err != nil {
 		return err
 	} else if showMeta {
 		for _, t := range targets {

@@ -51,11 +51,11 @@ func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 		}
 	}
 
-	if err, ctx.Verbose = mod.BoolParam("net.sniff.verbose"); err != nil {
+	if ctx.Verbose, err = mod.BoolParam("net.sniff.verbose"); err != nil {
 		return err, ctx
 	}
 
-	if err, ctx.DumpLocal = mod.BoolParam("net.sniff.local"); err != nil {
+	if ctx.DumpLocal, err = mod.BoolParam("net.sniff.local"); err != nil {
 		return err, ctx
 	}
 

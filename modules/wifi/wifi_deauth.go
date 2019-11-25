@@ -50,7 +50,7 @@ func (mod *WiFiModule) skipDeauth(to net.HardwareAddr) bool {
 }
 
 func (mod *WiFiModule) isDeauthSilent() bool {
-	if err, is := mod.BoolParam("wifi.deauth.silent"); err != nil {
+	if is, err := mod.BoolParam("wifi.deauth.silent"); err != nil {
 		mod.Warning("%v", err)
 	} else {
 		mod.deauthSilent = is
@@ -59,7 +59,7 @@ func (mod *WiFiModule) isDeauthSilent() bool {
 }
 
 func (mod *WiFiModule) doDeauthOpen() bool {
-	if err, is := mod.BoolParam("wifi.deauth.open"); err != nil {
+	if is, err := mod.BoolParam("wifi.deauth.open"); err != nil {
 		mod.Warning("%v", err)
 	} else {
 		mod.deauthOpen = is

@@ -437,7 +437,7 @@ func (mod *WiFiModule) Configure() error {
 		return err
 	}
 
-	if err, mod.shakesAggregate = mod.BoolParam("wifi.handshakes.aggregate"); err != nil {
+	if mod.shakesAggregate, err = mod.BoolParam("wifi.handshakes.aggregate"); err != nil {
 		return err
 	} else if err, mod.shakesFile = mod.StringParam("wifi.handshakes.file"); err != nil {
 		return err
@@ -515,7 +515,7 @@ func (mod *WiFiModule) Configure() error {
 		}
 	}
 
-	if err, mod.skipBroken = mod.BoolParam("wifi.skip-broken"); err != nil {
+	if mod.skipBroken, err = mod.BoolParam("wifi.skip-broken"); err != nil {
 		return err
 	} else if err, hopPeriod = mod.IntParam("wifi.hop.period"); err != nil {
 		return err
