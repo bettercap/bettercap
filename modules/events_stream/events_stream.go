@@ -258,7 +258,7 @@ func (mod *EventsStream) Configure() (err error) {
 		return err
 	} else if err, mod.rotation.How = mod.StringParam("events.stream.output.rotate.how"); err != nil {
 		return err
-	} else if err, mod.rotation.Period = mod.DecParam("events.stream.output.rotate.when"); err != nil {
+	} else if mod.rotation.Period, err = mod.DecParam("events.stream.output.rotate.when"); err != nil {
 		return err
 	}
 

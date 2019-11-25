@@ -77,11 +77,11 @@ func (mod *Sniffer) configureFuzzing() (err error) {
 		mod.fuzzLayers = str.Comma(layers)
 	}
 
-	if err, mod.fuzzRate = mod.DecParam("net.fuzz.rate"); err != nil {
+	if mod.fuzzRate, err = mod.DecParam("net.fuzz.rate"); err != nil {
 		return
 	}
 
-	if err, mod.fuzzRatio = mod.DecParam("net.fuzz.ratio"); err != nil {
+	if mod.fuzzRatio, err = mod.DecParam("net.fuzz.ratio"); err != nil {
 		return
 	}
 

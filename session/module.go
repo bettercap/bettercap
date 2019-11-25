@@ -202,16 +202,16 @@ func (m SessionModule) IntParam(name string) (error, int) {
 	}
 }
 
-func (m SessionModule) DecParam(name string) (error, float64) {
+func (m SessionModule) DecParam(name string) (float64, error) {
 	if p, found := m.params[name]; found {
 		if v, err := p.Get(m.Session); err != nil {
-			return err, 0
+			return 0, err
 		} else {
-			return nil, v.(float64)
+			return v.(float64), err
 		}
 
 	} else {
-		return fmt.Errorf("Parameter %s does not exist.", name), 0
+		return 0, fmt.Errorf("Parameter %s does not exist.", name)
 	}
 }
 
