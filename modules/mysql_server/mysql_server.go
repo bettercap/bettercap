@@ -86,7 +86,7 @@ func (mod *MySQLServer) Configure() error {
 		return err
 	} else if err, address = mod.StringParam("mysql.server.address"); err != nil {
 		return err
-	} else if err, port = mod.IntParam("mysql.server.port"); err != nil {
+	} else if port, err = mod.IntParam("mysql.server.port"); err != nil {
 		return err
 	} else if mod.address, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port)); err != nil {
 		return err

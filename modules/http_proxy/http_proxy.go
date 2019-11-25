@@ -92,9 +92,9 @@ func (mod *HttpProxy) Configure() error {
 		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, address = mod.StringParam("http.proxy.address"); err != nil {
 		return err
-	} else if err, proxyPort = mod.IntParam("http.proxy.port"); err != nil {
+	} else if proxyPort, err = mod.IntParam("http.proxy.port"); err != nil {
 		return err
-	} else if err, httpPort = mod.IntParam("http.port"); err != nil {
+	} else if httpPort, err = mod.IntParam("http.port"); err != nil {
 		return err
 	} else if err, scriptPath = mod.StringParam("http.proxy.script"); err != nil {
 		return err

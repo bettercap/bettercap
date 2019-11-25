@@ -132,7 +132,7 @@ func (mod *PacketProxy) Configure() (err error) {
 
 	mod.destroyQueue()
 
-	if err, mod.queueNum = mod.IntParam("packet.proxy.queue.num"); err != nil {
+	if mod.queueNum, err = mod.IntParam("packet.proxy.queue.num"); err != nil {
 		return
 	} else if err, mod.chainName = mod.StringParam("packet.proxy.chain"); err != nil {
 		return

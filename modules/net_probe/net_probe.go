@@ -81,7 +81,7 @@ func (mod Prober) Author() string {
 
 func (mod *Prober) Configure() error {
 	var err error
-	if err, mod.throttle = mod.IntParam("net.probe.throttle"); err != nil {
+	if mod.throttle, err = mod.IntParam("net.probe.throttle"); err != nil {
 		return err
 	} else if mod.probes.NBNS, err = mod.BoolParam("net.probe.nbns"); err != nil {
 		return err

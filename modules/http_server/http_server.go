@@ -92,7 +92,7 @@ func (mod *HttpServer) Configure() error {
 		return err
 	}
 
-	if err, port = mod.IntParam("http.server.port"); err != nil {
+	if port, err = mod.IntParam("http.server.port"); err != nil {
 		return err
 	}
 

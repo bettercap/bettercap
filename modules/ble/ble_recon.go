@@ -157,7 +157,7 @@ func (mod *BLERecon) Configure() (err error) {
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
 	} else if mod.gattDevice == nil {
-		if err, mod.deviceId = mod.IntParam("ble.device"); err != nil {
+		if mod.deviceId, err = mod.IntParam("ble.device"); err != nil {
 			return err
 		}
 
@@ -180,9 +180,9 @@ func (mod *BLERecon) Configure() (err error) {
 		mod.gattDevice.Init(mod.onStateChanged)
 	}
 
-	if err, mod.connTimeout = mod.IntParam("ble.timeout"); err != nil {
+	if mod.connTimeout, err = mod.IntParam("ble.timeout"); err != nil {
 		return err
-	} else if err, mod.devTTL = mod.IntParam("ble.ttl"); err != nil {
+	} else if mod.devTTL, err = mod.IntParam("ble.ttl"); err != nil {
 		return err
 	}
 

@@ -189,16 +189,16 @@ func (m SessionModule) IPParam(name string) (error, net.IP) {
 	}
 }
 
-func (m SessionModule) IntParam(name string) (error, int) {
+func (m SessionModule) IntParam(name string) (int, error) {
 	if p, found := m.params[name]; found {
 		if v, err := p.Get(m.Session); err != nil {
-			return err, 0
+			return 0, err
 		} else {
-			return nil, v.(int)
+			return v.(int), nil
 		}
 
 	} else {
-		return fmt.Errorf("Parameter %s does not exist.", name), 0
+		return 0, fmt.Errorf("Parameter %s does not exist.", name)
 	}
 }
 

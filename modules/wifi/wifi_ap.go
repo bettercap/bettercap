@@ -22,7 +22,7 @@ func (mod *WiFiModule) parseApConfig() (err error) {
 		return
 	} else if mod.apConfig.BSSID, err = net.ParseMAC(network.NormalizeMac(bssid)); err != nil {
 		return
-	} else if err, mod.apConfig.Channel = mod.IntParam("wifi.ap.channel"); err != nil {
+	} else if mod.apConfig.Channel, err = mod.IntParam("wifi.ap.channel"); err != nil {
 		return
 	} else if mod.apConfig.Encryption, err = mod.BoolParam("wifi.ap.encryption"); err != nil {
 		return

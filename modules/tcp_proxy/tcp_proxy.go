@@ -102,13 +102,13 @@ func (mod *TcpProxy) Configure() error {
 		return err
 	} else if err, proxyAddress = mod.StringParam("tcp.proxy.address"); err != nil {
 		return err
-	} else if err, proxyPort = mod.IntParam("tcp.proxy.port"); err != nil {
+	} else if proxyPort, err = mod.IntParam("tcp.proxy.port"); err != nil {
 		return err
-	} else if err, port = mod.IntParam("tcp.port"); err != nil {
+	} else if port, err = mod.IntParam("tcp.port"); err != nil {
 		return err
 	} else if err, tunnelAddress = mod.StringParam("tcp.tunnel.address"); err != nil {
 		return err
-	} else if err, tunnelPort = mod.IntParam("tcp.tunnel.port"); err != nil {
+	} else if tunnelPort, err = mod.IntParam("tcp.tunnel.port"); err != nil {
 		return err
 	} else if err, scriptPath = mod.StringParam("tcp.proxy.script"); err != nil {
 		return err

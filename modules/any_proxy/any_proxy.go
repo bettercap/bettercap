@@ -85,9 +85,9 @@ func (mod *AnyProxy) Configure() error {
 		return err
 	} else if err, protocol = mod.StringParam("any.proxy.protocol"); err != nil {
 		return err
-	} else if err, srcPort = mod.IntParam("any.proxy.src_port"); err != nil {
+	} else if srcPort, err = mod.IntParam("any.proxy.src_port"); err != nil {
 		return err
-	} else if err, dstPort = mod.IntParam("any.proxy.dst_port"); err != nil {
+	} else if dstPort, err = mod.IntParam("any.proxy.dst_port"); err != nil {
 		return err
 	} else if err, srcAddress = mod.StringParam("any.proxy.src_address"); err != nil {
 		return err

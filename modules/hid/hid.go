@@ -176,23 +176,23 @@ func (mod *HIDRecon) Configure() error {
 		return err
 	}
 
-	if err, mod.devTTL = mod.IntParam("hid.ttl"); err != nil {
+	if mod.devTTL, err = mod.IntParam("hid.ttl"); err != nil {
 		return err
 	}
 
-	if err, n = mod.IntParam("hid.hop.period"); err != nil {
+	if n, err = mod.IntParam("hid.hop.period"); err != nil {
 		return err
 	} else {
 		mod.hopPeriod = time.Duration(n) * time.Millisecond
 	}
 
-	if err, n = mod.IntParam("hid.ping.period"); err != nil {
+	if n, err = mod.IntParam("hid.ping.period"); err != nil {
 		return err
 	} else {
 		mod.pingPeriod = time.Duration(n) * time.Millisecond
 	}
 
-	if err, n = mod.IntParam("hid.sniff.period"); err != nil {
+	if n, err = mod.IntParam("hid.sniff.period"); err != nil {
 		return err
 	} else {
 		mod.sniffPeriod = time.Duration(n) * time.Millisecond

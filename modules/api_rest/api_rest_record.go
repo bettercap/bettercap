@@ -82,7 +82,7 @@ func (mod *RestAPI) startRecording(filename string) (err error) {
 		return mod.errAlreadyRecording()
 	} else if mod.replaying {
 		return mod.errAlreadyReplaying()
-	} else if err, mod.recClock = mod.IntParam("api.rest.record.clock"); err != nil {
+	} else if mod.recClock, err = mod.IntParam("api.rest.record.clock"); err != nil {
 		return err
 	} else if mod.recordFileName, err = fs.Expand(filename); err != nil {
 		return err

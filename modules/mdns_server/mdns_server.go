@@ -114,7 +114,7 @@ func (mod *MDNSServer) Configure() (err error) {
 		return err
 	} else if err, ip6 = mod.StringParam("mdns.server.address6"); err != nil {
 		return err
-	} else if err, port = mod.IntParam("mdns.server.port"); err != nil {
+	} else if port, err = mod.IntParam("mdns.server.port"); err != nil {
 		return err
 	} else if err, info = mod.StringParam("mdns.server.info"); err != nil {
 		return err

@@ -62,7 +62,7 @@ func (mod *Ticker) Configure() error {
 		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, commands = mod.StringParam("ticker.commands"); err != nil {
 		return err
-	} else if err, period = mod.IntParam("ticker.period"); err != nil {
+	} else if period, err = mod.IntParam("ticker.period"); err != nil {
 		return err
 	}
 

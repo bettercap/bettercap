@@ -78,7 +78,7 @@ func NewSynScanner(s *session.Session) *SynScanner {
 				return err
 			} else if err = mod.parsePorts(args); err != nil {
 				return err
-			} else if err, period = mod.IntParam("syn.scan.show-progress-every"); err != nil {
+			} else if period, err = mod.IntParam("syn.scan.show-progress-every"); err != nil {
 				return err
 			} else {
 				mod.progressEvery = time.Duration(period) * time.Second

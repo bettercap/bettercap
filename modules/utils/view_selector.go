@@ -100,7 +100,7 @@ func (s *ViewSelector) Update() (err error) {
 		return
 	} else if err = s.parseSorting(); err != nil {
 		return
-	} else if err, s.Limit = s.owner.IntParam(s.limitName); err != nil {
+	} else if s.Limit, err = s.owner.IntParam(s.limitName); err != nil {
 		return
 	}
 	return

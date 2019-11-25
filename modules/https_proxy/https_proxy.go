@@ -109,9 +109,9 @@ func (mod *HttpsProxy) Configure() error {
 		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, address = mod.StringParam("https.proxy.address"); err != nil {
 		return err
-	} else if err, proxyPort = mod.IntParam("https.proxy.port"); err != nil {
+	} else if proxyPort, err = mod.IntParam("https.proxy.port"); err != nil {
 		return err
-	} else if err, httpPort = mod.IntParam("https.port"); err != nil {
+	} else if httpPort, err = mod.IntParam("https.port"); err != nil {
 		return err
 	} else if stripSSL, err = mod.BoolParam("https.proxy.sslstrip"); err != nil {
 		return err

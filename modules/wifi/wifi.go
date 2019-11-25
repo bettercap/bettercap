@@ -421,19 +421,19 @@ func (mod *WiFiModule) Configure() error {
 	var hopPeriod int
 	var err error
 
-	if err, mod.apTTL = mod.IntParam("wifi.ap.ttl"); err != nil {
+	if mod.apTTL, err = mod.IntParam("wifi.ap.ttl"); err != nil {
 		return err
-	} else if err, mod.staTTL = mod.IntParam("wifi.sta.ttl"); err != nil {
+	} else if mod.staTTL, err = mod.IntParam("wifi.sta.ttl"); err != nil {
 		return err
 	}
 
 	if err, mod.region = mod.StringParam("wifi.region"); err != nil {
 		return err
-	} else if err, mod.txPower = mod.IntParam("wifi.txpower"); err != nil {
+	} else if mod.txPower, err = mod.IntParam("wifi.txpower"); err != nil {
 		return err
 	} else if err, mod.source = mod.StringParam("wifi.source.file"); err != nil {
 		return err
-	} else if err, mod.minRSSI = mod.IntParam("wifi.rssi.min"); err != nil {
+	} else if mod.minRSSI, err = mod.IntParam("wifi.rssi.min"); err != nil {
 		return err
 	}
 
@@ -517,7 +517,7 @@ func (mod *WiFiModule) Configure() error {
 
 	if mod.skipBroken, err = mod.BoolParam("wifi.skip-broken"); err != nil {
 		return err
-	} else if err, hopPeriod = mod.IntParam("wifi.hop.period"); err != nil {
+	} else if hopPeriod, err = mod.IntParam("wifi.hop.period"); err != nil {
 		return err
 	}
 

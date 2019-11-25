@@ -58,7 +58,7 @@ func CertConfigToModule(prefix string, m *session.SessionModule, defaults CertCo
 }
 
 func CertConfigFromModule(prefix string, m session.SessionModule) (cfg CertConfig, err error) {
-	if err, cfg.Bits = m.IntParam(prefix + ".certificate.bits"); err != nil {
+	if cfg.Bits, err = m.IntParam(prefix + ".certificate.bits"); err != nil {
 		return cfg, err
 	} else if err, cfg.Country = m.StringParam(prefix + ".certificate.country"); err != nil {
 		return cfg, err
