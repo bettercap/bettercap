@@ -62,34 +62,32 @@ func NewDecimalParameter(name string, def_value string, desc string) *ModulePara
 	return NewModuleParameter(name, def_value, FLOAT, "^[\\d]+(\\.\\d+)?$", desc)
 }
 
-func (p ModuleParam) validate(value string) (error, interface{}) {
+func (p ModuleParam) validate(value string) (interface{}, error) {
 	if p.Validator != nil {
 		if !p.Validator.MatchString(value) {
-			return fmt.Errorf("Parameter %s not valid: '%s' does not match rule '%s'.", tui.Bold(p.Name), value, p.Validator.String()), nil
+			return nil, fmt.Errorf("Parameter %s not valid: '%s' does not match rule '%s'.", tui.Bold(p.Name), value, p.Validator.String())
 		}
 	}
 
 	switch p.Type {
 	case STRING:
-		return nil, value
+		return value, nil
 	case BOOL:
 		lvalue := strings.ToLower(value)
 		if lvalue == "true" {
-			return nil, true
+			return true, nil
 		} else if lvalue == "false" {
-			return nil, false
+			return false, nil
 		} else {
 			return fmt.Errorf("Can't typecast '%s' to boolean.", value), nil
 		}
 	case INT:
-		i, err := strconv.Atoi(value)
-		return err, i
+		return strconv.Atoi(value)
 	case FLOAT:
-		i, err := strconv.ParseFloat(value, 64)
-		return err, i
+		return strconv.ParseFloat(value, 64)
 	}
 
-	return fmt.Errorf("Unhandled module parameter type %d.", p.Type), nil
+	return nil, fmt.Errorf("Unhandled module parameter type %d.", p.Type)
 }
 
 const ParamIfaceName = "<interface name>"
@@ -122,7 +120,7 @@ func (p ModuleParam) getUnlocked(s *Session) string {
 	return p.parse(s, v)
 }
 
-func (p ModuleParam) Get(s *Session) (error, interface{}) {
+func (p ModuleParam) Get(s *Session) (interface{}, error) {
 	_, v := s.Env.Get(p.Name)
 	v = p.parse(s, v)
 	return p.validate(v)

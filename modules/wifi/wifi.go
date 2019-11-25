@@ -172,7 +172,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"Minimum WiFi signal strength in dBm.")
 
 	mod.AddObservableParam(minRSSI, func(v string) {
-		if err, v := minRSSI.Get(s); err != nil {
+		if v, err := minRSSI.Get(s); err != nil {
 			mod.Error("%v", err)
 		} else if mod.minRSSI = v.(int); mod.Started {
 			mod.Info("wifi.rssi.min set to %d", mod.minRSSI)
@@ -231,7 +231,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"Seconds of inactivity for an access points to be considered not in range anymore.")
 
 	mod.AddObservableParam(apTTL, func(v string) {
-		if err, v := apTTL.Get(s); err != nil {
+		if v, err := apTTL.Get(s); err != nil {
 			mod.Error("%v", err)
 		} else if mod.apTTL = v.(int); mod.Started {
 			mod.Info("wifi.ap.ttl set to %d", mod.apTTL)
@@ -243,7 +243,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"Seconds of inactivity for a client station to be considered not in range or not connected to its access point anymore.")
 
 	mod.AddObservableParam(staTTL, func(v string) {
-		if err, v := staTTL.Get(s); err != nil {
+		if v, err := staTTL.Get(s); err != nil {
 			mod.Error("%v", err)
 		} else if mod.staTTL = v.(int); mod.Started {
 			mod.Info("wifi.sta.ttl set to %d", mod.staTTL)

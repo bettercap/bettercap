@@ -171,7 +171,7 @@ func (m SessionModule) ListParam(name string) (err error, values []string) {
 
 func (m SessionModule) StringParam(name string) (error, string) {
 	if p, found := m.params[name]; found {
-		if err, v := p.Get(m.Session); err != nil {
+		if v, err := p.Get(m.Session); err != nil {
 			return err, ""
 		} else {
 			return nil, v.(string)
@@ -191,7 +191,7 @@ func (m SessionModule) IPParam(name string) (error, net.IP) {
 
 func (m SessionModule) IntParam(name string) (error, int) {
 	if p, found := m.params[name]; found {
-		if err, v := p.Get(m.Session); err != nil {
+		if v, err := p.Get(m.Session); err != nil {
 			return err, 0
 		} else {
 			return nil, v.(int)
@@ -204,7 +204,7 @@ func (m SessionModule) IntParam(name string) (error, int) {
 
 func (m SessionModule) DecParam(name string) (error, float64) {
 	if p, found := m.params[name]; found {
-		if err, v := p.Get(m.Session); err != nil {
+		if v, err := p.Get(m.Session); err != nil {
 			return err, 0
 		} else {
 			return nil, v.(float64)
@@ -216,7 +216,7 @@ func (m SessionModule) DecParam(name string) (error, float64) {
 }
 
 func (m SessionModule) BoolParam(name string) (error, bool) {
-	if err, v := m.params[name].Get(m.Session); err != nil {
+	if v, err := m.params[name].Get(m.Session); err != nil {
 		return err, false
 	} else {
 		return nil, v.(bool)
