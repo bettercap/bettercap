@@ -181,11 +181,11 @@ func (m SessionModule) StringParam(name string) (error, string) {
 	}
 }
 
-func (m SessionModule) IPParam(name string) (error, net.IP) {
+func (m SessionModule) IPParam(name string) (net.IP, error) {
 	if err, v := m.StringParam(name); err != nil {
-		return err, nil
+		return nil, err
 	} else {
-		return nil, net.ParseIP(v)
+		return net.ParseIP(v), err
 	}
 }
 
