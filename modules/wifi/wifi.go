@@ -354,7 +354,9 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 			if len(freqs) == 0 {
 				mod.Debug("resetting hopping channels")
-				if freqs, err = network.GetSupportedFrequencies(mod.iface.Name()); err != nil {
+				if mod.iface == nil {
+					return fmt.Errorf("wifi.interface not set or not found")
+				} else if freqs, err = network.GetSupportedFrequencies(mod.iface.Name()); err != nil {
 					return err
 				}
 			}
@@ -452,6 +454,8 @@ func (mod *WiFiModule) Configure() error {
 		ifName = mod.iface.Name()
 	} else if mod.iface, err = network.FindInterface(ifName); err != nil {
 		return fmt.Errorf("could not find interface %s: %v", ifName, err)
+	} else if mod.iface == nil {
+		return fmt.Errorf("could not find interface %s", ifName)
 	}
 
 	mod.Info("using interface %s (%s)", ifName, mod.iface.HwAddress)
