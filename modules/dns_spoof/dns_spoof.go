@@ -100,7 +100,7 @@ func (mod *DNSSpoofer) Configure() error {
 		return err
 	} else if err, domains = mod.ListParam("dns.spoof.domains"); err != nil {
 		return err
-	} else if err, hostsFile = mod.StringParam("dns.spoof.hosts"); err != nil {
+	} else if hostsFile, err = mod.StringParam("dns.spoof.hosts"); err != nil {
 		return err
 	}
 

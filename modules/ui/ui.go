@@ -73,13 +73,13 @@ func (mod *UIModule) Author() string {
 }
 
 func (mod *UIModule) Configure() (err error) {
-	if err, mod.basePath = mod.StringParam("ui.basepath"); err != nil {
+	if mod.basePath, err = mod.StringParam("ui.basepath"); err != nil {
 		return err
 	} else {
 		mod.uiPath = filepath.Join(mod.basePath, "ui")
 	}
 
-	if err, mod.tmpFile = mod.StringParam("ui.tmpfile"); err != nil {
+	if mod.tmpFile, err = mod.StringParam("ui.tmpfile"); err != nil {
 		return err
 	}
 

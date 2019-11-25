@@ -90,21 +90,21 @@ func (mod *HttpProxy) Configure() error {
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
-	} else if err, address = mod.StringParam("http.proxy.address"); err != nil {
+	} else if address, err = mod.StringParam("http.proxy.address"); err != nil {
 		return err
 	} else if proxyPort, err = mod.IntParam("http.proxy.port"); err != nil {
 		return err
 	} else if httpPort, err = mod.IntParam("http.port"); err != nil {
 		return err
-	} else if err, scriptPath = mod.StringParam("http.proxy.script"); err != nil {
+	} else if scriptPath, err = mod.StringParam("http.proxy.script"); err != nil {
 		return err
 	} else if stripSSL, err = mod.BoolParam("http.proxy.sslstrip"); err != nil {
 		return err
-	} else if err, jsToInject = mod.StringParam("http.proxy.injectjs"); err != nil {
+	} else if jsToInject, err = mod.StringParam("http.proxy.injectjs"); err != nil {
 		return err
-	} else if err, blacklist = mod.StringParam("http.proxy.blacklist"); err != nil {
+	} else if blacklist, err = mod.StringParam("http.proxy.blacklist"); err != nil {
 		return err
-	} else if err, whitelist = mod.StringParam("http.proxy.whitelist"); err != nil {
+	} else if whitelist, err = mod.StringParam("http.proxy.whitelist"); err != nil {
 		return err
 	}
 

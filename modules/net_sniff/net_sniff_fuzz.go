@@ -71,7 +71,7 @@ func (mod *Sniffer) doFuzzing(pkt gopacket.Packet) {
 func (mod *Sniffer) configureFuzzing() (err error) {
 	layers := ""
 
-	if err, layers = mod.StringParam("net.fuzz.layers"); err != nil {
+	if layers, err = mod.StringParam("net.fuzz.layers"); err != nil {
 		return
 	} else {
 		mod.fuzzLayers = str.Comma(layers)

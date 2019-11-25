@@ -427,11 +427,11 @@ func (mod *WiFiModule) Configure() error {
 		return err
 	}
 
-	if err, mod.region = mod.StringParam("wifi.region"); err != nil {
+	if mod.region, err = mod.StringParam("wifi.region"); err != nil {
 		return err
 	} else if mod.txPower, err = mod.IntParam("wifi.txpower"); err != nil {
 		return err
-	} else if err, mod.source = mod.StringParam("wifi.source.file"); err != nil {
+	} else if mod.source, err = mod.StringParam("wifi.source.file"); err != nil {
 		return err
 	} else if mod.minRSSI, err = mod.IntParam("wifi.rssi.min"); err != nil {
 		return err
@@ -439,7 +439,7 @@ func (mod *WiFiModule) Configure() error {
 
 	if mod.shakesAggregate, err = mod.BoolParam("wifi.handshakes.aggregate"); err != nil {
 		return err
-	} else if err, mod.shakesFile = mod.StringParam("wifi.handshakes.file"); err != nil {
+	} else if mod.shakesFile, err = mod.StringParam("wifi.handshakes.file"); err != nil {
 		return err
 	} else if mod.shakesFile != "" {
 		if mod.shakesFile, err = fs.Expand(mod.shakesFile); err != nil {
@@ -447,7 +447,7 @@ func (mod *WiFiModule) Configure() error {
 		}
 	}
 
-	if err, ifName = mod.StringParam("wifi.interface"); err != nil {
+	if ifName, err = mod.StringParam("wifi.interface"); err != nil {
 		return err
 	} else if ifName == "" {
 		mod.iface = mod.Session.Interface

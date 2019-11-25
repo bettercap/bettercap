@@ -189,23 +189,23 @@ func (mod *RestAPI) Configure() error {
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
-	} else if err, ip = mod.StringParam("api.rest.address"); err != nil {
+	} else if ip, err = mod.StringParam("api.rest.address"); err != nil {
 		return err
 	} else if port, err = mod.IntParam("api.rest.port"); err != nil {
 		return err
-	} else if err, mod.allowOrigin = mod.StringParam("api.rest.alloworigin"); err != nil {
+	} else if mod.allowOrigin, err = mod.StringParam("api.rest.alloworigin"); err != nil {
 		return err
-	} else if err, mod.certFile = mod.StringParam("api.rest.certificate"); err != nil {
+	} else if mod.certFile, err = mod.StringParam("api.rest.certificate"); err != nil {
 		return err
 	} else if mod.certFile, err = fs.Expand(mod.certFile); err != nil {
 		return err
-	} else if err, mod.keyFile = mod.StringParam("api.rest.key"); err != nil {
+	} else if mod.keyFile, err = mod.StringParam("api.rest.key"); err != nil {
 		return err
 	} else if mod.keyFile, err = fs.Expand(mod.keyFile); err != nil {
 		return err
-	} else if err, mod.username = mod.StringParam("api.rest.username"); err != nil {
+	} else if mod.username, err = mod.StringParam("api.rest.username"); err != nil {
 		return err
-	} else if err, mod.password = mod.StringParam("api.rest.password"); err != nil {
+	} else if mod.password, err = mod.StringParam("api.rest.password"); err != nil {
 		return err
 	} else if mod.useWebsocket, err = mod.BoolParam("api.rest.websocket"); err != nil {
 		return err

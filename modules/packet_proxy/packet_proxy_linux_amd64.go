@@ -134,11 +134,11 @@ func (mod *PacketProxy) Configure() (err error) {
 
 	if mod.queueNum, err = mod.IntParam("packet.proxy.queue.num"); err != nil {
 		return
-	} else if err, mod.chainName = mod.StringParam("packet.proxy.chain"); err != nil {
+	} else if mod.chainName, err = mod.StringParam("packet.proxy.chain"); err != nil {
 		return
-	} else if err, mod.rule = mod.StringParam("packet.proxy.rule"); err != nil {
+	} else if mod.rule, err = mod.StringParam("packet.proxy.rule"); err != nil {
 		return
-	} else if err, mod.pluginPath = mod.StringParam("packet.proxy.plugin"); err != nil {
+	} else if mod.pluginPath, err = mod.StringParam("packet.proxy.plugin"); err != nil {
 		return
 	}
 

@@ -107,7 +107,7 @@ func (mod *HttpsProxy) Configure() error {
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
-	} else if err, address = mod.StringParam("https.proxy.address"); err != nil {
+	} else if address, err = mod.StringParam("https.proxy.address"); err != nil {
 		return err
 	} else if proxyPort, err = mod.IntParam("https.proxy.port"); err != nil {
 		return err
@@ -115,21 +115,21 @@ func (mod *HttpsProxy) Configure() error {
 		return err
 	} else if stripSSL, err = mod.BoolParam("https.proxy.sslstrip"); err != nil {
 		return err
-	} else if err, certFile = mod.StringParam("https.proxy.certificate"); err != nil {
+	} else if certFile, err = mod.StringParam("https.proxy.certificate"); err != nil {
 		return err
 	} else if certFile, err = fs.Expand(certFile); err != nil {
 		return err
-	} else if err, keyFile = mod.StringParam("https.proxy.key"); err != nil {
+	} else if keyFile, err = mod.StringParam("https.proxy.key"); err != nil {
 		return err
 	} else if keyFile, err = fs.Expand(keyFile); err != nil {
 		return err
-	} else if err, scriptPath = mod.StringParam("https.proxy.script"); err != nil {
+	} else if scriptPath, err = mod.StringParam("https.proxy.script"); err != nil {
 		return err
-	} else if err, jsToInject = mod.StringParam("https.proxy.injectjs"); err != nil {
+	} else if jsToInject, err = mod.StringParam("https.proxy.injectjs"); err != nil {
 		return err
-	} else if err, blacklist = mod.StringParam("https.proxy.blacklist"); err != nil {
+	} else if blacklist, err = mod.StringParam("https.proxy.blacklist"); err != nil {
 		return err
-	} else if err, whitelist = mod.StringParam("https.proxy.whitelist"); err != nil {
+	} else if whitelist, err = mod.StringParam("https.proxy.whitelist"); err != nil {
 		return err
 	}
 

@@ -155,7 +155,7 @@ func (m *SessionModule) Param(name string) *ModuleParam {
 func (m SessionModule) ListParam(name string) (err error, values []string) {
 	values = make([]string, 0)
 	list := ""
-	if err, list = m.StringParam(name); err != nil {
+	if list, err = m.StringParam(name); err != nil {
 		return
 	} else {
 		parts := strings.Split(list, ",")
@@ -169,20 +169,20 @@ func (m SessionModule) ListParam(name string) (err error, values []string) {
 	return
 }
 
-func (m SessionModule) StringParam(name string) (error, string) {
+func (m SessionModule) StringParam(name string) (string, error) {
 	if p, found := m.params[name]; found {
 		if v, err := p.Get(m.Session); err != nil {
-			return err, ""
+			return "", err
 		} else {
-			return nil, v.(string)
+			return v.(string), nil
 		}
 	} else {
-		return fmt.Errorf("Parameter %s does not exist.", name), ""
+		return "", fmt.Errorf("Parameter %s does not exist.", name)
 	}
 }
 
 func (m SessionModule) IPParam(name string) (net.IP, error) {
-	if err, v := m.StringParam(name); err != nil {
+	if v, err := m.StringParam(name); err != nil {
 		return nil, err
 	} else {
 		return net.ParseIP(v), err

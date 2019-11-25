@@ -81,17 +81,17 @@ func (mod *AnyProxy) Configure() error {
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
-	} else if err, iface = mod.StringParam("any.proxy.iface"); err != nil {
+	} else if iface, err = mod.StringParam("any.proxy.iface"); err != nil {
 		return err
-	} else if err, protocol = mod.StringParam("any.proxy.protocol"); err != nil {
+	} else if protocol, err = mod.StringParam("any.proxy.protocol"); err != nil {
 		return err
 	} else if srcPort, err = mod.IntParam("any.proxy.src_port"); err != nil {
 		return err
 	} else if dstPort, err = mod.IntParam("any.proxy.dst_port"); err != nil {
 		return err
-	} else if err, srcAddress = mod.StringParam("any.proxy.src_address"); err != nil {
+	} else if srcAddress, err = mod.StringParam("any.proxy.src_address"); err != nil {
 		return err
-	} else if err, dstAddress = mod.StringParam("any.proxy.dst_address"); err != nil {
+	} else if dstAddress, err = mod.StringParam("any.proxy.dst_address"); err != nil {
 		return err
 	}
 

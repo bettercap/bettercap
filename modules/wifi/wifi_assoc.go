@@ -53,7 +53,7 @@ func (mod *WiFiModule) doAssocOpen() bool {
 
 func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 	// parse skip list
-	if err, assocSkip := mod.StringParam("wifi.assoc.skip"); err != nil {
+	if assocSkip, err := mod.StringParam("wifi.assoc.skip"); err != nil {
 		return err
 	} else if macs, err := network.ParseMACs(assocSkip); err != nil {
 		return err

@@ -65,9 +65,9 @@ func (mod *MacChanger) Author() string {
 func (mod *MacChanger) Configure() (err error) {
 	var changeTo string
 
-	if err, mod.iface = mod.StringParam("mac.changer.iface"); err != nil {
+	if mod.iface, err = mod.StringParam("mac.changer.iface"); err != nil {
 		return err
-	} else if err, changeTo = mod.StringParam("mac.changer.address"); err != nil {
+	} else if changeTo, err = mod.StringParam("mac.changer.address"); err != nil {
 		return err
 	}
 

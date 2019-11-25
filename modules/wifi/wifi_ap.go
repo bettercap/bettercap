@@ -16,9 +16,9 @@ var errNoRecon = errors.New("Module wifi.ap requires module wifi.recon to be act
 
 func (mod *WiFiModule) parseApConfig() (err error) {
 	var bssid string
-	if err, mod.apConfig.SSID = mod.StringParam("wifi.ap.ssid"); err != nil {
+	if mod.apConfig.SSID, err = mod.StringParam("wifi.ap.ssid"); err != nil {
 		return
-	} else if err, bssid = mod.StringParam("wifi.ap.bssid"); err != nil {
+	} else if bssid, err = mod.StringParam("wifi.ap.bssid"); err != nil {
 		return
 	} else if mod.apConfig.BSSID, err = net.ParseMAC(network.NormalizeMac(bssid)); err != nil {
 		return

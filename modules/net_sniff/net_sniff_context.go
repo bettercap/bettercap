@@ -32,7 +32,7 @@ func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 
 	ctx := NewSnifferContext()
 
-	if err, ctx.Source = mod.StringParam("net.sniff.source"); err != nil {
+	if ctx.Source, err = mod.StringParam("net.sniff.source"); err != nil {
 		return err, ctx
 	}
 
@@ -59,7 +59,7 @@ func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 		return err, ctx
 	}
 
-	if err, ctx.Filter = mod.StringParam("net.sniff.filter"); err != nil {
+	if ctx.Filter, err = mod.StringParam("net.sniff.filter"); err != nil {
 		return err, ctx
 	} else if ctx.Filter != "" {
 		err = ctx.Handle.SetBPFFilter(ctx.Filter)
@@ -68,7 +68,7 @@ func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 		}
 	}
 
-	if err, ctx.Expression = mod.StringParam("net.sniff.regexp"); err != nil {
+	if ctx.Expression, err = mod.StringParam("net.sniff.regexp"); err != nil {
 		return err, ctx
 	} else if ctx.Expression != "" {
 		if ctx.Compiled, err = regexp.Compile(ctx.Expression); err != nil {
@@ -76,7 +76,7 @@ func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 		}
 	}
 
-	if err, ctx.Output = mod.StringParam("net.sniff.output"); err != nil {
+	if ctx.Output, err = mod.StringParam("net.sniff.output"); err != nil {
 		return err, ctx
 	} else if ctx.Output != "" {
 		if ctx.OutputFile, err = os.Create(ctx.Output); err != nil {

@@ -45,7 +45,7 @@ func errNoKeyMap(layout string) error {
 func (mod *HIDRecon) prepInjection() (error, *network.HIDDevice, []*Command) {
 	var err error
 
-	if err, mod.sniffType = mod.StringParam("hid.force.type"); err != nil {
+	if mod.sniffType, err = mod.StringParam("hid.force.type"); err != nil {
 		return err, nil, nil
 	}
 

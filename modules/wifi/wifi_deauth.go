@@ -69,7 +69,7 @@ func (mod *WiFiModule) doDeauthOpen() bool {
 
 func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	// parse skip list
-	if err, deauthSkip := mod.StringParam("wifi.deauth.skip"); err != nil {
+	if deauthSkip, err := mod.StringParam("wifi.deauth.skip"); err != nil {
 		return err
 	} else if macs, err := network.ParseMACs(deauthSkip); err != nil {
 		return err

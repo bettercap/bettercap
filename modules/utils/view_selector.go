@@ -57,7 +57,7 @@ func ViewSelectorFor(m *session.SessionModule, prefix string, sortFields []strin
 }
 
 func (s *ViewSelector) parseFilter() (err error) {
-	if err, s.Filter = s.owner.StringParam(s.filterName); err != nil {
+	if s.Filter, err = s.owner.StringParam(s.filterName); err != nil {
 		return
 	}
 
@@ -76,7 +76,7 @@ func (s *ViewSelector) parseFilter() (err error) {
 
 func (s *ViewSelector) parseSorting() (err error) {
 	expr := ""
-	if err, expr = s.owner.StringParam(s.sortName); err != nil {
+	if expr, err = s.owner.StringParam(s.sortName); err != nil {
 		return
 	}
 

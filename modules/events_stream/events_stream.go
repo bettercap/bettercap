@@ -237,7 +237,7 @@ func (mod EventsStream) Author() string {
 func (mod *EventsStream) Configure() (err error) {
 	var output string
 
-	if err, output = mod.StringParam("events.stream.output"); err == nil {
+	if output, err = mod.StringParam("events.stream.output"); err == nil {
 		if output == "" {
 			mod.output = os.Stdout
 		} else if mod.outputName, err = fs.Expand(output); err == nil {
@@ -250,13 +250,13 @@ func (mod *EventsStream) Configure() (err error) {
 
 	if mod.rotation.Enabled, err = mod.BoolParam("events.stream.output.rotate"); err != nil {
 		return err
-	} else if err, mod.timeFormat = mod.StringParam("events.stream.time.format"); err != nil {
+	} else if mod.timeFormat, err = mod.StringParam("events.stream.time.format"); err != nil {
 		return err
 	} else if mod.rotation.Compress, err = mod.BoolParam("events.stream.output.rotate.compress"); err != nil {
 		return err
-	} else if err, mod.rotation.Format = mod.StringParam("events.stream.output.rotate.format"); err != nil {
+	} else if mod.rotation.Format, err = mod.StringParam("events.stream.output.rotate.format"); err != nil {
 		return err
-	} else if err, mod.rotation.How = mod.StringParam("events.stream.output.rotate.how"); err != nil {
+	} else if mod.rotation.How, err = mod.StringParam("events.stream.output.rotate.how"); err != nil {
 		return err
 	} else if mod.rotation.Period, err = mod.DecParam("events.stream.output.rotate.when"); err != nil {
 		return err

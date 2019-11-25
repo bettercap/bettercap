@@ -104,19 +104,19 @@ func (mod *MDNSServer) Configure() (err error) {
 	var port int
 	var info string
 
-	if err, host = mod.StringParam("mdns.server.host"); err != nil {
+	if host, err = mod.StringParam("mdns.server.host"); err != nil {
 		return err
-	} else if err, service = mod.StringParam("mdns.server.service"); err != nil {
+	} else if service, err = mod.StringParam("mdns.server.service"); err != nil {
 		return err
-	} else if err, domain = mod.StringParam("mdns.server.domain"); err != nil {
+	} else if domain, err = mod.StringParam("mdns.server.domain"); err != nil {
 		return err
-	} else if err, ip4 = mod.StringParam("mdns.server.address"); err != nil {
+	} else if ip4, err = mod.StringParam("mdns.server.address"); err != nil {
 		return err
-	} else if err, ip6 = mod.StringParam("mdns.server.address6"); err != nil {
+	} else if ip6, err = mod.StringParam("mdns.server.address6"); err != nil {
 		return err
 	} else if port, err = mod.IntParam("mdns.server.port"); err != nil {
 		return err
-	} else if err, info = mod.StringParam("mdns.server.info"); err != nil {
+	} else if info, err = mod.StringParam("mdns.server.info"); err != nil {
 		return err
 	}
 

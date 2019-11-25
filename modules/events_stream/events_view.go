@@ -153,7 +153,7 @@ func (mod *EventsStream) doRotation() {
 
 func (mod *EventsStream) View(e session.Event, refresh bool) {
 	var err error
-	if err, mod.timeFormat = mod.StringParam("events.stream.time.format"); err != nil {
+	if mod.timeFormat, err = mod.StringParam("events.stream.time.format"); err != nil {
 		fmt.Fprintf(mod.output, "%v", err)
 		mod.timeFormat = "15:04:05"
 	}

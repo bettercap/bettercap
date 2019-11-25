@@ -101,9 +101,9 @@ func (mod *ArpSpoofer) Configure() error {
 		return err
 	} else if mod.internal, err = mod.BoolParam("arp.spoof.internal"); err != nil {
 		return err
-	} else if err, targets = mod.StringParam("arp.spoof.targets"); err != nil {
+	} else if targets, err = mod.StringParam("arp.spoof.targets"); err != nil {
 		return err
-	} else if err, whitelist = mod.StringParam("arp.spoof.whitelist"); err != nil {
+	} else if whitelist, err = mod.StringParam("arp.spoof.whitelist"); err != nil {
 		return err
 	} else if mod.addresses, mod.macs, err = network.ParseTargets(targets, mod.Session.Lan.Aliases()); err != nil {
 		return err

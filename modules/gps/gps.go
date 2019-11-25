@@ -73,7 +73,7 @@ func (mod *GPS) Author() string {
 func (mod *GPS) Configure() (err error) {
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
-	} else if err, mod.serialPort = mod.StringParam("gps.device"); err != nil {
+	} else if mod.serialPort, err = mod.StringParam("gps.device"); err != nil {
 		return err
 	} else if mod.baudRate, err = mod.IntParam("gps.baudrate"); err != nil {
 		return err

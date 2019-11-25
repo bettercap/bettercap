@@ -80,11 +80,11 @@ func (mod *MySQLServer) Configure() error {
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
-	} else if err, mod.infile = mod.StringParam("mysql.server.infile"); err != nil {
+	} else if mod.infile, err = mod.StringParam("mysql.server.infile"); err != nil {
 		return err
-	} else if err, mod.outfile = mod.StringParam("mysql.server.outfile"); err != nil {
+	} else if mod.outfile, err = mod.StringParam("mysql.server.outfile"); err != nil {
 		return err
-	} else if err, address = mod.StringParam("mysql.server.address"); err != nil {
+	} else if address, err = mod.StringParam("mysql.server.address"); err != nil {
 		return err
 	} else if port, err = mod.IntParam("mysql.server.port"); err != nil {
 		return err

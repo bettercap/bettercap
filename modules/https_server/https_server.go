@@ -92,7 +92,7 @@ func (mod *HttpsServer) Configure() error {
 		return session.ErrAlreadyStarted(mod.Name())
 	}
 
-	if err, path = mod.StringParam("https.server.path"); err != nil {
+	if path, err = mod.StringParam("https.server.path"); err != nil {
 		return err
 	}
 
@@ -106,7 +106,7 @@ func (mod *HttpsServer) Configure() error {
 
 	mod.server.Handler = router
 
-	if err, address = mod.StringParam("https.server.address"); err != nil {
+	if address, err = mod.StringParam("https.server.address"); err != nil {
 		return err
 	}
 
@@ -116,13 +116,13 @@ func (mod *HttpsServer) Configure() error {
 
 	mod.server.Addr = fmt.Sprintf("%s:%d", address, port)
 
-	if err, certFile = mod.StringParam("https.server.certificate"); err != nil {
+	if certFile, err = mod.StringParam("https.server.certificate"); err != nil {
 		return err
 	} else if certFile, err = fs.Expand(certFile); err != nil {
 		return err
 	}
 
-	if err, keyFile = mod.StringParam("https.server.key"); err != nil {
+	if keyFile, err = mod.StringParam("https.server.key"); err != nil {
 		return err
 	} else if keyFile, err = fs.Expand(keyFile); err != nil {
 		return err

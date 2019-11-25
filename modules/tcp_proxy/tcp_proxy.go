@@ -98,19 +98,19 @@ func (mod *TcpProxy) Configure() error {
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
-	} else if err, address = mod.StringParam("tcp.address"); err != nil {
+	} else if address, err = mod.StringParam("tcp.address"); err != nil {
 		return err
-	} else if err, proxyAddress = mod.StringParam("tcp.proxy.address"); err != nil {
+	} else if proxyAddress, err = mod.StringParam("tcp.proxy.address"); err != nil {
 		return err
 	} else if proxyPort, err = mod.IntParam("tcp.proxy.port"); err != nil {
 		return err
 	} else if port, err = mod.IntParam("tcp.port"); err != nil {
 		return err
-	} else if err, tunnelAddress = mod.StringParam("tcp.tunnel.address"); err != nil {
+	} else if tunnelAddress, err = mod.StringParam("tcp.tunnel.address"); err != nil {
 		return err
 	} else if tunnelPort, err = mod.IntParam("tcp.tunnel.port"); err != nil {
 		return err
-	} else if err, scriptPath = mod.StringParam("tcp.proxy.script"); err != nil {
+	} else if scriptPath, err = mod.StringParam("tcp.proxy.script"); err != nil {
 		return err
 	} else if mod.localAddr, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", proxyAddress, proxyPort)); err != nil {
 		return err

@@ -60,15 +60,15 @@ func CertConfigToModule(prefix string, m *session.SessionModule, defaults CertCo
 func CertConfigFromModule(prefix string, m session.SessionModule) (cfg CertConfig, err error) {
 	if cfg.Bits, err = m.IntParam(prefix + ".certificate.bits"); err != nil {
 		return cfg, err
-	} else if err, cfg.Country = m.StringParam(prefix + ".certificate.country"); err != nil {
+	} else if cfg.Country, err = m.StringParam(prefix + ".certificate.country"); err != nil {
 		return cfg, err
-	} else if err, cfg.Locality = m.StringParam(prefix + ".certificate.locality"); err != nil {
+	} else if cfg.Locality, err = m.StringParam(prefix + ".certificate.locality"); err != nil {
 		return cfg, err
-	} else if err, cfg.Organization = m.StringParam(prefix + ".certificate.organization"); err != nil {
+	} else if cfg.Organization, err = m.StringParam(prefix + ".certificate.organization"); err != nil {
 		return cfg, err
-	} else if err, cfg.OrganizationalUnit = m.StringParam(prefix + ".certificate.organizationalunit"); err != nil {
+	} else if cfg.OrganizationalUnit, err = m.StringParam(prefix + ".certificate.organizationalunit"); err != nil {
 		return cfg, err
-	} else if err, cfg.CommonName = m.StringParam(prefix + ".certificate.commonname"); err != nil {
+	} else if cfg.CommonName, err = m.StringParam(prefix + ".certificate.commonname"); err != nil {
 		return cfg, err
 	}
 	return cfg, err

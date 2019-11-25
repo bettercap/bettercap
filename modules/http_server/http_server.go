@@ -74,7 +74,7 @@ func (mod *HttpServer) Configure() error {
 		return session.ErrAlreadyStarted(mod.Name())
 	}
 
-	if err, path = mod.StringParam("http.server.path"); err != nil {
+	if path, err = mod.StringParam("http.server.path"); err != nil {
 		return err
 	}
 
@@ -88,7 +88,7 @@ func (mod *HttpServer) Configure() error {
 
 	mod.server.Handler = router
 
-	if err, address = mod.StringParam("http.server.address"); err != nil {
+	if address, err = mod.StringParam("http.server.address"); err != nil {
 		return err
 	}
 
