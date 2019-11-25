@@ -252,19 +252,19 @@ func TestSessionEnvironmentGetInt(t *testing.T) {
 	}
 
 	for k := range testEnvData {
-		if err, _ := env.GetInt(k); err == nil {
+		if _, err := env.GetInt(k); err == nil {
 			t.Fatal("expected error")
 		}
 	}
 
 	env.Data["num"] = "1234"
-	if err, i := env.GetInt("num"); err != nil {
+	if i, err := env.GetInt("num"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else if i != 1234 {
 		t.Fatalf("unexpected integer: %d", i)
 	}
 
-	if err, _ := env.GetInt("unknownint"); err == nil {
+	if _, err := env.GetInt("unknownint"); err == nil {
 		t.Fatalf("expected error (unknown key): %v", err)
 	}
 }

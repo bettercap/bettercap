@@ -113,16 +113,16 @@ func (env *Environment) Get(name string) (bool, string) {
 	return env.GetUnlocked(name)
 }
 
-func (env *Environment) GetInt(name string) (error, int) {
+func (env *Environment) GetInt(name string) (int, error) {
 	if found, value := env.Get(name); found {
 		if i, err := strconv.Atoi(value); err == nil {
-			return nil, i
+			return i, nil
 		} else {
-			return err, 0
+			return 0, err
 		}
 	}
 
-	return fmt.Errorf("Not found."), 0
+	return 0, fmt.Errorf("Not found.")
 }
 
 func (env *Environment) Sorted() []string {
