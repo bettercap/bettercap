@@ -41,11 +41,22 @@ func SetInterfaceChannel(iface string, channel int) error {
 		return nil
 	}
 
-	out, err := core.Exec("iwconfig", []string{iface, "channel", fmt.Sprintf("%d", channel)})
-	if err != nil {
-		return err
-	} else if out != "" {
-		return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
+	if core.HasBinary("iw") {
+		Debug("SetInterfaceChannel(%s, %d) iw based", iface, channel)
+		out, err := core.Exec("iw", []string{"dev", iface, "set", "channel", fmt.Sprintf("%d", channel)})
+		if err != nil {
+			return err
+		} else if out != "" {
+			return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
+		}
+	} else if core.HasBinary("iwconfig") {
+		Debug("SetInterfaceChannel(%s, %d) iwconfig based")
+		out, err := core.Exec("iwconfig", []string{iface, "channel", fmt.Sprintf("%d", channel)})
+		if err != nil {
+			return err
+		} else if out != "" {
+			return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
+		}
 	}
 
 	SetInterfaceCurrentChannel(iface, channel)

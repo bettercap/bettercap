@@ -285,7 +285,14 @@ func ActivateInterface(name string) error {
 }
 
 func SetInterfaceTxPower(name string, txpower int) error {
-	if core.HasBinary("iwconfig") {
+	if core.HasBinary("iw") {
+		Debug("SetInterfaceTxPower(%s, %d) iw based", name, txpower)
+		if _, err := core.Exec("iw", []string{"dev", name, "set", "txpower", fmt.Sprintf("%dmBm",
+			txpower)}); err != nil {
+			return err
+		}
+	} else if core.HasBinary("iwconfig") {
+		Debug("SetInterfaceTxPower(%s, %d) iwconfig based", name, txpower)
 		if out, err := core.Exec("iwconfig", []string{name, "txpower", fmt.Sprintf("%d", txpower)}); err != nil {
 			return err
 		} else if out != "" {
