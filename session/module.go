@@ -152,7 +152,7 @@ func (m *SessionModule) Param(name string) *ModuleParam {
 	return m.params[name]
 }
 
-func (m SessionModule) ListParam(name string) (err error, values []string) {
+func (m SessionModule) ListParam(name string) (values []string, err error) {
 	values = make([]string, 0)
 	list := ""
 	if list, err = m.StringParam(name); err != nil {

@@ -98,7 +98,7 @@ func (mod *DNSSpoofer) Configure() error {
 		return err
 	} else if address, err = mod.IPParam("dns.spoof.address"); err != nil {
 		return err
-	} else if err, domains = mod.ListParam("dns.spoof.domains"); err != nil {
+	} else if domains, err = mod.ListParam("dns.spoof.domains"); err != nil {
 		return err
 	} else if hostsFile, err = mod.StringParam("dns.spoof.hosts"); err != nil {
 		return err

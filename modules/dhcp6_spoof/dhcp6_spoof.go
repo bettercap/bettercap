@@ -92,7 +92,7 @@ func (mod *DHCP6Spoofer) Configure() error {
 		return err
 	}
 
-	if err, mod.Domains = mod.ListParam("dhcp6.spoof.domains"); err != nil {
+	if mod.Domains, err = mod.ListParam("dhcp6.spoof.domains"); err != nil {
 		return err
 	}
 
