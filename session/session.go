@@ -155,13 +155,13 @@ func (s *Session) Unlock() {
 	s.WiFi.Unlock()
 }
 
-func (s *Session) Module(name string) (err error, mod Module) {
+func (s *Session) Module(name string) (mod Module, err error) {
 	for _, m := range s.Modules {
 		if m.Name() == name {
-			return nil, m
+			return m, nil
 		}
 	}
-	return fmt.Errorf("module %s not found", name), mod
+	return mod, fmt.Errorf("module %s not found", name)
 }
 
 func (s *Session) Close() {

@@ -61,7 +61,7 @@ func (s *Session) generalHelp() {
 }
 
 func (s *Session) moduleHelp(filter string) error {
-	err, m := s.Module(filter)
+	m, err := s.Module(filter)
 	if err != nil {
 		return err
 	}
