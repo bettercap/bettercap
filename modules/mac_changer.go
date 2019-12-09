@@ -1,4 +1,4 @@
-package mac_changer
+package modules
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
@@ -21,62 +22,62 @@ type MacChanger struct {
 }
 
 func NewMacChanger(s *session.Session) *MacChanger {
-	mod := &MacChanger{
+	mc := &MacChanger{
 		SessionModule: session.NewSessionModule("mac.changer", s),
 	}
 
-	mod.AddParam(session.NewStringParameter("mac.changer.iface",
+	mc.AddParam(session.NewStringParameter("mac.changer.iface",
 		session.ParamIfaceName,
 		"",
 		"Name of the interface to use."))
 
-	mod.AddParam(session.NewStringParameter("mac.changer.address",
+	mc.AddParam(session.NewStringParameter("mac.changer.address",
 		session.ParamRandomMAC,
 		"[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}",
 		"Hardware address to apply to the interface."))
 
-	mod.AddHandler(session.NewModuleHandler("mac.changer on", "",
+	mc.AddHandler(session.NewModuleHandler("mac.changer on", "",
 		"Start mac changer module.",
 		func(args []string) error {
-			return mod.Start()
+			return mc.Start()
 		}))
 
-	mod.AddHandler(session.NewModuleHandler("mac.changer off", "",
+	mc.AddHandler(session.NewModuleHandler("mac.changer off", "",
 		"Stop mac changer module and restore original mac address.",
 		func(args []string) error {
-			return mod.Stop()
+			return mc.Stop()
 		}))
 
-	return mod
+	return mc
 }
 
-func (mod *MacChanger) Name() string {
+func (mc *MacChanger) Name() string {
 	return "mac.changer"
 }
 
-func (mod *MacChanger) Description() string {
+func (mc *MacChanger) Description() string {
 	return "Change active interface mac address."
 }
 
-func (mod *MacChanger) Author() string {
-	return "Simone Margaritelli <evilsocket@gmail.com>"
+func (mc *MacChanger) Author() string {
+	return "Simone Margaritelli <evilsocket@protonmail.com>"
 }
 
-func (mod *MacChanger) Configure() (err error) {
+func (mc *MacChanger) Configure() (err error) {
 	var changeTo string
 
-	if err, mod.iface = mod.StringParam("mac.changer.iface"); err != nil {
+	if err, mc.iface = mc.StringParam("mac.changer.iface"); err != nil {
 		return err
-	} else if err, changeTo = mod.StringParam("mac.changer.address"); err != nil {
+	} else if err, changeTo = mc.StringParam("mac.changer.address"); err != nil {
 		return err
 	}
 
 	changeTo = network.NormalizeMac(changeTo)
-	if mod.fakeMac, err = net.ParseMAC(changeTo); err != nil {
+	if mc.fakeMac, err = net.ParseMAC(changeTo); err != nil {
 		return err
 	}
 
-	mod.originalMac = mod.Session.Interface.HW
+	mc.originalMac = mc.Session.Interface.HW
 
 	return nil
 }
@@ -103,26 +104,26 @@ func (mc *MacChanger) setMac(mac net.HardwareAddr) error {
 	return err
 }
 
-func (mod *MacChanger) Start() error {
-	if mod.Running() {
-		return session.ErrAlreadyStarted(mod.Name())
-	} else if err := mod.Configure(); err != nil {
+func (mc *MacChanger) Start() error {
+	if mc.Running() {
+		return session.ErrAlreadyStarted
+	} else if err := mc.Configure(); err != nil {
 		return err
-	} else if err := mod.setMac(mod.fakeMac); err != nil {
+	} else if err := mc.setMac(mc.fakeMac); err != nil {
 		return err
 	}
 
-	return mod.SetRunning(true, func() {
-		mod.Info("interface mac address set to %s", tui.Bold(mod.fakeMac.String()))
+	return mc.SetRunning(true, func() {
+		log.Info("Interface mac address set to %s", tui.Bold(mc.fakeMac.String()))
 	})
 }
 
-func (mod *MacChanger) Stop() error {
-	return mod.SetRunning(false, func() {
-		if err := mod.setMac(mod.originalMac); err == nil {
-			mod.Info("interface mac address restored to %s", tui.Bold(mod.originalMac.String()))
+func (mc *MacChanger) Stop() error {
+	return mc.SetRunning(false, func() {
+		if err := mc.setMac(mc.originalMac); err == nil {
+			log.Info("Interface mac address restored to %s", tui.Bold(mc.originalMac.String()))
 		} else {
-			mod.Error("error while restoring mac address: %s", err)
+			log.Error("Error while restoring mac address: %s", err)
 		}
 	})
 }
