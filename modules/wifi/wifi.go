@@ -491,7 +491,7 @@ func (mod *WiFiModule) Configure() error {
 			if err = ihandle.SetRFMon(true); err != nil {
 				return fmt.Errorf("error while setting interface %s in monitor mode: %s", tui.Bold(ifName), err)
 			} else if err = ihandle.SetSnapLen(65536); err != nil {
-				return fmt.Errorf("error while settng span len: %s", err)
+				return fmt.Errorf("error while settng snapshot length: %s", err)
 			}
 			/*
 			 * We don't want to pcap.BlockForever otherwise pcap_close(handle)
