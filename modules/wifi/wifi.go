@@ -481,6 +481,7 @@ func (mod *WiFiModule) Configure() error {
 			}
 		}
 
+		setRFMonMaybeFatal := false
 		for retry := 0; ; retry++ {
 			ihandle, err := pcap.NewInactiveHandle(ifName)
 			if err != nil {
@@ -488,9 +489,18 @@ func (mod *WiFiModule) Configure() error {
 			}
 			defer ihandle.CleanUp()
 
-			if err = ihandle.SetRFMon(true); err != nil {
-				return fmt.Errorf("error while setting interface %s in monitor mode: %s", tui.Bold(ifName), err)
-			} else if err = ihandle.SetSnapLen(65536); err != nil {
+			/*
+			 * Calling SetRFMon is fatal when the interface is already in monitor mode.
+			 * gopacket has no GetRFMon analogue to SetRFMon with which we could check this, however ...
+			 */
+			if !setRFMonMaybeFatal {
+				if err = ihandle.SetRFMon(true); err != nil {
+					return fmt.Errorf("error while setting interface %s in monitor mode: %s", tui.Bold(ifName), err)
+				}
+			} else {
+				mod.Debug("SetRFMon on interface %s might be fatal, skipping this time", tui.Bold(ifName))
+			}
+			if err = ihandle.SetSnapLen(65536); err != nil {
 				return fmt.Errorf("error while settng snapshot length: %s", err)
 			}
 			/*
@@ -508,7 +518,13 @@ func (mod *WiFiModule) Configure() error {
 					}
 					continue
 				}
-				return fmt.Errorf("error while activating handle: %s", err)
+				if setRFMonMaybeFatal {
+					return fmt.Errorf("error while activating handle: %s", err)
+				} else {
+					mod.Warning("error while activating handle: %s, %s", err, tui.Bold("interface might already be monitoring. retrying!"))
+					setRFMonMaybeFatal = true
+					continue
+				}
 			}
 
 			break
