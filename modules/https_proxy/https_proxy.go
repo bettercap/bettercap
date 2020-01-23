@@ -33,6 +33,10 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"8083",
 		"Port to bind the HTTPS proxy to."))
 
+	mod.AddParam(session.NewBoolParameter("https.proxy.redirect",
+		"true",
+		"Enable or disable port redirection with iptables."))
+
 	mod.AddParam(session.NewBoolParameter("https.proxy.sslstrip",
 		"false",
 		"Enable or disable SSL stripping."))
@@ -97,6 +101,7 @@ func (mod *HttpsProxy) Configure() error {
 	var address string
 	var proxyPort int
 	var httpPort int
+	var doRedirect bool
 	var scriptPath string
 	var certFile string
 	var keyFile string
@@ -112,6 +117,8 @@ func (mod *HttpsProxy) Configure() error {
 	} else if err, proxyPort = mod.IntParam("https.proxy.port"); err != nil {
 		return err
 	} else if err, httpPort = mod.IntParam("https.port"); err != nil {
+		return err
+	} else if err, doRedirect = mod.BoolParam("https.proxy.redirect"); err != nil {
 		return err
 	} else if err, stripSSL = mod.BoolParam("https.proxy.sslstrip"); err != nil {
 		return err
@@ -153,7 +160,8 @@ func (mod *HttpsProxy) Configure() error {
 		mod.Info("loading proxy certification authority TLS certificate from %s", certFile)
 	}
 
-	return mod.proxy.ConfigureTLS(address, proxyPort, httpPort, scriptPath, certFile, keyFile, jsToInject, stripSSL)
+	return mod.proxy.ConfigureTLS(address, proxyPort, httpPort, doRedirect, scriptPath, certFile, keyFile, jsToInject,
+		stripSSL)
 }
 
 func (mod *HttpsProxy) Start() error {

@@ -30,6 +30,10 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		"8080",
 		"Port to bind the HTTP proxy to."))
 
+	mod.AddParam(session.NewBoolParameter("http.proxy.redirect",
+		"true",
+		"Enable or disable port redirection with iptables."))
+
 	mod.AddParam(session.NewStringParameter("http.proxy.script",
 		"",
 		"",
@@ -82,6 +86,7 @@ func (mod *HttpProxy) Configure() error {
 	var address string
 	var proxyPort int
 	var httpPort int
+	var doRedirect bool
 	var scriptPath string
 	var stripSSL bool
 	var jsToInject string
@@ -95,6 +100,8 @@ func (mod *HttpProxy) Configure() error {
 	} else if err, proxyPort = mod.IntParam("http.proxy.port"); err != nil {
 		return err
 	} else if err, httpPort = mod.IntParam("http.port"); err != nil {
+		return err
+	} else if err, doRedirect = mod.BoolParam("http.proxy.redirect"); err != nil {
 		return err
 	} else if err, scriptPath = mod.StringParam("http.proxy.script"); err != nil {
 		return err
@@ -111,7 +118,7 @@ func (mod *HttpProxy) Configure() error {
 	mod.proxy.Blacklist = str.Comma(blacklist)
 	mod.proxy.Whitelist = str.Comma(whitelist)
 
-	return mod.proxy.Configure(address, proxyPort, httpPort, scriptPath, jsToInject, stripSSL)
+	return mod.proxy.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL)
 }
 
 func (mod *HttpProxy) Start() error {

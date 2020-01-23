@@ -49,6 +49,7 @@ type HTTPProxy struct {
 	jsHook      string
 	isTLS       bool
 	isRunning   bool
+	doRedirect  bool
 	stripper    *SSLStripper
 	sniListener net.Listener
 	sess        *session.Session
@@ -73,15 +74,16 @@ func (l dummyLogger) Printf(format string, v ...interface{}) {
 
 func NewHTTPProxy(s *session.Session) *HTTPProxy {
 	p := &HTTPProxy{
-		Name:      "http.proxy",
-		Proxy:     goproxy.NewProxyHttpServer(),
-		sess:      s,
-		stripper:  NewSSLStripper(s, false),
-		isTLS:     false,
-		Server:    nil,
-		Blacklist: make([]string, 0),
-		Whitelist: make([]string, 0),
-		tag:       session.AsTag("http.proxy"),
+		Name:       "http.proxy",
+		Proxy:      goproxy.NewProxyHttpServer(),
+		sess:       s,
+		stripper:   NewSSLStripper(s, false),
+		isTLS:      false,
+		doRedirect: true,
+		Server:     nil,
+		Blacklist:  make([]string, 0),
+		Whitelist:  make([]string, 0),
+		tag:        session.AsTag("http.proxy"),
 	}
 
 	p.Proxy.Verbose = false
@@ -167,11 +169,13 @@ func (p *HTTPProxy) shouldProxy(req *http.Request) bool {
 	return true
 }
 
-func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scriptPath string, jsToInject string, stripSSL bool) error {
+func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRedirect bool, scriptPath string,
+	jsToInject string, stripSSL bool) error {
 	var err error
 
 	p.stripper.Enable(stripSSL)
 	p.Address = address
+	p.doRedirect = doRedirect
 
 	if strings.HasPrefix(jsToInject, "http://") || strings.HasPrefix(jsToInject, "https://") {
 		p.jsHook = fmt.Sprintf("<script src=\"%s\" type=\"text/javascript\"></script></head>", jsToInject)
@@ -205,22 +209,26 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, scrip
 		WriteTimeout: httpWriteTimeout,
 	}
 
-	if !p.sess.Firewall.IsForwardingEnabled() {
-		p.Info("enabling forwarding.")
-		p.sess.Firewall.EnableForwarding(true)
+	if p.doRedirect {
+		if !p.sess.Firewall.IsForwardingEnabled() {
+			p.Info("enabling forwarding.")
+			p.sess.Firewall.EnableForwarding(true)
+		}
+
+		p.Redirection = firewall.NewRedirection(p.sess.Interface.Name(),
+			"TCP",
+			httpPort,
+			p.Address,
+			proxyPort)
+
+		if err := p.sess.Firewall.EnableRedirection(p.Redirection, true); err != nil {
+			return err
+		}
+
+		p.Debug("applied redirection %s", p.Redirection.String())
+	} else {
+		p.Warning("port redirection disabled, the proxy must be set manually to work")
 	}
-
-	p.Redirection = firewall.NewRedirection(p.sess.Interface.Name(),
-		"TCP",
-		httpPort,
-		p.Address,
-		proxyPort)
-
-	if err := p.sess.Firewall.EnableRedirection(p.Redirection, true); err != nil {
-		return err
-	}
-
-	p.Debug("applied redirection %s", p.Redirection.String())
 
 	p.sess.UnkCmdCallback = func(cmd string) bool {
 		if p.Script != nil {
@@ -267,8 +275,10 @@ func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *
 	}
 }
 
-func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, scriptPath string, certFile string, keyFile string, jsToInject string, stripSSL bool) (err error) {
-	if p.Configure(address, proxyPort, httpPort, scriptPath, jsToInject, stripSSL); err != nil {
+func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, doRedirect bool, scriptPath string,
+	certFile string,
+	keyFile string, jsToInject string, stripSSL bool) (err error) {
+	if err = p.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL); err != nil {
 		return err
 	}
 
@@ -402,7 +412,7 @@ func (p *HTTPProxy) Start() {
 }
 
 func (p *HTTPProxy) Stop() error {
-	if p.Redirection != nil {
+	if p.doRedirect && p.Redirection != nil {
 		p.Debug("disabling redirection %s", p.Redirection.String())
 		if err := p.sess.Firewall.EnableRedirection(p.Redirection, false); err != nil {
 			return err
