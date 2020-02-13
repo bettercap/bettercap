@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-        "strconv"
+    "strconv"
 	
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
