@@ -8,7 +8,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-
+        "strconv"
+	
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
@@ -296,7 +297,6 @@ func (s *SSLStripper) fixResponseHeaders(res *http.Response) {
 	res.Header.Del("X-Download-Options")
 	res.Header.Del("X-Permitted-Cross-Domain-Policies")
 	res.Header.Del("X-Xss-Protection")
-	res.Header.Del("Content-Length")
 	res.Header.Set("Allow-Access-From-Same-Origin", "*")
 	res.Header.Set("Access-Control-Allow-Origin", "*")
 	res.Header.Set("Access-Control-Allow-Methods", "*")
@@ -377,7 +377,9 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			hostStripped := strings.Replace(stripped, "http://", "", 1)
 			s.hosts.Track(hostOriginal, hostStripped)
 		}
-
+		
+		res.Header.Set("Content-Length", strconv.Itoa(len(body)))
+		
 		// reset the response body to the original unread state
 		// but with just a string reader, this way further calls
 		// to ioutil.ReadAll(res.Body) will just return the content
