@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"strconv"
 
 	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
@@ -376,6 +377,8 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			hostStripped := strings.Replace(stripped, "http://", "", 1)
 			s.hosts.Track(hostOriginal, hostStripped)
 		}
+
+		res.Header.Set("Content-Length", strconv.Itoa(len(body)))
 
 		// reset the response body to the original unread state
 		// but with just a string reader, this way further calls
