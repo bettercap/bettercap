@@ -61,7 +61,7 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 	mod.AddParam(session.NewStringParameter("dns.spoof.ttl",
 		"1024",
 		"^[0-9]+$",
-		"TTL of spoofed DNS replies in seconds."))
+		"TTL of spoofed DNS replies."))
 
 	mod.AddHandler(session.NewModuleHandler("dns.spoof on", "",
 		"Start the DNS spoofer in the background.",
