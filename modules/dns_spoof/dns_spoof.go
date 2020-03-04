@@ -144,7 +144,7 @@ func (mod *DNSSpoofer) Configure() error {
 
 	ttl_, err := strconv.ParseUint(ttl, 10, 32)
 	if err != nil {
-	return fmt.Errorf("dns.spoof.ttl value must be an integer")
+		return fmt.Errorf("dns.spoof.ttl value must be an integer")
 	}
 	mod.TTL = uint32(ttl_)
 
