@@ -142,11 +142,11 @@ func (mod *DNSSpoofer) Configure() error {
 		mod.Session.Firewall.EnableForwarding(true)
 	}
 
-	ttl_, err := strconv.ParseUint(ttl, 10, 32)
-	if err != nil {
-		return fmt.Errorf("dns.spoof.ttl value must be an integer")
+	_ttl, _ := strconv.ParseUint(ttl, 10, 32)
+	if _ttl <= 0 {
+		return fmt.Errorf("dns.spoof.ttl value must be 1 or higher")
 	}
-	mod.TTL = uint32(ttl_)
+	mod.TTL = uint32(_ttl)
 
 	return nil
 }
