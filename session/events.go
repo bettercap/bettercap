@@ -65,9 +65,7 @@ func (p *EventPool) Listen() <-chan Event {
 	go func() {
 		for i := len(p.events) - 1; i >= 0; i-- {
 			defer func() {
-				if recover() != nil {
-
-				}
+				recover()
 			}()
 			l <- p.events[i]
 		}
