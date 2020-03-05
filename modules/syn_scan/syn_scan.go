@@ -227,8 +227,8 @@ func (mod *SynScanner) synScan() error {
 		mod.State.Store("progress", 0.0)
 
 		// start the collector
+		mod.waitGroup.Add(1)
 		go func() {
-			mod.waitGroup.Add(1)
 			defer mod.waitGroup.Done()
 
 			for packet := range mod.packets {
