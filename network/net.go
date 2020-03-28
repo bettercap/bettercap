@@ -287,7 +287,7 @@ func ActivateInterface(name string) error {
 func SetInterfaceTxPower(name string, txpower int) error {
 	if core.HasBinary("iw") {
 		Debug("SetInterfaceTxPower(%s, %d) iw based", name, txpower)
-		if _, err := core.Exec("iw", []string{"dev", name, "set", "txpower", fmt.Sprintf("%dmBm",
+		if _, err := core.Exec("iw", []string{"dev", name, "set", "txpower", "fixed", fmt.Sprintf("%d",
 			txpower)}); err != nil {
 			return err
 		}
