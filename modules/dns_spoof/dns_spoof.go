@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"strconv"
 	"sync"
 
 	"github.com/bettercap/bettercap/packets"
@@ -20,6 +21,7 @@ type DNSSpoofer struct {
 	session.SessionModule
 	Handle        *pcap.Handle
 	Hosts         Hosts
+	TTL           uint32
 	All           bool
 	waitGroup     *sync.WaitGroup
 	pktSourceChan chan gopacket.Packet
@@ -31,6 +33,7 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		Handle:        nil,
 		All:           false,
 		Hosts:         Hosts{},
+		TTL:           1024,
 		waitGroup:     &sync.WaitGroup{},
 	}
 
@@ -54,6 +57,11 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 	mod.AddParam(session.NewBoolParameter("dns.spoof.all",
 		"false",
 		"If true the module will reply to every DNS request, otherwise it will only reply to the one targeting the local pc."))
+
+	mod.AddParam(session.NewStringParameter("dns.spoof.ttl",
+		"1024",
+		"^[0-9]+$",
+		"TTL of spoofed DNS replies."))
 
 	mod.AddHandler(session.NewModuleHandler("dns.spoof on", "",
 		"Start the DNS spoofer in the background.",
@@ -84,6 +92,7 @@ func (mod DNSSpoofer) Author() string {
 
 func (mod *DNSSpoofer) Configure() error {
 	var err error
+	var ttl string
 	var hostsFile string
 	var domains []string
 	var address net.IP
@@ -101,6 +110,8 @@ func (mod *DNSSpoofer) Configure() error {
 	} else if err, domains = mod.ListParam("dns.spoof.domains"); err != nil {
 		return err
 	} else if err, hostsFile = mod.StringParam("dns.spoof.hosts"); err != nil {
+		return err
+	} else if err, ttl = mod.StringParam("dns.spoof.ttl"); err != nil {
 		return err
 	}
 
@@ -130,6 +141,9 @@ func (mod *DNSSpoofer) Configure() error {
 		mod.Info("enabling forwarding.")
 		mod.Session.Firewall.EnableForwarding(true)
 	}
+
+	_ttl, _ := strconv.Atoi(ttl)
+	mod.TTL = uint32(_ttl)
 
 	return nil
 }
@@ -184,7 +198,7 @@ func (mod *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp
 				Name:  []byte(q.Name),
 				Type:  q.Type,
 				Class: q.Class,
-				TTL:   1024,
+				TTL:   mod.TTL,
 				IP:    address,
 			})
 	}

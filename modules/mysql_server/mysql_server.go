@@ -121,7 +121,7 @@ func (mod *MySQLServer) Start() error {
 				if _, err := conn.Write(packets.MySQLGreeting); err != nil {
 					mod.Warning("error while writing server greeting: %s", err)
 					continue
-				} else if read, err = reader.Read(readBuffer); err != nil {
+				} else if _, err = reader.Read(readBuffer); err != nil {
 					mod.Warning("error while reading client message: %s", err)
 					continue
 				}

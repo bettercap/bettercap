@@ -75,7 +75,7 @@ func (mod *EventsStream) dumpForm(body []byte) string {
 			if err != nil {
 				value = v
 			}
-			form = append(form, fmt.Sprintf("%s", tui.Bold(tui.Red(value))))
+			form = append(form, tui.Bold(tui.Red(value)))
 		}
 	}
 	return "\n" + strings.Join(form, "&") + "\n"
@@ -113,7 +113,7 @@ func (mod *EventsStream) dumpJSON(body []byte) string {
 	if err := json.Indent(&buf, body, "", "  "); err != nil {
 		pretty = string(body)
 	} else {
-		pretty = string(buf.Bytes())
+		pretty = buf.String()
 	}
 
 	return "\n" + reJsonKey.ReplaceAllString(pretty, tui.Green(`$1:`)) + "\n"
