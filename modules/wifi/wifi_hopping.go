@@ -92,7 +92,7 @@ func (mod *WiFiModule) channelHopper() {
 			}
 
 			select {
-			case _ = <-mod.hopChanges:
+			case <-mod.hopChanges:
 				mod.Debug("hop changed")
 				break loopCurrentChannels
 			case <-time.After(delay):

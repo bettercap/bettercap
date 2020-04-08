@@ -13,7 +13,7 @@ import (
 )
 
 func upnpParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
-	if data := packets.UPNPGetMeta(pkt); data != nil && len(data) > 0 {
+	if data := packets.UPNPGetMeta(pkt); len(data) > 0 {
 		s := ""
 		for name, value := range data {
 			s += fmt.Sprintf("%s:%s ", tui.Blue(name), tui.Yellow(value))

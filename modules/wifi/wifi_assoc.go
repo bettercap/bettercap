@@ -88,9 +88,8 @@ func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 		}
 		return fmt.Errorf("%s is an unknown BSSID or it is in the association skip list.", to.String())
 	}
-
+	mod.writes.Add(1)
 	go func() {
-		mod.writes.Add(1)
 		defer mod.writes.Done()
 
 		// since we need to change the wifi adapter channel for each

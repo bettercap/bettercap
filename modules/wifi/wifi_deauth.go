@@ -113,8 +113,8 @@ func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 		return fmt.Errorf("%s is an unknown BSSID, is in the deauth skip list, or doesn't have detected clients.", to.String())
 	}
 
+	mod.writes.Add(1)
 	go func() {
-		mod.writes.Add(1)
 		defer mod.writes.Done()
 
 		// since we need to change the wifi adapter channel for each
