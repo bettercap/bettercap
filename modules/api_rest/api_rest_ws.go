@@ -95,7 +95,7 @@ func (mod *RestAPI) streamReader(ws *websocket.Conn) {
 	for {
 		_, _, err := ws.ReadMessage()
 		if err != nil {
-			mod.Debug("Closing websocket reader.")
+			mod.Warning("error reading message from websocket: %v", err)
 			break
 		}
 	}
@@ -105,12 +105,12 @@ func (mod *RestAPI) startStreamingEvents(w http.ResponseWriter, r *http.Request)
 	ws, err := mod.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		if _, ok := err.(websocket.HandshakeError); !ok {
-			mod.Error("Error while updating api.rest connection to websocket: %s", err)
+			mod.Error("error while updating api.rest connection to websocket: %s", err)
 		}
 		return
 	}
 
-	mod.Debug("Websocket streaming started for %s", r.RemoteAddr)
+	mod.Debug("websocket streaming started for %s", r.RemoteAddr)
 
 	go mod.streamWriter(ws, w, r)
 	mod.streamReader(ws)
