@@ -33,7 +33,7 @@ finish: &finish
 cross_deps: &cross_deps
   <<: *linux_deps
   before_install:
-    - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.1-1+b3_amd64.deb"
+    - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.2-3_amd64.deb"
     - sudo dpkg -i "qemu.deb"
 
 normal_install: &normal_install
