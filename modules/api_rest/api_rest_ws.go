@@ -40,6 +40,7 @@ func (mod *RestAPI) streamEvent(ws *websocket.Conn, event session.Event) error {
 
 func (mod *RestAPI) sendPing(ws *websocket.Conn) error {
 	ws.SetWriteDeadline(time.Now().Add(writeWait))
+	ws.SetReadDeadline(time.Now().Add(pongWait))
 	if err := ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 		mod.Error("Error while writing websocket ping message: %s", err)
 		return err
