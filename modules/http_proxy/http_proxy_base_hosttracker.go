@@ -34,25 +34,38 @@ func NewHost(name string) *Host {
 
 type HostTracker struct {
 	sync.RWMutex
-	hosts map[string]*Host
+	uhosts map[string]*Host
+	shosts map[string]*Host
 }
 
 func NewHostTracker() *HostTracker {
 	return &HostTracker{
-		hosts: make(map[string]*Host),
+		uhosts: make(map[string]*Host),
+		shosts: make(map[string]*Host),
 	}
 }
 
 func (t *HostTracker) Track(host, stripped string) {
 	t.Lock()
 	defer t.Unlock()
-	t.hosts[stripped] = NewHost(host)
+	t.uhosts[stripped] = NewHost(host)
+	t.shosts[host] = NewHost(stripped)
 }
 
 func (t *HostTracker) Unstrip(stripped string) *Host {
 	t.RLock()
 	defer t.RUnlock()
-	if host, found := t.hosts[stripped]; found {
+	if host, found := t.uhosts[stripped]; found {
+		return host
+	}
+	return nil
+}
+
+
+func (t *HostTracker) Strip(unstripped string) *Host {
+	t.RLock()
+	defer t.RUnlock()
+	if host, found := t.shosts[unstripped]; found {
 		return host
 	}
 	return nil
