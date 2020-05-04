@@ -153,7 +153,7 @@ func (mod *MySQLServer) Start() error {
 				if strings.HasPrefix(mod.infile, "\\") {
 					mod.Info("NTLM from '%s' relayed to %s", clientAddress, mod.infile)
 				} else if fileSize := read - 9; fileSize < 4 {
-					mod.Warning("unpexpected buffer size %d", read)
+					mod.Warning("unexpected buffer size %d", read)
 				} else {
 					mod.Info("read file ( %s ) is %d bytes", mod.infile, fileSize)
 
