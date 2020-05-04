@@ -378,8 +378,9 @@ func (p *HTTPProxy) httpsWorker() error {
 					Opaque: hostname,
 					Host:   net.JoinHostPort(hostname, "443"),
 				},
-				Host:   hostname,
-				Header: make(http.Header),
+				Host:       hostname,
+				Header:     make(http.Header),
+				RemoteAddr: c.RemoteAddr().String(),
 			}
 			p.Proxy.ServeHTTP(dumbResponseWriter{tlsConn}, req)
 		}(c)
