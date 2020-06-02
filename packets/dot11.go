@@ -89,6 +89,30 @@ func NewDot11Beacon(conf Dot11ApConfig, seq uint16) (error, []byte) {
 	return Serialize(stack...)
 }
 
+func NewDot11BeaconWithCSA(seq uint16, channel int8, ssid string, bssid net.HardwareAddr) (error, []byte) {
+	return Serialize(
+		&layers.RadioTap{},
+		&layers.Dot11{
+			Address1:       network.BroadcastHw,
+			Address2:       bssid,
+			Address3:       bssid,
+			SequenceNumber: seq,
+			FragmentNumber: 0,
+			Type:           layers.Dot11TypeMgmtBeacon,
+		},
+		&layers.Dot11MgmtBeacon{
+			Timestamp: 0,
+			Interval:  0x64,
+			Flags:     65535,
+		},
+		Dot11Info(layers.Dot11InformationElementIDSSID, []byte(ssid)),
+		Dot11Info(layers.Dot11InformationElementIDRates, fakeApRates),
+		Dot11Info(layers.Dot11InformationElementIDSwitchChannelAnnounce, []byte{0,byte(channel),0}),
+
+	)
+
+}
+
 func NewDot11Deauth(a1 net.HardwareAddr, a2 net.HardwareAddr, a3 net.HardwareAddr, seq uint16) (error, []byte) {
 	return Serialize(
 		&layers.RadioTap{},
