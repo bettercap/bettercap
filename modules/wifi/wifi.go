@@ -207,7 +207,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			}
 			channel,_:=strconv.Atoi( args[1])
 			if  channel>180 || channel<1{
-				return fmt.Errorf("%s is not a valid channel number")
+				return fmt.Errorf("%d is not a valid channel number",channel)
 			}
 			packet_count,_:=strconv.Atoi( args[2])
 			if packet_count>65535{
