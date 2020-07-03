@@ -14,7 +14,7 @@ type HttpProxy struct {
 func NewHttpProxy(s *session.Session) *HttpProxy {
 	mod := &HttpProxy{
 		SessionModule: session.NewSessionModule("http.proxy", s),
-		proxy:         NewHTTPProxy(s),
+		proxy:         NewHTTPProxy(s, "http.proxy"),
 	}
 
 	mod.AddParam(session.NewIntParameter("http.port",
@@ -54,6 +54,10 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		"false",
 		"Enable or disable SSL stripping."))
 
+	mod.AddParam(session.NewBoolParameter("http.proxy.sslstrip.useIDN",
+		"false",
+		"Use an Internationalized Domain Name to bypass HSTS. Otherwise, double the last TLD's character"))
+
 	mod.AddHandler(session.NewModuleHandler("http.proxy on", "",
 		"Start HTTP proxy.",
 		func(args []string) error {
@@ -65,6 +69,8 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		func(args []string) error {
 			return mod.Stop()
 		}))
+
+		mod.InitState("stripper")
 
 	return mod
 }
@@ -89,6 +95,7 @@ func (mod *HttpProxy) Configure() error {
 	var doRedirect bool
 	var scriptPath string
 	var stripSSL bool
+	var useIDN bool
 	var jsToInject string
 	var blacklist string
 	var whitelist string
@@ -107,6 +114,8 @@ func (mod *HttpProxy) Configure() error {
 		return err
 	} else if err, stripSSL = mod.BoolParam("http.proxy.sslstrip"); err != nil {
 		return err
+	} else if err, useIDN = mod.BoolParam("http.proxy.sslstrip.useIDN"); err != nil {
+		return err
 	} else if err, jsToInject = mod.StringParam("http.proxy.injectjs"); err != nil {
 		return err
 	} else if err, blacklist = mod.StringParam("http.proxy.blacklist"); err != nil {
@@ -118,7 +127,12 @@ func (mod *HttpProxy) Configure() error {
 	mod.proxy.Blacklist = str.Comma(blacklist)
 	mod.proxy.Whitelist = str.Comma(whitelist)
 
-	return mod.proxy.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL)
+	error := mod.proxy.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL, useIDN)
+
+	// save stripper to share it with other http(s) proxies
+	mod.State.Store("stripper", mod.proxy.Stripper)
+
+	return error
 }
 
 func (mod *HttpProxy) Start() error {
@@ -132,6 +146,7 @@ func (mod *HttpProxy) Start() error {
 }
 
 func (mod *HttpProxy) Stop() error {
+	mod.State.Store("stripper", nil)
 	return mod.SetRunning(false, func() {
 		mod.proxy.Stop()
 	})

@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"strconv"
 
 	"github.com/elazarl/goproxy"
 
@@ -24,7 +25,7 @@ func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*
 
 		p.fixRequestHeaders(req)
 
-		redir := p.stripper.Preprocess(req, ctx)
+		redir := p.Stripper.Preprocess(req, ctx)
 		if redir != nil {
 			// we need to redirect the user in order to make
 			// some session cookie expire
@@ -73,12 +74,12 @@ func (p *HTTPProxy) isScriptInjectable(res *http.Response) (bool, string) {
 	return false, ""
 }
 
-func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) (error, *http.Response) {
+func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) (error) {
 	defer res.Body.Close()
 
 	raw, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err, nil
+		return err
 	} else if html := string(raw); strings.Contains(html, "</head>") {
 		p.Info("> injecting javascript (%d bytes) into %s (%d bytes) for %s",
 			len(p.jsHook),
@@ -87,17 +88,15 @@ func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) (error, 
 			tui.Bold(strings.Split(res.Request.RemoteAddr, ":")[0]))
 
 		html = strings.Replace(html, "</head>", p.jsHook, -1)
-		newResp := goproxy.NewResponse(res.Request, cType, res.StatusCode, html)
-		for k, vv := range res.Header {
-			for _, v := range vv {
-				newResp.Header.Add(k, v)
-			}
-		}
+		res.Header.Set("Content-Length", strconv.Itoa(len(html)))
 
-		return nil, newResp
+		// reset the response body to the original unread state
+		res.Body = ioutil.NopCloser(strings.NewReader(html))
+
+		return nil
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
@@ -109,7 +108,7 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 	if p.shouldProxy(res.Request) {
 		p.Debug("> %s %s %s%s", res.Request.RemoteAddr, res.Request.Method, res.Request.Host, res.Request.URL.Path)
 
-		p.stripper.Process(res, ctx)
+		p.Stripper.Process(res, ctx)
 
 		// do we have a proxy script?
 		if p.Script != nil {
@@ -117,16 +116,20 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 			if jsres != nil {
 				// the response has been changed by the script
 				p.logResponseAction(res.Request, jsres)
-				return jsres.ToResponse(res.Request)
+				raw, err := ioutil.ReadAll(jsres.ToResponse(res.Request).Body)
+				if err == nil {
+					html := string(raw)
+					res.Header.Set("Content-Length", strconv.Itoa(len(html)))
+					// reset the response body to the original unread state
+					res.Body = ioutil.NopCloser(strings.NewReader(html))
+				}
 			}
 		}
 
 		// inject javascript code if specified and needed
 		if doInject, cType := p.isScriptInjectable(res); doInject {
-			if err, injectedResponse := p.doScriptInjection(res, cType); err != nil {
+			if err := p.doScriptInjection(res, cType); err != nil {
 				p.Error("error while injecting javascript: %s", err)
-			} else if injectedResponse != nil {
-				return injectedResponse
 			}
 		}
 	}
@@ -135,7 +138,7 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 }
 
 func (p *HTTPProxy) logRequestAction(req *http.Request, jsreq *JSRequest) {
-	p.sess.Events.Add(p.Name+".spoofed-request", struct {
+	p.Sess.Events.Add(p.Name+".spoofed-request", struct {
 		To     string
 		Method string
 		Host   string
@@ -151,7 +154,7 @@ func (p *HTTPProxy) logRequestAction(req *http.Request, jsreq *JSRequest) {
 }
 
 func (p *HTTPProxy) logResponseAction(req *http.Request, jsres *JSResponse) {
-	p.sess.Events.Add(p.Name+".spoofed-response", struct {
+	p.Sess.Events.Add(p.Name+".spoofed-response", struct {
 		To     string
 		Method string
 		Host   string

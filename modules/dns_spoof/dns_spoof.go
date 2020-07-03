@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/bettercap/bettercap/log"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
@@ -148,23 +149,21 @@ func (mod *DNSSpoofer) Configure() error {
 	return nil
 }
 
-func (mod *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, address net.IP, req *layers.DNS, target net.HardwareAddr) {
+func DnsReply(s *session.Session, TTL uint32, pkt gopacket.Packet, peth *layers.Ethernet, pudp *layers.UDP, domain string, address net.IP, req *layers.DNS, target net.HardwareAddr) (string, string) {
 	redir := fmt.Sprintf("(->%s)", address.String())
 	who := target.String()
 
-	if t, found := mod.Session.Lan.Get(target.String()); found {
+	if t, found := s.Lan.Get(target.String()); found {
 		who = t.String()
 	}
-
-	mod.Info("sending spoofed DNS reply for %s %s to %s.", tui.Red(domain), tui.Dim(redir), tui.Bold(who))
 
 	var err error
 	var src, dst net.IP
 
 	nlayer := pkt.NetworkLayer()
 	if nlayer == nil {
-		mod.Debug("missing network layer skipping packet.")
-		return
+		log.Debug("missing network layer skipping packet.")
+		return "", ""
 	}
 
 	var eType layers.EthernetType
@@ -198,7 +197,7 @@ func (mod *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp
 				Name:  []byte(q.Name),
 				Type:  q.Type,
 				Class: q.Class,
-				TTL:   mod.TTL,
+				TTL:   TTL,
 				IP:    address,
 			})
 	}
@@ -232,8 +231,8 @@ func (mod *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp
 
 		err, raw = packets.Serialize(&eth, &ip6, &udp, &dns)
 		if err != nil {
-			mod.Error("error serializing packet: %s.", err)
-			return
+			log.Error("error serializing packet: %s.", err)
+			return "", ""
 		}
 	} else {
 		ip4 := layers.IPv4{
@@ -253,15 +252,18 @@ func (mod *DNSSpoofer) dnsReply(pkt gopacket.Packet, peth *layers.Ethernet, pudp
 
 		err, raw = packets.Serialize(&eth, &ip4, &udp, &dns)
 		if err != nil {
-			mod.Error("error serializing packet: %s.", err)
-			return
+			log.Error("error serializing packet: %s.", err)
+			return "", ""
 		}
 	}
 
-	mod.Debug("sending %d bytes of packet ...", len(raw))
-	if err := mod.Session.Queue.Send(raw); err != nil {
-		mod.Error("error sending packet: %s", err)
+	log.Debug("sending %d bytes of packet ...", len(raw))
+	if err := s.Queue.Send(raw); err != nil {
+		log.Error("error sending packet: %s", err)
+		return "", ""
 	}
+
+	return redir, who
 }
 
 func (mod *DNSSpoofer) onPacket(pkt gopacket.Packet) {
@@ -279,7 +281,10 @@ func (mod *DNSSpoofer) onPacket(pkt gopacket.Packet) {
 			for _, q := range dns.Questions {
 				qName := string(q.Name)
 				if address := mod.Hosts.Resolve(qName); address != nil {
-					mod.dnsReply(pkt, eth, udp, qName, address, dns, eth.SrcMAC)
+					redir, who := DnsReply(mod.Session, mod.TTL, pkt, eth, udp, qName, address, dns, eth.SrcMAC)
+					if redir != "" && who != "" {
+						mod.Info("sending spoofed DNS reply for %s %s to %s.", tui.Red(qName), tui.Dim(redir), tui.Bold(who))
+					}
 					break
 				} else {
 					mod.Debug("skipping domain %s", qName)
