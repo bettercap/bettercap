@@ -46,3 +46,7 @@ func Exec(executable string, args []string) (string, error) {
 		return str.Trim(string(raw)), nil
 	}
 }
+
+func ExecInEnglish(executable string, args []string) (string, error) {
+	return Exec("cmd", append([]string{"/C", "chcp 437", "&&", executable}, args...))
+}

@@ -1,11 +1,11 @@
 package firewall
 
 import (
+	"bufio"
 	"fmt"
-	"strings"
-
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/network"
+	"strings"
 )
 
 type WindowsFirewall struct {
@@ -27,11 +27,22 @@ func Make(iface *network.Endpoint) FirewallManager {
 }
 
 func (f WindowsFirewall) IsForwardingEnabled() bool {
-	if out, err := core.Exec("netsh", []string{"interface", "ipv4", "dump"}); err != nil {
+	if out, err := core.ExecInEnglish("netsh", []string{"interface", "ipv4", "show", "interface", fmt.Sprintf("%d", f.iface.Index)}); err != nil {
 		fmt.Printf("%s\n", err)
 		return false
 	} else {
-		return strings.Contains(out, "forwarding=enabled")
+		scanner := bufio.NewScanner(strings.NewReader(out))
+		for scanner.Scan() {
+			keyPair := strings.Split(scanner.Text(), ":")
+			if len(keyPair) != 2 {
+				continue
+			}
+			key, value := strings.TrimSpace(keyPair[0]), strings.TrimSpace(keyPair[1])
+			if key == "Forwarding" {
+				return value == "enabled"
+			}
+		}
+		return false
 	}
 }
 

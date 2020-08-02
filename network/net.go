@@ -225,7 +225,7 @@ func matchByAddress(iface net.Interface, name string) bool {
 func findInterfaceByName(name string, ifaces []net.Interface) (*Endpoint, error) {
 	for _, iface := range ifaces {
 		ifName := getInterfaceName(iface)
-		if ifName == name || matchByAddress(iface, name) {
+		if ifName == name || iface.Name == name || matchByAddress(iface, name) {
 			return buildEndpointFromInterface(iface)
 		}
 	}
