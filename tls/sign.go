@@ -63,7 +63,7 @@ func SignCertificateForHost(ca *tls.Certificate, host string, port int) (cert *t
 			},
 			NotBefore:             notBefore,
 			NotAfter:              notAfter,
-			KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+			KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 			ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 			BasicConstraintsValid: true,
 		}
@@ -90,7 +90,7 @@ func SignCertificateForHost(ca *tls.Certificate, host string, port int) (cert *t
 	}
 
 	var certpriv *rsa.PrivateKey
-	if certpriv, err = rsa.GenerateKey(rand.Reader, 1024); err != nil {
+	if certpriv, err = rsa.GenerateKey(rand.Reader, 2048); err != nil {
 		return
 	}
 

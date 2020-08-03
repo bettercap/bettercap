@@ -2,6 +2,7 @@ package http_proxy
 
 import (
 	"github.com/bettercap/bettercap/session"
+	"github.com/evilsocket/islazy/fs"
 
 	"github.com/evilsocket/islazy/str"
 )
@@ -44,6 +45,11 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		"",
 		"URL, path or javascript code to inject into every HTML page."))
 
+	mod.AddParam(session.NewStringParameter("http.proxy.certificate",
+		"~/.bettercap-ca.cert.pem",
+		"",
+		"HTTP proxy certification authority TLS certificate file."))
+
 	mod.AddParam(session.NewStringParameter("http.proxy.blacklist", "", "",
 		"Comma separated list of hostnames to skip while proxying (wildcard expressions can be used)."))
 
@@ -70,7 +76,7 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 			return mod.Stop()
 		}))
 
-		mod.InitState("stripper")
+	mod.InitState("stripper")
 
 	return mod
 }
@@ -94,6 +100,7 @@ func (mod *HttpProxy) Configure() error {
 	var httpPort int
 	var doRedirect bool
 	var scriptPath string
+	var certFile string
 	var stripSSL bool
 	var useIDN bool
 	var jsToInject string
@@ -118,6 +125,10 @@ func (mod *HttpProxy) Configure() error {
 		return err
 	} else if err, jsToInject = mod.StringParam("http.proxy.injectjs"); err != nil {
 		return err
+	} else if err, certFile = mod.StringParam("http.proxy.certificate"); err != nil {
+		return err
+	} else if certFile, err = fs.Expand(certFile); err != nil {
+		return err
 	} else if err, blacklist = mod.StringParam("http.proxy.blacklist"); err != nil {
 		return err
 	} else if err, whitelist = mod.StringParam("http.proxy.whitelist"); err != nil {
@@ -127,7 +138,7 @@ func (mod *HttpProxy) Configure() error {
 	mod.proxy.Blacklist = str.Comma(blacklist)
 	mod.proxy.Whitelist = str.Comma(whitelist)
 
-	error := mod.proxy.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL, useIDN)
+	error := mod.proxy.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL, useIDN, certFile)
 
 	// save stripper to share it with other http(s) proxies
 	mod.State.Store("stripper", mod.proxy.Stripper)

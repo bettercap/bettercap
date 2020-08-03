@@ -24,6 +24,7 @@ type DNSSpoofer struct {
 	Hosts         Hosts
 	TTL           uint32
 	All           bool
+	ResolveAll    bool
 	waitGroup     *sync.WaitGroup
 	pktSourceChan chan gopacket.Packet
 }
@@ -33,6 +34,7 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		SessionModule: session.NewSessionModule("dns.spoof", s),
 		Handle:        nil,
 		All:           false,
+		ResolveAll:    true,
 		Hosts:         Hosts{},
 		TTL:           1024,
 		waitGroup:     &sync.WaitGroup{},
@@ -63,6 +65,10 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		"1024",
 		"^[0-9]+$",
 		"TTL of spoofed DNS replies."))
+
+	mod.AddParam(session.NewBoolParameter("dns.spoof.resolve_all",
+		"true",
+		"If true the module will resolve every DNS request, even if it is not covered by spoof list."))
 
 	mod.AddHandler(session.NewModuleHandler("dns.spoof on", "",
 		"Start the DNS spoofer in the background.",
@@ -105,6 +111,8 @@ func (mod *DNSSpoofer) Configure() error {
 	} else if err = mod.Handle.SetBPFFilter("udp"); err != nil {
 		return err
 	} else if err, mod.All = mod.BoolParam("dns.spoof.all"); err != nil {
+		return err
+	} else if err, mod.ResolveAll = mod.BoolParam("dns.spoof.resolve_all"); err != nil {
 		return err
 	} else if err, address = mod.IPParam("dns.spoof.address"); err != nil {
 		return err
@@ -287,6 +295,16 @@ func (mod *DNSSpoofer) onPacket(pkt gopacket.Packet) {
 					}
 					break
 				} else {
+					if mod.ResolveAll {
+						ips, err := net.LookupIP(qName)
+						if err == nil && len(ips) > 0 {
+							redir, who := DnsReply(mod.Session, mod.TTL, pkt, eth, udp, qName, ips[0], dns, eth.SrcMAC)
+							if redir != "" && who != "" {
+								mod.Info("sending forward DNS reply for %s %s to %s.", tui.Red(qName), tui.Dim(redir), tui.Bold(who))
+							}
+							break
+						}
+					}
 					mod.Debug("skipping domain %s", qName)
 				}
 			}
@@ -306,7 +324,7 @@ func (mod *DNSSpoofer) Start() error {
 		src := gopacket.NewPacketSource(mod.Handle, mod.Handle.LinkType())
 		mod.pktSourceChan = src.Packets()
 		for packet := range mod.pktSourceChan {
-			if !mod.Running() {
+			if !mod.Running() || packet == nil {
 				break
 			}
 

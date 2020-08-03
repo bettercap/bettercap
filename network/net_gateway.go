@@ -3,17 +3,17 @@
 package network
 
 import (
+	"bufio"
+	"fmt"
 	"strings"
 
 	"github.com/bettercap/bettercap/core"
-
-	"github.com/evilsocket/islazy/str"
 )
 
 func FindGateway(iface *Endpoint) (*Endpoint, error) {
-	Debug("FindGateway(%s) [cmd=%v opts=%v parser=%v]", iface.Name(), IPv4RouteCmd, IPv4RouteCmdOpts, IPv4RouteParser)
+	Debug("FindGateway(%s) [cmd=%v opts=%v]", iface.Name(), IPv4RouteCmd, IPv4RouteCmdOpts)
 
-	output, err := core.Exec(IPv4RouteCmd, IPv4RouteCmdOpts)
+	output, err := core.ExecInEnglish(IPv4RouteCmd, append(IPv4RouteCmdOpts, fmt.Sprintf("%d", iface.Index)))
 	if err != nil {
 		Debug("FindGateway(%s): core.Exec failed with %s", err)
 		return nil, err
@@ -22,25 +22,24 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 	Debug("FindGateway(%s) output:\n%s", iface.Name(), output)
 
 	ifName := iface.Name()
-	for _, line := range strings.Split(output, "\n") {
-		if line = str.Trim(line); strings.Contains(line, ifName) {
-			m := IPv4RouteParser.FindStringSubmatch(line)
-			if len(m) >= IPv4RouteTokens {
-				Debug("FindGateway(%s) line '%s' matched with %v", iface.Name(), line, m)
-				return IPv4RouteIsGateway(ifName, m, func(gateway string) (*Endpoint, error) {
-					if gateway == iface.IpAddress {
-						Debug("gateway is the interface")
-						return iface, nil
-					} else {
-						// we have the address, now we need its mac
-						mac, err := ArpLookup(ifName, gateway, false)
-						if err != nil {
-							return nil, err
-						}
-						Debug("gateway is %s[%s]", gateway, mac)
-						return NewEndpoint(gateway, mac), nil
-					}
-				})
+	scanner := bufio.NewScanner(strings.NewReader(output))
+	for scanner.Scan() {
+		keyPair := strings.Split(scanner.Text(), ":")
+		if len(keyPair) != 2 {
+			continue
+		}
+		key, value := strings.TrimSpace(keyPair[0]), strings.TrimSpace(keyPair[1])
+		if key == "Default Gateway" {
+			if value == iface.IpAddress {
+				return iface, nil
+			} else {
+				// we have the address, now we need its mac
+				mac, err := ArpLookup(ifName, value, false)
+				if err != nil {
+					return nil, err
+				}
+				Debug("gateway is %s[%s]", value, mac)
+				return NewEndpoint(value, mac), nil
 			}
 		}
 	}

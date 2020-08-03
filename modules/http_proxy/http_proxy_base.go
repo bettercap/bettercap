@@ -94,8 +94,13 @@ func NewHTTPProxy(s *session.Session, tag string) *HTTPProxy {
 			if !p.isTLS {
 				req.URL.Scheme = "http"
 			}
+			// Clone it.
 			req.URL.Host = req.Host
-			p.Proxy.ServeHTTP(w, req)
+			if req.Host == "mitm.it" {
+				p.GetCert(w, req)
+			} else {
+				p.Proxy.ServeHTTP(w, req)
+			}
 		}
 	})
 
@@ -104,6 +109,24 @@ func NewHTTPProxy(s *session.Session, tag string) *HTTPProxy {
 	p.Proxy.OnResponse().DoFunc(p.onResponseFilter)
 
 	return p
+}
+
+func (p *HTTPProxy) GetCert(w http.ResponseWriter, req *http.Request) {
+	if p.CertFile != "" {
+		respHeader := w.Header()
+		respHeader.Set("Content-Type", "application/x-x509-ca-cert")
+		if strings.Index(req.UserAgent(), "Windows NT") != -1 {
+			// Return cer certificate format.
+			respHeader.Set("Content-Disposition", "inline; filename=ca-cert.cer")
+		} else {
+			// Return pem certificate format.
+			respHeader.Set("Content-Disposition", "inline; filename=ca-cert.pem")
+		}
+		rawCert, _ := ioutil.ReadFile(p.CertFile)
+		_, _ = w.Write(rawCert)
+	} else {
+		http.NotFound(w, req)
+	}
 }
 
 func (p *HTTPProxy) Debug(format string, args ...interface{}) {
@@ -170,12 +193,12 @@ func (p *HTTPProxy) shouldProxy(req *http.Request) bool {
 }
 
 func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRedirect bool, scriptPath string,
-	jsToInject string, stripSSL bool, useIDN bool) error {
+	jsToInject string, stripSSL bool, useIDN bool, certFile string) error {
 	var err error
 
 	// check if another http(s) proxy is using sslstrip and merge strippers
 	if stripSSL {
-		for _, mname := range []string{"http.proxy", "https.proxy"}{
+		for _, mname := range []string{"http.proxy", "https.proxy"} {
 			err, m := p.Sess.Module(mname)
 			if err == nil && m.Running() {
 				var mextra interface{}
@@ -196,6 +219,8 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRed
 	p.Address = address
 	p.doRedirect = doRedirect
 	p.jsHook = ""
+
+	p.CertFile = certFile
 
 	if strings.HasPrefix(jsToInject, "http://") || strings.HasPrefix(jsToInject, "https://") {
 		p.jsHook = fmt.Sprintf("<script src=\"%s\" type=\"text/javascript\"></script></head>", jsToInject)
@@ -298,7 +323,7 @@ func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *
 func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, doRedirect bool, scriptPath string,
 	certFile string,
 	keyFile string, jsToInject string, stripSSL bool, useIDN bool) (err error) {
-	if err = p.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL, useIDN); err != nil {
+	if err = p.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL, useIDN, certFile); err != nil {
 		return err
 	}
 

@@ -3,8 +3,10 @@ package tls
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/pem"
 	"math/big"
 	"os"
@@ -74,6 +76,17 @@ func CertConfigFromModule(prefix string, m session.SessionModule) (cfg CertConfi
 	return cfg, err
 }
 
+var oidPublicKeyRSA = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
+var oidNetscapeCertType = asn1.ObjectIdentifier{2, 16, 840, 1, 113730, 1, 1}
+
+var netscapeCetSSLCA = []byte{3, 2, 2, 4}
+
+type publicKeyInfo struct {
+	Raw       asn1.RawContent
+	Algorithm pkix.AlgorithmIdentifier
+	PublicKey asn1.BitString
+}
+
 func CreateCertificate(cfg CertConfig, ca bool) (*rsa.PrivateKey, []byte, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, cfg.Bits)
 	if err != nil {
@@ -100,10 +113,40 @@ func CreateCertificate(cfg CertConfig, ca bool) (*rsa.PrivateKey, []byte, error)
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageEmailProtection, x509.ExtKeyUsageTimeStamping, x509.ExtKeyUsageMicrosoftCommercialCodeSigning, x509.ExtKeyUsageMicrosoftServerGatedCrypto, x509.ExtKeyUsageNetscapeServerGatedCrypto},
 		BasicConstraintsValid: true,
 		IsCA:                  ca,
+	}
+	// We can only remove this once we move to go 1.15.
+	if ca && len(template.SubjectKeyId) == 0 {
+		// SubjectKeyId generated using method 1 in RFC 5280, Section 4.2.1.2
+		publicKeyBytes, err := asn1.Marshal(priv.PublicKey)
+		if err != nil {
+			return nil, nil, err
+		}
+		// This is a NULL parameters value which is required by
+		// RFC 3279, Section 2.3.1.
+		publicKeyAlgorithm := pkix.AlgorithmIdentifier{
+			Algorithm:  oidPublicKeyRSA,
+			Parameters: asn1.NullRawValue,
+		}
+		encodedPublicKey := asn1.BitString{BitLength: len(publicKeyBytes) * 8, Bytes: publicKeyBytes}
+		pki := publicKeyInfo{nil, publicKeyAlgorithm, encodedPublicKey}
+		b, err := asn1.Marshal(pki)
+		if err != nil {
+			return nil, nil, err
+		}
+		h := sha1.Sum(b)
+		template.SubjectKeyId = h[:]
+	}
+
+	if ca {
+		template.ExtraExtensions = append(template.ExtraExtensions, pkix.Extension{
+			Id:       oidNetscapeCertType,
+			Critical: false,
+			Value:    netscapeCetSSLCA,
+		})
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)

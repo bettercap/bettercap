@@ -3,17 +3,14 @@ package network
 import (
 	"fmt"
 	"net"
-	"regexp"
 	"strings"
 
 	"github.com/google/gopacket/pcap"
 )
 
 // only matches gateway lines
-var IPv4RouteParser = regexp.MustCompile("^.+\\s+.+\\s+\\d+\\s+([0-9\\.]+/\\d+)\\s+\\d+\\s+([0-9\\.]+).*$")
-var IPv4RouteTokens = 3
 var IPv4RouteCmd = "netsh"
-var IPv4RouteCmdOpts = []string{"interface", "ipv4", "show", "route"}
+var IPv4RouteCmdOpts = []string{"interface", "ipv4", "show", "address"}
 
 func IPv4RouteIsGateway(ifname string, tokens []string, f func(gateway string) (*Endpoint, error)) (*Endpoint, error) {
 	// TODO check if the subnet is the same as iface ?
