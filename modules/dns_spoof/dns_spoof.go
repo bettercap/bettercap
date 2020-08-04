@@ -67,8 +67,8 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		"TTL of spoofed DNS replies."))
 
 	mod.AddParam(session.NewBoolParameter("dns.spoof.resolve_all",
-		"true",
-		"If true the module will resolve every DNS request, even if it is not covered by spoof list."))
+		"false",
+		"If true the module will resolve every DNS request, even if it is not covered by spoof list, useful when gateway and dns is one the same ip."))
 
 	mod.AddHandler(session.NewModuleHandler("dns.spoof on", "",
 		"Start the DNS spoofer in the background.",
