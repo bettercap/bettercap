@@ -54,9 +54,9 @@ func NewHttpProxy(s *session.Session) *HttpProxy {
 		"false",
 		"Enable or disable SSL stripping."))
 
-	mod.AddParam(session.NewBoolParameter("http.proxy.sslstrip.useIDN",
-		"false",
-		"Use an Internationalized Domain Name to bypass HSTS. Otherwise, double the last TLD's character"))
+	mod.AddParam(session.NewStringParameter("http.proxy.sslstrip.replacements",
+		"com:corn net:nel org:orq", "(.*:.*\\s*$)+",
+		"Space separated list of '<original_chars>:<stripped_chars>', and ordered by priority. Use '*' for any domain. Internationalized Domain Names are allowed. If the domain to strip isn't found in this parameter, the last char of the top-level domain will be duplicated."))
 
 	mod.AddHandler(session.NewModuleHandler("http.proxy on", "",
 		"Start HTTP proxy.",
@@ -95,7 +95,7 @@ func (mod *HttpProxy) Configure() error {
 	var doRedirect bool
 	var scriptPath string
 	var stripSSL bool
-	var useIDN bool
+	var replacements string
 	var jsToInject string
 	var blacklist string
 	var whitelist string
@@ -114,7 +114,7 @@ func (mod *HttpProxy) Configure() error {
 		return err
 	} else if err, stripSSL = mod.BoolParam("http.proxy.sslstrip"); err != nil {
 		return err
-	} else if err, useIDN = mod.BoolParam("http.proxy.sslstrip.useIDN"); err != nil {
+	} else if err, replacements = mod.StringParam("http.proxy.sslstrip.replacements"); err != nil {
 		return err
 	} else if err, jsToInject = mod.StringParam("http.proxy.injectjs"); err != nil {
 		return err
@@ -127,7 +127,7 @@ func (mod *HttpProxy) Configure() error {
 	mod.proxy.Blacklist = str.Comma(blacklist)
 	mod.proxy.Whitelist = str.Comma(whitelist)
 
-	error := mod.proxy.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL, useIDN)
+	error := mod.proxy.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL, replacements)
 
 	// save stripper to share it with other http(s) proxies
 	mod.State.Store("stripper", mod.proxy.Stripper)
