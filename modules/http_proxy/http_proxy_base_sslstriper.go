@@ -142,23 +142,26 @@ func (s *SSLStripper) processURL(url string) string {
 			iPort = iEndHost
 	}
 	// search for domain's part to replace according to the settings
-	replacement := []string{}
+	replaceto := ""
 	for _, r := range strings.Fields(s.replacements) {
 		rep := strings.Split(r, ":")
-		if rep[0] == "*" {
-			rep[0] = url[:iPort]
-		}
-		if strings.Contains(url[:iPort], rep[0]) {
-			replacement = rep
+		replacer := regexp.MustCompile("(?i)^" + strings.ReplaceAll(regexp.QuoteMeta(rep[0]), "\\*", "(.+)") + "$") //allow using * to designate any existing character + case insensitive
+		if replacer.MatchString(url[:iPort]) {
+			replacement := ""
+			sreplacement := strings.Split(rep[1], "*")
+			for i := range sreplacement {
+				replacement += sreplacement[i]
+				if i+1 < len(sreplacement) {
+					replacement += "${" + strconv.Itoa(i+1) + "}"
+				}
+			}
+			replaceto = replacer.ReplaceAllString(url[:iPort], replacement)
 			break
 		}
 	}
-	if len(replacement) != 0{
+	if len(replaceto) != 0 {
 		// replace domain according to the settings & strip HTTPS port (if any)
-		url = url[:iPort] + url[iEndHost:]
-		iReplacement := strings.LastIndex(url, replacement[0])
-		replaceto := strings.ReplaceAll(replacement[1], "*", replacement[0])
-		url = url[:iReplacement] + replaceto + url[iReplacement+len(replacement[0]):]
+		url = replaceto + url[iEndHost:]
 	} else {
 		// double the last TLD's character & strip HTTPS port (if any)
 		url = url[:iPort] + string(url[iPort-1]) + url[iEndHost:]
