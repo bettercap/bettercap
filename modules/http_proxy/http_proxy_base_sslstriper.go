@@ -24,7 +24,7 @@ import (
 
 var (
 	httpsLinksParser = regexp.MustCompile(`https://[^"'/]+`)
-	domainCookieParser = regexp.MustCompile(`; ?(?i)domain=.*(;|$)`)
+	domainCookieParser = regexp.MustCompile(`; ?(?i)domain=([^;]+)(;|$)`)
 	flagsCookieParser = regexp.MustCompile(`; ?(?i)(secure|httponly)`)
 )
 
@@ -208,18 +208,29 @@ func (s *SSLStripper) fixCookies(res *http.Response) {
 	strippedHost := s.hosts.Strip(origHost)
 
 	if strippedHost != nil && strippedHost.Hostname != origHost && res.Header["Set-Cookie"] != nil {
-		// get domains from hostnames
-		if origParts, strippedParts := strings.Split(origHost, "."), strings.Split(strippedHost.Hostname, "."); len(origParts) > 1 && len(strippedParts) > 1 {
-			origDomain := origParts[len(origParts)-2] + "." + origParts[len(origParts)-1]
-			strippedDomain := strippedParts[len(strippedParts)-2] + "." + strippedParts[len(strippedParts)-1]
-
+		strippedParts := strings.Split(strippedHost.Hostname, ".")
+		if len(strippedParts) > 1 {
 			log.Info("[%s] Fixing cookies on %s", tui.Green("sslstrip"),tui.Bold(strippedHost.Hostname))
 			cookies := make([]string, len(res.Header["Set-Cookie"]))
 			// replace domain and strip "secure" flag for each cookie
 			for i, cookie := range res.Header["Set-Cookie"] {
-				domainIndex := domainCookieParser.FindStringIndex(cookie)
-				if domainIndex != nil {
-					cookie = cookie[:domainIndex[0]] + strings.Replace(cookie[domainIndex[0]:domainIndex[1]], origDomain, strippedDomain, 1) + cookie[domainIndex[1]:]
+				strippedDomain := ""
+				if domainCookieParser.MatchString(cookie) {
+					cookieSubmatch := domainCookieParser.FindStringSubmatchIndex(cookie)
+					domainIndex := [2]int{cookieSubmatch[len(cookieSubmatch)-4], cookieSubmatch[len(cookieSubmatch)-3]}
+					// domain name could be splited to include any subdomain
+					splittedDomain := strings.Split(cookie[domainIndex[0]:domainIndex[1]], ".")
+					for i := range splittedDomain {
+						if len(splittedDomain[len(splittedDomain)-(i+1)]) != 0 {
+							strippedDomain = "." + strippedParts[len(strippedParts)-(i+1)] + strippedDomain
+						}
+					}
+					if string(cookie[domainIndex[0]]) != "." {
+						strippedDomain = strippedDomain[1:]
+					} else if len(strippedDomain) == 0 {
+						strippedDomain = "."
+					}
+					cookie = cookie[:domainIndex[0]] + strippedDomain + cookie[domainIndex[1]:]
 				}
 				cookies[i] = flagsCookieParser.ReplaceAllString(cookie, "")
 			}
