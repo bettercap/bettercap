@@ -8,6 +8,7 @@ import (
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/adrianmo/go-nmea"
+	"github.com/koppacetic/go-gpsd"
 	"github.com/tarm/serial"
 
 	"github.com/evilsocket/islazy/str"
@@ -18,7 +19,16 @@ type GPS struct {
 
 	serialPort string
 	baudRate   int
-	serial     *serial.Port
+
+	serial *serial.Port
+	gpsd   *gpsd.Session
+}
+
+var ModeInfo = [4]string{
+	"NoValueSeen",
+	"NoFix",
+	"Mode2D",
+	"Mode3D",
 }
 
 func NewGPS(s *session.Session) *GPS {
@@ -31,7 +41,7 @@ func NewGPS(s *session.Session) *GPS {
 	mod.AddParam(session.NewStringParameter("gps.device",
 		mod.serialPort,
 		"",
-		"Serial device of the GPS hardware."))
+		"Serial device of the GPS hardware or hostname:port for a GPSD instance."))
 
 	mod.AddParam(session.NewIntParameter("gps.baudrate",
 		fmt.Sprintf("%d", mod.baudRate),
@@ -63,7 +73,7 @@ func (mod *GPS) Name() string {
 }
 
 func (mod *GPS) Description() string {
-	return "A module talking with GPS hardware on a serial interface."
+	return "A module talking with GPS hardware on a serial interface or via GPSD."
 }
 
 func (mod *GPS) Author() string {
@@ -79,11 +89,17 @@ func (mod *GPS) Configure() (err error) {
 		return err
 	}
 
-	mod.serial, err = serial.OpenPort(&serial.Config{
-		Name:        mod.serialPort,
-		Baud:        mod.baudRate,
-		ReadTimeout: time.Second * 1,
-	})
+	if mod.serialPort[0] == '/' || mod.serialPort[0] == '.' {
+		mod.Debug("connecting to serial port %s", mod.serialPort)
+		mod.serial, err = serial.OpenPort(&serial.Config{
+			Name:        mod.serialPort,
+			Baud:        mod.baudRate,
+			ReadTimeout: time.Second * 1,
+		})
+	} else {
+		mod.Debug("connecting to gpsd at %s", mod.serialPort)
+		mod.gpsd, err = gpsd.Dial(mod.serialPort)
+	}
 
 	return
 }
@@ -118,6 +134,57 @@ func (mod *GPS) Show() error {
 	return nil
 }
 
+func (mod *GPS) readFromSerial() {
+	if line, err := mod.readLine(); err == nil {
+		if s, err := nmea.Parse(line); err == nil {
+			// http://aprs.gids.nl/nmea/#gga
+			if m, ok := s.(nmea.GNGGA); ok {
+				mod.Session.GPS.Updated = time.Now()
+				mod.Session.GPS.Latitude = m.Latitude
+				mod.Session.GPS.Longitude = m.Longitude
+				mod.Session.GPS.FixQuality = m.FixQuality
+				mod.Session.GPS.NumSatellites = m.NumSatellites
+				mod.Session.GPS.HDOP = m.HDOP
+				mod.Session.GPS.Altitude = m.Altitude
+				mod.Session.GPS.Separation = m.Separation
+			} else if m, ok := s.(nmea.GPGGA); ok {
+				mod.Session.GPS.Updated = time.Now()
+				mod.Session.GPS.Latitude = m.Latitude
+				mod.Session.GPS.Longitude = m.Longitude
+				mod.Session.GPS.FixQuality = m.FixQuality
+				mod.Session.GPS.NumSatellites = m.NumSatellites
+				mod.Session.GPS.HDOP = m.HDOP
+				mod.Session.GPS.Altitude = m.Altitude
+				mod.Session.GPS.Separation = m.Separation
+			}
+		} else {
+			mod.Debug("error parsing line '%s': %s", line, err)
+		}
+	} else if err != io.EOF {
+		mod.Warning("error while reading serial port: %s", err)
+	}
+}
+
+func (mod *GPS) runFromGPSD() {
+	mod.gpsd.Subscribe("TPV", func(r interface{}) {
+		report := r.(*gpsd.TPVReport)
+		mod.Session.GPS.Updated = report.Time
+		mod.Session.GPS.Latitude = report.Lat
+		mod.Session.GPS.Longitude = report.Lon
+		mod.Session.GPS.FixQuality = ModeInfo[report.Mode]
+		mod.Session.GPS.Altitude = report.Alt
+	})
+
+	mod.gpsd.Subscribe("SKY", func(r interface{}) {
+		report := r.(*gpsd.SKYReport)
+		mod.Session.GPS.NumSatellites = int64(len(report.Satellites))
+		mod.Session.GPS.HDOP = report.Hdop
+		//mod.Session.GPS.Separation = 0
+	})
+
+	mod.gpsd.Run()
+}
+
 func (mod *GPS) Start() error {
 	if err := mod.Configure(); err != nil {
 		return err
@@ -128,42 +195,25 @@ func (mod *GPS) Start() error {
 
 		mod.Info("started on port %s ...", mod.serialPort)
 
-		for mod.Running() {
-			if line, err := mod.readLine(); err == nil {
-				if s, err := nmea.Parse(line); err == nil {
-					// http://aprs.gids.nl/nmea/#gga
-					if m, ok := s.(nmea.GNGGA); ok {
-						mod.Session.GPS.Updated = time.Now()
-						mod.Session.GPS.Latitude = m.Latitude
-						mod.Session.GPS.Longitude = m.Longitude
-						mod.Session.GPS.FixQuality = m.FixQuality
-						mod.Session.GPS.NumSatellites = m.NumSatellites
-						mod.Session.GPS.HDOP = m.HDOP
-						mod.Session.GPS.Altitude = m.Altitude
-						mod.Session.GPS.Separation = m.Separation
-					} else if m, ok := s.(nmea.GPGGA); ok {
-						mod.Session.GPS.Updated = time.Now()
-						mod.Session.GPS.Latitude = m.Latitude
-						mod.Session.GPS.Longitude = m.Longitude
-						mod.Session.GPS.FixQuality = m.FixQuality
-						mod.Session.GPS.NumSatellites = m.NumSatellites
-						mod.Session.GPS.HDOP = m.HDOP
-						mod.Session.GPS.Altitude = m.Altitude
-						mod.Session.GPS.Separation = m.Separation
-					}
-				} else {
-					mod.Debug("error parsing line '%s': %s", line, err)
-				}
-			} else if err != io.EOF {
-				mod.Warning("error while reading serial port: %s", err)
+		if mod.serial != nil {
+			for mod.Running() {
+				mod.readFromSerial()
 			}
+		} else {
+			mod.runFromGPSD()
 		}
 	})
 }
 
 func (mod *GPS) Stop() error {
 	return mod.SetRunning(false, func() {
-		// let the read fail and exit
-		mod.serial.Close()
+		if mod.serial != nil {
+			// let the read fail and exit
+			mod.serial.Close()
+		} else {
+			if err := mod.gpsd.Close(); err != nil {
+				mod.Error("failed closing the connection to GPSD: %s", err)
+			}
+		}
 	})
 }

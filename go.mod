@@ -26,6 +26,7 @@ require (
 	github.com/hashicorp/mdns v1.0.3
 	github.com/inconshreveable/go-vhost v0.0.0-20160627193104-06d84117953b
 	github.com/jpillora/go-tld v1.0.0
+	github.com/koppacetic/go-gpsd v0.4.0
 	github.com/kr/binarydist v0.1.0 // indirect
 	github.com/malfunkt/iprange v0.9.0
 	github.com/mattn/go-colorable v0.1.7 // indirect

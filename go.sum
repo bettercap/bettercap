@@ -93,6 +93,8 @@ github.com/jpillora/go-tld v0.0.0-20190202073305-f16ca3b7b383/go.mod h1:7H/4k+TV
 github.com/jpillora/go-tld v1.0.0 h1:W0Wz3fYT9WCDNJXcXc58uV7sriLnVeELeOU5MP5X42M=
 github.com/jpillora/go-tld v1.0.0/go.mod h1:kitBxOF//DR5FxYeIGw+etdiiTIq5S7bx0dwy1GUNAk=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
+github.com/koppacetic/go-gpsd v0.4.0 h1:/T3cRvi1ZsWbxCZPB9pPor0HjIw3HuD+MSvaxV5QqQ8=
+github.com/koppacetic/go-gpsd v0.4.0/go.mod h1:mhcLuh9X++WHepbL3jEmEwnx1OkQDepZMihv12RO4qk=
 github.com/kr/binarydist v0.1.0 h1:6kAoLA9FMMnNGSehX0s1PdjbEaACznAv/W219j2uvyo=
 github.com/kr/binarydist v0.1.0/go.mod h1:DY7S//GCoz1BCd0B0EVrinCKAZN3pXe+MDaIZbXQVgM=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
