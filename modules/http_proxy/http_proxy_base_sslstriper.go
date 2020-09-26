@@ -142,7 +142,7 @@ func (s *SSLStripper) processURL(url string) string {
 			iPort = iEndHost
 	}
 	// search for domain's part to replace according to the settings
-	replaceto := ""
+	replaceto := url[:iPort]
 	for _, r := range strings.Fields(s.replacements) {
 		rep := strings.Split(r, ":")
 		replacer := regexp.MustCompile("(?i)^" + strings.ReplaceAll(regexp.QuoteMeta(rep[0]), "\\*", "(.+)") + "$") //allow using * to designate any existing character + case insensitive
@@ -159,13 +159,9 @@ func (s *SSLStripper) processURL(url string) string {
 			break
 		}
 	}
-	if len(replaceto) != 0 {
-		// replace domain according to the settings & strip HTTPS port (if any)
-		url = replaceto + url[iEndHost:]
-	} else {
-		// double the last TLD's character & strip HTTPS port (if any)
-		url = url[:iPort] + string(url[iPort-1]) + url[iEndHost:]
-	}
+
+	// replace domain according to the settings & strip HTTPS port (if any)
+	url = replaceto + url[iEndHost:]
 
 	// finally we add the http schema
 	url = "http://" + url

@@ -43,7 +43,7 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 
 	mod.AddParam(session.NewStringParameter("https.proxy.sslstrip.replacements",
 		"*.com:*.corn *.net:*.nel *.org:*.orq", "(.*:.*\\s*$)+",
-		"Space separated list of '<original_domain>:<stripped_domain>', and ordered by priority. Use '*' for any characters. You can use Internationalized Domain Names. If the domain to strip isn't found in this parameter, the last char of the top-level domain will be duplicated."))
+		"Space separated list of '<original_domain>:<stripped_domain>', and ordered by priority. Use '*' for any characters. You can use Internationalized Domain Names."))
 
 	mod.AddParam(session.NewStringParameter("https.proxy.injectjs",
 		"",
