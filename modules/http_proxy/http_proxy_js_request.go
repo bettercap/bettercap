@@ -29,7 +29,7 @@ type JSRequest struct {
 	bodyRead bool
 }
 
-var header_regexp = regexp.MustCompile(`(.*?): (.*)`)
+var header_regexp = regexp.MustCompile(`^\s*(.*?)\s*:\s*(.*)\s*$`)
 
 func NewJSRequest(req *http.Request) *JSRequest {
 	headers := ""
