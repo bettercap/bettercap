@@ -83,6 +83,9 @@ func (mod *HttpServer) Configure() error {
 
 	router.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mod.Debug("%s %s %s%s", tui.Bold(strings.Split(r.RemoteAddr, ":")[0]), r.Method, r.Host, r.URL.Path)
+		if r.URL.Path == "/proxy.pac" || r.URL.Path == "/wpad.dat" {
+			w.Header().Set("Content-Type", "application/x-ns-proxy-autoconfig")
+		}
 		fileServer.ServeHTTP(w, r)
 	}))
 
