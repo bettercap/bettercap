@@ -79,27 +79,44 @@ func (j *JSResponse) WasModified() bool {
 func (j *JSResponse) GetHeader(name, deflt string) string {
 	headers := strings.Split(j.Headers, "\r\n")
 	for i := 0; i < len(headers); i++ {
-		header_name := header_regexp.ReplaceAllString(headers[i], "$1")
-		header_value := header_regexp.ReplaceAllString(headers[i], "$2")
+		if headers[i] != "" {
+			header_parts := header_regexp.FindAllSubmatch([]byte(headers[i]), 1)
+			if len(header_parts) != 0 && len(header_parts[0]) == 3 {
+				header_name := string(header_parts[0][1])
+				header_value := string(header_parts[0][2])
 
-		if strings.ToLower(name) == strings.ToLower(header_name) {
-			return header_value
+				if strings.ToLower(name) == strings.ToLower(header_name) {
+					return header_value
+				}
+			}
 		}
 	}
 	return deflt
 }
 
 func (j *JSResponse) SetHeader(name, value string) {
+	name = strings.TrimSpace(name)
+	value = strings.TrimSpace(value)
+
+	if strings.ToLower(name) == "content-type" {
+		j.ContentType = value
+	}
+
 	headers := strings.Split(j.Headers, "\r\n")
 	for i := 0; i < len(headers); i++ {
-		header_name := header_regexp.ReplaceAllString(headers[i], "$1")
-		header_value := header_regexp.ReplaceAllString(headers[i], "$2")
+		if headers[i] != "" {
+			header_parts := header_regexp.FindAllSubmatch([]byte(headers[i]), 1)
+			if len(header_parts) != 0 && len(header_parts[0]) == 3 {
+				header_name := string(header_parts[0][1])
+				header_value := string(header_parts[0][2])
 
-		if strings.ToLower(name) == strings.ToLower(header_name) {
-			old_header := header_name + ": " + header_value + "\r\n"
-			new_header := header_name + ": " + value + "\r\n"
-			j.Headers = strings.Replace(j.Headers, old_header, new_header, 1)
-			return
+				if strings.ToLower(name) == strings.ToLower(header_name) {
+					old_header := header_name + ": " + header_value + "\r\n"
+					new_header := name + ": " + value + "\r\n"
+					j.Headers = strings.Replace(j.Headers, old_header, new_header, 1)
+					return
+				}
+			}
 		}
 	}
 	j.Headers += name + ": " + value + "\r\n"
@@ -108,13 +125,18 @@ func (j *JSResponse) SetHeader(name, value string) {
 func (j *JSResponse) RemoveHeader(name string) {
 	headers := strings.Split(j.Headers, "\r\n")
 	for i := 0; i < len(headers); i++ {
-		header_name := header_regexp.ReplaceAllString(headers[i], "$1")
-		header_value := header_regexp.ReplaceAllString(headers[i], "$2")
+		if headers[i] != "" {
+			header_parts := header_regexp.FindAllSubmatch([]byte(headers[i]), 1)
+			if len(header_parts) != 0 && len(header_parts[0]) == 3 {
+				header_name := string(header_parts[0][1])
+				header_value := string(header_parts[0][2])
 
-		if strings.ToLower(name) == strings.ToLower(header_name) {
-			removed_header := header_name + ": " + header_value + "\r\n"
-			j.Headers = strings.Replace(j.Headers, removed_header, "", 1)
-			return
+				if strings.ToLower(name) == strings.ToLower(header_name) {
+					removed_header := header_name + ": " + header_value + "\r\n"
+					j.Headers = strings.Replace(j.Headers, removed_header, "", 1)
+					return
+				}
+			}
 		}
 	}
 }
@@ -130,10 +152,13 @@ func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
 	headers := strings.Split(j.Headers, "\r\n")
 	for i := 0; i < len(headers); i++ {
 		if headers[i] != "" {
-			header_name := header_regexp.ReplaceAllString(headers[i], "$1")
-			header_value := header_regexp.ReplaceAllString(headers[i], "$2")
+			header_parts := header_regexp.FindAllSubmatch([]byte(headers[i]), 1)
+			if len(header_parts) != 0 && len(header_parts[0]) == 3 {
+				header_name := string(header_parts[0][1])
+				header_value := string(header_parts[0][2])
 
-			resp.Header.Add(header_name, header_value)
+				resp.Header.Add(header_name, header_value)
+			}
 		}
 	}
 
