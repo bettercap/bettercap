@@ -77,7 +77,7 @@ func NewHTTPProxy(s *session.Session, tag string) *HTTPProxy {
 		Name:       "http.proxy",
 		Proxy:      goproxy.NewProxyHttpServer(),
 		Sess:       s,
-		Stripper:   NewSSLStripper(s, false, false),
+		Stripper:   NewSSLStripper(s, false),
 		isTLS:      false,
 		doRedirect: true,
 		Server:     nil,
@@ -170,7 +170,7 @@ func (p *HTTPProxy) shouldProxy(req *http.Request) bool {
 }
 
 func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRedirect bool, scriptPath string,
-	jsToInject string, stripSSL bool, useIDN bool) error {
+	jsToInject string, stripSSL bool) error {
 	var err error
 
 	// check if another http(s) proxy is using sslstrip and merge strippers
@@ -192,7 +192,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRed
 		}
 	}
 
-	p.Stripper.Enable(stripSSL, useIDN)
+	p.Stripper.Enable(stripSSL)
 	p.Address = address
 	p.doRedirect = doRedirect
 	p.jsHook = ""
@@ -297,8 +297,8 @@ func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *
 
 func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, doRedirect bool, scriptPath string,
 	certFile string,
-	keyFile string, jsToInject string, stripSSL bool, useIDN bool) (err error) {
-	if err = p.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL, useIDN); err != nil {
+	keyFile string, jsToInject string, stripSSL bool) (err error) {
+	if err = p.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL); err != nil {
 		return err
 	}
 
