@@ -41,10 +41,6 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"false",
 		"Enable or disable SSL stripping."))
 
-	mod.AddParam(session.NewBoolParameter("https.proxy.sslstrip.useIDN",
-		"false",
-		"Use an Internationalized Domain Name to bypass HSTS. Otherwise, double the last TLD's character"))
-
 	mod.AddParam(session.NewStringParameter("https.proxy.injectjs",
 		"",
 		"",
@@ -112,7 +108,6 @@ func (mod *HttpsProxy) Configure() error {
 	var certFile string
 	var keyFile string
 	var stripSSL bool
-	var useIDN bool
 	var jsToInject string
 	var whitelist string
 	var blacklist string
@@ -128,8 +123,6 @@ func (mod *HttpsProxy) Configure() error {
 	} else if err, doRedirect = mod.BoolParam("https.proxy.redirect"); err != nil {
 		return err
 	} else if err, stripSSL = mod.BoolParam("https.proxy.sslstrip"); err != nil {
-		return err
-	} else if err, useIDN = mod.BoolParam("https.proxy.sslstrip.useIDN"); err != nil {
 		return err
 	} else if err, certFile = mod.StringParam("https.proxy.certificate"); err != nil {
 		return err
@@ -170,7 +163,7 @@ func (mod *HttpsProxy) Configure() error {
 	}
 
 	error := mod.proxy.ConfigureTLS(address, proxyPort, httpPort, doRedirect, scriptPath, certFile, keyFile, jsToInject,
-		stripSSL, useIDN)
+		stripSSL)
 
 	// save stripper to share it with other http(s) proxies
 	mod.State.Store("stripper", mod.proxy.Stripper)
