@@ -67,6 +67,15 @@ func (mod *WiFiModule) doDeauthOpen() bool {
 	return mod.deauthOpen
 }
 
+func (mod *WiFiModule) doDeauthAcquired() bool {
+	if err, is := mod.BoolParam("wifi.deauth.acquired"); err != nil {
+		mod.Warning("%v", err)
+	} else {
+		mod.deauthAcquired = is
+	}
+	return mod.deauthAcquired
+}
+
 func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	// parse skip list
 	if err, deauthSkip := mod.StringParam("wifi.deauth.skip"); err != nil {
@@ -136,6 +145,8 @@ func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 
 				if ap.IsOpen() && !mod.doDeauthOpen() {
 					mod.Debug("skipping deauth for open network %s (wifi.deauth.open is false)", ap.ESSID())
+				} else if ap.HasKeyMaterial() && !mod.doDeauthAcquired() {
+					mod.Debug("skipping deauth for AP %s (key material already acquired)", ap.ESSID())
 				} else {
 					logger("deauthing client %s from AP %s (channel:%d encryption:%s)", client.String(), ap.ESSID(), ap.Channel, ap.Encryption)
 

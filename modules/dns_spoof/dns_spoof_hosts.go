@@ -22,7 +22,8 @@ type HostEntry struct {
 }
 
 func (e HostEntry) Matches(host string) bool {
-	return e.Host == host || strings.HasSuffix(host, e.Suffix) || (e.Expr != nil && e.Expr.Match(host))
+	lowerHost := strings.ToLower(host)
+	return e.Host == lowerHost || strings.HasSuffix(lowerHost, e.Suffix) || (e.Expr != nil && e.Expr.Match(lowerHost))
 }
 
 type Hosts []HostEntry

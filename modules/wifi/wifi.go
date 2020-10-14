@@ -49,11 +49,13 @@ type WiFiModule struct {
 	deauthSkip          []net.HardwareAddr
 	deauthSilent        bool
 	deauthOpen          bool
+	deauthAcquired      bool
 	assocSkip           []net.HardwareAddr
 	assocSilent         bool
 	assocOpen           bool
 	csaSilent           bool
 	fakeAuthSilent      bool
+	assocAcquired       bool
 	filterProbeSTA      *regexp.Regexp
 	filterProbeAP       *regexp.Regexp
 	apRunning           bool
@@ -82,11 +84,13 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		deauthSkip:      []net.HardwareAddr{},
 		deauthSilent:    false,
 		deauthOpen:      false,
+		deauthAcquired:  false,
 		assocSkip:       []net.HardwareAddr{},
 		assocSilent:     false,
 		assocOpen:       false,
 		csaSilent:       false,
 		fakeAuthSilent:	 false,
+		assocAcquired:   false,
 		showManuf:       false,
 		shakesAggregate: true,
 		writes:          &sync.WaitGroup{},
@@ -264,6 +268,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"true",
 		"Send wifi deauth packets to open networks."))
 
+	mod.AddParam(session.NewBoolParameter("wifi.deauth.acquired",
+		"false",
+		"Send wifi deauth packets from AP's for which key material was already acquired."))
+
 	assoc := session.NewModuleHandler("wifi.assoc BSSID", `wifi\.assoc ((?:[a-fA-F0-9:]{11,})|all|\*)`,
 		"Send an association request to the selected BSSID in order to receive a RSN PMKID key. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate for every access point.",
 		func(args []string) error {
@@ -326,6 +334,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	mod.AddParam(session.NewBoolParameter("wifi.assoc.open",
 		"false",
 		"Send association requests to open networks."))
+
+	mod.AddParam(session.NewBoolParameter("wifi.assoc.acquired",
+		"false",
+		"Send association to AP's for which key material was already acquired."))
 
 	mod.AddHandler(session.NewModuleHandler("wifi.ap", "",
 		"Inject fake management beacons in order to create a rogue access point.",
