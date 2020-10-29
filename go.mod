@@ -20,7 +20,7 @@ require (
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/gopacket v1.1.18
-	github.com/google/gousb v2.1.0+incompatible
+	github.com/google/gousb v1.1.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/mdns v1.0.3
