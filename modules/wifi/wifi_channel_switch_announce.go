@@ -28,7 +28,9 @@ func (mod *WiFiModule) sendBeaconWithCSA_Packet(ap *network.AccessPoint, to_chan
 			mod.Error("could not create beacon packet: %s", err)
 			continue
 		} else {
-			mod.injectPacket(pkt)
+			mod.onChannel(ap.Channel, func() {
+				mod.injectPacket(pkt)
+			})
 		}
 	}
 }

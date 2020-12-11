@@ -216,8 +216,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				return fmt.Errorf("%d is not a valid channel number",channel)
 			}
 			packet_count,_:=strconv.Atoi( args[2])
-			if packet_count>65535{
-				packet_count=65535
+			if packet_count>1000{
+				packet_count=1000
 			}
 			return mod.startCSA(bssid,int8(channel),packet_count)
 		})

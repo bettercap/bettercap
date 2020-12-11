@@ -19,7 +19,7 @@ func (mod *WiFiModule) injectPacket(data []byte) {
 		mod.Session.Queue.TrackSent(uint64(len(data)))
 	}
 	// let the network card breath a little
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(1 * time.Millisecond)
 }
 
 func (mod *WiFiModule) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
