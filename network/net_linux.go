@@ -40,7 +40,14 @@ func SetInterfaceChannel(iface string, channel int) error {
 	if curr == channel {
 		return nil
 	}
-
+	if core.HasBinary("nexutil") {
+		Debug("SetInterfaceChannel(%s, %d) nexutil based", iface, channel)
+		out, err := core.Exec("nexutil", []string{"-i -s 30 -v", fmt.Sprintf("%d", channel)})
+		if err != nil {
+			return err
+		} else if out != "" {
+			return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
+		}
 	if core.HasBinary("iw") {
 		Debug("SetInterfaceChannel(%s, %d) iw based", iface, channel)
 		out, err := core.Exec("iw", []string{"dev", iface, "set", "channel", fmt.Sprintf("%d", channel)})
