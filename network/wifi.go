@@ -218,9 +218,6 @@ func (w *WiFi) NumHandshakes() int {
 }
 
 func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error {
-	w.RLock()
-	defer w.RUnlock()
-
 	// check if folder exists first
 	dirName := filepath.Dir(fileName)
 	if _, err := os.Stat(dirName); err != nil {
@@ -243,6 +240,9 @@ func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error
 			return err
 		}
 	}
+
+	w.RLock()
+	defer w.RUnlock()
 
 	for _, ap := range w.aps {
 		for _, station := range ap.Clients() {
