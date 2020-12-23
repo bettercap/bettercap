@@ -72,7 +72,7 @@ func (w *WiFi) MarshalJSON() ([]byte, error) {
 
 	doc := wifiJSON{
 		// we know the length so preallocate to reduce memory allocations
-		AccessPoints: make([]*AccessPoint, len(w.aps)),
+		AccessPoints: make([]*AccessPoint, 0, len(w.aps)),
 	}
 
 	for _, ap := range w.aps {
@@ -95,7 +95,7 @@ func (w *WiFi) Stations() (list []*Station) {
 	w.RLock()
 	defer w.RUnlock()
 
-	list = make([]*Station, len(w.aps))
+	list = make([]*Station, 0, len(w.aps))
 
 	for _, ap := range w.aps {
 		list = append(list, ap.Station)
@@ -107,7 +107,7 @@ func (w *WiFi) List() (list []*AccessPoint) {
 	w.RLock()
 	defer w.RUnlock()
 
-	list = make([]*AccessPoint, len(w.aps))
+	list = make([]*AccessPoint, 0, len(w.aps))
 
 	for _, ap := range w.aps {
 		list = append(list, ap)

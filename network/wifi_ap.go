@@ -37,7 +37,7 @@ func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
 
 	doc := apJSON{
 		Station:   ap.Station,
-		Clients:   make([]*Station, len(ap.clients)),
+		Clients:   make([]*Station, 0, len(ap.clients)),
 		Handshake: ap.withKeyMaterial,
 	}
 
@@ -106,7 +106,7 @@ func (ap *AccessPoint) Clients() (list []*Station) {
 	ap.RLock()
 	defer ap.RUnlock()
 
-	list = make([]*Station, len(ap.clients))
+	list = make([]*Station, 0, len(ap.clients))
 	for _, c := range ap.clients {
 		list = append(list, c)
 	}
