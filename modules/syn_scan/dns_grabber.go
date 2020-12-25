@@ -13,7 +13,7 @@ func grabChaos(addr string, q string) string {
 	c := new(dns.Client)
 	m := new(dns.Msg)
 	m.Question = make([]dns.Question, 1)
-	m.Question[0] = dns.Question{q, dns.TypeTXT, dns.ClassCHAOS}
+	m.Question[0] = dns.Question{Name: q, Qtype: dns.TypeTXT, Qclass: dns.ClassCHAOS}
 	if in, _, _ := c.Exchange(m, addr); in != nil && len(in.Answer) > 0 {
 		s := in.Answer[0].String()
 		if match := chaosParser.FindStringSubmatch(s); len(match) > 0 {

@@ -19,7 +19,7 @@ const (
 )
 
 type ModuleHandler struct {
-	sync.Mutex
+	*sync.Mutex
 
 	Name        string
 	Description string
@@ -30,6 +30,7 @@ type ModuleHandler struct {
 
 func NewModuleHandler(name string, expr string, desc string, exec func(args []string) error) ModuleHandler {
 	h := ModuleHandler{
+		Mutex:       &sync.Mutex{},
 		Name:        name,
 		Description: desc,
 		Parser:      nil,

@@ -38,7 +38,7 @@ func (e Event) Label() string {
 }
 
 type EventPool struct {
-	sync.Mutex
+	*sync.Mutex
 
 	debug     bool
 	silent    bool
@@ -48,6 +48,7 @@ type EventPool struct {
 
 func NewEventPool(debug bool, silent bool) *EventPool {
 	return &EventPool{
+		Mutex:     &sync.Mutex{},
 		debug:     debug,
 		silent:    silent,
 		events:    make([]Event, 0),
