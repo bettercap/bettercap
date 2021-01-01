@@ -223,6 +223,14 @@ func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error
 		}
 	}
 
+	// Create symlink to handshakes directory - to add ability to download handshakes directly from the ui
+	dirSymlink := "/usr/local/share/bettercap/ui" + dirName
+	if _, err := os.Stat(dirSymlink); err != nil {
+		if err = os.Symlink(dirName, dirSymlink); err != nil {
+			return err
+		}
+	}
+
 	doHead := !fs.Exists(fileName)
 	fp, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
