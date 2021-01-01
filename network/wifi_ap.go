@@ -15,12 +15,14 @@ type AccessPoint struct {
 	aliases         *data.UnsortedKV
 	clients         map[string]*Station
 	withKeyMaterial bool
+	shakeFile       string
 }
 
 type apJSON struct {
 	*Station
 	Clients   []*Station `json:"clients"`
 	Handshake bool       `json:"handshake"`
+	shakeFile string     `json:"shakefile"`
 }
 
 func NewAccessPoint(essid, bssid string, frequency int, rssi int8, aliases *data.UnsortedKV) *AccessPoint {
@@ -39,6 +41,7 @@ func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
 		Station:   ap.Station,
 		Clients:   make([]*Station, 0),
 		Handshake: ap.withKeyMaterial,
+		shakeFile: ap.shakeFile,
 	}
 
 	for _, c := range ap.clients {
@@ -166,4 +169,11 @@ func (ap *AccessPoint) HasPMKID() bool {
 	}
 
 	return false
+}
+
+func (ap *AccessPoint) ShakeFile(filename string) {
+	ap.Lock()
+	defer ap.Unlock()
+
+	ap.shakeFile = filename
 }

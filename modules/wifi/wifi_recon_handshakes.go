@@ -119,6 +119,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 			// make sure the info that we have key material for this AP
 			// is persisted even after stations are pruned due to inactivity
 			ap.WithKeyMaterial(true)
+			ap.ShakeFile(shakesFileName)
 		}
 		// if we added ourselves as a client station but we didn't get any
 		// PMKID, just remove it from the list of clients of this AP.
