@@ -222,15 +222,15 @@ func NewEventsStream(s *session.Session) *EventsStream {
 	return mod
 }
 
-func (mod EventsStream) Name() string {
+func (mod *EventsStream) Name() string {
 	return "events.stream"
 }
 
-func (mod EventsStream) Description() string {
+func (mod *EventsStream) Description() string {
 	return "Print events as a continuous stream."
 }
 
-func (mod EventsStream) Author() string {
+func (mod *EventsStream) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
