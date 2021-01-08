@@ -2,7 +2,7 @@
 sudo: false
 language: go
 go:
-  - 1.13.x
+  - 1.15.x
 env:
   global:
     - VERSION=$(echo ${TRAVIS_BRANCH} | sed "s/\//_/g")
