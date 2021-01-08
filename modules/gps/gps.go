@@ -191,11 +191,11 @@ func (mod *GPS) Start() error {
 	}
 
 	return mod.SetRunning(true, func() {
-		defer mod.serial.Close()
-
 		mod.Info("started on port %s ...", mod.serialPort)
 
 		if mod.serial != nil {
+			defer mod.serial.Close()
+
 			for mod.Running() {
 				mod.readFromSerial()
 			}
