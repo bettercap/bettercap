@@ -43,7 +43,7 @@ type APNewCallback func(ap *AccessPoint)
 type APLostCallback func(ap *AccessPoint)
 
 type WiFi struct {
-	sync.RWMutex
+	sync.Mutex
 
 	aliases *data.UnsortedKV
 	aps     map[string]*AccessPoint
@@ -67,12 +67,8 @@ func NewWiFi(iface *Endpoint, aliases *data.UnsortedKV, newcb APNewCallback, los
 }
 
 func (w *WiFi) MarshalJSON() ([]byte, error) {
-	w.RLock()
-	defer w.RUnlock()
-
 	doc := wifiJSON{
-		// we know the length so preallocate to reduce memory allocations
-		AccessPoints: make([]*AccessPoint, 0, len(w.aps)),
+		AccessPoints: make([]*AccessPoint, 0),
 	}
 
 	for _, ap := range w.aps {
@@ -92,11 +88,10 @@ func (w *WiFi) EachAccessPoint(cb func(mac string, ap *AccessPoint)) {
 }
 
 func (w *WiFi) Stations() (list []*Station) {
-	w.RLock()
-	defer w.RUnlock()
+	w.Lock()
+	defer w.Unlock()
 
-	list = make([]*Station, 0, len(w.aps))
-
+	list = make([]*Station, 0)
 	for _, ap := range w.aps {
 		list = append(list, ap.Station)
 	}
@@ -104,11 +99,10 @@ func (w *WiFi) Stations() (list []*Station) {
 }
 
 func (w *WiFi) List() (list []*AccessPoint) {
-	w.RLock()
-	defer w.RUnlock()
+	w.Lock()
+	defer w.Unlock()
 
-	list = make([]*AccessPoint, 0, len(w.aps))
-
+	list = make([]*AccessPoint, 0)
 	for _, ap := range w.aps {
 		list = append(list, ap)
 	}
@@ -173,8 +167,8 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) (*AccessPoin
 }
 
 func (w *WiFi) Get(mac string) (*AccessPoint, bool) {
-	w.RLock()
-	defer w.RUnlock()
+	w.Lock()
+	defer w.Unlock()
 
 	mac = NormalizeMac(mac)
 	ap, found := w.aps[mac]
@@ -182,8 +176,8 @@ func (w *WiFi) Get(mac string) (*AccessPoint, bool) {
 }
 
 func (w *WiFi) GetClient(mac string) (*Station, bool) {
-	w.RLock()
-	defer w.RUnlock()
+	w.Lock()
+	defer w.Unlock()
 
 	mac = NormalizeMac(mac)
 	for _, ap := range w.aps {
@@ -202,8 +196,8 @@ func (w *WiFi) Clear() {
 }
 
 func (w *WiFi) NumHandshakes() int {
-	w.RLock()
-	defer w.RUnlock()
+	w.Lock()
+	defer w.Unlock()
 
 	sum := 0
 	for _, ap := range w.aps {
@@ -218,6 +212,9 @@ func (w *WiFi) NumHandshakes() int {
 }
 
 func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error {
+	w.Lock()
+	defer w.Unlock()
+
 	// check if folder exists first
 	dirName := filepath.Dir(fileName)
 	if _, err := os.Stat(dirName); err != nil {
@@ -240,9 +237,6 @@ func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error
 			return err
 		}
 	}
-
-	w.RLock()
-	defer w.RUnlock()
 
 	for _, ap := range w.aps {
 		for _, station := range ap.Clients() {

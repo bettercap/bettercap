@@ -8,7 +8,7 @@ import (
 )
 
 type Handshake struct {
-	sync.RWMutex
+	sync.Mutex
 
 	Beacon        gopacket.Packet
 	Challenges    []gopacket.Packet
@@ -80,8 +80,8 @@ func (h *Handshake) AddFrame(n int, pkt gopacket.Packet) {
 }
 
 func (h *Handshake) Complete() bool {
-	h.RLock()
-	defer h.RUnlock()
+	h.Lock()
+	defer h.Unlock()
 
 	nChal := len(h.Challenges)
 	nResp := len(h.Responses)
@@ -91,8 +91,8 @@ func (h *Handshake) Complete() bool {
 }
 
 func (h *Handshake) Half() bool {
-	h.RLock()
-	defer h.RUnlock()
+	h.Lock()
+	defer h.Unlock()
 
 	/*
 	 * You can use every combination of the handshake to crack the net:
@@ -110,14 +110,14 @@ func (h *Handshake) Half() bool {
 }
 
 func (h *Handshake) HasPMKID() bool {
-	h.RLock()
-	defer h.RUnlock()
+	h.Lock()
+	defer h.Unlock()
 	return h.hasPMKID
 }
 
 func (h *Handshake) NumUnsaved() int {
-	h.RLock()
-	defer h.RUnlock()
+	h.Lock()
+	defer h.Unlock()
 	return len(h.unsaved)
 }
 

@@ -10,7 +10,7 @@ import (
 
 type AccessPoint struct {
 	*Station
-	sync.RWMutex
+	sync.Mutex
 
 	aliases         *data.UnsortedKV
 	clients         map[string]*Station
@@ -32,12 +32,12 @@ func NewAccessPoint(essid, bssid string, frequency int, rssi int8, aliases *data
 }
 
 func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
-	ap.RLock()
-	defer ap.RUnlock()
+	ap.Lock()
+	defer ap.Unlock()
 
 	doc := apJSON{
 		Station:   ap.Station,
-		Clients:   make([]*Station, 0, len(ap.clients)),
+		Clients:   make([]*Station, 0),
 		Handshake: ap.withKeyMaterial,
 	}
 
@@ -49,8 +49,8 @@ func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
 }
 
 func (ap *AccessPoint) Get(bssid string) (*Station, bool) {
-	ap.RLock()
-	defer ap.RUnlock()
+	ap.Lock()
+	defer ap.Unlock()
 
 	bssid = NormalizeMac(bssid)
 	if s, found := ap.clients[bssid]; found {
@@ -97,16 +97,16 @@ func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8) (*
 }
 
 func (ap *AccessPoint) NumClients() int {
-	ap.RLock()
-	defer ap.RUnlock()
+	ap.Lock()
+	defer ap.Unlock()
 	return len(ap.clients)
 }
 
 func (ap *AccessPoint) Clients() (list []*Station) {
-	ap.RLock()
-	defer ap.RUnlock()
+	ap.Lock()
+	defer ap.Unlock()
 
-	list = make([]*Station, 0, len(ap.clients))
+	list = make([]*Station, 0)
 	for _, c := range ap.clients {
 		list = append(list, c)
 	}
@@ -130,15 +130,15 @@ func (ap *AccessPoint) WithKeyMaterial(state bool) {
 }
 
 func (ap *AccessPoint) HasKeyMaterial() bool {
-	ap.RLock()
-	defer ap.RUnlock()
+	ap.Lock()
+	defer ap.Unlock()
 
 	return ap.withKeyMaterial
 }
 
 func (ap *AccessPoint) NumHandshakes() int {
-	ap.RLock()
-	defer ap.RUnlock()
+	ap.Lock()
+	defer ap.Unlock()
 
 	sum := 0
 
@@ -156,8 +156,8 @@ func (ap *AccessPoint) HasHandshakes() bool {
 }
 
 func (ap *AccessPoint) HasPMKID() bool {
-	ap.RLock()
-	defer ap.RUnlock()
+	ap.Lock()
+	defer ap.Unlock()
 
 	for _, c := range ap.clients {
 		if c.Handshake.HasPMKID() {
