@@ -67,8 +67,6 @@ func NewWiFi(iface *Endpoint, aliases *data.UnsortedKV, newcb APNewCallback, los
 }
 
 func (w *WiFi) MarshalJSON() ([]byte, error) {
-	w.RLock()
-	defer w.RUnlock()
 
 	doc := wifiJSON{
 		// we know the length so preallocate to reduce memory allocations
