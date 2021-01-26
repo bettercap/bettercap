@@ -5,6 +5,7 @@ import (
 	"github.com/bettercap/bettercap/modules/api_rest"
 	"github.com/bettercap/bettercap/modules/arp_spoof"
 	"github.com/bettercap/bettercap/modules/ble"
+	"github.com/bettercap/bettercap/modules/c2"
 	"github.com/bettercap/bettercap/modules/caplets"
 	"github.com/bettercap/bettercap/modules/dhcp6_spoof"
 	"github.com/bettercap/bettercap/modules/dns_spoof"
@@ -59,6 +60,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(wifi.NewWiFiModule(sess))
 	sess.Register(wol.NewWOL(sess))
 	sess.Register(hid.NewHIDRecon(sess))
+	sess.Register(c2.NewC2(sess))
 
 	sess.Register(caplets.NewCapletsModule(sess))
 	sess.Register(update.NewUpdateModule(sess))

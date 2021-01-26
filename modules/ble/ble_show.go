@@ -3,7 +3,6 @@
 package ble
 
 import (
-	"os"
 	"sort"
 	"time"
 
@@ -146,7 +145,7 @@ func (mod *BLERecon) Show() error {
 	}
 
 	if len(rows) > 0 {
-		tui.Table(os.Stdout, mod.colNames(hasName), rows)
+		tui.Table(mod.Session.Events.Stdout, mod.colNames(hasName), rows)
 		mod.Session.Refresh()
 	}
 

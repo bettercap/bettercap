@@ -91,7 +91,7 @@ func (mod *CapletsModule) Show() error {
 		})
 	}
 
-	tui.Table(os.Stdout, colNames, rows)
+	tui.Table(mod.Session.Events.Stdout, colNames, rows)
 
 	return nil
 }
@@ -106,8 +106,8 @@ func (mod *CapletsModule) Paths() error {
 		rows = append(rows, []string{path})
 	}
 
-	tui.Table(os.Stdout, colNames, rows)
-	fmt.Printf("(paths can be customized by defining the %s environment variable)\n", tui.Bold(caplets.EnvVarName))
+	tui.Table(mod.Session.Events.Stdout, colNames, rows)
+	mod.Printf("(paths can be customized by defining the %s environment variable)\n", tui.Bold(caplets.EnvVarName))
 
 	return nil
 }

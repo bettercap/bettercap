@@ -132,6 +132,10 @@ func (m *SessionModule) Fatal(format string, args ...interface{}) {
 	m.Session.Events.Log(log.FATAL, m.tag+format, args...)
 }
 
+func (m *SessionModule) Printf(format string, a ...interface{}) {
+	m.Session.Events.Printf(format, a...)
+}
+
 func (m *SessionModule) Requires(modName string) {
 	m.requires = append(m.requires, modName)
 }

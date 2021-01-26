@@ -1,8 +1,6 @@
 package events_stream
 
 import (
-	"os"
-
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/evilsocket/islazy/tui"
@@ -41,7 +39,7 @@ func (mod *EventsStream) showTriggers() error {
 	})
 
 	if len(rows) > 0 {
-		tui.Table(os.Stdout, colNames, rows)
+		tui.Table(mod.Session.Events.Stdout, colNames, rows)
 		mod.Session.Refresh()
 	}
 

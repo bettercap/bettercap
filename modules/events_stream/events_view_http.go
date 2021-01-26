@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"regexp"
 	"strings"
@@ -128,11 +129,11 @@ func (mod *EventsStream) dumpRaw(body []byte) string {
 	return "\n" + hex.Dump(body) + "\n"
 }
 
-func (mod *EventsStream) viewHttpRequest(e session.Event) {
+func (mod *EventsStream) viewHttpRequest(output io.Writer, e session.Event) {
 	se := e.Data.(net_sniff.SnifferEvent)
 	req := se.Data.(net_sniff.HTTPRequest)
 
-	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
+	fmt.Fprintf(output, "[%s] [%s] %s\n",
 		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		se.Message)
@@ -166,15 +167,15 @@ func (mod *EventsStream) viewHttpRequest(e session.Event) {
 			}
 		}
 
-		fmt.Fprintf(mod.output, "\n%s\n", dump)
+		fmt.Fprintf(output, "\n%s\n", dump)
 	}
 }
 
-func (mod *EventsStream) viewHttpResponse(e session.Event) {
+func (mod *EventsStream) viewHttpResponse(output io.Writer, e session.Event) {
 	se := e.Data.(net_sniff.SnifferEvent)
 	res := se.Data.(net_sniff.HTTPResponse)
 
-	fmt.Fprintf(mod.output, "[%s] [%s] %s\n",
+	fmt.Fprintf(output, "[%s] [%s] %s\n",
 		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
 		se.Message)
@@ -198,14 +199,14 @@ func (mod *EventsStream) viewHttpResponse(e session.Event) {
 			}
 		}
 
-		fmt.Fprintf(mod.output, "\n%s\n", dump)
+		fmt.Fprintf(output, "\n%s\n", dump)
 	}
 }
 
-func (mod *EventsStream) viewHttpEvent(e session.Event) {
+func (mod *EventsStream) viewHttpEvent(output io.Writer, e session.Event) {
 	if e.Tag == "net.sniff.http.request" {
-		mod.viewHttpRequest(e)
+		mod.viewHttpRequest(output, e)
 	} else if e.Tag == "net.sniff.http.response" {
-		mod.viewHttpResponse(e)
+		mod.viewHttpResponse(output, e)
 	}
 }

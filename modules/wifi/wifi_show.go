@@ -2,7 +2,6 @@ package wifi
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -265,9 +264,9 @@ func (mod *WiFiModule) colNames(nrows int) []string {
 		} else {
 			columns = []string{"RSSI", "BSSID", "Ch", "Sent", "Recvd", "Seen"}
 		}
-		fmt.Printf("\n%s clients:\n", mod.ap.HwAddress)
+		mod.Printf("\n%s clients:\n", mod.ap.HwAddress)
 	} else {
-		fmt.Printf("\nNo authenticated clients detected for %s.\n", mod.ap.HwAddress)
+		mod.Printf("\nNo authenticated clients detected for %s.\n", mod.ap.HwAddress)
 	}
 
 	if columns != nil {
@@ -312,7 +311,7 @@ func (mod *WiFiModule) showStatusBar() {
 		parts = append(parts, fmt.Sprintf("%d handshakes", nHandshakes))
 	}
 
-	fmt.Printf("\n%s\n\n", strings.Join(parts, " / "))
+	mod.Printf("\n%s\n\n", strings.Join(parts, " / "))
 }
 
 func (mod *WiFiModule) Show() (err error) {
@@ -337,7 +336,7 @@ func (mod *WiFiModule) Show() (err error) {
 	}
 	nrows := len(rows)
 	if nrows > 0 {
-		tui.Table(os.Stdout, mod.colNames(nrows), rows)
+		tui.Table(mod.Session.Events.Stdout, mod.colNames(nrows), rows)
 	}
 
 	mod.showStatusBar()
@@ -396,7 +395,7 @@ func (mod *WiFiModule) ShowWPS(bssid string) (err error) {
 			})
 		}
 
-		tui.Table(os.Stdout, colNames, rows)
+		tui.Table(mod.Session.Events.Stdout, colNames, rows)
 	}
 
 	return nil

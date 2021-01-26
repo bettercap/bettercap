@@ -33,10 +33,10 @@ func (s *Session) generalHelp() {
 	pad := "%" + strconv.Itoa(maxLen) + "s"
 
 	for _, h := range s.CoreHandlers {
-		fmt.Printf("  "+tui.Yellow(pad)+" : %s\n", h.Name, h.Description)
+		s.Events.Printf("  "+tui.Yellow(pad)+" : %s\n", h.Name, h.Description)
 	}
 
-	fmt.Println(tui.Bold("\nModules\n"))
+	s.Events.Printf("%s\n", tui.Bold("\nModules\n"))
 
 	maxLen = 0
 	for _, m := range s.Modules {
@@ -54,7 +54,7 @@ func (s *Session) generalHelp() {
 		} else {
 			status = tui.Red("not running")
 		}
-		fmt.Printf("  "+tui.Yellow(pad)+" > %s\n", m.Name(), status)
+		s.Events.Printf("  "+tui.Yellow(pad)+" > %s\n", m.Name(), status)
 	}
 
 	fmt.Println()
@@ -73,7 +73,7 @@ func (s *Session) moduleHelp(filter string) error {
 	} else {
 		status = tui.Red("not running")
 	}
-	fmt.Printf("%s (%s): %s\n\n", tui.Yellow(m.Name()), status, tui.Dim(m.Description()))
+	s.Events.Printf("%s (%s): %s\n\n", tui.Yellow(m.Name()), status, tui.Dim(m.Description()))
 
 	maxLen := 0
 	handlers := m.Handlers()
@@ -85,7 +85,7 @@ func (s *Session) moduleHelp(filter string) error {
 	}
 
 	for _, h := range handlers {
-		fmt.Print(h.Help(maxLen))
+		s.Events.Printf("%s", h.Help(maxLen))
 	}
 	fmt.Println()
 
@@ -105,9 +105,9 @@ func (s *Session) moduleHelp(filter string) error {
 			return v[i].Name < v[j].Name
 		})
 
-		fmt.Print("  Parameters\n\n")
+		s.Events.Printf("  Parameters\n\n")
 		for _, p := range v {
-			fmt.Print(p.Help(maxLen))
+			s.Events.Printf("%s", p.Help(maxLen))
 		}
 		fmt.Println()
 	}
@@ -138,13 +138,13 @@ func (s *Session) activeHandler(args []string, sess *Session) error {
 			continue
 		}
 
-		fmt.Printf("%s (%s)\n", tui.Bold(m.Name()), tui.Dim(m.Description()))
+		s.Events.Printf("%s (%s)\n", tui.Bold(m.Name()), tui.Dim(m.Description()))
 		params := m.Parameters()
 		if len(params) > 0 {
 			fmt.Println()
 			for _, p := range params {
 				_, val := s.Env.Get(p.Name)
-				fmt.Printf("  %s : %s\n", tui.Yellow(p.Name), val)
+				s.Events.Printf("  %s : %s\n", tui.Yellow(p.Name), val)
 			}
 		}
 
@@ -206,13 +206,13 @@ func (s *Session) getHandler(args []string, sess *Session) error {
 					prev_ns = ns
 				}
 
-				fmt.Printf("  %"+strconv.Itoa(padding)+"s: '%s'\n", k, s.Env.Data[k])
+				s.Events.Printf("  %"+strconv.Itoa(padding)+"s: '%s'\n", k, s.Env.Data[k])
 			}
 		}
 		fmt.Println()
 	} else if found, value := s.Env.Get(key); found {
 		fmt.Println()
-		fmt.Printf("  %s: '%s'\n", key, value)
+		s.Events.Printf("  %s: '%s'\n", key, value)
 		fmt.Println()
 	} else {
 		return fmt.Errorf("%s not found", key)
@@ -269,7 +269,7 @@ func (s *Session) includeHandler(args []string, sess *Session) error {
 func (s *Session) shHandler(args []string, sess *Session) error {
 	out, err := core.Shell(args[0])
 	if err == nil {
-		fmt.Printf("%s\n", out)
+		s.Events.Printf("%s\n", out)
 	}
 	return err
 }

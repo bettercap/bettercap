@@ -3,6 +3,7 @@ module github.com/bettercap/bettercap
 go 1.12
 
 require (
+	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/adrianmo/go-nmea v1.3.0
 	github.com/antchfx/jsonquery v1.1.4
 	github.com/antchfx/xpath v1.1.10 // indirect
@@ -38,6 +39,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/robertkrimen/otto v0.0.0-20200922221731-ef014fd054ac
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
+	github.com/thoj/go-ircevent v0.0.0-20190807115034-8e7ce4b5a1eb
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/net v0.0.0-20200925080053-05aa5d4ee321
 	golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d // indirect

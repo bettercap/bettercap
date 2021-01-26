@@ -2,6 +2,7 @@ package events_stream
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"sync"
@@ -27,7 +28,7 @@ type EventsStream struct {
 	session.SessionModule
 	timeFormat    string
 	outputName    string
-	output        *os.File
+	output        io.Writer
 	rotation      rotation
 	triggerList   *TriggerList
 	waitFor       string
@@ -149,13 +150,13 @@ func NewEventsStream(s *session.Session) *EventsStream {
 		"Print the list of filters used to ignore events.",
 		func(args []string) error {
 			if mod.Session.EventsIgnoreList.Empty() {
-				fmt.Printf("Ignore filters list is empty.\n")
+				mod.Printf("Ignore filters list is empty.\n")
 			} else {
 				mod.Session.EventsIgnoreList.RLock()
 				defer mod.Session.EventsIgnoreList.RUnlock()
 
 				for _, filter := range mod.Session.EventsIgnoreList.Filters() {
-					fmt.Printf("  '%s'\n", string(filter))
+					mod.Printf("  '%s'\n", string(filter))
 				}
 			}
 			return nil
@@ -322,7 +323,7 @@ func (mod *EventsStream) Show(limit int) error {
 	}
 
 	if numSelected := len(selected); numSelected > 0 {
-		fmt.Println()
+		mod.Printf("\n")
 		for i := range selected {
 			mod.View(selected[numSelected-1-i], false)
 		}
@@ -360,7 +361,9 @@ func (mod *EventsStream) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.quit <- true
 		if mod.output != os.Stdout {
-			mod.output.Close()
+			if fp, ok := mod.output.(*os.File); ok {
+				fp.Close()
+			}
 		}
 	})
 }

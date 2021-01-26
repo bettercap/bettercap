@@ -1,8 +1,6 @@
 package hid
 
 import (
-	"fmt"
-	"os"
 	"sort"
 	"time"
 
@@ -109,12 +107,12 @@ func (mod *HIDRecon) Show() (err error) {
 		rows = append(rows, mod.getRow(dev))
 	}
 
-	tui.Table(os.Stdout, mod.colNames(), rows)
+	tui.Table(mod.Session.Events.Stdout, mod.colNames(), rows)
 
 	if mod.sniffAddrRaw == nil {
-		fmt.Printf("\nchannel:%d\n\n", mod.channel)
+		mod.Printf("\nchannel:%d\n\n", mod.channel)
 	} else {
-		fmt.Printf("\nchannel:%d sniffing:%s\n\n", mod.channel, tui.Red(mod.sniffAddr))
+		mod.Printf("\nchannel:%d sniffing:%s\n\n", mod.channel, tui.Red(mod.sniffAddr))
 	}
 
 	if len(rows) > 0 {

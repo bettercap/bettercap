@@ -2,7 +2,6 @@ package net_recon
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -223,7 +222,7 @@ func (mod *Discovery) showStatusBar() {
 		parts = append(parts, fmt.Sprintf("%d errs", nErrors))
 	}
 
-	fmt.Printf("\n%s\n\n", strings.Join(parts, " / "))
+	mod.Printf("\n%s\n\n", strings.Join(parts, " / "))
 }
 
 func (mod *Discovery) Show(arg string) (err error) {
@@ -263,7 +262,7 @@ func (mod *Discovery) Show(arg string) (err error) {
 		}
 	}
 
-	tui.Table(os.Stdout, colNames, rows)
+	tui.Table(mod.Session.Events.Stdout, colNames, rows)
 
 	mod.showStatusBar()
 
@@ -305,7 +304,7 @@ func (mod *Discovery) showMeta(arg string) (err error) {
 			}
 
 			any = true
-			tui.Table(os.Stdout, colNames, rows)
+			tui.Table(mod.Session.Events.Stdout, colNames, rows)
 		}
 	}
 
