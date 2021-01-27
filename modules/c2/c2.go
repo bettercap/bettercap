@@ -16,10 +16,13 @@ import (
 
 type settings struct {
 	server         string
-	ssl            bool
+	tls            bool
+	tlsVerify      bool
 	nick           string
 	user           string
 	password       string
+	saslUser       string
+	saslPassword   string
 	operator       string
 	controlChannel string
 	eventsChannel  string
@@ -52,7 +55,8 @@ func NewC2(s *session.Session) *C2 {
 		quit:          make(chan bool),
 		settings: settings{
 			server:         "localhost:6697",
-			ssl:            true,
+			tls:            true,
+			tlsVerify:      false,
 			nick:           "bettercap",
 			user:           "bettercap",
 			password:       "password",
@@ -71,6 +75,10 @@ func NewC2(s *session.Session) *C2 {
 	mod.AddParam(session.NewBoolParameter("c2.server.tls",
 		"true",
 		"Enable or disable TLS."))
+
+	mod.AddParam(session.NewBoolParameter("c2.server.tls.verify",
+		"false",
+		"Enable or disable TLS certificate validation."))
 
 	mod.AddParam(session.NewStringParameter("c2.operator",
 		mod.settings.operator,
@@ -91,6 +99,16 @@ func NewC2(s *session.Session) *C2 {
 		mod.settings.password,
 		"",
 		"IRC server password."))
+
+	mod.AddParam(session.NewStringParameter("c2.sasl.username",
+		mod.settings.saslUser,
+		"",
+		"IRC SASL username."))
+
+	mod.AddParam(session.NewStringParameter("c2.sasl.password",
+		mod.settings.saslPassword,
+		"",
+		"IRC server SASL password."))
 
 	mod.AddParam(session.NewStringParameter("c2.channel.output",
 		mod.settings.outputChannel,
@@ -200,13 +218,19 @@ func (mod *C2) Configure() (err error) {
 
 	if err, mod.settings.server = mod.StringParam("c2.server"); err != nil {
 		return err
-	} else if err, mod.settings.ssl = mod.BoolParam("c2.server.tls"); err != nil {
+	} else if err, mod.settings.tls = mod.BoolParam("c2.server.tls"); err != nil {
+		return err
+	} else if err, mod.settings.tlsVerify = mod.BoolParam("c2.server.tls.verify"); err != nil {
 		return err
 	} else if err, mod.settings.nick = mod.StringParam("c2.nick"); err != nil {
 		return err
 	} else if err, mod.settings.user = mod.StringParam("c2.username"); err != nil {
 		return err
 	} else if err, mod.settings.password = mod.StringParam("c2.password"); err != nil {
+		return err
+	} else if err, mod.settings.saslUser = mod.StringParam("c2.sasl.username"); err != nil {
+		return err
+	} else if err, mod.settings.saslPassword = mod.StringParam("c2.sasl.password"); err != nil {
 		return err
 	} else if err, mod.settings.operator = mod.StringParam("c2.operator"); err != nil {
 		return err
@@ -226,10 +250,17 @@ func (mod *C2) Configure() (err error) {
 		mod.client.VerboseCallbackHandler = true
 		mod.client.Debug = true
 	}
+
 	mod.client.Password = mod.settings.password
-	mod.client.UseTLS = mod.settings.ssl
+	mod.client.UseTLS = mod.settings.tls
 	mod.client.TLSConfig = &tls.Config{
-		InsecureSkipVerify: true, // TODO: pass this by parameter?
+		InsecureSkipVerify: !mod.settings.tlsVerify,
+	}
+
+	if mod.settings.saslUser != "" || mod.settings.saslPassword != "" {
+		mod.client.SASLLogin = mod.settings.saslUser
+		mod.client.SASLPassword = mod.settings.saslPassword
+		mod.client.UseSASL = true
 	}
 
 	mod.client.AddCallback("PRIVMSG", func(event *irc.Event) {
@@ -263,7 +294,7 @@ func (mod *C2) Configure() (err error) {
 		} else if cmd == "nick" {
 			mod.client.Nick(args)
 		} else if err = mod.Session.Run(message); err == nil {
-			// mod.client.Privmsg(event.Nick, "ok")
+
 		} else {
 			mod.client.Privmsgf(event.Nick, "error: %v", stripansi.Strip(err.Error()))
 		}
@@ -279,7 +310,7 @@ func (mod *C2) Configure() (err error) {
 	return mod.client.Connect(mod.settings.server)
 }
 
-func (mod *C2) onPrint(format string, args...interface{}) {
+func (mod *C2) onPrint(format string, args ...interface{}) {
 	if !mod.Running() {
 		return
 	}
