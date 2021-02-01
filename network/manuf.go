@@ -35144,7 +35144,7 @@ func ManufLookup(mac string) string {
 	macHex := strings.Replace(mac, ":", "", -1)
 	macInt := new(big.Int)
 
-	if _, ok := macInt.SetString(macHex, 16); ok == false {
+	if _, ok := macInt.SetString(macHex, 16); !ok {
 		return ""
 	}
 
