@@ -27,6 +27,8 @@ github.com/bettercap/nrf24 v0.0.0-20190219153547-aa37e6d0e0eb h1:JWAAJk4ny+bT3Vr
 github.com/bettercap/nrf24 v0.0.0-20190219153547-aa37e6d0e0eb/go.mod h1:g6WiaSRgMTiChuk7jYyFSEtpgaw1F0wAsBfspG3bu0M=
 github.com/bettercap/readline v0.0.0-20180208083827-9cec905dd291 h1:6GtREdpf6N/trykGvhwfr0nyo3V/yncz0JvNbu+z7S8=
 github.com/bettercap/readline v0.0.0-20180208083827-9cec905dd291/go.mod h1:03rWiUf60r1miMVzMEtgtkq7RdZniecZFw3/Zgvyxcs=
+github.com/bettercap/readline v0.0.0-20210228151553-655e48bcb7bf h1:pwGPRc5PIp4KCF9QbKn0iLVMhfigUMw4IzGZEZ81m1I=
+github.com/bettercap/readline v0.0.0-20210228151553-655e48bcb7bf/go.mod h1:03rWiUf60r1miMVzMEtgtkq7RdZniecZFw3/Zgvyxcs=
 github.com/bettercap/recording v0.0.0-20190408083647-3ce1dcf032e3 h1:pC4ZAk7UtDIbrRKzMMiIL1TVkiKlgtgcJodqKB53Rl4=
 github.com/bettercap/recording v0.0.0-20190408083647-3ce1dcf032e3/go.mod h1:kqVwnx6DKuOHMZcBnzsgp2Lq2JZHDtFtm92b5hxdRaM=
 github.com/chifflier/nfqueue-go v0.0.0-20170228160439-61ca646babef h1:uhLIhHeIRlFbAI1mOHkz3vN23T+QdhA9MgnvnJaQyL0=
@@ -200,6 +202,8 @@ golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d h1:L/IKR6COd7ubZrs2oTnTi73IhgqJ71c9s80WsQnh0Es=
 golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210228012217-479acdf4ea46 h1:V066+OYJ66oTjnhm4Yrn7SXIwSCiDQJxpBxmvqb1N1c=
+golang.org/x/sys v0.0.0-20210228012217-479acdf4ea46/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.2 h1:tW2bmiBqwgJj/UpqtC8EpXEZVYOwU0yG4iWbprSVAcs=
 golang.org/x/text v0.3.2/go.mod h1:bEr9sfX3Q8Zfm5fL9x+3itogRgK3+ptLWKqgva+5dAk=

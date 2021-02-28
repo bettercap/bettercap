@@ -9,7 +9,7 @@ require (
 	github.com/antchfx/xpath v1.1.10 // indirect
 	github.com/bettercap/gatt v0.0.0-20191018133023-569d3d9372bb
 	github.com/bettercap/nrf24 v0.0.0-20190219153547-aa37e6d0e0eb
-	github.com/bettercap/readline v0.0.0-20180208083827-9cec905dd291
+	github.com/bettercap/readline v0.0.0-20210228151553-655e48bcb7bf
 	github.com/bettercap/recording v0.0.0-20190408083647-3ce1dcf032e3
 	github.com/chifflier/nfqueue-go v0.0.0-20170228160439-61ca646babef
 	github.com/chzyer/logex v1.1.10 // indirect
@@ -42,7 +42,7 @@ require (
 	github.com/thoj/go-ircevent v0.0.0-20190807115034-8e7ce4b5a1eb
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/net v0.0.0-20200925080053-05aa5d4ee321
-	golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d // indirect
+	golang.org/x/sys v0.0.0-20210228012217-479acdf4ea46 // indirect
 	golang.org/x/text v0.3.3 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	honnef.co/go/tools v0.0.0-2019.2.1 // indirect
