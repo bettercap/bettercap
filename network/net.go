@@ -101,10 +101,10 @@ func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs
 
 	// first isolate MACs and parse them
 	for _, mac := range macParser.FindAllString(targets, -1) {
-		mac = NormalizeMac(mac)
-		hw, err := net.ParseMAC(mac)
+		normalizedMac := NormalizeMac(mac)
+		hw, err := net.ParseMAC(normalizedMac)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error while parsing MAC '%s': %s", mac, err)
+			return nil, nil, fmt.Errorf("error while parsing MAC '%s': %s", normalizedMac, err)
 		}
 
 		macs = append(macs, hw)
