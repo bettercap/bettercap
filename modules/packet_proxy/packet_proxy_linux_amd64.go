@@ -161,6 +161,18 @@ func (mod *PacketProxy) Configure() (err error) {
 		return fmt.Errorf("Symbol OnPacket is not a valid callback function.")
 	}
 
+	if sym, err = mod.plugin.Lookup("OnStart"); err == nil {
+		var onStartCb func() int
+		if onStartCb, ok = sym.(func() int); !ok {
+			return fmt.Errorf("OnStart signature does not match expected signature: 'func() int'")
+		} else {
+			var result int
+			if result = onStartCb(); result != 0 {
+				return fmt.Errorf("OnStart returned non-zero result. result=%d", result)
+			}
+		}
+	}
+
 	mod.queue = new(nfqueue.Queue)
 	if err = mod.queue.SetCallback(dummyCallback); err != nil {
 		return
@@ -206,10 +218,22 @@ func (mod *PacketProxy) Start() error {
 	})
 }
 
-func (mod *PacketProxy) Stop() error {
+func (mod *PacketProxy) Stop() (err error) {
 	return mod.SetRunning(false, func() {
 		mod.queue.StopLoop()
 		mod.runRule(false)
+
+		var sym plugin.Symbol
+		if sym, err = mod.plugin.Lookup("OnStop"); err == nil {
+			var onStopCb func()
+			var ok bool
+			if onStopCb, ok = sym.(func()); !ok {
+				mod.Error("OnStop signature does not match expected signature: 'func()', unable to call OnStop.")
+			} else {
+				onStopCb()
+			}
+		}
+
 		<-mod.done
 	})
 }
