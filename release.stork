@@ -1,4 +1,6 @@
 #!/usr/bin/env stork -f
+git:changelog
+
 version:file "core/banner.go"
 version:from_user
 
