@@ -6,4 +6,4 @@ Feature updates and security fixes are streamlined only to the latest version, m
 
 ## Reporting a Vulnerability
 
-For non critical bugs and vulnerabilities feel free to open an issue and tag @evilsocket, for more severe reports send an email to evilsocket AT gmail DOT com
+For non critical bugs and vulnerabilities feel free to open an issue and tag `@evilsocket`, for more severe reports send an email to `evilsocket AT gmail DOT com`.
