@@ -2,21 +2,8 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+Feature updates and security fixes are streamlined only to the latest version, make sure to check [the release page](https://github.com/bettercap/bettercap/releases) periodically.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
-safe
+For non critical bugs and vulnerabilities feel free to open an issue and tag @evilsocket, for more severe reports send an email to evilsocket AT gmail DOT com
