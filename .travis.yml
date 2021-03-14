@@ -1,8 +1,7 @@
 # Globals
-sudo: false
 language: go
 go:
-  - 1.15.x
+  - 1.16.x
 env:
   global:
     - VERSION=$(echo ${TRAVIS_BRANCH} | sed "s/\//_/g")
@@ -33,7 +32,7 @@ finish: &finish
 cross_deps: &cross_deps
   <<: *linux_deps
   before_install:
-    - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_4.2-3_amd64.deb"
+    - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_5.2+dfsg-6+b1_amd64.deb"
     - sudo dpkg -i "qemu.deb"
 
 normal_install: &normal_install
@@ -110,8 +109,8 @@ matrix:
         - TARGET_ARCH=amd64
         - PKG_CONFIG_PATH="c:/pkg-config"
         - OUTPUT=bettercap.exe
-        - CGO_CFLAGS="-I/c/npcap/Include -I/c/libusb/include/libusb-1.0"
-        - CGO_LDFLAGS="-L/c/npcap/Lib/x64 -L/c/libusb/MinGW64/static"
+        - CGO_CFLAGS="-I/c/winpcap/WpdPack/Include -I/c/libusb/include/libusb-1.0"
+        - CGO_LDFLAGS="-L/c/winpcap/WpdPack/Lib/x64 -L/c/libusb/MinGW64/static"
       before_install:
         - choco install openssl.light -y
         - choco install make -y
@@ -119,14 +118,14 @@ matrix:
         - choco install pkgconfiglite -y
         - mkdir /c/pkg-config
         - choco install zadig -y
-        - curl -L "https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.7z"
-          -o "/c/libusb.7z"
+        - curl -L "https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.7z" -o "/c/libusb.7z"
         - 7z x -y "/c/libusb.7z" -o"/c/libusb"
-        - choco install npcap --version 0.86 -y
-        - curl -L "https://nmap.org/npcap/dist/npcap-sdk-1.03.zip" -o "c:/npcap.zip"
-        - 7z x -y "/c/npcap.zip" -o"/c/npcap"
         - cp builder/libusb.pc /c/pkg-config/libusb.pc
         - cp builder/libusb.pc /c/pkg-config/libusb-1.0.pc
+        - choco install winpcap -y
+        - curl -L "https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip" -o "c:/wpcap-sdk.zip"
+        - 7z x -y "/c/wpcap-sdk.zip" -o"/c/winpcap"
+ 
       <<: *normal_install
 
     - name: Linux - tests

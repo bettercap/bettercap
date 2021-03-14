@@ -6,8 +6,8 @@ PROGRAM="${1}"
 shift
 COMMAND="${*}"
 
-IMAGE="https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-07-12/2019-07-10-raspbian-buster-lite.zip"
-GOLANG="https://dl.google.com/go/go1.13.1.linux-armv6l.tar.gz"
+IMAGE="https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip"
+GOLANG="https://golang.org/dl/go1.16.2.linux-armv6l.tar.gz"
 
 REPO_DIR="${PWD}"
 TMP_DIR="/tmp/builder"
