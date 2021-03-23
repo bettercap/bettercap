@@ -224,6 +224,12 @@ func (s *Session) Start() error {
 		return s.Modules[i].Name() < s.Modules[j].Name()
 	})
 
+	if *s.Options.CapletsPath != "" {
+		if err = caplets.Setup(*s.Options.CapletsPath); err != nil {
+			return err
+		}
+	}
+
 	if s.Interface, err = network.FindInterface(*s.Options.InterfaceName); err != nil {
 		return err
 	}

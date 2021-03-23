@@ -16,6 +16,7 @@ type Options struct {
 	Commands      *string
 	CpuProfile    *string
 	MemProfile    *string
+	CapletsPath   *string
 }
 
 func ParseOptions() (Options, error) {
@@ -33,6 +34,7 @@ func ParseOptions() (Options, error) {
 		Commands:      flag.String("eval", "", "Run one or more commands separated by ; in the interactive session, used to set variables via command line."),
 		CpuProfile:    flag.String("cpu-profile", "", "Write cpu profile `file`."),
 		MemProfile:    flag.String("mem-profile", "", "Write memory profile to `file`."),
+		CapletsPath:   flag.String("caplets-path", "", "Specify an alternative base path for caplets."),
 	}
 
 	flag.Parse()

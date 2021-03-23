@@ -15,7 +15,7 @@ const (
 	InstallArchive = "https://github.com/bettercap/caplets/archive/master.zip"
 )
 
-func getInstallBase() string {
+func getDefaultInstallBase() string {
 	if runtime.GOOS == "windows" {
 		return filepath.Join(os.Getenv("ALLUSERSPROFILE"), "bettercap")
 	}
@@ -28,10 +28,18 @@ func getUserHomeDir() string {
 }
 
 var (
-	InstallBase        = getInstallBase()
+	InstallBase        = ""
+	InstallPathArchive = ""
+	InstallPath        = ""
+	ArchivePath        = ""
+	LoadPaths          = []string(nil)
+)
+
+func Setup(base string) error {
+	InstallBase = base
 	InstallPathArchive = filepath.Join(InstallBase, "caplets-master")
-	InstallPath        = filepath.Join(InstallBase, "caplets")
-	ArchivePath        = filepath.Join(os.TempDir(), "caplets.zip")
+	InstallPath = filepath.Join(InstallBase, "caplets")
+	ArchivePath = filepath.Join(os.TempDir(), "caplets.zip")
 
 	LoadPaths = []string{
 		"./",
@@ -39,9 +47,7 @@ var (
 		InstallPath,
 		filepath.Join(getUserHomeDir(), "caplets"),
 	}
-)
 
-func init() {
 	for _, path := range str.SplitBy(str.Trim(os.Getenv(EnvVarName)), string(os.PathListSeparator)) {
 		if path = str.Trim(path); len(path) > 0 {
 			LoadPaths = append(LoadPaths, path)
@@ -51,4 +57,11 @@ func init() {
 	for i, path := range LoadPaths {
 		LoadPaths[i], _ = filepath.Abs(path)
 	}
+
+	return nil
+}
+
+func init() {
+	// init with defaults
+	Setup(getDefaultInstallBase())
 }
