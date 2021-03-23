@@ -7,7 +7,7 @@ require (
 	github.com/adrianmo/go-nmea v1.3.0
 	github.com/antchfx/jsonquery v1.1.4
 	github.com/antchfx/xpath v1.1.10 // indirect
-	github.com/bettercap/gatt v0.0.0-20191018133023-569d3d9372bb
+	github.com/bettercap/gatt v0.0.0-20210323182651-e1a2422767ff
 	github.com/bettercap/nrf24 v0.0.0-20190219153547-aa37e6d0e0eb
 	github.com/bettercap/readline v0.0.0-20210228151553-655e48bcb7bf
 	github.com/bettercap/recording v0.0.0-20190408083647-3ce1dcf032e3
@@ -30,7 +30,7 @@ require (
 	github.com/koppacetic/go-gpsd v0.4.0
 	github.com/kr/binarydist v0.1.0 // indirect
 	github.com/malfunkt/iprange v0.9.0
-	github.com/mattn/go-colorable v0.1.7 // indirect
+	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mdlayher/dhcp6 v0.0.0-20190311162359-2a67805d7d0b
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mgutz/logxi v0.0.0-20161027140823-aebf8a7d67ab // indirect
@@ -42,7 +42,7 @@ require (
 	github.com/thoj/go-ircevent v0.0.0-20190807115034-8e7ce4b5a1eb
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/net v0.0.0-20200925080053-05aa5d4ee321
-	golang.org/x/sys v0.0.0-20210228012217-479acdf4ea46 // indirect
+	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4 // indirect
 	golang.org/x/text v0.3.3 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	honnef.co/go/tools v0.0.0-2019.2.1 // indirect
