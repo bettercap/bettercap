@@ -192,6 +192,13 @@ func DnsReply(s *session.Session, TTL uint32, pkt gopacket.Packet, peth *layers.
 
 	answers := make([]layers.DNSResourceRecord, 0)
 	for _, q := range req.Questions {
+		// do not include types we can't handle and that are not needed
+		// for successful spoofing anyway
+		// ref: https://github.com/bettercap/bettercap/issues/843
+		if q.Type.String() == "Unknown" {
+			continue
+		}
+
 		answers = append(answers,
 			layers.DNSResourceRecord{
 				Name:  []byte(q.Name),
@@ -231,7 +238,7 @@ func DnsReply(s *session.Session, TTL uint32, pkt gopacket.Packet, peth *layers.
 
 		err, raw = packets.Serialize(&eth, &ip6, &udp, &dns)
 		if err != nil {
-			log.Error("error serializing packet: %s.", err)
+			log.Error("error serializing ipv6 packet: %s.", err)
 			return "", ""
 		}
 	} else {
@@ -252,7 +259,7 @@ func DnsReply(s *session.Session, TTL uint32, pkt gopacket.Packet, peth *layers.
 
 		err, raw = packets.Serialize(&eth, &ip4, &udp, &dns)
 		if err != nil {
-			log.Error("error serializing packet: %s.", err)
+			log.Error("error serializing ipv4 packet: %s.", err)
 			return "", ""
 		}
 	}
