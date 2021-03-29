@@ -57,6 +57,8 @@ func SetInterfaceChannel(iface string, channel int) error {
 		} else if out != "" {
 			return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
 		}
+	} else {
+		return fmt.Errorf("no iw or iwconfig binaries found in $PATH")
 	}
 
 	SetInterfaceCurrentChannel(iface, channel)
