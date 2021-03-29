@@ -7,7 +7,7 @@ import (
 )
 
 func TestProcessSupportedFrequencies(t *testing.T) {
-	// Actually test processSupportedFrequencies; IO is lifted out.
+	// Actually test parseIWListFreqs; IO is lifted out.
 	cases := []struct {
 		Name          string
 		InputString   string
