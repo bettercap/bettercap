@@ -79,6 +79,12 @@ func (h *Handshake) AddFrame(n int, pkt gopacket.Packet) {
 	h.unsaved = append(h.unsaved, pkt)
 }
 
+func (h *Handshake) AddExtra(pkt gopacket.Packet) {
+	h.Lock()
+	defer h.Unlock()
+	h.unsaved = append(h.unsaved, pkt)
+}
+
 func (h *Handshake) Complete() bool {
 	h.RLock()
 	defer h.RUnlock()
@@ -113,6 +119,10 @@ func (h *Handshake) HasPMKID() bool {
 	h.RLock()
 	defer h.RUnlock()
 	return h.hasPMKID
+}
+
+func (h *Handshake) Any() bool {
+	return h.HasPMKID() || h.Half() || h.Complete()
 }
 
 func (h *Handshake) NumUnsaved() int {
