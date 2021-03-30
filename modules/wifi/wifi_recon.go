@@ -150,3 +150,35 @@ func (mod *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.
 		}
 	})
 }
+
+func (mod *WiFiModule) discoverDeauths(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+	if dot11.Type != layers.Dot11TypeMgmtDeauthentication {
+		return
+	}
+
+	// ignore deauth frames that we sent
+	if radiotap.ChannelFrequency == 0 {
+		return
+	}
+
+	deauthLayer := packet.Layer(layers.LayerTypeDot11MgmtDeauthentication)
+	if deauthLayer == nil {
+		return
+	}
+
+	deauth, ok := deauthLayer.(*layers.Dot11MgmtDeauthentication)
+	reason := "?"
+	if ok {
+		reason = deauth.Reason.String()
+	}
+
+	mod.Debug("deauth radio %#v", radiotap)
+
+	mod.Session.Events.Add("wifi.deauthentication", DeauthEvent{
+		RSSI:     radiotap.DBMAntennaSignal,
+		Address1: dot11.Address1.String(),
+		Address2: dot11.Address2.String(),
+		Address3: dot11.Address3.String(),
+		Reason:   reason,
+	})
+}

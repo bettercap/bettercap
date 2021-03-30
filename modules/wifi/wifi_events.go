@@ -9,6 +9,14 @@ type ClientEvent struct {
 	Client *network.Station
 }
 
+type DeauthEvent struct {
+	RSSI     int8   `json:"rssi"`
+	Address1 string `json:"address1"`
+	Address2 string `json:"address2"`
+	Address3 string `json:"address3"`
+	Reason   string `json:"reason"`
+}
+
 type ProbeEvent struct {
 	FromAddr   string `json:"mac"`
 	FromVendor string `json:"vendor"`

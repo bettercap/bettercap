@@ -661,6 +661,7 @@ func (mod *WiFiModule) Start() error {
 				mod.discoverAccessPoints(radiotap, dot11, packet)
 				mod.discoverClients(radiotap, dot11, packet)
 				mod.discoverHandshakes(radiotap, dot11, packet)
+				mod.discoverDeauths(radiotap, dot11, packet)
 				mod.updateInfo(dot11, packet)
 				mod.updateStats(dot11, packet)
 			}

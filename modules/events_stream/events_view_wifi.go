@@ -118,9 +118,24 @@ func (mod *EventsStream) viewWiFiClientEvent(output io.Writer, e session.Event) 
 	}
 }
 
+func (mod *EventsStream) viewWiFiDeauthEvent(output io.Writer, e session.Event) {
+	deauth := e.Data.(wifi.DeauthEvent)
+
+	fmt.Fprintf(output, "[%s] [%s] a1=%s a2=%s a3=%s reason=%s (%d dBm)\n",
+		e.Time.Format(mod.timeFormat),
+		tui.Green(e.Tag),
+		deauth.Address1,
+		deauth.Address2,
+		deauth.Address3,
+		tui.Bold(deauth.Reason),
+		deauth.RSSI)
+}
+
 func (mod *EventsStream) viewWiFiEvent(output io.Writer, e session.Event) {
 	if strings.HasPrefix(e.Tag, "wifi.ap.") {
 		mod.viewWiFiApEvent(output, e)
+	} else if e.Tag == "wifi.deauthentication" {
+		mod.viewWiFiDeauthEvent(output, e)
 	} else if e.Tag == "wifi.client.probe" {
 		mod.viewWiFiClientProbeEvent(output, e)
 	} else if e.Tag == "wifi.client.handshake" {
@@ -128,6 +143,6 @@ func (mod *EventsStream) viewWiFiEvent(output io.Writer, e session.Event) {
 	} else if e.Tag == "wifi.client.new" || e.Tag == "wifi.client.lost" {
 		mod.viewWiFiClientEvent(output, e)
 	} else {
-		fmt.Fprintf(output, "[%s] [%s] %v\n", e.Time.Format(mod.timeFormat), tui.Green(e.Tag), e)
+		fmt.Fprintf(output, "[%s] [%s] %#v\n", e.Time.Format(mod.timeFormat), tui.Green(e.Tag), e)
 	}
 }
