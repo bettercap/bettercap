@@ -145,5 +145,5 @@ func GetSupportedFrequencies(iface string) ([]int, error) {
 	} else if core.HasBinary("iwlist") {
 		return iwlistSupportedFrequencies(iface)
 	}
-	return fmt.Errorf("no iw or iwlist binaries found in $PATH")
+	return nil, fmt.Errorf("no iw or iwlist binaries found in $PATH")
 }
