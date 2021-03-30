@@ -69,12 +69,12 @@ var iwlistFreqParser = regexp.MustCompile(`^\s+Channel.([0-9]+)\s+:\s+([0-9\.]+)
 func iwlistSupportedFrequencies(iface string) ([]int, error) {
 	out, err := core.Exec("iwlist", []string{iface, "freq"})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	freqs := make([]int, 0)
-	if output != "" {
-		scanner := bufio.NewScanner(strings.NewReader(output))
+	if out != "" {
+		scanner := bufio.NewScanner(strings.NewReader(out))
 		for scanner.Scan() {
 			line := scanner.Text()
 			matches := iwlistFreqParser.FindStringSubmatch(line)
