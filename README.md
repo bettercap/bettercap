@@ -25,18 +25,6 @@ bettercap is a powerful, easily extensible and portable framework written in Go 
 * **A very convenient [web UI](https://www.bettercap.org/usage/#web-ui).**
 * [More!](https://www.bettercap.org/modules/)
 
-## About the 1.x Legacy Version
-
-While the first version (up to 1.6.2) of bettercap was implemented in Ruby and only offered basic MITM, sniffing and proxying capabilities, the 2.x is a complete reimplementation using the [Go programming language](https://golang.org/). 
-
-This ground-up rewrite offered several advantages:
-
-* bettercap can now be distributed as a **single binary** with very few dependencies, for basically **any OS and any architecture**.
-* 1.x proxies, although highly optimized and event based, **[used to bottleneck the entire network](https://en.wikipedia.org/wiki/Global_interpreter_lock)** when performing a MITM attack, while the new version adds almost no overhead.
-* Due to such **performance and functional limitations**, most of the features that the 2.x version is offering were simply impossible to implement properly (read as: without killing the entire network ... or your computer).
-
-For this reason, **any version prior to 2.x is considered deprecated** and any type of support has been dropped in favor of the new implementation. An archived copy of the legacy documentation is [available here](https://www.bettercap.org/legacy/), however **it is strongly suggested to upgrade**.
-
 ## Documentation and Examples
 
 The project is documented [here](https://www.bettercap.org/).
