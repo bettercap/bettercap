@@ -25,10 +25,6 @@ bettercap is a powerful, easily extensible and portable framework written in Go 
 * **A very convenient [web UI](https://www.bettercap.org/usage/#web-ui).**
 * [More!](https://www.bettercap.org/modules/)
 
-## Documentation and Examples
-
-The project is documented [here](https://www.bettercap.org/).
-
 ## License
 
 `bettercap` is made with ♥  by [the dev team](https://github.com/orgs/bettercap/people) and it's released under the GPL 3 license.
