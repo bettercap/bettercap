@@ -18,6 +18,7 @@ import (
 	"github.com/bettercap/bettercap/modules/https_server"
 	"github.com/bettercap/bettercap/modules/mac_changer"
 	"github.com/bettercap/bettercap/modules/mdns_server"
+	"github.com/bettercap/bettercap/modules/modem"
 	"github.com/bettercap/bettercap/modules/mysql_server"
 	"github.com/bettercap/bettercap/modules/net_probe"
 	"github.com/bettercap/bettercap/modules/net_recon"
@@ -61,6 +62,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(wol.NewWOL(sess))
 	sess.Register(hid.NewHIDRecon(sess))
 	sess.Register(c2.NewC2(sess))
+	sess.Register(modem.NewModem(sess))
 
 	sess.Register(caplets.NewCapletsModule(sess))
 	sess.Register(update.NewUpdateModule(sess))
