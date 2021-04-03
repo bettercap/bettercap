@@ -32,7 +32,7 @@ finish: &finish
 cross_deps: &cross_deps
   <<: *linux_deps
   before_install:
-    - wget --show-progress -qcO "qemu.deb" "https://debian.grena.ge/debian/pool/main/q/qemu/qemu-user-static_5.2+dfsg-6+b1_amd64.deb"
+    - wget --show-progress -qcO "qemu.deb" "https://github.com/bettercap/buildutils/raw/main/qemu-user-static_5.2_dfsg-9_amd64.deb"
     - sudo dpkg -i "qemu.deb"
 
 normal_install: &normal_install
