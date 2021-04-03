@@ -1,6 +1,7 @@
 package net_sniff
 
 import (
+	"net"
 	"strings"
 
 	"github.com/bettercap/bettercap/packets"
@@ -12,7 +13,7 @@ import (
 	"github.com/evilsocket/islazy/tui"
 )
 
-func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
+func mdnsParser(srcIP, dstIP net.IP, payload []byte, pkt gopacket.Packet, udp *layers.UDP) bool {
 	if udp.SrcPort == packets.MDNSPort && udp.DstPort == packets.MDNSPort {
 		dns := layers.DNS{}
 		if err := dns.DecodeFromBytes(udp.Payload, gopacket.NilDecodeFeedback); err == nil && dns.OpCode == layers.DNSOpCodeQuery {
@@ -20,12 +21,12 @@ func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 				NewSnifferEvent(
 					pkt.Metadata().Timestamp,
 					"mdns",
-					ip.SrcIP.String(),
-					ip.DstIP.String(),
+					srcIP.String(),
+					dstIP.String(),
 					nil,
 					"%s %s : %s query for %s",
 					tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "mdns"),
-					vIP(ip.SrcIP),
+					vIP(srcIP),
 					tui.Dim(q.Type.String()),
 					tui.Yellow(string(q.Name)),
 				).Push()
@@ -56,12 +57,12 @@ func mdnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 				NewSnifferEvent(
 					pkt.Metadata().Timestamp,
 					"mdns",
-					ip.SrcIP.String(),
-					ip.DstIP.String(),
+					srcIP.String(),
+					dstIP.String(),
 					nil,
 					"%s %s : %s is %s",
 					tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "mdns"),
-					vIP(ip.SrcIP),
+					vIP(srcIP),
 					tui.Yellow(hostname),
 					tui.Dim(strings.Join(ips, ", ")),
 				).Push()

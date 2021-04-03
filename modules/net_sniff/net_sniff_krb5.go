@@ -2,6 +2,7 @@ package net_sniff
 
 import (
 	"encoding/asn1"
+	"net"
 
 	"github.com/bettercap/bettercap/packets"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/evilsocket/islazy/tui"
 )
 
-func krb5Parser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
+func krb5Parser(srcIP, dstIP net.IP, payload []byte, pkt gopacket.Packet, udp *layers.UDP) bool {
 	if udp.DstPort != 88 {
 		return false
 	}
@@ -26,13 +27,13 @@ func krb5Parser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 		NewSnifferEvent(
 			pkt.Metadata().Timestamp,
 			"krb5",
-			ip.SrcIP.String(),
-			ip.DstIP.String(),
+			srcIP.String(),
+			dstIP.String(),
 			nil,
 			"%s %s -> %s : %s",
 			tui.Wrap(tui.BACKRED+tui.FOREBLACK, "krb-as-req"),
-			vIP(ip.SrcIP),
-			vIP(ip.DstIP),
+			vIP(srcIP),
+			vIP(dstIP),
 			s,
 		).Push()
 

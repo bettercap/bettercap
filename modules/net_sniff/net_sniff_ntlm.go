@@ -1,6 +1,7 @@
 package net_sniff
 
 import (
+	"net"
 	"regexp"
 	"strings"
 
@@ -31,7 +32,7 @@ func isResponse(s string) bool {
 	return respRe.FindString(s) != ""
 }
 
-func ntlmParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
+func ntlmParser(srcIP, dstIP net.IP, payload []byte, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	data := tcp.Payload
 	ok := false
 
@@ -50,13 +51,13 @@ func ntlmParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 					NewSnifferEvent(
 						pkt.Metadata().Timestamp,
 						"ntlm.response",
-						ip.SrcIP.String(),
-						ip.DstIP.String(),
+						srcIP.String(),
+						dstIP.String(),
 						nil,
 						"%s %s > %s | %s",
 						tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "ntlm.response"),
-						vIP(ip.SrcIP),
-						vIP(ip.DstIP),
+						vIP(srcIP),
+						vIP(dstIP),
 						data.LcString(),
 					).Push()
 				})

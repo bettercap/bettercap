@@ -1,6 +1,7 @@
 package net_sniff
 
 import (
+	"net"
 	"regexp"
 
 	"github.com/google/gopacket"
@@ -14,7 +15,7 @@ var (
 	ftpRe = regexp.MustCompile(`^(USER|PASS) (.+)[\n\r]+$`)
 )
 
-func ftpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
+func ftpParser(srcIP, dstIP net.IP, payload []byte, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	data := string(tcp.Payload)
 
 	if matches := ftpRe.FindAllStringSubmatch(data, -1); matches != nil {
@@ -23,13 +24,13 @@ func ftpParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 		NewSnifferEvent(
 			pkt.Metadata().Timestamp,
 			"ftp",
-			ip.SrcIP.String(),
-			ip.DstIP.String(),
+			srcIP.String(),
+			dstIP.String(),
 			nil,
 			"%s %s > %s:%s - %s %s",
 			tui.Wrap(tui.BACKYELLOW+tui.FOREWHITE, "ftp"),
-			vIP(ip.SrcIP),
-			vIP(ip.DstIP),
+			vIP(srcIP),
+			vIP(dstIP),
 			vPort(tcp.DstPort),
 			tui.Bold(what),
 			tui.Yellow(cred),

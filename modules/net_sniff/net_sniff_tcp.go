@@ -2,6 +2,7 @@ package net_sniff
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -9,7 +10,7 @@ import (
 	"github.com/evilsocket/islazy/tui"
 )
 
-var tcpParsers = []func(*layers.IPv4, gopacket.Packet, *layers.TCP) bool{
+var tcpParsers = []func(net.IP, net.IP, []byte, gopacket.Packet, *layers.TCP) bool{
 	sniParser,
 	ntlmParser,
 	httpParser,
@@ -17,30 +18,31 @@ var tcpParsers = []func(*layers.IPv4, gopacket.Packet, *layers.TCP) bool{
 	teamViewerParser,
 }
 
-func onTCP(ip *layers.IPv4, pkt gopacket.Packet, verbose bool) {
+func onTCP(srcIP, dstIP net.IP, payload []byte, pkt gopacket.Packet, verbose bool) {
 	tcp := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
 	for _, parser := range tcpParsers {
-		if parser(ip, pkt, tcp) {
+		if parser(srcIP, dstIP, payload, pkt, tcp) {
 			return
 		}
 	}
 
 	if verbose {
+		sz := len(payload)
 		NewSnifferEvent(
 			pkt.Metadata().Timestamp,
 			"tcp",
-			fmt.Sprintf("%s:%s", ip.SrcIP, vPort(tcp.SrcPort)),
-			fmt.Sprintf("%s:%s", ip.DstIP, vPort(tcp.DstPort)),
+			fmt.Sprintf("%s:%s", srcIP, vPort(tcp.SrcPort)),
+			fmt.Sprintf("%s:%s", dstIP, vPort(tcp.DstPort)),
 			SniffData{
-				"Size": len(ip.Payload),
+				"Size": len(payload),
 			},
 			"%s %s:%s > %s:%s %s",
 			tui.Wrap(tui.BACKLIGHTBLUE+tui.FOREBLACK, "tcp"),
-			vIP(ip.SrcIP),
+			vIP(srcIP),
 			vPort(tcp.SrcPort),
-			vIP(ip.DstIP),
+			vIP(dstIP),
 			vPort(tcp.DstPort),
-			tui.Dim(fmt.Sprintf("%d bytes", len(ip.Payload))),
+			tui.Dim(fmt.Sprintf("%d bytes", sz)),
 		).Push()
 	}
 }

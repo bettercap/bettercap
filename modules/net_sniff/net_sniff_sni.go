@@ -2,6 +2,7 @@ package net_sniff
 
 import (
 	"fmt"
+	"net"
 
 	"regexp"
 
@@ -14,7 +15,7 @@ import (
 // poor man's TLS Client Hello with SNI extension parser :P
 var sniRe = regexp.MustCompile("\x00\x00.{4}\x00.{2}([a-z0-9]+([\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,6})\x00")
 
-func sniParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
+func sniParser(srcIP, dstIP net.IP, payload []byte, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	data := tcp.Payload
 	dataSize := len(data)
 
@@ -35,12 +36,12 @@ func sniParser(ip *layers.IPv4, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	NewSnifferEvent(
 		pkt.Metadata().Timestamp,
 		"https",
-		ip.SrcIP.String(),
+		srcIP.String(),
 		domain,
 		nil,
 		"%s %s > %s",
 		tui.Wrap(tui.BACKYELLOW+tui.FOREWHITE, "sni"),
-		vIP(ip.SrcIP),
+		vIP(srcIP),
 		tui.Yellow("https://"+domain),
 	).Push()
 

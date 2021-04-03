@@ -3,12 +3,13 @@ package net_sniff
 import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"net"
 	"strings"
 
 	"github.com/evilsocket/islazy/tui"
 )
 
-func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
+func dnsParser(srcIP, dstIP net.IP, payload []byte, pkt gopacket.Packet, udp *layers.UDP) bool {
 	dns, parsed := pkt.Layer(layers.LayerTypeDNS).(*layers.DNS)
 	if !parsed {
 		return false
@@ -50,13 +51,13 @@ func dnsParser(ip *layers.IPv4, pkt gopacket.Packet, udp *layers.UDP) bool {
 		NewSnifferEvent(
 			pkt.Metadata().Timestamp,
 			"dns",
-			ip.SrcIP.String(),
-			ip.DstIP.String(),
+			srcIP.String(),
+			dstIP.String(),
 			nil,
 			"%s %s > %s : %s is %s",
 			tui.Wrap(tui.BACKDARKGRAY+tui.FOREWHITE, "dns"),
-			vIP(ip.SrcIP),
-			vIP(ip.DstIP),
+			vIP(srcIP),
+			vIP(dstIP),
 			tui.Yellow(hostname),
 			tui.Dim(strings.Join(ips, ", ")),
 		).Push()

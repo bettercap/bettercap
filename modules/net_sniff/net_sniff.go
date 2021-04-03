@@ -128,11 +128,19 @@ func (mod Sniffer) Author() string {
 }
 
 func (mod Sniffer) isLocalPacket(packet gopacket.Packet) bool {
-	ipl := packet.Layer(layers.LayerTypeIPv4)
-	if ipl != nil {
-		ip, _ := ipl.(*layers.IPv4)
-		if ip.SrcIP.Equal(mod.Session.Interface.IP) || ip.DstIP.Equal(mod.Session.Interface.IP) {
+	ip4l := packet.Layer(layers.LayerTypeIPv4)
+	if ip4l != nil {
+		ip4, _ := ip4l.(*layers.IPv4)
+		if ip4.SrcIP.Equal(mod.Session.Interface.IP) || ip4.DstIP.Equal(mod.Session.Interface.IP) {
 			return true
+		}
+	} else {
+		ip6l := packet.Layer(layers.LayerTypeIPv6)
+		if ip6l != nil {
+			ip6, _ := ip6l.(*layers.IPv6)
+			if ip6.SrcIP.Equal(mod.Session.Interface.IPv6) || ip6.DstIP.Equal(mod.Session.Interface.IPv6) {
+				return true
+			}
 		}
 	}
 	return false
