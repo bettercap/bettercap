@@ -95,6 +95,7 @@ func (p ModuleParam) validate(value string) (error, interface{}) {
 const ParamIfaceName = "<interface name>"
 const ParamIfaceAddress = "<interface address>"
 const ParamIfaceAddress6 = "<interface address6>"
+const ParamIfaceMac = "<interface mac>"
 const ParamSubnet = "<entire subnet>"
 const ParamRandomMAC = "<random mac>"
 
@@ -108,6 +109,8 @@ func (p ModuleParam) parse(s *Session, v string) string {
 		v = s.Interface.IpAddress
 	case ParamIfaceAddress6:
 		v = s.Interface.Ip6Address
+	case ParamIfaceMac:
+		v = s.Interface.HwAddress
 	case ParamSubnet:
 		v = s.Interface.CIDR()
 	case ParamRandomMAC:

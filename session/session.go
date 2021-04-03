@@ -305,7 +305,7 @@ func (s *Session) Start() error {
 func (s *Session) Skip(ip net.IP) bool {
 	if ip.IsLoopback() {
 		return true
-	} else if ip.Equal(s.Interface.IP) {
+	} else if ip.Equal(s.Interface.IP) || ip.Equal(s.Interface.IPv6){
 		return true
 	} else if ip.Equal(s.Gateway.IP) {
 		return true
@@ -323,6 +323,10 @@ func (s *Session) FindMAC(ip net.IP, probe bool) (net.HardwareAddr, error) {
 	if err != nil && probe {
 		from := s.Interface.IP
 		from_hw := s.Interface.HW
+
+		if ip.To4() == nil {
+			from = s.Interface.IPv6
+		}
 
 		if err, probe := packets.NewUDPProbe(from, from_hw, ip, 139); err != nil {
 			log.Error("Error while creating UDP probe packet for %s: %s", ip.String(), err)

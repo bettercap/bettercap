@@ -112,6 +112,8 @@ func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs
 	}
 	targets = strings.Trim(targets, ", ")
 
+	fmt.Printf("targets=%s macs=%#v\n", targets, macs)
+
 	// check and resolve aliases
 	for _, targetAlias := range aliasParser.FindAllString(targets, -1) {
 		found := false
@@ -137,7 +139,7 @@ func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs
 	if targets != "" {
 		list, err := iprange.ParseList(targets)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error while parsing address list '%s': %s.", targets, err)
+			return nil, nil, fmt.Errorf("error while parsing address list '%s': %s", targets, err)
 		}
 
 		ips = list.Expand()

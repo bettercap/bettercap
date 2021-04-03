@@ -9,6 +9,7 @@ import (
 	"github.com/bettercap/bettercap/network"
 
 	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/fs"
 )
 
 type LinuxFirewall struct {
@@ -19,6 +20,7 @@ type LinuxFirewall struct {
 
 const (
 	IPV4ForwardingFile = "/proc/sys/net/ipv4/ip_forward"
+	IPV6ForwardingFile = "/proc/sys/net/ipv6/conf/all/forwarding"
 )
 
 func Make(iface *network.Endpoint) FirewallManager {
@@ -61,7 +63,12 @@ func (f LinuxFirewall) IsForwardingEnabled() bool {
 }
 
 func (f LinuxFirewall) EnableForwarding(enabled bool) error {
-	return f.enableFeature(IPV4ForwardingFile, enabled)
+	if err := f.enableFeature(IPV4ForwardingFile, enabled); err != nil {
+		return err
+	} else if fs.Exists(IPV6ForwardingFile) {
+		return f.enableFeature(IPV6ForwardingFile, enabled)
+	}
+	return nil
 }
 
 func (f *LinuxFirewall) getCommandLine(r *Redirection, enabled bool) (cmdLine []string) {
