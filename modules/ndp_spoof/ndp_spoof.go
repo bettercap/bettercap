@@ -29,8 +29,8 @@ func NewNDPSpoofer(s *session.Session) *NDPSpoofer {
 
 	mod.SessionModule.Requires("net.recon")
 
-	mod.AddParam(session.NewStringParameter("ndp.spoof.targets", "", "", "Comma separated list of IPv6 addresses, "+
-		"MAC addresses or aliases to spoof."))
+	mod.AddParam(session.NewStringParameter("ndp.spoof.targets", "", "",
+		"Comma separated list of IPv6 victim addresses."))
 
 	mod.AddParam(session.NewStringParameter("ndp.spoof.neighbour", "fe80::1", "",
 		"Neighbour IPv6 address to spoof, clear to disable NA."))
