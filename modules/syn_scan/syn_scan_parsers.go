@@ -2,18 +2,30 @@ package syn_scan
 
 import (
 	"fmt"
+	"net"
 	"strconv"
+	"strings"
 
 	"github.com/evilsocket/islazy/str"
 	"github.com/malfunkt/iprange"
 )
 
 func (mod *SynScanner) parseTargets(arg string) error {
-	if list, err := iprange.Parse(arg); err != nil {
-		return fmt.Errorf("error while parsing IP range '%s': %s", arg, err)
+	if strings.Contains(arg, ":") {
+		// parse as IPv6 address
+		if ip := net.ParseIP(arg); ip == nil {
+			return fmt.Errorf("error while parsing IPv6 '%s'", arg)
+		} else {
+			mod.addresses = []net.IP{ip}
+		}
 	} else {
-		mod.addresses = list.Expand()
+		if list, err := iprange.Parse(arg); err != nil {
+			return fmt.Errorf("error while parsing IP range '%s': %s", arg, err)
+		} else {
+			mod.addresses = list.Expand()
+		}
 	}
+
 	return nil
 }
 

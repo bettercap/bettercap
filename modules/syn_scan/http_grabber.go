@@ -55,6 +55,11 @@ func httpGrabber(mod *SynScanner, ip string, port int) string {
 		}
 	}
 
+	// https://stackoverflow.com/questions/12260003/connect-returns-invalid-argument-with-ipv6-address
+	if strings.Contains(ip, ":") {
+		ip = fmt.Sprintf("[%s%%25%s]", ip, mod.Session.Interface.Name())
+	}
+
 	url := fmt.Sprintf("%s://%s:%d/", schema, ip, port)
 	resp, err := client.Get(url)
 	if err != nil {

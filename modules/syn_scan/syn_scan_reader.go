@@ -24,26 +24,40 @@ func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
 	}
 
 	var eth layers.Ethernet
-	var ip layers.IPv4
+	var ip4 layers.IPv4
+	var ip6 layers.IPv6
 	var tcp layers.TCP
-	foundLayerTypes := []gopacket.LayerType{}
 
+
+
+	isIPv6 := false
+	foundLayerTypes := []gopacket.LayerType{}
 	parser := gopacket.NewDecodingLayerParser(
 		layers.LayerTypeEthernet,
 		&eth,
-		&ip,
+		&ip4,
 		&tcp,
 	)
 
 	err := parser.DecodeLayers(pkt.Data(), &foundLayerTypes)
 	if err != nil {
-		return
+		// try ipv6
+		parser := gopacket.NewDecodingLayerParser(
+			layers.LayerTypeEthernet,
+			&eth,
+			&ip6,
+			&tcp,
+		)
+		err = parser.DecodeLayers(pkt.Data(), &foundLayerTypes)
+		if err != nil {
+			return
+		}
+		isIPv6 = true
 	}
 
 	if tcp.DstPort == synSourcePort && tcp.SYN && tcp.ACK {
 		atomic.AddUint64(&mod.stats.openPorts, 1)
 
-		from := ip.SrcIP.String()
 		port := int(tcp.SrcPort)
 
 		openPort := &OpenPort{
@@ -53,12 +67,28 @@ func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
 		}
 
 		var host *network.Endpoint
-		if ip.SrcIP.Equal(mod.Session.Interface.IP) {
-			host = mod.Session.Interface
-		} else if ip.SrcIP.Equal(mod.Session.Gateway.IP) {
-			host = mod.Session.Gateway
+
+		from := ""
+
+		if isIPv6 {
+			from = ip6.SrcIP.String()
+			if ip6.SrcIP.Equal(mod.Session.Interface.IPv6) {
+				host = mod.Session.Interface
+			} else if ip6.SrcIP.Equal(mod.Session.Gateway.IPv6) {
+				host = mod.Session.Gateway
+			} else {
+				host = mod.Session.Lan.GetByIp(from)
+			}
 		} else {
-			host = mod.Session.Lan.GetByIp(from)
+			from = ip4.SrcIP.String()
+
+			if ip4.SrcIP.Equal(mod.Session.Interface.IP) {
+				host = mod.Session.Interface
+			} else if ip4.SrcIP.Equal(mod.Session.Gateway.IP) {
+				host = mod.Session.Gateway
+			} else {
+				host = mod.Session.Lan.GetByIp(from)
+			}
 		}
 
 		if host != nil {

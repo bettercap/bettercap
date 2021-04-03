@@ -153,7 +153,7 @@ func (lan *LAN) shouldIgnore(ip, mac string) bool {
 	}
 	// skip everything which is not in our subnet (multicast noise)
 	addr := net.ParseIP(ip)
-	return !lan.iface.Net.Contains(addr)
+	return addr.To4() != nil && !lan.iface.Net.Contains(addr)
 }
 
 func (lan *LAN) Has(ip string) bool {
