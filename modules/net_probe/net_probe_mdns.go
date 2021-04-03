@@ -41,22 +41,37 @@ func (mod *Prober) mdnsListener(c chan *mdns.ServiceEntry) {
 	defer mod.Debug("mdns listener stopped")
 
 	for entry := range c {
-		if host := mod.Session.Lan.GetByIp(entry.AddrV4.String()); host != nil {
-			meta := make(map[string]string)
+		addrs := []string{}
+		if entry.AddrV4 != nil {
+			addrs = append(addrs, entry.AddrV4.String())
+		}
+		if entry.AddrV6 != nil {
+			addrs = append(addrs, entry.AddrV6.String())
+		}
 
-			meta["mdns:name"] = entry.Name
-			meta["mdns:hostname"] = entry.Host
-			meta["mdns:ipv4"] = entry.AddrV4.String()
+		for _, addr := range addrs {
+			if host := mod.Session.Lan.GetByIp(addr); host != nil {
+				meta := make(map[string]string)
 
-			if entry.AddrV6 != nil {
-				meta["mdns:ipv6"] = entry.AddrV6.String()
+				meta["mdns:name"] = entry.Name
+				meta["mdns:hostname"] = entry.Host
+
+				if entry.AddrV4 != nil {
+					meta["mdns:ipv4"] = entry.AddrV4.String()
+				}
+
+				if entry.AddrV6 != nil {
+					meta["mdns:ipv6"] = entry.AddrV6.String()
+				}
+
+				meta["mdns:port"] = fmt.Sprintf("%d", entry.Port)
+
+				mod.Debug("meta for %s: %v", addr, meta)
+
+				host.OnMeta(meta)
+			} else {
+				mod.Debug("got mdns entry for unknown ip %s", entry.AddrV4)
 			}
-
-			meta["mdns:port"] = fmt.Sprintf("%d", entry.Port)
-
-			host.OnMeta(meta)
-		} else {
-			mod.Debug("got mdns entry for known ip %s", entry.AddrV4)
 		}
 	}
 }
