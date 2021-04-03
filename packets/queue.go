@@ -121,7 +121,7 @@ func (q *Queue) trackProtocols(pkt gopacket.Packet) {
 	}
 }
 
-func (q *Queue) trackActivity(eth *layers.Ethernet, ip4 *layers.IPv4, address net.IP, meta map[string]string, pktSize uint64, isSent bool) {
+func (q *Queue) trackActivity(eth *layers.Ethernet, address net.IP, meta map[string]string, pktSize uint64, isSent bool) {
 	// push to activity channel
 	q.Activities <- Activity{
 		IP:     address,
@@ -188,31 +188,40 @@ func (q *Queue) worker() {
 
 		q.TrackPacket(pktSize)
 
-		// decode eth and ipv4 layers
+		// decode eth and ipv4/6 layers
 		leth := pkt.Layer(layers.LayerTypeEthernet)
 		lip4 := pkt.Layer(layers.LayerTypeIPv4)
-		if leth != nil && lip4 != nil {
-			eth := leth.(*layers.Ethernet)
-			ip4 := lip4.(*layers.IPv4)
+		lip6 := pkt.Layer(layers.LayerTypeIPv6)
+		if leth != nil && (lip4 != nil || lip6 != nil) {
+			var srcIP, dstIP net.IP
+			if lip4 != nil {
+				ip4 := lip4.(*layers.IPv4)
+				srcIP = ip4.SrcIP
+				dstIP = ip4.DstIP
+			} else {
+				ip6 := lip4.(*layers.IPv6)
+				srcIP = ip6.SrcIP
+				dstIP = ip6.DstIP
+			}
 
 			// here we try to discover new hosts
 			// on this lan by inspecting packets
 			// we manage to sniff
+			eth := leth.(*layers.Ethernet)
 
 			// something coming from someone on the LAN
-			isFromMe := q.iface.IP.Equal(ip4.SrcIP)
-			isFromLAN := q.iface.Net.Contains(ip4.SrcIP)
+			isFromMe := q.iface.IP.Equal(srcIP) || q.iface.IPv6.Equal(srcIP)
+			isFromLAN := q.iface.Net.Contains(srcIP)
 			if !isFromMe && isFromLAN {
 				meta := q.getPacketMeta(pkt)
-
-				q.trackActivity(eth, ip4, ip4.SrcIP, meta, pktSize, true)
+				q.trackActivity(eth, srcIP, meta, pktSize, true)
 			}
 
 			// something going to someone on the LAN
-			isToMe := q.iface.IP.Equal(ip4.DstIP)
-			isToLAN := q.iface.Net.Contains(ip4.DstIP)
+			isToMe := q.iface.IP.Equal(dstIP) || q.iface.IPv6.Equal(dstIP)
+			isToLAN := q.iface.Net.Contains(dstIP)
 			if !isToMe && isToLAN {
-				q.trackActivity(eth, ip4, ip4.DstIP, nil, pktSize, false)
+				q.trackActivity(eth, dstIP, nil, pktSize, false)
 			}
 		}
 	}
