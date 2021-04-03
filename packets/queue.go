@@ -199,7 +199,7 @@ func (q *Queue) worker() {
 				srcIP = ip4.SrcIP
 				dstIP = ip4.DstIP
 			} else {
-				ip6 := lip4.(*layers.IPv6)
+				ip6 := lip6.(*layers.IPv6)
 				srcIP = ip6.SrcIP
 				dstIP = ip6.DstIP
 			}
