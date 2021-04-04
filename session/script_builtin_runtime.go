@@ -56,9 +56,12 @@ func jsOnEventFunc(call otto.FunctionCall) otto.Value {
 
 		for event := range listener {
 			if expr == "" || event.Tag == expr {
+				// lock vm
+				I.script.Lock()
 				if _, err := cb.Call(otto.NullValue(), event); err != nil {
 					I.Events.Log(log.ERROR, "error dispatching event %s: %v", event.Tag, err)
 				}
+				I.script.Unlock()
 			}
 		}
 	}(filterExpr, cb)
