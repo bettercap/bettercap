@@ -1,7 +1,7 @@
 *.sw*
 *.tar.gz
 *.prof*
-betterbot.js
+_example/config.js
 pcaps
 build
 bettercap

@@ -1,17 +1,5 @@
-var wifiInterface = 'put the wifi interface to put in monitor mode here';
-var telegramToken = 'put your telegram bot token here';
-var telegramChatId = 'put your telegram chat id here';
-
-function sendMessage(message) {
-    var url = 'https://api.telegram.org/bot' + telegramToken +
-        '/sendMessage?chat_id=' + telegramChatId +
-        '&text=' + http.Encode(message);
-
-    var resp = http.Get(url, {});
-    if( resp.Error ) {
-        log("error while running sending telegram message: " + resp.Error.Error());
-    }
-}
+require("config.js")
+require("telegram.js")
 
 function onDeauthentication(event) {
     var data = event.Data;

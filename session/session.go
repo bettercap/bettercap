@@ -311,7 +311,7 @@ func (s *Session) Start() error {
 
 	// load the script here so the session and its internal objects are ready
 	if *s.Options.Script != "" {
-		if s.script, err = LoadScript(*s.Options.Script, s); err != nil {
+		if s.script, err = LoadScript(*s.Options.Script); err != nil {
 			return fmt.Errorf("error loading %s: %v", *s.Options.Script, err)
 		}
 		log.Debug("session script %s loaded", *s.Options.Script)
