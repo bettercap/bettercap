@@ -17,6 +17,7 @@ type Options struct {
 	CpuProfile    *string
 	MemProfile    *string
 	CapletsPath   *string
+	Script        *string
 }
 
 func ParseOptions() (Options, error) {
@@ -35,6 +36,7 @@ func ParseOptions() (Options, error) {
 		CpuProfile:    flag.String("cpu-profile", "", "Write cpu profile `file`."),
 		MemProfile:    flag.String("mem-profile", "", "Write memory profile to `file`."),
 		CapletsPath:   flag.String("caplets-path", "", "Specify an alternative base path for caplets."),
+		Script:        flag.String("script", "", "Load a session script."),
 	}
 
 	flag.Parse()

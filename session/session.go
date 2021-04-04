@@ -3,6 +3,7 @@ package session
 import (
 	"errors"
 	"fmt"
+	"github.com/evilsocket/islazy/plugin"
 	"net"
 	"os"
 	"regexp"
@@ -89,6 +90,8 @@ type Session struct {
 	EventsIgnoreList *EventsIgnoreList
 	UnkCmdCallback   UnknownCommandCallback
 	Firewall         firewall.FirewallManager
+
+	script *Script
 }
 
 func New() (*Session, error) {
@@ -299,13 +302,28 @@ func (s *Session) Start() error {
 		s.Events.Add("session.started", nil)
 	}
 
+	// register js functions here to avoid cyclic dependency between
+	// js and session
+	plugin.Defines["env"] = jsEnvFunc
+	plugin.Defines["run"] = jsRunFunc
+	plugin.Defines["onEvent"] = jsOnEventFunc
+	plugin.Defines["session"] = s
+
+	// load the script here so the session and its internal objects are ready
+	if *s.Options.Script != "" {
+		if s.script, err = LoadScript(*s.Options.Script, s); err != nil {
+			return fmt.Errorf("error loading %s: %v", *s.Options.Script, err)
+		}
+		log.Debug("session script %s loaded", *s.Options.Script)
+	}
+
 	return nil
 }
 
 func (s *Session) Skip(ip net.IP) bool {
 	if ip.IsLoopback() {
 		return true
-	} else if ip.Equal(s.Interface.IP) || ip.Equal(s.Interface.IPv6){
+	} else if ip.Equal(s.Interface.IP) || ip.Equal(s.Interface.IPv6) {
 		return true
 	} else if ip.Equal(s.Gateway.IP) {
 		return true
