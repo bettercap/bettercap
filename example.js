@@ -1,3 +1,4 @@
+const wifiInterface = 'put the wifi interface to put in monitor mode here';
 const telegramToken = 'put your telegram bot token here';
 const telegramChatId = 'put your telegram chat id here';
 
@@ -19,7 +20,7 @@ run('net.recon on');
 run('net.probe on');
 
 // enable wifi scanning
-run('set wifi.interface wlx00c0ca916886');
+run('set wifi.interface ' + wifiInterface);
 run('wifi.recon on');
 
 // register for wifi.deauthentication events
