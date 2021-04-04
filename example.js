@@ -1,6 +1,6 @@
-const wifiInterface = 'put the wifi interface to put in monitor mode here';
-const telegramToken = 'put your telegram bot token here';
-const telegramChatId = 'put your telegram chat id here';
+var wifiInterface = 'put the wifi interface to put in monitor mode here';
+var telegramToken = 'put your telegram bot token here';
+var telegramChatId = 'put your telegram chat id here';
 
 function sendMessage(message) {
     var url = 'https://api.telegram.org/bot' + telegramToken +
