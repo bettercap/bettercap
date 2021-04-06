@@ -59,6 +59,7 @@ type WiFiModule struct {
 	apRunning           bool
 	showManuf           bool
 	apConfig            packets.Dot11ApConfig
+	probeMac            net.HardwareAddr
 	writes              *sync.WaitGroup
 	reads               *sync.WaitGroup
 	chanLock            *sync.Mutex
@@ -203,12 +204,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	probe := session.NewModuleHandler("wifi.probe BSSID ESSID",
 		`wifi\.probe\s+([a-fA-F0-9:]{11,})\s+([^\s].+)`,
 		"Sends a fake client probe with the given station BSSID, searching for ESSID.",
-		func(args []string) error {
-			bssid, err := net.ParseMAC(args[0])
-			if err != nil {
+		func(args []string) (err error) {
+			if mod.probeMac, err = net.ParseMAC(args[0]); err != nil {
 				return err
 			}
-			return mod.startProbing(bssid, args[1])
+			return mod.startProbing(mod.probeMac, args[1])
 		})
 
 	probe.Complete("wifi.probe", s.WiFiCompleterFull)

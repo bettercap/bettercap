@@ -50,30 +50,6 @@ func (mod *WiFiModule) stationPruner() {
 	}
 }
 
-func (mod *WiFiModule) startProbing(staMac net.HardwareAddr, ssid string) error {
-	// if not already running, temporarily enable the pcap handle
-	// for packet injection
-	if !mod.Running() {
-		if err := mod.Configure(); err != nil {
-			return err
-		}
-		defer mod.handle.Close()
-	}
-
-	for seq := uint16(0); seq < 5 && mod.Running(); seq++ {
-		if err, pkt := packets.NewDot11ProbeRequest(staMac, seq, ssid, network.GetInterfaceChannel(mod.iface.Name())); err != nil {
-			mod.Error("could not create probe packet: %s", err)
-			continue
-		} else {
-			mod.injectPacket(pkt)
-		}
-	}
-
-	mod.Info("sent probe frames")
-
-	return nil
-}
-
 func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	// search for Dot11InformationElementIDSSID
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok {
@@ -110,6 +86,30 @@ func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *la
 	}
 }
 
+func (mod *WiFiModule) startProbing(staMac net.HardwareAddr, ssid string) error {
+	// if not already running, temporarily enable the pcap handle
+	// for packet injection
+	if !mod.Running() {
+		if err := mod.Configure(); err != nil {
+			return err
+		}
+		defer mod.handle.Close()
+	}
+
+	for seq := uint16(0); seq < 5 && mod.Running(); seq++ {
+		if err, pkt := packets.NewDot11ProbeRequest(staMac, seq, ssid, network.GetInterfaceChannel(mod.iface.Name())); err != nil {
+			mod.Error("could not create probe packet: %s", err)
+			continue
+		} else {
+			mod.injectPacket(pkt)
+		}
+	}
+
+	mod.Info("sent probe frames")
+
+	return nil
+}
+
 func (mod *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	if dot11.Type != layers.Dot11TypeMgmtProbeReq {
 		return
@@ -122,6 +122,11 @@ func (mod *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.D
 
 	req, ok := reqLayer.(*layers.Dot11MgmtProbeReq)
 	if !ok {
+		return
+	}
+
+	// skip stuff we're sending
+	if bytes.Equal(mod.probeMac, dot11.Address2) {
 		return
 	}
 
