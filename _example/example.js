@@ -1,5 +1,5 @@
-require("config.js")
-require("telegram.js")
+require("config")
+require("telegram")
 
 function onDeauthentication(event) {
     var data = event.Data;
