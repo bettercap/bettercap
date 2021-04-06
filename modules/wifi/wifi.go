@@ -200,6 +200,21 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 	mod.AddHandler(deauth)
 
+	probe := session.NewModuleHandler("wifi.probe BSSID ESSID",
+		`wifi\.probe\s+([a-fA-F0-9:]{11,})\s+([^\s].+)`,
+		"Sends a fake client probe with the given station BSSID, searching for ESSID.",
+		func(args []string) error {
+			bssid, err := net.ParseMAC(args[0])
+			if err != nil {
+				return err
+			}
+			return mod.startProbing(bssid, args[1])
+		})
+
+	probe.Complete("wifi.probe", s.WiFiCompleterFull)
+
+	mod.AddHandler(probe)
+
 	mod.AddParam(session.NewStringParameter("wifi.deauth.skip",
 		"",
 		"",

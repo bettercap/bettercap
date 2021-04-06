@@ -2,6 +2,7 @@ package wifi
 
 import (
 	"bytes"
+	"net"
 	"time"
 
 	"github.com/bettercap/bettercap/network"
@@ -47,6 +48,30 @@ func (mod *WiFiModule) stationPruner() {
 		maxApTTL = time.Duration(mod.apTTL) * time.Second
 		maxStaTTL = time.Duration(mod.staTTL) * time.Second
 	}
+}
+
+func (mod *WiFiModule) startProbing(staMac net.HardwareAddr, ssid string) error {
+	// if not already running, temporarily enable the pcap handle
+	// for packet injection
+	if !mod.Running() {
+		if err := mod.Configure(); err != nil {
+			return err
+		}
+		defer mod.handle.Close()
+	}
+
+	for seq := uint16(0); seq < 5 && mod.Running(); seq++ {
+		if err, pkt := packets.NewDot11ProbeRequest(staMac, seq, ssid, network.GetInterfaceChannel(mod.iface.Name())); err != nil {
+			mod.Error("could not create probe packet: %s", err)
+			continue
+		} else {
+			mod.injectPacket(pkt)
+		}
+	}
+
+	mod.Info("sent probe frames")
+
+	return nil
 }
 
 func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
