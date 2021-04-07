@@ -3,6 +3,7 @@ package graph
 import (
 	"fmt"
 	"time"
+	"unicode"
 )
 
 type NodeType string
@@ -50,7 +51,20 @@ func (n Node) String() string {
 func (n Node) Label() string {
 	switch n.Type {
 	case SSID:
-		return n.Entity.(string)
+		s := n.Entity.(string)
+		allPrint := true
+
+		for _, rn := range s {
+			if !unicode.IsPrint(rune(rn)) {
+				allPrint = false
+				break
+			}
+		}
+
+		if !allPrint {
+			s = fmt.Sprintf("0x%x", s)
+		}
+		return s
 	case BLEServer:
 		return fmt.Sprintf("%s\\n(%s)",
 			n.Entity.(map[string]interface{})["mac"].(string),
