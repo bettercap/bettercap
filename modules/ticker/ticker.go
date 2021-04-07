@@ -72,6 +72,8 @@ func (mod *Ticker) Configure() error {
 	return nil
 }
 
+type TickEvent struct {}
+
 func (mod *Ticker) Start() error {
 	if err := mod.Configure(); err != nil {
 		return err
@@ -84,6 +86,8 @@ func (mod *Ticker) Start() error {
 			if !mod.Running() {
 				break
 			}
+
+			session.I.Events.Add("tick", TickEvent{})
 
 			for _, cmd := range mod.Commands {
 				if err := mod.Session.Run(cmd); err != nil {

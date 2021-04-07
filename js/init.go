@@ -35,4 +35,6 @@ func init() {
 
 	plugin.Defines["httpRequest"] = httpRequest
 	plugin.Defines["http"] = httpPackage{}
+
+	plugin.Defines["random"] = randomPackage{}
 }

@@ -1,6 +1,8 @@
 package session
 
 import (
+	"encoding/json"
+
 	"github.com/bettercap/bettercap/js"
 	"github.com/evilsocket/islazy/log"
 	"github.com/robertkrimen/otto"
@@ -56,9 +58,18 @@ func jsOnEventFunc(call otto.FunctionCall) otto.Value {
 
 		for event := range listener {
 			if expr == "" || event.Tag == expr {
+				// some objects don't do well with js, so convert them to a generic map
+				// before passing them to the callback
+				var opaque interface{}
+				if raw, err := json.Marshal(event); err != nil {
+					I.Events.Log(log.ERROR, "error serializing event %s: %v", event.Tag, err)
+				} else if err = json.Unmarshal(raw, &opaque); err != nil {
+					I.Events.Log(log.ERROR, "error serializing event %s: %v", event.Tag, err)
+				}
+
 				// lock vm
 				I.script.Lock()
-				if _, err := cb.Call(otto.NullValue(), event); err != nil {
+				if _, err := cb.Call(otto.NullValue(), opaque); err != nil {
 					I.Events.Log(log.ERROR, "error dispatching event %s: %v", event.Tag, err)
 				}
 				I.script.Unlock()

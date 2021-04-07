@@ -105,7 +105,7 @@ func (mod *WiFiModule) startProbing(staMac net.HardwareAddr, ssid string) error 
 		}
 	}
 
-	mod.Info("sent probe frames")
+	mod.Debug("sent probe frames")
 
 	return nil
 }
