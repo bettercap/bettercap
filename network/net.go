@@ -112,7 +112,7 @@ func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs
 	}
 	targets = strings.Trim(targets, ", ")
 
-	fmt.Printf("targets=%s macs=%#v\n", targets, macs)
+	// fmt.Printf("targets=%s macs=%#v\n", targets, macs)
 
 	// check and resolve aliases
 	for _, targetAlias := range aliasParser.FindAllString(targets, -1) {
