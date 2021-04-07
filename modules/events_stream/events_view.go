@@ -127,7 +127,9 @@ func (mod *EventsStream) Render(output io.Writer, e session.Event) {
 		mod.viewSynScanEvent(output, e)
 	} else if e.Tag == "update.available" {
 		mod.viewUpdateEvent(output, e)
-	} else {
+	} else if strings.HasPrefix(e.Tag, "graph.") {
+		mod.viewGraphEvent(output, e)
+	} else if e.Tag != "tick" {
 		fmt.Fprintf(output, "[%s] [%s] %v\n", e.Time.Format(mod.timeFormat), tui.Green(e.Tag), e)
 	}
 }
