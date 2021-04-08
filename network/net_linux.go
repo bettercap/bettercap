@@ -41,7 +41,7 @@ func SetInterfaceChannel(iface string, channel int) error {
 	}
 
 	if core.HasBinary("iw") {
-		Debug("SetInterfaceChannel(%s, %d) iw based", iface, channel)
+		// Debug("SetInterfaceChannel(%s, %d) iw based", iface, channel)
 		out, err := core.Exec("iw", []string{"dev", iface, "set", "channel", fmt.Sprintf("%d", channel)})
 		if err != nil {
 			return fmt.Errorf("iw: out=%s err=%s", out, err)
@@ -49,7 +49,7 @@ func SetInterfaceChannel(iface string, channel int) error {
 			return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
 		}
 	} else if core.HasBinary("iwconfig") {
-		Debug("SetInterfaceChannel(%s, %d) iwconfig based")
+		// Debug("SetInterfaceChannel(%s, %d) iwconfig based")
 		out, err := core.Exec("iwconfig", []string{iface, "channel", fmt.Sprintf("%d", channel)})
 		if err != nil {
 			return fmt.Errorf("iwconfig: out=%s err=%s", out, err)

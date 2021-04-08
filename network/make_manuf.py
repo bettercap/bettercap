@@ -2,7 +2,6 @@
 import os
 import six
 import re
-import sys
 
 base = os.path.dirname(os.path.realpath(__file__))
 # "https://code.wireshark.org/review/gitweb?p=wireshark.git;a=blob_plain;f=manuf;hb=HEAD"

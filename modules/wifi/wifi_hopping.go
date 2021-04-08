@@ -24,7 +24,7 @@ func (mod *WiFiModule) isInterfaceConnected() bool {
 }
 
 func (mod *WiFiModule) hopUnlocked(channel int) (mustStop bool) {
-	mod.Debug("hopping on channel %d", channel)
+	// mod.Debug("hopping on channel %d", channel)
 
 	if err := network.SetInterfaceChannel(mod.iface.Name(), channel); err != nil {
 		// check if the device has been disconnected

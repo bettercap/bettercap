@@ -111,7 +111,8 @@ func (mod *Prober) Start() error {
 			return
 		}
 
-		list, err := iprange.Parse(mod.Session.Interface.CIDR())
+		cidr := mod.Session.Interface.CIDR()
+		list, err := iprange.Parse(cidr)
 		if err != nil {
 			mod.Fatal("%s", err)
 		}
@@ -124,6 +125,8 @@ func (mod *Prober) Start() error {
 		fromHW := mod.Session.Interface.HW
 		addresses := list.Expand()
 		throttle := time.Duration(mod.throttle) * time.Millisecond
+
+		mod.Info("probing %d addresses on %s", len(addresses), cidr)
 
 		for mod.Running() {
 			if mod.probes.MDNS {
