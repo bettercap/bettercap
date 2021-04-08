@@ -2,21 +2,21 @@ package graph
 
 import "sync"
 
-type element struct {
+type entry struct {
 	data interface{}
-	next *element
+	next *entry
 }
 
-type stack struct {
+type Stack struct {
 	lock *sync.Mutex
-	head *element
+	head *entry
 	Size int
 }
 
-func (stk *stack) Push(data interface{}) {
+func (stk *Stack) Push(data interface{}) {
 	stk.lock.Lock()
 
-	element := new(element)
+	element := new(entry)
 	element.data = data
 	temp := stk.head
 	element.next = temp
@@ -26,7 +26,7 @@ func (stk *stack) Push(data interface{}) {
 	stk.lock.Unlock()
 }
 
-func (stk *stack) Pop() interface{} {
+func (stk *Stack) Pop() interface{} {
 	if stk.head == nil {
 		return nil
 	}
@@ -40,8 +40,8 @@ func (stk *stack) Pop() interface{} {
 	return r
 }
 
-func NewStack() *stack {
-	stk := new(stack)
+func NewStack() *Stack {
+	stk := new(Stack)
 	stk.lock = &sync.Mutex{}
 	return stk
 }

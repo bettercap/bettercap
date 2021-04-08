@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 )
 
@@ -19,11 +20,15 @@ const (
 	edgeStaleTime   = time.Hour * 24
 )
 
+var privacyFilter = regexp.MustCompile("(?i)([a-f0-9]{2}):([a-f0-9]{2}):([a-f0-9]{2}):([a-f0-9]{2}):([a-f0-9]{2}):([a-f0-9]{2})")
+
 type settings struct {
-	path string
-	layout string
-	name string
-	output string
+	path         string
+	layout       string
+	name         string
+	output       string
+	disconnected bool
+	privacy      bool
 }
 
 type Module struct {
@@ -40,9 +45,9 @@ func NewModule(s *session.Session) *Module {
 	mod := &Module{
 		SessionModule: session.NewSessionModule("graph", s),
 		settings: settings{
-			path: filepath.Join(caplets.InstallBase, "graph"),
+			path:   filepath.Join(caplets.InstallBase, "graph"),
 			layout: "neato",
-			name: "bettergraph",
+			name:   "bettergraph",
 			output: "bettergraph.dot",
 		},
 	}
@@ -66,6 +71,14 @@ func NewModule(s *session.Session) *Module {
 		mod.settings.output,
 		"",
 		"File name for dot output."))
+
+	mod.AddParam(session.NewBoolParameter("graph.dot.disconnected",
+		"false",
+		"Include disconnected edges in then output graph."))
+
+	mod.AddParam(session.NewBoolParameter("graph.dot.privacy",
+		"false",
+		"Obfuscate mac addresses."))
 
 	mod.AddHandler(session.NewModuleHandler("graph on", "",
 		"Start the Module module.",
@@ -114,6 +127,10 @@ func (mod *Module) updateSettings() error {
 		return err
 	} else if err, mod.settings.output = mod.StringParam("graph.dot.output"); err != nil {
 		return err
+	} else if err, mod.settings.disconnected = mod.BoolParam("graph.dot.disconnected"); err != nil {
+		return err
+	} else if err, mod.settings.privacy = mod.BoolParam("graph.dot.privacy"); err != nil {
+		return err
 	} else if err, mod.settings.path = mod.StringParam("graph.path"); err != nil {
 		return err
 	} else if mod.settings.path, err = filepath.Abs(mod.settings.path); err != nil {
@@ -140,6 +157,19 @@ func (mod *Module) Configure() (err error) {
 
 	// if have an IP
 	if mod.Session.Gateway != nil && mod.Session.Interface != nil {
+		// find or create interface node
+		iface := mod.Session.Interface
+		if mod.iface, err = mod.db.FindNode(Endpoint, iface.HwAddress); err != nil {
+			return err
+		} else if mod.iface == nil {
+			// create the interface node
+			if mod.iface, err = mod.db.CreateNode(Endpoint, iface.HwAddress, iface, ifaceAnnotation); err != nil {
+				return err
+			}
+		} else if err = mod.db.UpdateNode(mod.iface); err != nil {
+			return err
+		}
+
 		// find or create gateway node
 		gw := mod.Session.Gateway
 		if mod.gw, err = mod.db.FindNode(Gateway, gw.HwAddress); err != nil {
@@ -154,33 +184,26 @@ func (mod *Module) Configure() (err error) {
 			}
 		}
 
-		// find or create interface node
-		iface := mod.Session.Interface
-		if mod.iface, err = mod.db.FindNode(Endpoint, iface.HwAddress); err != nil {
-			return err
-		} else if mod.iface == nil {
-			// create the interface node
-			if mod.iface, err = mod.db.CreateNode(Endpoint, iface.HwAddress, iface, ifaceAnnotation); err != nil {
-				return err
-			}
-		} else if err = mod.db.UpdateNode(mod.iface); err != nil {
-			return err
-		}
-
 		// create relations if needed
-		if manages, err := mod.db.FindLastRecentEdgeOfType(mod.gw, mod.iface, Manages, edgeStaleTime); err != nil {
-			return err
-		} else if manages == nil {
-			if manages, err = mod.db.CreateEdge(mod.gw, mod.iface, Manages); err != nil {
+		if iface.HwAddress == gw.HwAddress {
+			if err = mod.connectAsSame(mod.gw, mod.iface); err != nil {
 				return err
 			}
-		}
-
-		if connects_to, err := mod.db.FindLastEdgeOfType(mod.iface, mod.gw, ConnectsTo); err != nil {
-			return err
-		} else if connects_to == nil {
-			if connects_to, err = mod.db.CreateEdge(mod.iface, mod.gw, ConnectsTo); err != nil {
+		} else {
+			if manages, err := mod.db.FindLastRecentEdgeOfType(mod.gw, mod.iface, Manages, edgeStaleTime); err != nil {
 				return err
+			} else if manages == nil {
+				if manages, err = mod.db.CreateEdge(mod.gw, mod.iface, Manages); err != nil {
+					return err
+				}
+			}
+
+			if connects_to, err := mod.db.FindLastEdgeOfType(mod.iface, mod.gw, ConnectsTo); err != nil {
+				return err
+			} else if connects_to == nil {
+				if connects_to, err = mod.db.CreateEdge(mod.iface, mod.gw, ConnectsTo); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -192,16 +215,28 @@ func (mod *Module) Configure() (err error) {
 
 func (mod *Module) generateDotGraph(bssid string) error {
 	start := time.Now()
-
 	if err := mod.updateSettings(); err != nil {
-		return err
-	} else if data, err := mod.db.Dot(bssid, mod.settings.layout, mod.settings.name); err != nil {
-		return err
-	} else if err := ioutil.WriteFile(mod.settings.output, []byte(data), os.ModePerm); err != nil {
 		return err
 	}
 
-	mod.Info("graph saved to %s in %v", mod.settings.output, time.Since(start))
+	data, size, discarded, err := mod.db.Dot(bssid, mod.settings.layout, mod.settings.name, mod.settings.disconnected)
+	if err != nil {
+		return err
+	}
+
+	if mod.settings.privacy {
+		data = privacyFilter.ReplaceAllString(data, "$1:$2:xx:xx:xx:xx")
+	}
+
+	if err := ioutil.WriteFile(mod.settings.output, []byte(data), os.ModePerm); err != nil {
+		return err
+	} else {
+		mod.Info("graph saved to %s in %v (%d edges, %d discarded)",
+			mod.settings.output,
+			time.Since(start),
+			size,
+			discarded)
+	}
 	return nil
 }
 
@@ -317,7 +352,7 @@ func (mod *Module) createDot11Graph(ap *network.AccessPoint, station *network.St
 }
 
 func (mod *Module) createDot11ProbeGraph(ssid string, station *network.Station) (*Node, bool, *Node, bool, error) {
-	apNode, apIsNew, err := mod.createDot11SSIDGraph(station.HwAddress + fmt.Sprintf(":PROBE:%x", ssid), ssid)
+	apNode, apIsNew, err := mod.createDot11SSIDGraph(station.HwAddress+fmt.Sprintf(":PROBE:%x", ssid), ssid)
 	if err != nil {
 		return nil, false, nil, false, err
 	}

@@ -1,7 +1,10 @@
 package graph
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"time"
 	"unicode"
 )
@@ -26,13 +29,22 @@ var NodeTypes = []NodeType{
 	BLEServer,
 }
 
+var nodeTypeDescs = map[NodeType]string{
+	SSID:        "WiFI SSID probe",
+	BLEServer:   "BLE Device",
+	Station:     "WiFi Client",
+	AccessPoint: "WiFi AP",
+	Endpoint:    "IP Client",
+	Gateway:     "IP Gateway",
+}
+
 var nodeDotStyles = map[NodeType]string{
-	SSID:        "shape=diamond",
-	BLEServer:   "shape=box, style=filled, color=dodgerblue3",
-	Endpoint:    "shape=box, style=filled, color=azure2",
-	Gateway:     "shape=diamond, style=filled, color=azure4",
-	Station:     "shape=box, style=filled, color=gold",
-	AccessPoint: "shape=diamond, style=filled, color=goldenrod3",
+	SSID:        "shape=circle style=filled color=lightgray fillcolor=lightgray fixedsize=true penwidth=0.5",
+	BLEServer:   "shape=box style=filled color=dodgerblue3",
+	Endpoint:    "shape=box style=filled color=azure2",
+	Gateway:     "shape=diamond style=filled color=azure4",
+	Station:     "shape=box style=filled color=gold",
+	AccessPoint: "shape=diamond style=filled color=goldenrod3",
 }
 
 type Node struct {
@@ -42,13 +54,54 @@ type Node struct {
 	ID          string      `json:"id"`
 	Annotations string      `json:"annotations"`
 	Entity      interface{} `json:"entity"`
+	Dummy       bool        `json:"-"`
+}
+
+func ReadNode(fileName string) (*Node, error) {
+	var node Node
+	if raw, err := ioutil.ReadFile(fileName); err != nil {
+		return nil, fmt.Errorf("error while reading %s: %v", fileName, err)
+	} else if err = json.Unmarshal(raw, &node); err != nil {
+		return nil, fmt.Errorf("error while decoding %s: %v", fileName, err)
+	}
+	return &node, nil
+}
+
+func WriteNode(fileName string, node *Node, update bool) error {
+	if update {
+		node.UpdatedAt = time.Now()
+	} else {
+		node.CreatedAt = time.Now()
+	}
+
+	if raw, err := json.Marshal(node); err != nil {
+		return fmt.Errorf("error creating data for %s: %v", fileName, err)
+	} else if err = ioutil.WriteFile(fileName, raw, os.ModePerm); err != nil {
+		return fmt.Errorf("error creating %s: %v", fileName, err)
+	}
+	return nil
+}
+
+func CreateNode(fileName string, node *Node) error {
+	return WriteNode(fileName, node, false)
+}
+
+func UpdateNode(fileName string, node *Node) error {
+	return WriteNode(fileName, node, true)
 }
 
 func (n Node) String() string {
-	return fmt.Sprintf("%s_%s", n.Type, n.ID)
+	if n.Dummy == false {
+		return fmt.Sprintf("%s_%s", n.Type, n.ID)
+	}
+	return string(n.Type)
 }
 
 func (n Node) Label() string {
+	if n.Dummy {
+		return n.Annotations
+	}
+
 	switch n.Type {
 	case SSID:
 		s := n.Entity.(string)
@@ -74,9 +127,10 @@ func (n Node) Label() string {
 			n.Entity.(map[string]interface{})["mac"].(string),
 			n.Entity.(map[string]interface{})["vendor"].(string))
 	case AccessPoint:
-		return fmt.Sprintf("%s\\n(%s)",
+		return fmt.Sprintf("%s\\n%s\\n(%s)",
 			n.Entity.(map[string]interface{})["hostname"].(string),
-			n.Entity.(map[string]interface{})["mac"].(string))
+			n.Entity.(map[string]interface{})["mac"].(string),
+			n.Entity.(map[string]interface{})["vendor"].(string))
 	case Endpoint:
 		return fmt.Sprintf("%s\\n(%s %s)",
 			n.Entity.(map[string]interface{})["ipv4"].(string),
@@ -96,8 +150,8 @@ func (n Node) Dot(isTarget bool) string {
 	if isTarget {
 		style += ", color=red"
 	}
-	return fmt.Sprintf("node [%s]; {node [label=\"%s\"] \"%s\";};",
+	return fmt.Sprintf("\"%s\" [%s, label=\"%s\"];",
+		n.String(),
 		style,
-		n.Label(),
-		n.String())
+		n.Label())
 }
