@@ -7,6 +7,9 @@ import (
 )
 
 func (mod *Module) generateJSONGraph(bssid string) error {
+	mod.wLock.Lock()
+	defer mod.wLock.Unlock()
+	
 	start := time.Now()
 	if err := mod.updateSettings(); err != nil {
 		return err

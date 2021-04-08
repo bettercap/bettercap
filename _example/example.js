@@ -4,15 +4,22 @@ require("telegram")
 var fakeESSID = random.String(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 var fakeBSSID = random.Mac()
 
+function graph(who, where) {
+    // generates a .dot file with the graph for this mac
+    run('graph.to_dot ' + who);
+    // uses graphviz to make a png of it
+    run('!dot -Tpng bettergraph.dot > ' + where);
+}
+
 function onDeauthentication(event) {
     var data = event.data;
 
-    run('graph.to_dot ' + data.address1);
-    run('!dot -Tpng bettergraph.dot > /tmp/graph_deauth.png')
+    graph(data.address1, '/tmp/graph_deauth.png');
 
     var message = '🚨 Detected deauthentication frame:\n\n' +
-        'Time: ' + event.time + "\n" +
-        'GPS: lat=' + session.GPS.Latitude + " lon=" + session.GPS.Longitude + " updated_at=" + session.GPS.Updated.String() + "\n\n" +
+        // 'Time: ' + event.time + "\n" +
+        // 'GPS: lat=' + session.GPS.Latitude + " lon=" + session.GPS.Longitude + " updated_at=" +
+        //session.GPS.Updated.String() + "\n\n" +
         'RSSI: ' + data.rssi + "\n" +
         'Reason: ' + data.reason + "\n" +
         'Address1: ' + data.address1 + "\n" +
@@ -27,12 +34,12 @@ function onDeauthentication(event) {
 function onNewAP(event){
     var ap = event.data;
     if(ap.hostname == fakeESSID) {
-        run('graph.to_dot ' + ap.mac);
-        run('!dot -Tpng bettergraph.dot > /tmp/graph_ap.png')
+        graph(ap.mac, '/tmp/graph_ap.png');
 
         var message = '🚨 Detected possible rogue AP:\n\n' +
-            'Time: ' + event.time + "\n" +
-            'GPS: lat=' + session.GPS.Latitude + " lon=" + session.GPS.Longitude + " updated_at=" + session.GPS.Updated.String() + "\n\n" +
+            // 'Time: ' + event.time + "\n" +
+            // 'GPS: lat=' + session.GPS.Latitude + " lon=" + session.GPS.Longitude + " updated_at=" +
+            //session.GPS.Updated.String() + "\n\n" +
             'AP: ' + ap.mac + ' (' + ap.vendor + ')';
 
         // send to telegram bot
@@ -45,8 +52,7 @@ function onHandshake(event){
     var data = event.data;
     var what = 'handshake';
 
-    run('graph.to_dot ' + data.station);
-    run('!dot -Tpng bettergraph.dot > /tmp/graph_handshake.png')
+    graph(data.station, '/tmp/graph_handshake.png');
 
     if(data.pmkid != null) {
         what = "RSN PMKID";
@@ -57,8 +63,9 @@ function onHandshake(event){
     }
 
     var message = '💰 Captured ' + what + ':\n\n' +
-        'Time: ' + event.time + "\n" +
-        'GPS: lat=' + session.GPS.Latitude + " lon=" + session.GPS.Longitude + " updated_at=" + session.GPS.Updated.String() + "\n\n" +
+        //'Time: ' + event.time + "\n" +
+        //'GPS: lat=' + session.GPS.Latitude + " lon=" + session.GPS.Longitude + " updated_at=" +
+        //session.GPS.Updated.String() + "\n\n" +
         'Station: ' + data.station + "\n" +
         'AP: ' + data.ap;
 

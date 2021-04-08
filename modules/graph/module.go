@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sync"
 	"time"
 )
 
@@ -46,6 +47,7 @@ type Module struct {
 	gw       *Node
 	iface    *Node
 	eventBus session.EventBus
+	wLock    sync.Mutex
 }
 
 func NewModule(s *session.Session) *Module {

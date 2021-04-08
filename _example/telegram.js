@@ -13,6 +13,6 @@ function sendMessage(message) {
 
 function sendPhoto(path) {
     var url = 'https://api.telegram.org/bot' + telegramToken + '/sendPhoto';
-    var cmd = 'curl -s -X POST "' + url + '" -F chat_id=' + telegramChatId + ' -F photo="@' + path + '"';
+    var cmd = 'curl -s -X POST "' + url + '" -F chat_id=' + telegramChatId + ' -F photo="@' + path + '" > /dev/null';
     run("!"+cmd);
 }
