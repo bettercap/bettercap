@@ -203,6 +203,7 @@ func (g *Graph) Dot(filter, layout, name string, disconnected bool) (string, int
 		return "", 0, 0, err
 	}
 
+	/*
 	data += "\n"
 	data += "node [style=filled height=0.55 fontname=\"Verdana\" fontsize=10];\n"
 	data += "subgraph legend {\n" +
@@ -224,8 +225,8 @@ func (g *Graph) Dot(filter, layout, name string, disconnected bool) (string, int
 	for i := 0; i < ntypes - 1; i++ {
 		data += fmt.Sprintf("  \"%s\" -> \"%s\" [style=invis];\n", types[i], types[i + 1])
 	}
-
 	data += "}\n"
+	*/
 
 	data += "\n"
 	data += "  overlap=false\n"
