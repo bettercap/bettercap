@@ -1,14 +1,12 @@
 package graph
 
 import (
-	"fmt"
 	"github.com/bettercap/bettercap/caplets"
 	"github.com/bettercap/bettercap/modules/wifi"
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/str"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -22,11 +20,20 @@ const (
 
 var privacyFilter = regexp.MustCompile("(?i)([a-f0-9]{2}):([a-f0-9]{2}):([a-f0-9]{2}):([a-f0-9]{2}):([a-f0-9]{2}):([a-f0-9]{2})")
 
+type dotSettings struct {
+	layout string
+	name   string
+	output string
+}
+
+type jsonSettings struct {
+	output string
+}
+
 type settings struct {
 	path         string
-	layout       string
-	name         string
-	output       string
+	dot          dotSettings
+	json         jsonSettings
 	disconnected bool
 	privacy      bool
 }
@@ -45,10 +52,15 @@ func NewModule(s *session.Session) *Module {
 	mod := &Module{
 		SessionModule: session.NewSessionModule("graph", s),
 		settings: settings{
-			path:   filepath.Join(caplets.InstallBase, "graph"),
-			layout: "neato",
-			name:   "bettergraph",
-			output: "bettergraph.dot",
+			path: filepath.Join(caplets.InstallBase, "graph"),
+			dot: dotSettings{
+				layout: "neato",
+				name:   "bettergraph",
+				output: "bettergraph.dot",
+			},
+			json: jsonSettings{
+				output: "bettergraph.json",
+			},
 		},
 	}
 
@@ -58,25 +70,30 @@ func NewModule(s *session.Session) *Module {
 		"Base path for the graph database."))
 
 	mod.AddParam(session.NewStringParameter("graph.dot.name",
-		mod.settings.name,
+		mod.settings.dot.name,
 		"",
 		"Graph name in the dot output."))
 
 	mod.AddParam(session.NewStringParameter("graph.dot.layout",
-		mod.settings.layout,
+		mod.settings.dot.layout,
 		"",
 		"Layout for dot output."))
 
 	mod.AddParam(session.NewStringParameter("graph.dot.output",
-		mod.settings.output,
+		mod.settings.dot.output,
 		"",
 		"File name for dot output."))
 
-	mod.AddParam(session.NewBoolParameter("graph.dot.disconnected",
+	mod.AddParam(session.NewStringParameter("graph.json.output",
+		mod.settings.json.output,
+		"",
+		"File name for JSON output."))
+
+	mod.AddParam(session.NewBoolParameter("graph.disconnected",
 		"false",
 		"Include disconnected edges in then output graph."))
 
-	mod.AddParam(session.NewBoolParameter("graph.dot.privacy",
+	mod.AddParam(session.NewBoolParameter("graph.privacy",
 		"false",
 		"Obfuscate mac addresses."))
 
@@ -103,6 +120,17 @@ func NewModule(s *session.Session) *Module {
 			return mod.generateDotGraph(bssid)
 		}))
 
+	mod.AddHandler(session.NewModuleHandler("graph.to_json MAC?",
+		`graph\.to_json\s*([^\s]*)`,
+		"Generate a JSON graph file from the current graph.",
+		func(args []string) (err error) {
+			bssid := ""
+			if len(args) == 1 && args[0] != "" {
+				bssid = network.NormalizeMac(str.Trim(args[0]))
+			}
+			return mod.generateJSONGraph(bssid)
+		}))
+
 	return mod
 }
 
@@ -121,15 +149,17 @@ func (mod *Module) Author() string {
 func (mod *Module) updateSettings() error {
 	var err error
 
-	if err, mod.settings.name = mod.StringParam("graph.dot.name"); err != nil {
+	if err, mod.settings.dot.name = mod.StringParam("graph.dot.name"); err != nil {
 		return err
-	} else if err, mod.settings.layout = mod.StringParam("graph.dot.layout"); err != nil {
+	} else if err, mod.settings.dot.layout = mod.StringParam("graph.dot.layout"); err != nil {
 		return err
-	} else if err, mod.settings.output = mod.StringParam("graph.dot.output"); err != nil {
+	} else if err, mod.settings.dot.output = mod.StringParam("graph.dot.output"); err != nil {
 		return err
-	} else if err, mod.settings.disconnected = mod.BoolParam("graph.dot.disconnected"); err != nil {
+	} else if err, mod.settings.json.output = mod.StringParam("graph.json.output"); err != nil {
 		return err
-	} else if err, mod.settings.privacy = mod.BoolParam("graph.dot.privacy"); err != nil {
+	} else if err, mod.settings.disconnected = mod.BoolParam("graph.disconnected"); err != nil {
+		return err
+	} else if err, mod.settings.privacy = mod.BoolParam("graph.privacy"); err != nil {
 		return err
 	} else if err, mod.settings.path = mod.StringParam("graph.path"); err != nil {
 		return err
@@ -209,203 +239,6 @@ func (mod *Module) Configure() (err error) {
 	}
 
 	mod.eventBus = mod.Session.Events.Listen()
-
-	return nil
-}
-
-func (mod *Module) generateDotGraph(bssid string) error {
-	start := time.Now()
-	if err := mod.updateSettings(); err != nil {
-		return err
-	}
-
-	data, size, discarded, err := mod.db.Dot(bssid, mod.settings.layout, mod.settings.name, mod.settings.disconnected)
-	if err != nil {
-		return err
-	}
-
-	if mod.settings.privacy {
-		data = privacyFilter.ReplaceAllString(data, "$1:$2:xx:xx:xx:xx")
-	}
-
-	if err := ioutil.WriteFile(mod.settings.output, []byte(data), os.ModePerm); err != nil {
-		return err
-	} else {
-		mod.Info("graph saved to %s in %v (%d edges, %d discarded)",
-			mod.settings.output,
-			time.Since(start),
-			size,
-			discarded)
-	}
-	return nil
-}
-
-func (mod *Module) createIPGraph(endpoint *network.Endpoint) (*Node, bool, error) {
-	node, err := mod.db.FindNode(Endpoint, endpoint.HwAddress)
-	isNew := node == nil
-	if err != nil {
-		return nil, false, err
-	} else if isNew {
-		if node, err = mod.db.CreateNode(Endpoint, endpoint.HwAddress, endpoint, ""); err != nil {
-			return nil, false, err
-		}
-	} else {
-		if err = mod.db.UpdateNode(node); err != nil {
-			return nil, false, err
-		}
-	}
-
-	// create relations if needed
-	if manages, err := mod.db.FindLastRecentEdgeOfType(mod.gw, node, Manages, edgeStaleTime); err != nil {
-		return nil, false, err
-	} else if manages == nil {
-		if manages, err = mod.db.CreateEdge(mod.gw, node, Manages); err != nil {
-			return nil, false, err
-		}
-	}
-
-	if connects_to, err := mod.db.FindLastRecentEdgeOfType(node, mod.gw, ConnectsTo, edgeStaleTime); err != nil {
-		return nil, false, err
-	} else if connects_to == nil {
-		if connects_to, err = mod.db.CreateEdge(node, mod.gw, ConnectsTo); err != nil {
-			return nil, false, err
-		}
-	}
-
-	return node, isNew, nil
-}
-
-func (mod *Module) createDot11ApGraph(ap *network.AccessPoint) (*Node, bool, error) {
-	node, err := mod.db.FindNode(AccessPoint, ap.HwAddress)
-	isNew := node == nil
-	if err != nil {
-		return nil, false, err
-	} else if isNew {
-		if node, err = mod.db.CreateNode(AccessPoint, ap.HwAddress, ap, ""); err != nil {
-			return nil, false, err
-		}
-	} else if err = mod.db.UpdateNode(node); err != nil {
-		return nil, false, err
-	}
-	return node, isNew, nil
-}
-
-func (mod *Module) createDot11SSIDGraph(hw string, ssid string) (*Node, bool, error) {
-	node, err := mod.db.FindNode(SSID, hw)
-	isNew := node == nil
-	if err != nil {
-		return nil, false, err
-	} else if isNew {
-		if node, err = mod.db.CreateNode(SSID, hw, ssid, ""); err != nil {
-			return nil, false, err
-		}
-	} else if err = mod.db.UpdateNode(node); err != nil {
-		return nil, false, err
-	}
-	return node, isNew, nil
-}
-
-func (mod *Module) createDot11StaGraph(station *network.Station) (*Node, bool, error) {
-	node, err := mod.db.FindNode(Station, station.HwAddress)
-	isNew := node == nil
-	if err != nil {
-		return nil, false, err
-	} else if isNew {
-		if node, err = mod.db.CreateNode(Station, station.HwAddress, station, ""); err != nil {
-			return nil, false, err
-		}
-	} else if err = mod.db.UpdateNode(node); err != nil {
-		return nil, false, err
-	}
-	return node, isNew, nil
-}
-
-func (mod *Module) createDot11Graph(ap *network.AccessPoint, station *network.Station) (*Node, bool, *Node, bool, error) {
-	apNode, apIsNew, err := mod.createDot11ApGraph(ap)
-	if err != nil {
-		return nil, false, nil, false, err
-	}
-
-	staNode, staIsNew, err := mod.createDot11StaGraph(station)
-	if err != nil {
-		return nil, false, nil, false, err
-	}
-
-	// create relations if needed
-	if manages, err := mod.db.FindLastRecentEdgeOfType(apNode, staNode, Manages, edgeStaleTime); err != nil {
-		return nil, false, nil, false, err
-	} else if manages == nil {
-		if manages, err = mod.db.CreateEdge(apNode, staNode, Manages); err != nil {
-			return nil, false, nil, false, err
-		}
-	}
-
-	if connects_to, err := mod.db.FindLastRecentEdgeOfType(staNode, apNode, ConnectsTo, edgeStaleTime); err != nil {
-		return nil, false, nil, false, err
-	} else if connects_to == nil {
-		if connects_to, err = mod.db.CreateEdge(staNode, apNode, ConnectsTo); err != nil {
-			return nil, false, nil, false, err
-		}
-	}
-
-	return apNode, apIsNew, staNode, staIsNew, nil
-}
-
-func (mod *Module) createDot11ProbeGraph(ssid string, station *network.Station) (*Node, bool, *Node, bool, error) {
-	apNode, apIsNew, err := mod.createDot11SSIDGraph(station.HwAddress+fmt.Sprintf(":PROBE:%x", ssid), ssid)
-	if err != nil {
-		return nil, false, nil, false, err
-	}
-
-	staNode, staIsNew, err := mod.createDot11StaGraph(station)
-	if err != nil {
-		return nil, false, nil, false, err
-	}
-
-	// create relations if needed
-	if probes_for, err := mod.db.FindLastRecentEdgeOfType(staNode, apNode, ProbesFor, edgeStaleTime); err != nil {
-		return nil, false, nil, false, err
-	} else if probes_for == nil {
-		if probes_for, err = mod.db.CreateEdge(staNode, apNode, ProbesFor); err != nil {
-			return nil, false, nil, false, err
-		}
-	}
-
-	return apNode, apIsNew, staNode, staIsNew, nil
-}
-
-func (mod *Module) createBLEServerGraph(dev *network.BLEDevice) (*Node, bool, error) {
-	mac := network.NormalizeMac(dev.Device.ID())
-	node, err := mod.db.FindNode(BLEServer, mac)
-	isNew := node == nil
-	if err != nil {
-		return nil, false, err
-	} else if isNew {
-		if node, err = mod.db.CreateNode(BLEServer, mac, dev, ""); err != nil {
-			return nil, false, err
-		}
-	} else if err = mod.db.UpdateNode(node); err != nil {
-		return nil, false, err
-	}
-	return node, isNew, nil
-}
-
-func (mod *Module) connectAsSame(a, b *Node) error {
-	if aIsB, err := mod.db.FindLastEdgeOfType(a, b, Is); err != nil {
-		return err
-	} else if aIsB == nil {
-		if aIsB, err = mod.db.CreateEdge(a, b, Is); err != nil {
-			return err
-		}
-	}
-
-	if bIsA, err := mod.db.FindLastEdgeOfType(b, a, Is); err != nil {
-		return err
-	} else if bIsA == nil {
-		if bIsA, err = mod.db.CreateEdge(b, a, Is); err != nil {
-			return err
-		}
-	}
 
 	return nil
 }

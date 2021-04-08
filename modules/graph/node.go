@@ -155,3 +155,15 @@ func (n Node) Dot(isTarget bool) string {
 		style,
 		n.Label())
 }
+
+func (n Node) ToMap() (map[string]interface{}, error) {
+	var m map[string]interface{}
+
+	if raw, err := json.Marshal(n); err != nil {
+		return nil, err
+	} else if err = json.Unmarshal(raw, &m); err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}

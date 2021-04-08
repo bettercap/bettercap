@@ -1,0 +1,137 @@
+<head>
+    <style> body {
+        margin: 0;
+    } </style>
+    <script src="//unpkg.com/3d-force-graph"></script>
+    <script src="//unpkg.com/three"></script>
+    <script src="//unpkg.com/three/examples/js/renderers/CSS2DRenderer.js"></script>
+    <script src="//unpkg.com/three-spritetext"></script>
+
+    <style>
+        .node-label {
+            font-size: 1rem;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, 0.5);
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+<div id="3d-graph"></div>
+
+<script>
+
+    const typeColors = {
+        'ble_server': '#0066ff',
+
+        'ssid': '#ffff99',
+        'station': '#ffcc33',
+        'access_point': '#ff9900',
+
+        'endpoint': '#33cc33',
+        'gateway': '#006600'
+    };
+
+    const Graph = ForceGraph3D({
+        extraRenderers: [new THREE.CSS2DRenderer()]
+    })
+    (document.getElementById('3d-graph'))
+        .jsonUrl('bettergraph.json')
+        .nodeLabel('id')
+        .nodeColor(node => typeColors[node.type])
+        .linkDirectionalArrowLength(3.5)
+        .linkDirectionalArrowRelPos(1)
+        /*
+        .linkThreeObjectExtend(true)
+        .linkThreeObject(link => {
+            const sprite = new SpriteText(link.edge.type);
+            sprite.color = 'lightgrey';
+            sprite.textHeight = 1.5;
+            return sprite;
+        })
+        .linkPositionUpdate((sprite, {start, end}) => {
+            const middlePos = Object.assign(...['x', 'y', 'z'].map(c => ({
+                [c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
+            })));
+            Object.assign(sprite.position, middlePos);
+        })
+         */
+        .nodeThreeObject(node => {
+            const nodeEl = document.createElement('div');
+
+            switch (node.type) {
+                case 'ssid':
+                    nodeEl.innerHTML = `<small>${node.entity}</small>`
+                    break;
+
+                case 'access_point':
+                    var ap = node.entity;
+                    nodeEl.innerHTML = `
+                        <center>
+                            <b>${ap.hostname}</b> (${ap.encryption})
+                            <br/>
+                            ${ap.mac}
+                            ${ap.vendor? '<br/>(' + ap.vendor + ')' : ''}
+                            ${ap.wps.length? '<br/>' + JSON.stringify(ap.wps) : ''}
+                        </center>`;
+                    break;
+
+                case 'station':
+                    var sta = node.entity;
+                    nodeEl.innerHTML = `
+                        <center>
+                            ${sta.mac}
+                            ${sta.vendor? '<br/>(' + sta.vendor + ')' : ''}
+                        </center>`;
+                    break;
+
+                case 'ble_server':
+                    var dev = node.entity;
+                    nodeEl.innerHTML = `
+                        <center>
+                            ${dev.mac}
+                            ${dev.vendor? '<br/>(' + dev.vendor + ')' : ''}
+                        </center>`;
+                    break;
+
+                case 'endpoint':
+                    var ip = node.entity;
+                    nodeEl.innerHTML = `
+                        <center>
+                            ${ip.hostname? '<b>' + ip.hostname + '</b><br/>' : ''}
+                            ${ip.ipv4? ip.ipv4 + '<br/>' : ''}
+                            ${ip.ipv6? ip.ipv6 + '<br/>' : ''}
+                            <br/>
+                            ${ip.mac}
+                            ${ip.vendor? '<br/>(' + ip.vendor + ')' : ''}
+                            ${ip.meta.values.length? '<br/>' + JSON.stringify(ip.meta.values) : ''}
+                        </center>`;
+                    break;
+
+                case 'gateway':
+                    var ip = node.entity;
+                    nodeEl.innerHTML = `
+                        <center>
+                            ${ip.hostname? '<b>' + ip.hostname + '</b><br/>' : ''}
+                            ${ip.ipv4? ip.ipv4 + '<br/>' : ''}
+                            ${ip.ipv6? ip.ipv6 + '<br/>' : ''}
+                            <br/>
+                            ${ip.mac}
+                            ${ip.vendor? '<br/>(' + ip.vendor + ')' : ''}
+                            ${ip.meta.values.length? '<br/>' + JSON.stringify(ip.meta.values) : ''}
+                        </center>`;
+                    break;
+
+                default:
+                    nodeEl.innerHTML = `<b>${node.id}</b>`
+            }
+
+            nodeEl.style.color = typeColors[node.type];
+            nodeEl.className = 'node-label';
+            return new THREE.CSS2DObject(nodeEl);
+        })
+        .nodeThreeObjectExtend(true);
+</script>
+</body>

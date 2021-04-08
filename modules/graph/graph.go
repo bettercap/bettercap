@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bettercap/bettercap/session"
 	"github.com/evilsocket/islazy/fs"
@@ -204,28 +205,28 @@ func (g *Graph) Dot(filter, layout, name string, disconnected bool) (string, int
 	}
 
 	/*
-	data += "\n"
-	data += "node [style=filled height=0.55 fontname=\"Verdana\" fontsize=10];\n"
-	data += "subgraph legend {\n" +
-			"graph[style=dotted];\n" +
-			"label = \"Legend\";\n"
+		data += "\n"
+		data += "node [style=filled height=0.55 fontname=\"Verdana\" fontsize=10];\n"
+		data += "subgraph legend {\n" +
+				"graph[style=dotted];\n" +
+				"label = \"Legend\";\n"
 
-	var types []NodeType
-	for nodeType, _ := range typeMap {
-		types = append(types, nodeType)
-		node := Node{
-			Type:        nodeType,
-			Annotations: nodeTypeDescs[nodeType],
-			Dummy:       true,
+		var types []NodeType
+		for nodeType, _ := range typeMap {
+			types = append(types, nodeType)
+			node := Node{
+				Type:        nodeType,
+				Annotations: nodeTypeDescs[nodeType],
+				Dummy:       true,
+			}
+			data += fmt.Sprintf("  %s\n", node.Dot(false))
 		}
-		data += fmt.Sprintf("  %s\n", node.Dot(false))
-	}
 
-	ntypes := len(types)
-	for i := 0; i < ntypes - 1; i++ {
-		data += fmt.Sprintf("  \"%s\" -> \"%s\" [style=invis];\n", types[i], types[i + 1])
-	}
-	data += "}\n"
+		ntypes := len(types)
+		for i := 0; i < ntypes - 1; i++ {
+			data += fmt.Sprintf("  \"%s\" -> \"%s\" [style=invis];\n", types[i], types[i + 1])
+		}
+		data += "}\n"
 	*/
 
 	data += "\n"
@@ -233,6 +234,66 @@ func (g *Graph) Dot(filter, layout, name string, disconnected bool) (string, int
 	data += "}"
 
 	return data, size, discarded, nil
+}
+
+func (g *Graph) JSON(filter string, disconnected bool) (string, int, int, error) {
+	size := 0
+	discarded := 0
+
+	type link struct {
+		Source string      `json:"source"`
+		Target string      `json:"target"`
+		Edge   interface{} `json:"edge"`
+	}
+
+	type data struct {
+		Nodes []map[string]interface{} `json:"nodes"`
+		Links []link                   `json:"links"`
+	}
+
+	jsData := data{
+		Nodes: make([]map[string]interface{}, 0),
+		Links: make([]link, 0),
+	}
+
+	if err := g.Traverse(filter, func(node *Node) {
+		include := false
+		if disconnected || node.Type == SSID { // we don't create backwards edges for SSID
+			include = true
+		} else {
+			include = g.edges.IsConnected(node.String())
+		}
+
+		if include {
+			size++
+
+			if nm, err := node.ToMap(); err != nil {
+				panic(err)
+			} else {
+				// patch id
+				nm["id"] = node.String()
+				jsData.Nodes = append(jsData.Nodes, nm)
+			}
+		} else {
+			discarded++
+		}
+	}, func(left *Node, edges []Edge, right *Node) {
+		for _, edge := range edges {
+			jsData.Links = append(jsData.Links, link{
+				Source: left.String(),
+				Target: right.String(),
+				Edge:   edge,
+			})
+		}
+	}); err != nil {
+		return "", 0, 0, err
+	}
+
+	if raw, err := json.Marshal(jsData); err != nil {
+		return "", 0, 0, err
+	} else {
+		return string(raw), size, discarded, nil
+	}
 }
 
 func (g *Graph) FindNode(t NodeType, id string) (*Node, error) {
