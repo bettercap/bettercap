@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+var Loaded = (* Graph)(nil)
+
 type NodeCallback func(*Node)
 type EdgeCallback func(*Node, []Edge, *Node)
 
@@ -24,10 +26,11 @@ func NewGraph(path string) (*Graph, error) {
 	if edges, err := LoadEdges(path); err != nil {
 		return nil, err
 	} else {
-		return &Graph{
+		Loaded = &Graph{
 			path:  path,
 			edges: edges,
-		}, nil
+		}
+		return Loaded, nil
 	}
 }
 
@@ -145,6 +148,10 @@ func (g *Graph) Traverse(root string, onNode NodeCallback, onEdge EdgeCallback) 
 	}
 
 	return nil
+}
+
+func (g *Graph) IsConnected(nodeType string, nodeID string) bool {
+	return g.edges.IsConnected(fmt.Sprintf("%s_%s", nodeType, nodeID))
 }
 
 func (g *Graph) Dot(filter, layout, name string, disconnected bool) (string, int, int, error) {

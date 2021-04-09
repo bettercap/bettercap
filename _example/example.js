@@ -4,7 +4,7 @@ require("telegram")
 var fakeESSID = random.String(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 var fakeBSSID = random.Mac()
 
-function graph(who, where) {
+function createGraph(who, where) {
     // generates a .dot file with the graph for this mac
     run('graph.to_dot ' + who);
     // uses graphviz to make a png of it
@@ -14,7 +14,7 @@ function graph(who, where) {
 function onDeauthentication(event) {
     var data = event.data;
 
-    graph(data.address1, '/tmp/graph_deauth.png');
+    createGraph(data.address1, '/tmp/graph_deauth.png');
 
     var message = '🚨 Detected deauthentication frame:\n\n' +
         // 'Time: ' + event.time + "\n" +
@@ -34,7 +34,7 @@ function onDeauthentication(event) {
 function onNewAP(event){
     var ap = event.data;
     if(ap.hostname == fakeESSID) {
-        graph(ap.mac, '/tmp/graph_ap.png');
+        createGraph(ap.mac, '/tmp/graph_ap.png');
 
         var message = '🦠 Detected rogue AP:\n\n' +
             // 'Time: ' + event.time + "\n" +
@@ -52,7 +52,7 @@ function onHandshake(event){
     var data = event.data;
     var what = 'handshake';
 
-    graph(data.station, '/tmp/graph_handshake.png');
+    createGraph(data.station, '/tmp/graph_handshake.png');
 
     if(data.pmkid != null) {
         what = "RSN PMKID";
@@ -77,8 +77,8 @@ function onHandshake(event){
 function onNewNode(event) {
     var node = event.data;
 
-    if(node.type != 'ssid' && node.type != 'ble_server') {
-        graph(node.id, '/tmp/graph_node.png');
+    if(node.type != 'ssid' && node.type != 'ble_server' && graph.IsConnected(node.type, node.id)) {
+        createGraph(node.id, '/tmp/graph_node.png');
 
         var message = '🖥️  Detected previously unknown ' + node.type + ':\n\n' +
             'Type: ' + node.type + "\n" +

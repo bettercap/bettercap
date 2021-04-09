@@ -6,6 +6,7 @@ import (
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/plugin"
 	"github.com/evilsocket/islazy/str"
 	"os"
 	"path/filepath"
@@ -48,6 +49,10 @@ type Module struct {
 	iface    *Node
 	eventBus session.EventBus
 	wLock    sync.Mutex
+}
+
+func init() {
+	plugin.Defines["graph"] = graphPackage{}
 }
 
 func NewModule(s *session.Session) *Module {
@@ -173,8 +178,15 @@ func (mod *Module) updateSettings() error {
 		}
 	}
 
-	if mod.db, err = NewGraph(mod.settings.path); err != nil {
-		return err
+	// only reload if needed
+	if mod.db != nil && mod.db.path != mod.settings.path {
+		mod.db = nil
+	}
+
+	if mod.db == nil {
+		if mod.db, err = NewGraph(mod.settings.path); err != nil {
+			return err
+		}
 	}
 
 	return nil

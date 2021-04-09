@@ -3,7 +3,6 @@ package session
 import (
 	"errors"
 	"fmt"
-	"github.com/evilsocket/islazy/plugin"
 	"net"
 	"os"
 	"regexp"
@@ -25,6 +24,7 @@ import (
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/islazy/ops"
+	"github.com/evilsocket/islazy/plugin"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 )

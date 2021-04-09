@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 	"unicode"
 )
@@ -153,7 +154,7 @@ func (n Node) Dot(isTarget bool) string {
 	return fmt.Sprintf("\"%s\" [%s, label=\"%s\"];",
 		n.String(),
 		style,
-		n.Label())
+		strings.ReplaceAll(n.Label(), "\"", "\\\""))
 }
 
 func (n Node) ToMap() (map[string]interface{}, error) {
