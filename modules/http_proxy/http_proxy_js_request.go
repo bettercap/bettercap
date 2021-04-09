@@ -20,6 +20,7 @@ type JSRequest struct {
 	Path        string
 	Query       string
 	Hostname    string
+	Port        string
 	ContentType string
 	Headers     string
 	Body        string
@@ -58,7 +59,8 @@ func NewJSRequest(req *http.Request) *JSRequest {
 		Method:      req.Method,
 		Version:     fmt.Sprintf("%d.%d", req.ProtoMajor, req.ProtoMinor),
 		Scheme:      req.URL.Scheme,
-		Hostname:    req.Host,
+		Hostname:    req.URL.Hostname(),
+		Port:        req.URL.Port(),
 		Path:        req.URL.Path,
 		Query:       req.URL.RawQuery,
 		ContentType: cType,
@@ -73,7 +75,17 @@ func NewJSRequest(req *http.Request) *JSRequest {
 }
 
 func (j *JSRequest) NewHash() string {
-	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s.%s.%s", j.Client["IP"], j.Method, j.Version, j.Scheme, j.Hostname, j.Path, j.Query, j.ContentType, j.Headers)
+	hash := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s.%s.%s.%s",
+		j.Client["IP"],
+		j.Method,
+		j.Version,
+		j.Scheme,
+		j.Hostname,
+		j.Port,
+		j.Path,
+		j.Query,
+		j.ContentType,
+		j.Headers)
 	hash += "." + j.Body
 	return hash
 }
@@ -114,7 +126,7 @@ func (j *JSRequest) SetHeader(name, value string) {
 	value = strings.TrimSpace(value)
 
 	if strings.ToLower(name) == "content-type" {
-		j.ContentType = value;
+		j.ContentType = value
 	}
 
 	headers := strings.Split(j.Headers, "\r\n")
@@ -194,7 +206,12 @@ func (j *JSRequest) ParseForm() map[string]string {
 }
 
 func (j *JSRequest) ToRequest() (req *http.Request) {
-	url := fmt.Sprintf("%s://%s:%s%s?%s", j.Scheme, j.req.URL.Hostname(), j.req.URL.Port(), j.Path, j.Query)
+	portPart := ""
+	if j.Port != "" {
+		portPart = fmt.Sprintf(":%s", j.Port)
+	}
+
+	url := fmt.Sprintf("%s://%s%s%s?%s", j.Scheme, j.Hostname, portPart, j.Path, j.Query)
 	if j.Body == "" {
 		req, _ = http.NewRequest(j.Method, url, j.req.Body)
 	} else {
