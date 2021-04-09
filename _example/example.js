@@ -36,7 +36,7 @@ function onNewAP(event){
     if(ap.hostname == fakeESSID) {
         graph(ap.mac, '/tmp/graph_ap.png');
 
-        var message = '🚨 Detected possible rogue AP:\n\n' +
+        var message = '🦠 Detected rogue AP:\n\n' +
             // 'Time: ' + event.time + "\n" +
             // 'GPS: lat=' + session.GPS.Latitude + " lon=" + session.GPS.Longitude + " updated_at=" +
             //session.GPS.Updated.String() + "\n\n" +
@@ -74,6 +74,22 @@ function onHandshake(event){
     sendPhoto("/tmp/graph_handshake.png");
 }
 
+function onNewNode(event) {
+    var node = event.data;
+
+    if(node.type != 'ssid' && node.type != 'ble_server') {
+        graph(node.id, '/tmp/graph_node.png');
+
+        var message = '🖥️  Detected previously unknown ' + node.type + ':\n\n' +
+            'Type: ' + node.type + "\n" +
+            'MAC: ' + node.id;
+
+        // send to telegram bot
+        sendMessage(message);
+        sendPhoto("/tmp/graph_node.png");
+    }
+}
+
 function onTick(event) {
     run('wifi.probe ' + fakeBSSID + ' ' + fakeESSID);
 }
@@ -104,3 +120,5 @@ onEvent('wifi.deauthentication', onDeauthentication);
 onEvent('wifi.client.handshake', onHandshake);
 // register for wifi.ap.new events
 onEvent('wifi.ap.new', onNewAP);
+
+onEvent('graph.node.new', onNewNode);

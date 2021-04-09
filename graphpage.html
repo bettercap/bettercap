@@ -22,6 +22,16 @@
 <div id="3d-graph"></div>
 
 <script>
+    const typeNodeColors = {
+        'ble_server': '#0066ff',
+
+        'ssid': 'transparent',
+        'station': '#ffcc33',
+        'access_point': '#ff9900',
+
+        'endpoint': '#33cc33',
+        'gateway': '#006600'
+    };
 
     const typeColors = {
         'ble_server': '#0066ff',
@@ -40,7 +50,7 @@
     (document.getElementById('3d-graph'))
         .jsonUrl('bettergraph.json')
         .nodeLabel('id')
-        .nodeColor(node => typeColors[node.type])
+        .nodeColor(node => typeNodeColors[node.type])
         .linkDirectionalArrowLength(3.5)
         .linkDirectionalArrowRelPos(1)
         /*
@@ -130,8 +140,20 @@
 
             nodeEl.style.color = typeColors[node.type];
             nodeEl.className = 'node-label';
+
             return new THREE.CSS2DObject(nodeEl);
         })
-        .nodeThreeObjectExtend(true);
+        .nodeThreeObjectExtend(true)
+        .onNodeClick(node => {
+            // Aim at node from outside it
+            const distance = 40;
+            const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+
+            Graph.cameraPosition(
+                { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
+                node, // lookAt ({ x, y, z })
+                3000  // ms transition duration
+            );
+        });
 </script>
 </body>

@@ -168,7 +168,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		})
 
 		if target != nil {
-			mod.Info("saving extra %s frame (%d bytes) for %s",
+			mod.Debug("saving extra %s frame (%d bytes) for %s",
 				dot11.Type.String(),
 				len(packet.Data()),
 				target.String())
