@@ -22,7 +22,9 @@ function onDeauthentication(event) {
         'Reason: ' + data.reason + "\n" +
         'Address1: ' + data.address1 + "\n" +
         'Address2: ' + data.address2 + "\n" +
-        'Address3: ' + data.address3;
+        'Address3: ' + data.address3 + "\n"
+        'AP:\n' + JSON.stringify(data.ap, null, 2);
+
 
     // send to telegram bot
     sendMessage(message);

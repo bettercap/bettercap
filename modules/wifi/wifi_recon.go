@@ -202,11 +202,20 @@ func (mod *WiFiModule) discoverDeauths(radiotap *layers.RadioTap, dot11 *layers.
 		reason = deauth.Reason.String()
 	}
 
+	// trigger events only if the deauth is coming from an AP we know of
+	source := dot11.Address1.String()
+	ap, found := mod.Session.WiFi.Get(source)
+	if !found {
+		mod.Debug("skipping deauth frame from %s", source)
+		return
+	}
+
 	mod.Debug("deauth radio %#v", radiotap)
 
 	mod.Session.Events.Add("wifi.deauthentication", DeauthEvent{
 		RSSI:     radiotap.DBMAntennaSignal,
-		Address1: dot11.Address1.String(),
+		AP:       ap,
+		Address1: source,
 		Address2: dot11.Address2.String(),
 		Address3: dot11.Address3.String(),
 		Reason:   reason,
