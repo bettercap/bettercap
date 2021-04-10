@@ -305,7 +305,6 @@ func SetInterfaceTxPower(name string, txpower int) error {
 }
 
 func GatewayProvidedByUser(iface *Endpoint, gateway string) (*Endpoint, error) {
-	Debug("GatewayProvidedByUser(%s) [cmd=%v opts=%v parser=%v]", gateway, IPv4RouteCmd, IPv4RouteCmdOpts, IPv4RouteParser)
 	if IPv4Validator.MatchString(gateway) {
 		Debug("valid gateway ip %s", gateway)
 		// we have the address, now we need its mac
