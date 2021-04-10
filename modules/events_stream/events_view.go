@@ -129,6 +129,8 @@ func (mod *EventsStream) Render(output io.Writer, e session.Event) {
 		mod.viewUpdateEvent(output, e)
 	} else if strings.HasPrefix(e.Tag, "graph.") {
 		mod.viewGraphEvent(output, e)
+	} else if e.Tag == "gateway.change" {
+		mod.viewGatewayEvent(output, e)
 	} else if e.Tag != "tick" {
 		fmt.Fprintf(output, "[%s] [%s] %v\n", e.Time.Format(mod.timeFormat), tui.Green(e.Tag), e)
 	}

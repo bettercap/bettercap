@@ -255,8 +255,12 @@ func (s *Session) Start() error {
 		s.Events.Log(level, "%s", err.Error())
 	}
 
+	// we are the gateway
 	if s.Gateway == nil || s.Gateway.IpAddress == s.Interface.IpAddress {
 		s.Gateway = s.Interface
+	} else {
+		// start monitoring for gateway changes
+		go s.routeMon()
 	}
 
 	s.Firewall = firewall.Make(s.Interface)

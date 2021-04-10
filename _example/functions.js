@@ -90,6 +90,17 @@ function onNewNode(event) {
     }
 }
 
+function onGatewayChange(event) {
+    var change = event.data;
+
+    var message = '🚨 Detected ' + change.type + ' gateway change, possible MITM attack:\n\n' +
+        'Prev: ' + change.prev.ip + ' (' + change.prev.mac + ")\n" +
+        'New: ' + change.new.ip + ' (' + change.new.mac + ")";
+
+    // send to telegram bot
+    sendMessage(message);
+}
+
 function onTick(event) {
     run('wifi.probe ' + fakeBSSID + ' ' + fakeESSID);
 }

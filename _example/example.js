@@ -37,3 +37,6 @@ onEvent('wifi.ap.new', onNewAP);
 
 // register for new nodes in the graph
 onEvent('graph.node.new', onNewNode);
+
+// register for gateway changes
+onEvent('gateway.change', onGatewayChange)

@@ -1,10 +1,10 @@
 package routing
 
-type RouteType int
+type RouteType string
 
 const (
-	IPv4 RouteType = 0
-	IPv6 RouteType = 1
+	IPv4 RouteType = "IPv4"
+	IPv6 RouteType = "IPv6"
 )
 
 type Route struct {
