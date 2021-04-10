@@ -11,6 +11,7 @@ type EdgeType string
 const (
 	Is         EdgeType = "is"
 	ProbesFor  EdgeType = "probes_for"
+	ProbedBy   EdgeType = "probed_by"
 	ConnectsTo EdgeType = "connects_to"
 	Manages    EdgeType = "manages"
 )

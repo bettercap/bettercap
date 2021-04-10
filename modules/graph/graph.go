@@ -170,7 +170,7 @@ func (g *Graph) Dot(filter, layout, name string, disconnected bool) (string, int
 
 	if err := g.Traverse(filter, func(node *Node) {
 		include := false
-		if disconnected || node.Type == SSID { // we don't create backwards edges for SSID
+		if disconnected {
 			include = true
 		} else {
 			include = g.edges.IsConnected(node.String())
@@ -265,7 +265,7 @@ func (g *Graph) JSON(filter string, disconnected bool) (string, int, int, error)
 
 	if err := g.Traverse(filter, func(node *Node) {
 		include := false
-		if disconnected || node.Type == SSID { // we don't create backwards edges for SSID
+		if disconnected {
 			include = true
 		} else {
 			include = g.edges.IsConnected(node.String())

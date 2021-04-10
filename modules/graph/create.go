@@ -55,13 +55,13 @@ func (mod *Module) createDot11ApGraph(ap *network.AccessPoint) (*Node, bool, err
 	return node, isNew, nil
 }
 
-func (mod *Module) createDot11SSIDGraph(hw string, ssid string) (*Node, bool, error) {
-	node, err := mod.db.FindNode(SSID, hw)
+func (mod *Module) createDot11SSIDGraph(hex string, ssid string) (*Node, bool, error) {
+	node, err := mod.db.FindNode(SSID, hex)
 	isNew := node == nil
 	if err != nil {
 		return nil, false, err
 	} else if isNew {
-		if node, err = mod.db.CreateNode(SSID, hw, ssid, ""); err != nil {
+		if node, err = mod.db.CreateNode(SSID, hex, ssid, ""); err != nil {
 			return nil, false, err
 		}
 	} else if err = mod.db.UpdateNode(node); err != nil {
@@ -117,7 +117,7 @@ func (mod *Module) createDot11Graph(ap *network.AccessPoint, station *network.St
 }
 
 func (mod *Module) createDot11ProbeGraph(ssid string, station *network.Station) (*Node, bool, *Node, bool, error) {
-	apNode, apIsNew, err := mod.createDot11SSIDGraph(station.HwAddress+fmt.Sprintf(":PROBE:%x", ssid), ssid)
+	ssidNode, ssidIsNew, err := mod.createDot11SSIDGraph(fmt.Sprintf("%x", ssid), ssid)
 	if err != nil {
 		return nil, false, nil, false, err
 	}
@@ -128,15 +128,23 @@ func (mod *Module) createDot11ProbeGraph(ssid string, station *network.Station) 
 	}
 
 	// create relations if needed
-	if probes_for, err := mod.db.FindLastRecentEdgeOfType(staNode, apNode, ProbesFor, edgeStaleTime); err != nil {
+	if probes_for, err := mod.db.FindLastRecentEdgeOfType(staNode, ssidNode, ProbesFor, edgeStaleTime); err != nil {
 		return nil, false, nil, false, err
 	} else if probes_for == nil {
-		if probes_for, err = mod.db.CreateEdge(staNode, apNode, ProbesFor); err != nil {
+		if probes_for, err = mod.db.CreateEdge(staNode, ssidNode, ProbesFor); err != nil {
 			return nil, false, nil, false, err
 		}
 	}
 
-	return apNode, apIsNew, staNode, staIsNew, nil
+	if probed_by, err := mod.db.FindLastRecentEdgeOfType(ssidNode, staNode, ProbedBy, edgeStaleTime); err != nil {
+		return nil, false, nil, false, err
+	} else if probed_by == nil {
+		if probed_by, err = mod.db.CreateEdge(ssidNode, staNode, ProbedBy); err != nil {
+			return nil, false, nil, false, err
+		}
+	}
+
+	return ssidNode, ssidIsNew, staNode, staIsNew, nil
 }
 
 func (mod *Module) createBLEServerGraph(dev *network.BLEDevice) (*Node, bool, error) {
