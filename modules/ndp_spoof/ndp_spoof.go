@@ -53,12 +53,6 @@ func NewNDPSpoofer(s *session.Session) *NDPSpoofer {
 			return mod.Stop()
 		}))
 
-	mod.AddHandler(session.NewModuleHandler("ndp.ban off", "",
-		"Stop NDP spoofer.",
-		func(args []string) error {
-			return mod.Stop()
-		}))
-
 	return mod
 }
 
