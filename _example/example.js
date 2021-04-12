@@ -4,10 +4,6 @@ require("functions")
 
 log("session script loaded, fake AP is " + fakeESSID);
 
-// enable the graph module so we can extract more historical info
-// for each device we see
-run('graph on')
-
 // create an empty ticker so we can run commands every few seconds
 // this will inject decoy wifi client probes used to detect KARMA
 // attacks and in general rogue access points
@@ -34,9 +30,6 @@ onEvent('wifi.client.handshake', onHandshake);
 
 // register for wifi.ap.new events (used to detect rogue APs)
 onEvent('wifi.ap.new', onNewAP);
-
-// register for new nodes in the graph
-onEvent('graph.node.new', onNewNode);
 
 // register for gateway changes
 onEvent('gateway.change', onGatewayChange)

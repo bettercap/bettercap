@@ -1,18 +1,8 @@
 var fakeESSID = random.String(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 var fakeBSSID = random.Mac()
 
-// uses graph.to_dot and graphviz to generate a png graph
-function createGraph(who, where) {
-    // generates a .dot file with the graph for this mac
-    run('graph.to_dot ' + who);
-    // uses graphviz to make a png of it
-    run('!dot -Tpng bettergraph.dot > ' + where);
-}
-
 function onDeauthentication(event) {
     var data = event.data;
-
-    createGraph(data.address1, '/tmp/graph_deauth.png');
 
     var message = '🚨 Detected deauthentication frame:\n\n' +
         // 'Time: ' + event.time + "\n" +
@@ -28,14 +18,11 @@ function onDeauthentication(event) {
 
     // send to telegram bot
     sendMessage(message);
-    sendPhoto("/tmp/graph_deauth.png");
 }
 
 function onNewAP(event){
     var ap = event.data;
     if(ap.hostname == fakeESSID) {
-        createGraph(ap.mac, '/tmp/graph_ap.png');
-
         var message = '🦠 Detected rogue AP:\n\n' +
             // 'Time: ' + event.time + "\n" +
             // 'GPS: lat=' + session.GPS.Latitude + " lon=" + session.GPS.Longitude + " updated_at=" +
@@ -44,15 +31,12 @@ function onNewAP(event){
 
         // send to telegram bot
         sendMessage(message);
-        sendPhoto("/tmp/graph_ap.png");
     }
 }
 
 function onHandshake(event){
     var data = event.data;
     var what = 'handshake';
-
-    createGraph(data.station, '/tmp/graph_handshake.png');
 
     if(data.pmkid != null) {
         what = "RSN PMKID";
@@ -71,23 +55,6 @@ function onHandshake(event){
 
     // send to telegram bot
     sendMessage(message);
-    sendPhoto("/tmp/graph_handshake.png");
-}
-
-function onNewNode(event) {
-    var node = event.data;
-
-    if(node.type != 'ssid' && node.type != 'ble_server' && graph.IsConnected(node.type, node.id)) {
-        createGraph(node.id, '/tmp/graph_node.png');
-
-        var message = '🖥️  Detected previously unknown ' + node.type + ':\n\n' +
-            'Type: ' + node.type + "\n" +
-            'MAC: ' + node.id;
-
-        // send to telegram bot
-        sendMessage(message);
-        sendPhoto("/tmp/graph_node.png");
-    }
 }
 
 function onGatewayChange(event) {
