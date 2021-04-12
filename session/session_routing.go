@@ -25,7 +25,9 @@ func (s *Session) routeMon() {
 
 	s.Events.Log(log.INFO, "gateway monitor started ...")
 
-	gw4 = s.Gateway
+	if gw4 = s.Gateway; gw4 == nil {
+		gw4 = &network.Endpoint{}
+	}
 
 	gwIP6, err = routing.Gateway(routing.IPv6, s.Interface.Name())
 	if err != nil {
@@ -43,10 +45,12 @@ func (s *Session) routeMon() {
 		time.Sleep(5 * time.Second)
 
 		gw4now, err := network.FindGateway(s.Interface)
+		if gw4now == nil {
+			gw4now = &network.Endpoint{}
+		}
+
 		if err != nil {
 			s.Events.Log(log.ERROR, "error getting ipv4 gateway: %v", err)
-		} else if gw4now == nil {
-			s.Events.Log(log.ERROR, "null ipv4 gateway")
 		} else {
 			if gw4now.IpAddress != gw4.IpAddress || gw4now.HwAddress != gw4.HwAddress {
 				s.Events.Add("gateway.change", GatewayChange{
