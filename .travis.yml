@@ -138,8 +138,6 @@ matrix:
       <<: *linux_deps
       script:
         - env GO111MODULE=on make test
-      after_success:
-        - base <(curl -s https://codecov.io/bash)
 
 deploy:
   provider: releases
