@@ -139,6 +139,30 @@ matrix:
       script:
         - env GO111MODULE=on make test
 
+    - name: OSX - tests
+      if: tag IS blank
+      os: osx
+      arch: amd64
+      allow_failures:
+        - go: master
+      fast_finish: true
+      addons:
+        homebrew:
+          packages:
+            - libpcap
+            - libusb
+            - p7zip
+          update: true
+      env:
+        - TARGET_OS=darwin
+        - TARGET_ARCH=amd64
+        - PATH="/usr/local/opt/libpcap/bin:$PATH"
+        - LDFLAGS="-L/usr/local/opt/libpcap/lib $LDFLAGS"
+        - CPPFLAGS="-I/usr/local/opt/libpcap/include $CPPFLAGS"
+        - PKG_CONFIG_PATH="/usr/local/opt/libpcap/lib/pkgconfig:$PKG_CONFIG_PATH"
+      script:
+        - env GO111MODULE=on make test
+
 deploy:
   provider: releases
   api_key:
