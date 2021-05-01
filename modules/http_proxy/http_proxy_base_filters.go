@@ -116,13 +116,7 @@ func (p *HTTPProxy) onResponseFilter(res *http.Response, ctx *goproxy.ProxyCtx) 
 			if jsres != nil {
 				// the response has been changed by the script
 				p.logResponseAction(res.Request, jsres)
-				raw, err := ioutil.ReadAll(jsres.ToResponse(res.Request).Body)
-				if err == nil {
-					html := string(raw)
-					res.Header.Set("Content-Length", strconv.Itoa(len(html)))
-					// reset the response body to the original unread state
-					res.Body = ioutil.NopCloser(strings.NewReader(html))
-				}
+				return jsres.ToResponse(res.Request)
 			}
 		}
 
