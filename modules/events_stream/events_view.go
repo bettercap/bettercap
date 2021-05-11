@@ -2,11 +2,12 @@ package events_stream
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/session"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/session"
 
 	"github.com/bettercap/bettercap/modules/net_sniff"
 	"github.com/bettercap/bettercap/modules/syn_scan"
@@ -119,6 +120,8 @@ func (mod *EventsStream) Render(output io.Writer, e session.Event) {
 		mod.viewBLEEvent(output, e)
 	} else if strings.HasPrefix(e.Tag, "hid.") {
 		mod.viewHIDEvent(output, e)
+	} else if strings.HasPrefix(e.Tag, "gps.") {
+		mod.viewGPSEvent(output, e)
 	} else if strings.HasPrefix(e.Tag, "mod.") {
 		mod.viewModuleEvent(output, e)
 	} else if strings.HasPrefix(e.Tag, "net.sniff.") {
