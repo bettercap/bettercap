@@ -7,7 +7,7 @@ require (
 	github.com/adrianmo/go-nmea v1.3.0
 	github.com/antchfx/jsonquery v1.1.4
 	github.com/antchfx/xpath v1.1.11 // indirect
-	github.com/bettercap/gatt v0.0.0-20210412143611-7a3c1c59fe92
+	github.com/bettercap/gatt v0.0.0-20210514133428-df6e615f2f67
 	github.com/bettercap/nrf24 v0.0.0-20190219153547-aa37e6d0e0eb
 	github.com/bettercap/readline v0.0.0-20210228151553-655e48bcb7bf
 	github.com/bettercap/recording v0.0.0-20190408083647-3ce1dcf032e3
@@ -40,10 +40,8 @@ require (
 	github.com/robertkrimen/otto v0.0.0-20200922221731-ef014fd054ac
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	github.com/thoj/go-ircevent v0.0.0-20190807115034-8e7ce4b5a1eb
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1
+	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
-	honnef.co/go/tools v0.0.0-2019.2.1 // indirect
 )
