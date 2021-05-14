@@ -102,9 +102,19 @@ func TestCoreExec(t *testing.T) {
 		stdout string
 	}{
 		{"foo", []string{}, "", `exec: "foo": executable file not found in $PATH`, ""},
-		{"ps", []string{"-someinvalidflag"}, "", "exit status 1", ""},
+		{"ps", []string{"-someinvalidflag"},
+			`error: process ID list syntax error
+
+Usage:
+ ps [options]
+
+ Try 'ps --help <simple|list|output|threads|misc|all>'
+  or 'ps --help <s|l|o|t|m|a>'
+ for additional help text.
+
+For more details see ps(1).`, "exit status 1", ""},
 		{"true", []string{}, "", "", ""},
-		{"head", []string{"/path/to/file/that/does/not/exist"}, "", "exit status 1", ""},
+		{"head", []string{"/path/to/file/that/does/not/exist"}, "/usr/bin/head: cannot open '/path/to/file/that/does/not/exist' for reading: No such file or directory", "exit status 1", ""},
 	}
 
 	for _, u := range units {
