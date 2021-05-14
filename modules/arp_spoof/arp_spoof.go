@@ -65,7 +65,7 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 			mod.Warning("arp cache restoration after spoofing disabled")
 		} else {
 			mod.skipRestore = false
-			mod.Info("arp cache restoration after spoofing enabled")
+			mod.Debug("arp cache restoration after spoofing enabled")
 		}
 	})
 
