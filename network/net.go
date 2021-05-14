@@ -279,7 +279,11 @@ func SetWiFiRegion(region string) error {
 
 func ActivateInterface(name string) error {
 	if out, err := core.Exec("ifconfig", []string{name, "up"}); err != nil {
-		return err
+		if out != "" {
+			return fmt.Errorf("%v: %s", err, out)
+		} else {
+			return err
+		}
 	} else if out != "" {
 		return fmt.Errorf("unexpected output while activating interface %s: %s", name, out)
 	}
@@ -289,8 +293,7 @@ func ActivateInterface(name string) error {
 func SetInterfaceTxPower(name string, txpower int) error {
 	if core.HasBinary("iw") {
 		Debug("SetInterfaceTxPower(%s, %d) iw based", name, txpower)
-		if _, err := core.Exec("iw", []string{"dev", name, "set", "txpower", "fixed", fmt.Sprintf("%d",
-			txpower)}); err != nil {
+		if _, err := core.Exec("iw", []string{"dev", name, "set", "txpower", "fixed", fmt.Sprintf("%d", txpower)}); err != nil {
 			return err
 		}
 	} else if core.HasBinary("iwconfig") {
