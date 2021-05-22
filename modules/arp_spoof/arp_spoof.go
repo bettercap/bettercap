@@ -175,7 +175,7 @@ func (mod *ArpSpoofer) Start() error {
 		gwIP := mod.Session.Gateway.IP
 		myMAC := mod.Session.Interface.HW
 		for mod.Running() {
-			mod.arpSpoofTargets(gwIP, myMAC, true, false)
+			mod.arpSpoofTargets(gwIP, myMAC, true, true)
 			for _, address := range neighbours {
 				if !mod.Session.Skip(address) {
 					mod.arpSpoofTargets(address, myMAC, true, false)
@@ -281,47 +281,51 @@ func (mod *ArpSpoofer) arpSpoofTargets(saddr net.IP, smac net.HardwareAddr, chec
 		}
 	}
 
-	for ip, mac := range mod.getTargets(probe) {
-		if check_running && !mod.Running() {
-			return
-		} else if mod.isWhitelisted(ip, mac) {
-			mod.Debug("%s (%s) is whitelisted, skipping from spoofing loop.", ip, mac)
-			continue
-		} else if saddr.String() == ip {
-			continue
-		}
-
-		rawIP := net.ParseIP(ip)
-		if err, pkt := packets.NewARPReply(saddr, smac, rawIP, mac); err != nil {
-			mod.Error("error while creating ARP spoof packet for %s: %s", ip, err)
-		} else {
-			mod.Debug("sending %d bytes of ARP packet to %s:%s.", len(pkt), ip, mac.String())
-			mod.Session.Queue.Send(pkt)
-		}
-
-		if mod.fullDuplex && isGW {
-			err := error(nil)
-			gwPacket := []byte(nil)
-
-			if isSpoofing {
-				mod.Debug("telling the gw we are %s", ip)
-				// we told the target we're te gateway, not let's tell the
-				// gateway that we are the target
-				if err, gwPacket = packets.NewARPReply(rawIP, ourHW, gwIP, gwHW); err != nil {
-					mod.Error("error while creating ARP spoof packet: %s", err)
-				}
-			} else {
-				mod.Debug("telling the gw %s is %s", ip, mac)
-				// send the gateway the original MAC of the target
-				if err, gwPacket = packets.NewARPReply(rawIP, mac, gwIP, gwHW); err != nil {
-					mod.Error("error while creating ARP spoof packet: %s", err)
-				}
+	if targets := mod.getTargets(probe); len(targets) == 0 {
+		mod.Warning("could not find spoof targets")
+	} else {
+		for ip, mac := range targets {
+			if check_running && !mod.Running() {
+				return
+			} else if mod.isWhitelisted(ip, mac) {
+				mod.Debug("%s (%s) is whitelisted, skipping from spoofing loop.", ip, mac)
+				continue
+			} else if saddr.String() == ip {
+				continue
 			}
 
-			if gwPacket != nil {
-				mod.Debug("sending %d bytes of ARP packet to the gateway", len(gwPacket))
-				if err = mod.Session.Queue.Send(gwPacket); err != nil {
-					mod.Error("error while sending packet: %v", err)
+			rawIP := net.ParseIP(ip)
+			if err, pkt := packets.NewARPReply(saddr, smac, rawIP, mac); err != nil {
+				mod.Error("error while creating ARP spoof packet for %s: %s", ip, err)
+			} else {
+				mod.Debug("sending %d bytes of ARP packet to %s:%s.", len(pkt), ip, mac.String())
+				mod.Session.Queue.Send(pkt)
+			}
+
+			if mod.fullDuplex && isGW {
+				err := error(nil)
+				gwPacket := []byte(nil)
+
+				if isSpoofing {
+					mod.Debug("telling the gw we are %s", ip)
+					// we told the target we're te gateway, not let's tell the
+					// gateway that we are the target
+					if err, gwPacket = packets.NewARPReply(rawIP, ourHW, gwIP, gwHW); err != nil {
+						mod.Error("error while creating ARP spoof packet: %s", err)
+					}
+				} else {
+					mod.Debug("telling the gw %s is %s", ip, mac)
+					// send the gateway the original MAC of the target
+					if err, gwPacket = packets.NewARPReply(rawIP, mac, gwIP, gwHW); err != nil {
+						mod.Error("error while creating ARP spoof packet: %s", err)
+					}
+				}
+
+				if gwPacket != nil {
+					mod.Debug("sending %d bytes of ARP packet to the gateway", len(gwPacket))
+					if err = mod.Session.Queue.Send(gwPacket); err != nil {
+						mod.Error("error while sending packet: %v", err)
+					}
 				}
 			}
 		}
