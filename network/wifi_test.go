@@ -6,26 +6,39 @@ import (
 	"github.com/evilsocket/islazy/data"
 )
 
+// Define test data for dot11 frequency <-> channel tests
+type dot11pair struct {
+	frequency int
+	channel   int
+}
+
+var dot11TestVector = []dot11pair{
+	{2472, 13},
+	{2484, 14},
+	{5825, 165},
+	{5885, 177},
+}
+
 func buildExampleWiFi() *WiFi {
 	aliases := &data.UnsortedKV{}
 	return NewWiFi(buildExampleEndpoint(), aliases, func(ap *AccessPoint) {}, func(ap *AccessPoint) {})
 }
 
 func TestDot11Freq2Chan(t *testing.T) {
-	exampleFreq := 2472
-	exp := 13
-	got := Dot11Freq2Chan(exampleFreq)
-	if got != exp {
-		t.Fatalf("expected '%v', got '%v'", exp, got)
+	for _, entry := range dot11TestVector {
+		gotChannel := Dot11Freq2Chan(entry.frequency)
+		if gotChannel != entry.channel {
+			t.Fatalf("expected '%v', got '%v'", entry.channel, gotChannel)
+		}
 	}
 }
 
 func TestDot11Chan2Freq(t *testing.T) {
-	exampleChan := 13
-	exp := 2472
-	got := Dot11Chan2Freq(exampleChan)
-	if got != exp {
-		t.Fatalf("expected '%v', got '%v'", exp, got)
+	for _, entry := range dot11TestVector {
+		gotFrequency := Dot11Chan2Freq(entry.channel)
+		if gotFrequency != entry.frequency {
+			t.Fatalf("expected '%v', got '%v'", entry.frequency, gotFrequency)
+		}
 	}
 }
 
