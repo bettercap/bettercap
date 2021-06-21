@@ -30,27 +30,23 @@ type UIModule struct {
 	uiPath   string
 }
 
+func getDefaultInstallBase() string {
+	if runtime.GOOS == "windows" {
+		return filepath.Join(os.Getenv("ALLUSERSPROFILE"), "bettercap")
+	}
+	return "/usr/local/share/bettercap/"
+}
+
 func NewUIModule(s *session.Session) *UIModule {
 	mod := &UIModule{
 		SessionModule: session.NewSessionModule("ui", s),
 		client:        github.NewClient(nil),
 	}
 
-	var basePath *session.ModuleParam
-
-	if runtime.GOOS == "windows" {
-		basePath = session.NewStringParameter("ui.basepath",
-			filepath.Join(os.Getenv("ALLUSERSPROFILE"), "bettercap"),
-			"",
-			"UI base installation path.")
-	} else {
-		basePath = session.NewStringParameter("ui.basepath",
-			"/usr/local/share/bettercap/",
-			"",
-			"UI base installation path.")
-	}
-
-	mod.AddParam(basePath)
+	mod.AddParam(session.NewStringParameter("ui.basepath",
+		getDefaultInstallBase(),
+		"",
+		"UI base installation path."))
 
 	mod.AddParam(session.NewStringParameter("ui.tmpfile",
 		filepath.Join(os.TempDir(), "ui.zip"),
