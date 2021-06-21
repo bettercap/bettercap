@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 
 	"github.com/bettercap/bettercap/session"
 
@@ -35,10 +36,21 @@ func NewUIModule(s *session.Session) *UIModule {
 		client:        github.NewClient(nil),
 	}
 
-	mod.AddParam(session.NewStringParameter("ui.basepath",
-		"/usr/local/share/bettercap/",
-		"",
-		"UI base installation path."))
+	var basePath *session.ModuleParam
+
+	if runtime.GOOS == "windows" {
+		basePath = session.NewStringParameter("ui.basepath",
+			filepath.Join(os.Getenv("ALLUSERSPROFILE"), "bettercap"),
+			"",
+			"UI base installation path.")
+	} else {
+		basePath = session.NewStringParameter("ui.basepath",
+			"/usr/local/share/bettercap/",
+			"",
+			"UI base installation path.")
+	}
+
+	mod.AddParam(basePath)
 
 	mod.AddParam(session.NewStringParameter("ui.tmpfile",
 		filepath.Join(os.TempDir(), "ui.zip"),
