@@ -54,6 +54,7 @@ type WiFiModule struct {
 	assocSilent         bool
 	assocOpen           bool
 	assocAcquired       bool
+	csaSilent           bool
 	filterProbeSTA      *regexp.Regexp
 	filterProbeAP       *regexp.Regexp
 	apRunning           bool
@@ -88,6 +89,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		assocSilent:     false,
 		assocOpen:       false,
 		assocAcquired:   false,
+		csaSilent:       false,
 		showManuf:       false,
 		shakesAggregate: true,
 		writes:          &sync.WaitGroup{},
@@ -214,6 +216,28 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	probe.Complete("wifi.probe", s.WiFiCompleterFull)
 
 	mod.AddHandler(probe)
+
+	channelSwitchAnnounce := session.NewModuleHandler("wifi.channel_switch_announce bssid channel ", `wifi\.channel_switch_announce ((?:[a-fA-F0-9:]{11,}))\s+((?:[0-9]+))`,
+		"Start a 802.11 channel hop attack, all client will be force to change the channel lead to connection down.",
+		func(args []string) error {
+			bssid, err := net.ParseMAC(args[0])
+			if err != nil {
+				return err
+			}
+			channel,_:=strconv.Atoi( args[1])
+			if  channel>180 || channel<1{
+				return fmt.Errorf("%d is not a valid channel number",channel)
+			}
+			return mod.startCSA(bssid,int8(channel))
+		})
+
+	channelSwitchAnnounce.Complete("wifi.channel_switch_announce", s.WiFiCompleterFull)
+
+	mod.AddHandler(channelSwitchAnnounce)
+
+	mod.AddParam(session.NewBoolParameter("wifi.channel_switch_announce.silent",
+		"false",
+		"If true, messages from wifi.channel_switch_announce will be suppressed."))
 
 	mod.AddParam(session.NewStringParameter("wifi.deauth.skip",
 		"",
