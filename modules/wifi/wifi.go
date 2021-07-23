@@ -55,6 +55,7 @@ type WiFiModule struct {
 	assocOpen           bool
 	assocAcquired       bool
 	csaSilent           bool
+	fakeAuthSilent      bool
 	filterProbeSTA      *regexp.Regexp
 	filterProbeAP       *regexp.Regexp
 	apRunning           bool
@@ -90,6 +91,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		assocOpen:       false,
 		assocAcquired:   false,
 		csaSilent:       false,
+		fakeAuthSilent:	 false,
 		showManuf:       false,
 		shakesAggregate: true,
 		writes:          &sync.WaitGroup{},
@@ -235,9 +237,31 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 	mod.AddHandler(channelSwitchAnnounce)
 
+	fakeAuth := session.NewModuleHandler("wifi.fake_auth bssid client", `wifi\.fake_auth ((?:[a-fA-F0-9:]{11,}))\s+((?:[a-fA-F0-9:]{11,}))`,
+		"send an fake authentication with client mac to ap lead to client disconnect",
+		func(args []string) error {
+			bssid, err := net.ParseMAC(args[0])
+			if err != nil {
+				return err
+			}
+			client,err:=net.ParseMAC(args[1])
+			if err!=nil{
+				return err
+			}
+			return mod.startFakeAuth(bssid,client)
+		})
+
+	fakeAuth.Complete("wifi.fake_auth", s.WiFiCompleterFull)
+
+	mod.AddHandler(fakeAuth)
+
 	mod.AddParam(session.NewBoolParameter("wifi.channel_switch_announce.silent",
 		"false",
 		"If true, messages from wifi.channel_switch_announce will be suppressed."))
+
+	mod.AddParam(session.NewBoolParameter("wifi.fake_auth.silent",
+		"false",
+		"If true, messages from wifi.fake_auth will be suppressed."))
 
 	mod.AddParam(session.NewStringParameter("wifi.deauth.skip",
 		"",
