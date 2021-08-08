@@ -17,8 +17,8 @@ network/manuf.go:
 	@python3 ./network/make_manuf.py
 
 install:
-	@mkdir -p $(PREFIX)/share/bettercap/caplets
-	@cp bettercap $(PREFIX)/bin/
+	@mkdir -p $(DESTDIR)$(PREFIX)/share/bettercap/caplets
+	@cp bettercap $(DESTDIR)$(PREFIX)/bin/
 
 docker:
 	@docker build -t bettercap:latest .
