@@ -69,7 +69,7 @@ func NewQueue(iface *network.Endpoint) (q *Queue, err error) {
 	}
 
 	if q.active {
-		if q.handle, err = pcap.OpenLive(iface.Name(), 1024, true, pcap.BlockForever); err != nil {
+		if q.handle, err = network.Capture(iface.Name()); err != nil {
 			return
 		}
 

@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
@@ -83,7 +84,7 @@ func (mod *DHCP6Spoofer) Configure() error {
 		return session.ErrAlreadyStarted(mod.Name())
 	}
 
-	if mod.Handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+	if mod.Handle, err = network.Capture(mod.Session.Interface.Name()); err != nil {
 		return err
 	}
 

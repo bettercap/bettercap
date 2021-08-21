@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/google/gopacket/pcap"
@@ -42,7 +43,7 @@ func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 		 * could hang waiting for a timeout to expire ...
 		 */
 		readTimeout := 500 * time.Millisecond
-		if ctx.Handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, readTimeout); err != nil {
+		if ctx.Handle, err = network.CaptureWithTimeout(mod.Session.Interface.Name(), readTimeout); err != nil {
 			return err, ctx
 		}
 	} else {

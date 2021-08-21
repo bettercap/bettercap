@@ -91,7 +91,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		assocOpen:       false,
 		assocAcquired:   false,
 		csaSilent:       false,
-		fakeAuthSilent:	 false,
+		fakeAuthSilent:  false,
 		showManuf:       false,
 		shakesAggregate: true,
 		writes:          &sync.WaitGroup{},
@@ -226,11 +226,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			if err != nil {
 				return err
 			}
-			channel,_:=strconv.Atoi( args[1])
-			if  channel>180 || channel<1{
-				return fmt.Errorf("%d is not a valid channel number",channel)
+			channel, _ := strconv.Atoi(args[1])
+			if channel > 180 || channel < 1 {
+				return fmt.Errorf("%d is not a valid channel number", channel)
 			}
-			return mod.startCSA(bssid,int8(channel))
+			return mod.startCSA(bssid, int8(channel))
 		})
 
 	channelSwitchAnnounce.Complete("wifi.channel_switch_announce", s.WiFiCompleterFull)
@@ -244,11 +244,11 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			if err != nil {
 				return err
 			}
-			client,err:=net.ParseMAC(args[1])
-			if err!=nil{
+			client, err := net.ParseMAC(args[1])
+			if err != nil {
 				return err
 			}
-			return mod.startFakeAuth(bssid,client)
+			return mod.startFakeAuth(bssid, client)
 		})
 
 	fakeAuth.Complete("wifi.fake_auth", s.WiFiCompleterFull)
@@ -556,53 +556,33 @@ func (mod *WiFiModule) Configure() error {
 			}
 		}
 
-		setRFMonMaybeFatal := false
+		/*
+		 * We don't want to pcap.BlockForever otherwise pcap_close(handle)
+		 * could hang waiting for a timeout to expire ...
+		 */
+		opts := network.CAPTURE_DEFAULTS
+		opts.Timeout = 500 * time.Millisecond
+		opts.Monitor = true
+
 		for retry := 0; ; retry++ {
-			ihandle, err := pcap.NewInactiveHandle(ifName)
-			if err != nil {
-				return fmt.Errorf("error while opening interface %s: %s", ifName, err)
-			}
-			defer ihandle.CleanUp()
-
-			/*
-			 * Calling SetRFMon is fatal when the interface is already in monitor mode.
-			 * gopacket has no GetRFMon analogue to SetRFMon with which we could check this, however ...
-			 */
-			if !setRFMonMaybeFatal {
-				if err = ihandle.SetRFMon(true); err != nil {
-					return fmt.Errorf("error while setting interface %s in monitor mode: %s", tui.Bold(ifName), err)
+			if mod.handle, err = network.CaptureWithOptions(ifName, opts); err == nil {
+				// we're done
+				break
+			} else if retry == 0 /* && err.Error() == ErrIfaceNotUp */ {
+				// try to bring interface up and try again
+				mod.Info("interface %s is down, bringing it up ...", ifName)
+				if err := network.ActivateInterface(ifName); err != nil {
+					return err
 				}
+				continue
+			} else if !opts.Monitor {
+				// second fatal error, just bail
+				return fmt.Errorf("error while activating handle: %s", err)
 			} else {
-				mod.Debug("SetRFMon on interface %s might be fatal, skipping this time", tui.Bold(ifName))
+				// first fatal error, try again without setting the interface in monitor mode
+				mod.Warning("error while activating handle: %s, %s", err, tui.Bold("interface might already be monitoring. retrying!"))
+				opts.Monitor = false
 			}
-			if err = ihandle.SetSnapLen(65536); err != nil {
-				return fmt.Errorf("error while settng snapshot length: %s", err)
-			}
-			/*
-			 * We don't want to pcap.BlockForever otherwise pcap_close(handle)
-			 * could hang waiting for a timeout to expire ...
-			 */
-			readTimeout := 500 * time.Millisecond
-			if err = ihandle.SetTimeout(readTimeout); err != nil {
-				return fmt.Errorf("error while setting timeout: %s", err)
-			} else if mod.handle, err = ihandle.Activate(); err != nil {
-				if retry == 0 && err.Error() == ErrIfaceNotUp {
-					mod.Debug("interface %s is down, bringing it up ...", ifName)
-					if err := network.ActivateInterface(ifName); err != nil {
-						return err
-					}
-					continue
-				}
-				if setRFMonMaybeFatal {
-					return fmt.Errorf("error while activating handle: %s", err)
-				} else {
-					mod.Warning("error while activating handle: %s, %s", err, tui.Bold("interface might already be monitoring. retrying!"))
-					setRFMonMaybeFatal = true
-					continue
-				}
-			}
-
-			break
 		}
 	}
 
