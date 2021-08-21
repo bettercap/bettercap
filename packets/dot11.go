@@ -13,6 +13,7 @@ import (
 var (
 	openFlags      = 1057
 	wpaFlags       = 1041
+	specManFlag    = 1<<8
 	durationID     = uint16(0x013a)
 	capabilityInfo = uint16(0x0411)
 	listenInterval = uint16(3)
@@ -37,10 +38,11 @@ var (
 )
 
 type Dot11ApConfig struct {
-	SSID       string
-	BSSID      net.HardwareAddr
-	Channel    int
-	Encryption bool
+	SSID               string
+	BSSID              net.HardwareAddr
+	Channel            int
+	Encryption         bool
+	SpectrumManagement bool
 }
 
 func Dot11Info(id layers.Dot11InformationElementID, info []byte) *layers.Dot11InformationElement {
@@ -51,12 +53,14 @@ func Dot11Info(id layers.Dot11InformationElementID, info []byte) *layers.Dot11In
 	}
 }
 
-func NewDot11Beacon(conf Dot11ApConfig, seq uint16) (error, []byte) {
+func NewDot11Beacon(conf Dot11ApConfig, seq uint16, extendDot11Info ...*layers.Dot11InformationElement) (error, []byte) {
 	flags := openFlags
 	if conf.Encryption {
 		flags = wpaFlags
 	}
-
+	if conf.SpectrumManagement {
+		flags |= specManFlag
+	}
 	stack := []gopacket.SerializableLayer{
 		&layers.RadioTap{
 			DBMAntennaSignal: int8(-10),
@@ -77,7 +81,9 @@ func NewDot11Beacon(conf Dot11ApConfig, seq uint16) (error, []byte) {
 		Dot11Info(layers.Dot11InformationElementIDRates, fakeApRates),
 		Dot11Info(layers.Dot11InformationElementIDDSSet, []byte{byte(conf.Channel & 0xff)}),
 	}
-
+	for _, v := range extendDot11Info {
+		stack = append(stack, v)
+	}
 	if conf.Encryption {
 		stack = append(stack, &layers.Dot11InformationElement{
 			ID:     layers.Dot11InformationElementIDRSNInfo,
