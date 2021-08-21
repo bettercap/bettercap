@@ -1,6 +1,8 @@
 package core
 
-import "flag"
+import (
+	"flag"
+)
 
 type Options struct {
 	InterfaceName *string
@@ -18,6 +20,7 @@ type Options struct {
 	MemProfile    *string
 	CapletsPath   *string
 	Script        *string
+	PcapBufSize   *int
 }
 
 func ParseOptions() (Options, error) {
@@ -37,6 +40,7 @@ func ParseOptions() (Options, error) {
 		MemProfile:    flag.String("mem-profile", "", "Write memory profile to `file`."),
 		CapletsPath:   flag.String("caplets-path", "", "Specify an alternative base path for caplets."),
 		Script:        flag.String("script", "", "Load a session script."),
+		PcapBufSize:   flag.Int("pcap-buf-size", -1, "PCAP buffer size, leave to 0 for the default value."),
 	}
 
 	flag.Parse()

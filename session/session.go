@@ -127,6 +127,10 @@ func New() (*Session, error) {
 		}
 	}
 
+	if bufSize := *s.Options.PcapBufSize; bufSize != -1 {
+		network.CAPTURE_DEFAULTS.Bufsize = bufSize
+	}
+
 	if s.Env, err = NewEnvironment(*s.Options.EnvFile); err != nil {
 		return nil, err
 	}

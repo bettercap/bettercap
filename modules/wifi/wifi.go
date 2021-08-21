@@ -568,7 +568,7 @@ func (mod *WiFiModule) Configure() error {
 			if mod.handle, err = network.CaptureWithOptions(ifName, opts); err == nil {
 				// we're done
 				break
-			} else if retry == 0 /* && err.Error() == ErrIfaceNotUp */ {
+			} else if retry == 0 && err.Error() == ErrIfaceNotUp {
 				// try to bring interface up and try again
 				mod.Info("interface %s is down, bringing it up ...", ifName)
 				if err := network.ActivateInterface(ifName); err != nil {
