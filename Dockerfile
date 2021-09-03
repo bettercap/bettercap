@@ -3,8 +3,8 @@ FROM golang:alpine AS build-env
 
 ENV SRC_DIR $GOPATH/src/github.com/bettercap/bettercap
 
-RUN apk add --update ca-certificates
-RUN apk add --no-cache --update bash iptables wireless-tools build-base libpcap-dev libusb-dev linux-headers libnetfilter_queue-dev git
+RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache bash iptables wireless-tools build-base libpcap-dev libusb-dev linux-headers libnetfilter_queue-dev git
 
 WORKDIR $SRC_DIR
 ADD . $SRC_DIR
@@ -16,8 +16,8 @@ RUN git clone https://github.com/bettercap/caplets /usr/local/share/bettercap/ca
 
 # final stage
 FROM alpine
-RUN apk add --update ca-certificates
-RUN apk add --no-cache --update bash iproute2 libpcap libusb-dev libnetfilter_queue wireless-tools
+RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache bash iproute2 libpcap libusb-dev libnetfilter_queue wireless-tools
 COPY --from=build-env /go/src/github.com/bettercap/bettercap/bettercap /app/
 COPY --from=build-env /usr/local/share/bettercap/caplets /app/
 WORKDIR /app
