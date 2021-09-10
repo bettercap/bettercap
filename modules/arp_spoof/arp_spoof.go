@@ -20,7 +20,6 @@ type ArpSpoofer struct {
 	wMacs       []net.HardwareAddr
 	uAdresses   []net.IP
 	fullDuplex  bool
-	internal    bool
 	ban         bool
 	skipRestore bool
 	forward     bool
@@ -36,7 +35,6 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 		wMacs:         make([]net.HardwareAddr, 0),
 		uAdresses:     make([]net.IP, 0),
 		ban:           false,
-		internal:      false,
 		fullDuplex:    false,
 		skipRestore:   false,
 		forward:       true,
@@ -50,10 +48,6 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 	mod.AddParam(session.NewStringParameter("arp.spoof.whitelist", "", "", "Comma separated list of IP addresses, MAC addresses or aliases to skip while spoofing."))
 
 	mod.AddParam((session.NewStringParameter("arp.spoof.usurpate", session.ParamGatewayAddress, "", "IP addresses to usurpate, also supports nmap style IP ranges.")))
-
-	mod.AddParam(session.NewBoolParameter("arp.spoof.internal",
-		"false",
-		"If true, local connections among computers of the network will be spoofed, otherwise only connections going to and coming from the external network."))
 
 	mod.AddParam(session.NewBoolParameter("arp.spoof.fullduplex",
 		"false",
@@ -124,8 +118,6 @@ func (mod *ArpSpoofer) Configure() error {
 	var uTargets string
 
 	if err, mod.fullDuplex = mod.BoolParam("arp.spoof.fullduplex"); err != nil {
-		return err
-	} else if err, mod.internal = mod.BoolParam("arp.spoof.internal"); err != nil {
 		return err
 	} else if err, mod.forward = mod.BoolParam("arp.spoof.forwarding"); err != nil {
 		return err
