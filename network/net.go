@@ -264,7 +264,7 @@ func FindInterface(name string) (*Endpoint, error) {
 
 		for _, address := range addrs {
 			ip := address.String()
-			if ip != "127.0.0.1" && IPv4Validator.MatchString(ip) {
+			if !strings.HasPrefix(ip, "127.0.0.1") && IPv4BlockValidator.MatchString(ip) {
 				return buildEndpointFromInterface(iface)
 			}
 		}
