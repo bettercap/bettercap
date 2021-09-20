@@ -254,7 +254,7 @@ func FindInterface(name string) (*Endpoint, error) {
 
 	// user did not provide an interface name,
 	// return the first one with a valid ipv4
-	// address
+	// address that does not loop back
 	for _, iface := range ifaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
@@ -264,7 +264,7 @@ func FindInterface(name string) (*Endpoint, error) {
 
 		for _, address := range addrs {
 			ip := address.String()
-			if !strings.Contains(ip, "127.0.0.1") && IPv4Validator.MatchString(ip) {
+			if ip != "127.0.0.1" && IPv4Validator.MatchString(ip) {
 				return buildEndpointFromInterface(iface)
 			}
 		}
