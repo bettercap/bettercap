@@ -16,11 +16,12 @@ var (
 func update() ([]Route, error) {
 	table = make([]Route, 0)
 
-	output, err := core.Exec("netstat", []string{"-r", "-n"})
+	output, err := core.Exec("netstat", []string{"-r", "-n", "-4", "-6"})
 	if err != nil {
 		return nil, err
 	}
-	output = strings.ReplaceAll(output, "Next Hop", "NextHop")
+	// because entries are separated by whitespace
+	output = strings.ReplaceAll(output, "Next Hop", "Gateway")
 
 	for _, line := range strings.Split(output, "\n") {
 		if line = str.Trim(line); len(line) != 0 {
@@ -40,11 +41,17 @@ func update() ([]Route, error) {
 				case "Destination":
 					route.Destination = s
 					break
+				case "Flag":
+					route.Flags = s
+					break
 				case "Flags":
 					route.Flags = s
 					break
 				case "Gateway":
 					route.Gateway = s
+					break
+				case "If":
+					route.Device = s
 					break
 				case "Iface":
 					route.Device = s
@@ -52,20 +59,15 @@ func update() ([]Route, error) {
 				case "Netif":
 					route.Device = s
 					break
-				case "If":
-					route.Device = s
-					break
 				}
 			}
 
 			route.Default = strings.Contains(route.Flags, "G")
 
-			if route.Destination != "" {
-				if strings.ContainsRune(route.Destination, '.') || strings.ContainsRune(route.Gateway, '.') {
-					route.Type = "IPv4"
-				} else {
-					route.Type = "IPv6"
-				}
+			if strings.ContainsRune(route.Destination, '.') || strings.ContainsRune(route.Gateway, '.') {
+				route.Type = IPv4
+			} else {
+				route.Type = IPv6
 			}
 
 			table = append(table, route)
