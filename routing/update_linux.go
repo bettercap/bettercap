@@ -52,6 +52,9 @@ func update() ([]Route, error) {
 				case "Netif":
 					route.Device = s
 					break
+				case "If":
+					route.Device = s
+					break
 				}
 			}
 
