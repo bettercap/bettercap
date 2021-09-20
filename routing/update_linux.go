@@ -20,6 +20,7 @@ func update() ([]Route, error) {
 	if err != nil {
 		return nil, err
 	}
+	output = strings.ReplaceAll(output, "Next Hop", "NextHop")
 
 	for _, line := range strings.Split(output, "\n") {
 		if line = str.Trim(line); len(line) != 0 {
