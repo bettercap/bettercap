@@ -73,7 +73,7 @@ func iwlistSupportedFrequencies(iface string) ([]int, error) {
 }
 
 var iwPhyParser = regexp.MustCompile(`^\s*wiphy\s+(\d+)$`)
-var iwFreqParser = regexp.MustCompile(`^\s+\*\s+(\d+)\s+MHz.+$`)
+var iwFreqParser = regexp.MustCompile(`^\s+\*\s+(\d+)\s+MHz.+dBm.+$`)
 
 func iwSupportedFrequencies(iface string) ([]int, error) {
 	// first determine phy index
