@@ -24,7 +24,7 @@ require (
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gopacket v1.1.19
-	github.com/google/gousb v2.1.0+incompatible
+	github.com/google/gousb v1.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/mdns v1.0.4
@@ -44,6 +44,5 @@ require (
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
 	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
