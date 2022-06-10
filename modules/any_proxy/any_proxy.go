@@ -44,7 +44,7 @@ func NewAnyProxy(s *session.Session) *AnyProxy {
 
 	mod.AddParam(session.NewStringParameter("any.proxy.dst_address",
 		session.ParamIfaceAddress,
-		session.IPv4Validator,
+		"",
 		"Address where the proxy is listening."))
 
 	mod.AddParam(session.NewIntParameter("any.proxy.dst_port",
