@@ -2,11 +2,15 @@ package session
 
 import (
 	"encoding/json"
+	"io/ioutil"
 
 	"github.com/bettercap/bettercap/js"
 	"github.com/evilsocket/islazy/log"
 	"github.com/robertkrimen/otto"
 )
+
+// see https://github.com/robertkrimen/otto/issues/213
+var jsRuntime = otto.New()
 
 func jsRunFunc(call otto.FunctionCall) otto.Value {
 	argv := call.ArgumentList
@@ -78,4 +82,26 @@ func jsOnEventFunc(call otto.FunctionCall) otto.Value {
 	}(filterExpr, cb)
 
 	return js.NullValue
+}
+
+func jsLoadJSONFunc(call otto.FunctionCall) otto.Value {
+	argv := call.ArgumentList
+	argc := len(argv)
+	if argc != 1 {
+		return js.ReportError("LoadJSON accepts one string argument")
+	} else if argv[0].IsString() == false {
+		return js.ReportError("LoadJSON accepts one string argument")
+	}
+
+	fileName := argv[0].String()
+	var obj interface{}
+	if rawData, err := ioutil.ReadFile(fileName); err != nil {
+		return js.ReportError("can't read '%s': %v", fileName, err)
+	} else if err = json.Unmarshal(rawData, &obj); err != nil {
+		return js.ReportError("can't parse '%s': %v", fileName, err)
+	} else if v, err := jsRuntime.ToValue(obj); err != nil {
+		return js.ReportError("could not convert '%s' to javascript object: %s", fileName, err)
+	} else {
+		return v
+	}
 }
