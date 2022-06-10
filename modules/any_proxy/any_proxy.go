@@ -43,7 +43,7 @@ func NewAnyProxy(s *session.Session) *AnyProxy {
 		"Leave empty to intercept any source address."))
 
 	mod.AddParam(session.NewStringParameter("any.proxy.dst_address",
-		"",
+		session.ParamIfaceAddress,
 		"",
 		"Address where the proxy is listening."))
 
