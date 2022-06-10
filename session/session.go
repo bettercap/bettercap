@@ -306,9 +306,7 @@ func (s *Session) Start() error {
 
 	s.startNetMon()
 
-	if *s.Options.Debug {
-		s.Events.Add("session.started", nil)
-	}
+	s.Events.Add("session.started", nil)
 
 	// register js functions here to avoid cyclic dependency between
 	// js and session
