@@ -3,6 +3,7 @@ package session
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 
 	"github.com/bettercap/bettercap/js"
 	"github.com/evilsocket/islazy/log"
@@ -84,13 +85,38 @@ func jsOnEventFunc(call otto.FunctionCall) otto.Value {
 	return js.NullValue
 }
 
+func jsSaveJSONFunc(call otto.FunctionCall) otto.Value {
+	argv := call.ArgumentList
+	argc := len(argv)
+	if argc != 2 {
+		return js.ReportError("saveJSON accepts one object and one string arguments")
+	} else if argv[0].IsObject() == false {
+		return js.ReportError("saveJSON accepts one object and one string arguments")
+	} else if argv[1].IsString() == false {
+		return js.ReportError("saveJSON accepts one object and one string arguments")
+	}
+
+	obj := argv[0]
+	fileName := argv[1].String()
+
+	if exp, err := obj.Export(); err != nil {
+		return js.ReportError("error exporting object: %v", err)
+	} else if raw, err := json.Marshal(exp); err != nil {
+		return js.ReportError("error serializing object: %v", err)
+	} else if err = ioutil.WriteFile(fileName, raw, os.ModePerm); err != nil {
+		return js.ReportError("error writing to '%s': %v", fileName, err)
+	}
+
+	return js.NullValue
+}
+
 func jsLoadJSONFunc(call otto.FunctionCall) otto.Value {
 	argv := call.ArgumentList
 	argc := len(argv)
 	if argc != 1 {
-		return js.ReportError("LoadJSON accepts one string argument")
+		return js.ReportError("loadJSON accepts one string argument")
 	} else if argv[0].IsString() == false {
-		return js.ReportError("LoadJSON accepts one string argument")
+		return js.ReportError("loadJSON accepts one string argument")
 	}
 
 	fileName := argv[0].String()
