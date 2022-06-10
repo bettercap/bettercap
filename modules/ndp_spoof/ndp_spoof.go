@@ -32,7 +32,9 @@ func NewNDPSpoofer(s *session.Session) *NDPSpoofer {
 	mod.AddParam(session.NewStringParameter("ndp.spoof.targets", "", "",
 		"Comma separated list of IPv6 victim addresses."))
 
-	mod.AddParam(session.NewStringParameter("ndp.spoof.neighbour", "fe80::1", "",
+	mod.AddParam(session.NewStringParameter("ndp.spoof.neighbour",
+		"fe80::1",
+		session.IPv6Validator,
 		"Neighbour IPv6 address to spoof, clear to disable NA."))
 
 	mod.AddParam(session.NewStringParameter("ndp.spoof.prefix", "d00d::", "",
@@ -122,7 +124,7 @@ func (mod *NDPSpoofer) Start() error {
 	}
 
 	return mod.SetRunning(true, func() {
-		mod.Info("ndp spoofer started - neighbour=%s prefix=%s", mod.neighbour, mod.prefix)
+		mod.Info("ndp spoofer started - targets=%s neighbour=%s prefix=%s", mod.addresses, mod.neighbour, mod.prefix)
 
 		mod.waitGroup.Add(1)
 		defer mod.waitGroup.Done()
@@ -179,6 +181,8 @@ func (mod *NDPSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 		// do we have this ip mac address?
 		if hw, err := mod.Session.FindMAC(ip, probe); err == nil {
 			targets[ip.String()] = hw
+		} else {
+			mod.Info("couldn't get MAC for ip=%s, put it into the neighbour table manually e.g. ping -6")
 		}
 	}
 

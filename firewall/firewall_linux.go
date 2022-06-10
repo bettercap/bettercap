@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/network"
@@ -73,8 +74,16 @@ func (f LinuxFirewall) EnableForwarding(enabled bool) error {
 
 func (f *LinuxFirewall) getCommandLine(r *Redirection, enabled bool) (cmdLine []string) {
 	action := "-A"
+	destination := ""
+
 	if !enabled {
 		action = "-D"
+	}
+
+	if strings.Count(r.DstAddress, ":") < 2 {
+		destination = r.DstAddress
+	} else {
+		destination = fmt.Sprintf("[%s]", r.DstAddress)
 	}
 
 	if r.SrcAddress == "" {
@@ -85,7 +94,7 @@ func (f *LinuxFirewall) getCommandLine(r *Redirection, enabled bool) (cmdLine []
 			"-p", r.Protocol,
 			"--dport", fmt.Sprintf("%d", r.SrcPort),
 			"-j", "DNAT",
-			"--to", fmt.Sprintf("%s:%d", r.DstAddress, r.DstPort),
+			"--to", fmt.Sprintf("%s:%d", destination, r.DstPort),
 		}
 	} else {
 		cmdLine = []string{
@@ -96,7 +105,7 @@ func (f *LinuxFirewall) getCommandLine(r *Redirection, enabled bool) (cmdLine []
 			"-d", r.SrcAddress,
 			"--dport", fmt.Sprintf("%d", r.SrcPort),
 			"-j", "DNAT",
-			"--to", fmt.Sprintf("%s:%d", r.DstAddress, r.DstPort),
+			"--to", fmt.Sprintf("%s:%d", destination, r.DstPort),
 		}
 	}
 
@@ -107,6 +116,13 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 	cmdLine := f.getCommandLine(r, enabled)
 	rkey := r.String()
 	_, found := f.redirections[rkey]
+	cmd := ""
+
+	if strings.Count(r.DstAddress, ":") < 2 {
+		cmd = "iptables"
+	} else {
+		cmd = "ip6tables"
+	}
 
 	if enabled {
 		if found {
@@ -116,9 +132,9 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 		f.redirections[rkey] = r
 
 		// accept all
-		if _, err := core.Exec("iptables", []string{"-P", "FORWARD", "ACCEPT"}); err != nil {
+		if _, err := core.Exec(cmd, []string{"-P", "FORWARD", "ACCEPT"}); err != nil {
 			return err
-		} else if _, err := core.Exec("iptables", cmdLine); err != nil {
+		} else if _, err := core.Exec(cmd, cmdLine); err != nil {
 			return err
 		}
 	} else {
@@ -128,7 +144,7 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 
 		delete(f.redirections, r.String())
 
-		if _, err := core.Exec("iptables", cmdLine); err != nil {
+		if _, err := core.Exec(cmd, cmdLine); err != nil {
 			return err
 		}
 	}
