@@ -550,7 +550,7 @@ func (mod *WiFiModule) Configure() error {
 
 		if mod.txPower > 0 {
 			if err := network.SetInterfaceTxPower(ifName, mod.txPower); err != nil {
-				mod.Warning("could not set interface %s txpower to %d, 'Set Tx Power' requests not supported", ifName, mod.txPower)
+				mod.Warning("could not set interface %s txpower to %d, 'Set Tx Power' requests not supported: %v", ifName, mod.txPower, err)
 			} else {
 				mod.Debug("interface %s txpower set to %d", ifName, mod.txPower)
 			}
