@@ -312,6 +312,7 @@ func (s *Session) Start() error {
 	// js and session
 	plugin.Defines["env"] = jsEnvFunc
 	plugin.Defines["run"] = jsRunFunc
+	plugin.Defines["fileExists"] = jsFileExistsFunc
 	plugin.Defines["loadJSON"] = jsLoadJSONFunc
 	plugin.Defines["saveJSON"] = jsSaveJSONFunc
 	plugin.Defines["onEvent"] = jsOnEventFunc

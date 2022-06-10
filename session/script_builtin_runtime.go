@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/bettercap/bettercap/js"
+	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/log"
 	"github.com/robertkrimen/otto"
 )
@@ -72,12 +73,21 @@ func jsOnEventFunc(call otto.FunctionCall) otto.Value {
 					I.Events.Log(log.ERROR, "error serializing event %s: %v", event.Tag, err)
 				}
 
-				// lock vm
-				I.script.Lock()
+				// lock vm if ready and available
+				locked := false
+				if I.script != nil {
+					I.script.Lock()
+					locked = true
+				}
+
 				if _, err := cb.Call(otto.NullValue(), opaque); err != nil {
 					I.Events.Log(log.ERROR, "error dispatching event %s: %v", event.Tag, err)
 				}
-				I.script.Unlock()
+
+				// unlock vm if ready and available
+				if locked {
+					I.script.Unlock()
+				}
 			}
 		}
 	}(filterExpr, cb)
@@ -130,4 +140,21 @@ func jsLoadJSONFunc(call otto.FunctionCall) otto.Value {
 	} else {
 		return v
 	}
+}
+
+func jsFileExistsFunc(call otto.FunctionCall) otto.Value {
+	argv := call.ArgumentList
+	argc := len(argv)
+	if argc != 1 {
+		return js.ReportError("fileExists accepts one string argument")
+	} else if argv[0].IsString() == false {
+		return js.ReportError("fileExists accepts one string argument")
+	}
+
+	fileName := argv[0].String()
+	if fs.Exists(fileName) {
+		return otto.TrueValue()
+	}
+
+	return otto.FalseValue()
 }
