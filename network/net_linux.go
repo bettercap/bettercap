@@ -123,10 +123,12 @@ func iwSupportedFrequencies(iface string) ([]int, error) {
 }
 
 func GetSupportedFrequencies(iface string) ([]int, error) {
-	if core.HasBinary("iw") {
-		return iwSupportedFrequencies(iface)
-	} else if core.HasBinary("iwlist") {
+	// give priority to iwlist because of https://github.com/bettercap/bettercap/issues/881
+	if core.HasBinary("iwlist") {
 		return iwlistSupportedFrequencies(iface)
+	} else if core.HasBinary("iw") {
+		return iwSupportedFrequencies(iface)
 	}
+
 	return nil, fmt.Errorf("no iw or iwlist binaries found in $PATH")
 }
