@@ -107,9 +107,9 @@ func jsSaveJSONFunc(call otto.FunctionCall) otto.Value {
 	}
 
 	obj := argv[0]
-	fileName := argv[1].String()
-
-	if exp, err := obj.Export(); err != nil {
+	if fileName, err := fs.Expand(argv[1].String()); err != nil {
+		return js.ReportError("can't expand '%s': %v", fileName, err)
+	} else if exp, err := obj.Export(); err != nil {
 		return js.ReportError("error exporting object: %v", err)
 	} else if raw, err := json.Marshal(exp); err != nil {
 		return js.ReportError("error serializing object: %v", err)
@@ -129,9 +129,11 @@ func jsLoadJSONFunc(call otto.FunctionCall) otto.Value {
 		return js.ReportError("loadJSON accepts one string argument")
 	}
 
-	fileName := argv[0].String()
 	var obj interface{}
-	if rawData, err := ioutil.ReadFile(fileName); err != nil {
+
+	if fileName, err := fs.Expand(argv[0].String()); err != nil {
+		return js.ReportError("can't expand '%s': %v", fileName, err)
+	} else if rawData, err := ioutil.ReadFile(fileName); err != nil {
 		return js.ReportError("can't read '%s': %v", fileName, err)
 	} else if err = json.Unmarshal(rawData, &obj); err != nil {
 		return js.ReportError("can't parse '%s': %v", fileName, err)
@@ -149,10 +151,9 @@ func jsFileExistsFunc(call otto.FunctionCall) otto.Value {
 		return js.ReportError("fileExists accepts one string argument")
 	} else if argv[0].IsString() == false {
 		return js.ReportError("fileExists accepts one string argument")
-	}
-
-	fileName := argv[0].String()
-	if fs.Exists(fileName) {
+	} else if fileName, err := fs.Expand(argv[0].String()); err != nil {
+		return js.ReportError("can't expand '%s': %v", fileName, err)
+	} else if fs.Exists(fileName) {
 		return otto.TrueValue()
 	}
 
