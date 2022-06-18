@@ -25,7 +25,7 @@ func main() {
 	}
 	defer sess.Close()
 
-	if !tui.Effects() {
+	if !session.Effects() {
 		if *sess.Options.NoColors {
 			fmt.Printf("\n\nWARNING: Terminal colors have been disabled, view will be very limited.\n\n")
 		} else {
