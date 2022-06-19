@@ -15,4 +15,5 @@ stage/
 /snap
 .idea
 
-bettercap.exe
+*.exe
+.vscode/
