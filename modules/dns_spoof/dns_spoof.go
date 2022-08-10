@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
 
@@ -100,7 +101,7 @@ func (mod *DNSSpoofer) Configure() error {
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
-	} else if mod.Handle, err = pcap.OpenLive(mod.Session.Interface.Name(), 65536, true, pcap.BlockForever); err != nil {
+	} else if mod.Handle, err = network.Capture(mod.Session.Interface.Name()); err != nil {
 		return err
 	} else if err = mod.Handle.SetBPFFilter("udp"); err != nil {
 		return err

@@ -73,7 +73,7 @@ func iwlistSupportedFrequencies(iface string) ([]int, error) {
 }
 
 var iwPhyParser = regexp.MustCompile(`^\s*wiphy\s+(\d+)$`)
-var iwFreqParser = regexp.MustCompile(`^\s+\*\s+(\d+)\s+MHz.+$`)
+var iwFreqParser = regexp.MustCompile(`^\s+\*\s+(\d+)\s+MHz.+dBm.+$`)
 
 func iwSupportedFrequencies(iface string) ([]int, error) {
 	// first determine phy index
@@ -123,10 +123,12 @@ func iwSupportedFrequencies(iface string) ([]int, error) {
 }
 
 func GetSupportedFrequencies(iface string) ([]int, error) {
-	if core.HasBinary("iw") {
-		return iwSupportedFrequencies(iface)
-	} else if core.HasBinary("iwlist") {
+	// give priority to iwlist because of https://github.com/bettercap/bettercap/issues/881
+	if core.HasBinary("iwlist") {
 		return iwlistSupportedFrequencies(iface)
+	} else if core.HasBinary("iw") {
+		return iwSupportedFrequencies(iface)
 	}
+
 	return nil, fmt.Errorf("no iw or iwlist binaries found in $PATH")
 }

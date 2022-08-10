@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 
 	"github.com/bettercap/bettercap/session"
 
@@ -29,6 +30,13 @@ type UIModule struct {
 	uiPath   string
 }
 
+func getDefaultInstallBase() string {
+	if runtime.GOOS == "windows" {
+		return filepath.Join(os.Getenv("ALLUSERSPROFILE"), "bettercap")
+	}
+	return "/usr/local/share/bettercap/"
+}
+
 func NewUIModule(s *session.Session) *UIModule {
 	mod := &UIModule{
 		SessionModule: session.NewSessionModule("ui", s),
@@ -36,7 +44,7 @@ func NewUIModule(s *session.Session) *UIModule {
 	}
 
 	mod.AddParam(session.NewStringParameter("ui.basepath",
-		"/usr/local/share/bettercap/",
+		getDefaultInstallBase(),
 		"",
 		"UI base installation path."))
 

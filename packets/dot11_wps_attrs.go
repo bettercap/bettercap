@@ -177,14 +177,22 @@ func dot11ParseWPSVendorExtension(data []byte, info *map[string]string) string {
 		size := len(data)
 		for offset := 3; offset < size; {
 			idByte := uint8(data[offset])
-			sizeByte := uint8(data[offset+1])
-			if idByte == wpsVersion2ID {
-				verByte := fmt.Sprintf("%x", data[offset+2])
-				(*info)["Version"] = wpsVersionDesc[verByte]
-				data = data[offset+3:]
+			if next := offset + 1; next < size {
+				sizeByte := uint8(data[next])
+				if idByte == wpsVersion2ID {
+					if next = offset + 2; next < size {
+						verByte := fmt.Sprintf("%x", data[next])
+						(*info)["Version"] = wpsVersionDesc[verByte]
+						if next = offset + 3; next < size {
+							data = data[next:]
+						}
+						break
+					}
+				}
+				offset += int(sizeByte) + 2
+			} else {
 				break
 			}
-			offset += int(sizeByte) + 2
 		}
 	}
 	return hex.EncodeToString(data)

@@ -155,6 +155,9 @@ func (s *Session) activeHandler(args []string, sess *Session) error {
 }
 
 func (s *Session) exitHandler(args []string, sess *Session) error {
+	// notify any listener that the session is about to end
+	s.Events.Add("session.stopped", nil)
+
 	for _, mod := range s.Modules {
 		if mod.Running() {
 			mod.Stop()

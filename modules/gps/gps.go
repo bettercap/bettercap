@@ -138,7 +138,7 @@ func (mod *GPS) readFromSerial() {
 	if line, err := mod.readLine(); err == nil {
 		if s, err := nmea.Parse(line); err == nil {
 			// http://aprs.gids.nl/nmea/#gga
-			if m, ok := s.(nmea.GNGGA); ok {
+			if m, ok := s.(nmea.GGA); ok {
 				mod.Session.GPS.Updated = time.Now()
 				mod.Session.GPS.Latitude = m.Latitude
 				mod.Session.GPS.Longitude = m.Longitude
@@ -147,15 +147,8 @@ func (mod *GPS) readFromSerial() {
 				mod.Session.GPS.HDOP = m.HDOP
 				mod.Session.GPS.Altitude = m.Altitude
 				mod.Session.GPS.Separation = m.Separation
-			} else if m, ok := s.(nmea.GPGGA); ok {
-				mod.Session.GPS.Updated = time.Now()
-				mod.Session.GPS.Latitude = m.Latitude
-				mod.Session.GPS.Longitude = m.Longitude
-				mod.Session.GPS.FixQuality = m.FixQuality
-				mod.Session.GPS.NumSatellites = m.NumSatellites
-				mod.Session.GPS.HDOP = m.HDOP
-				mod.Session.GPS.Altitude = m.Altitude
-				mod.Session.GPS.Separation = m.Separation
+
+				mod.Session.Events.Add("gps.new", mod.Session.GPS)
 			}
 		} else {
 			mod.Debug("error parsing line '%s': %s", line, err)
@@ -173,6 +166,8 @@ func (mod *GPS) runFromGPSD() {
 		mod.Session.GPS.Longitude = report.Lon
 		mod.Session.GPS.FixQuality = ModeInfo[report.Mode]
 		mod.Session.GPS.Altitude = report.Alt
+
+		mod.Session.Events.Add("gps.new", mod.Session.GPS)
 	})
 
 	mod.gpsd.Subscribe("SKY", func(r interface{}) {

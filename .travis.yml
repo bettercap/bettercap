@@ -83,6 +83,7 @@ matrix:
     - name: OSX - amd64
       if: tag IS present
       os: osx
+      osx_image: xcode12.5
       arch: amd64
       addons:
         homebrew:
@@ -142,6 +143,7 @@ matrix:
     - name: OSX - tests
       if: tag IS blank
       os: osx
+      osx_image: xcode12.5
       arch: amd64
       allow_failures:
         - go: master

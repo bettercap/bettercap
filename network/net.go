@@ -29,11 +29,19 @@ const (
 
 var (
 	BroadcastHw        = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
-	IPv4Validator      = regexp.MustCompile(`^[0-9\.]+/?\d*$`)
-	IPv4RangeValidator = regexp.MustCompile(`^[0-9\.\-]+/?\d*$`)
-	MACValidator       = regexp.MustCompile(`(?i)^[a-f0-9]{1,2}:[a-f0-9]{1,2}:[a-f0-9]{1,2}:[a-f0-9]{1,2}:[a-f0-9]{1,2}:[a-f0-9]{1,2}$`)
+	IPv4BlockValidator = regexp.MustCompile(`^` +
+		`(?:(?:25[0-5]|2[0-4][0-9]|[1][0-9]{2}|[1-9]?[0-9])\.){3}` +
+		`(?:25[0-5]|2[0-4][0-9]|[1][0-9]{2}|[1-9]?[0-9])` +
+		`/(?:3[0-2]|2[0-9]|[1]?[0-9])` + `$`)
+	IPv4RangeValidator = regexp.MustCompile(`^` +
+		`(?:(?:(?:25[0-5]|2[0-4][0-9]|[1][0-9]{2}|[1-9]?[0-9])-)?(?:25[0-5]|2[0-4][0-9]|[1][0-9]{2}|[1-9]?[0-9])\.){3}` +
+		`(?:(?:25[0-5]|2[0-4][0-9]|[1][0-9]{2}|[1-9]?[0-9])-)?(?:25[0-5]|2[0-4][0-9]|[1][0-9]{2}|[1-9]?[0-9])` + `$`)
+	IPv4Validator = regexp.MustCompile(`^` +
+		`(?:(?:25[0-5]|2[0-4][0-9]|[1][0-9]{2}|[1-9]?[0-9])\.){3}` +
+		`(?:25[0-5]|2[0-4][0-9]|[1][0-9]{2}|[1-9]?[0-9])` + `$`)
+	MACValidator = regexp.MustCompile(`(?i)^(?:[a-f0-9]{2}:){5}[a-f0-9]{2}$`)
 	// lulz this sounds like a hamburger
-	macParser   = regexp.MustCompile(`(?i)([a-f0-9]{1,2}:[a-f0-9]{1,2}:[a-f0-9]{1,2}:[a-f0-9]{1,2}:[a-f0-9]{1,2}:[a-f0-9]{1,2})`)
+	macParser   = regexp.MustCompile(`(?i)((?:[a-f0-9]{2}:){5}[a-f0-9]{2})`)
 	aliasParser = regexp.MustCompile(`(?i)([a-z_][a-z_0-9]+)`)
 )
 
@@ -247,7 +255,7 @@ func FindInterface(name string) (*Endpoint, error) {
 
 	// user did not provide an interface name,
 	// return the first one with a valid ipv4
-	// address
+	// address that does not loop back
 	for _, iface := range ifaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
@@ -257,7 +265,7 @@ func FindInterface(name string) (*Endpoint, error) {
 
 		for _, address := range addrs {
 			ip := address.String()
-			if !strings.Contains(ip, "127.0.0.1") && IPv4Validator.MatchString(ip) {
+			if !strings.HasPrefix(ip, "127.0.0.1") && IPv4BlockValidator.MatchString(ip) {
 				return buildEndpointFromInterface(iface)
 			}
 		}
@@ -279,7 +287,11 @@ func SetWiFiRegion(region string) error {
 
 func ActivateInterface(name string) error {
 	if out, err := core.Exec("ifconfig", []string{name, "up"}); err != nil {
-		return err
+		if out != "" {
+			return fmt.Errorf("%v: %s", err, out)
+		} else {
+			return err
+		}
 	} else if out != "" {
 		return fmt.Errorf("unexpected output while activating interface %s: %s", name, out)
 	}
@@ -289,8 +301,7 @@ func ActivateInterface(name string) error {
 func SetInterfaceTxPower(name string, txpower int) error {
 	if core.HasBinary("iw") {
 		Debug("SetInterfaceTxPower(%s, %d) iw based", name, txpower)
-		if _, err := core.Exec("iw", []string{"dev", name, "set", "txpower", "fixed", fmt.Sprintf("%d",
-			txpower)}); err != nil {
+		if _, err := core.Exec("iw", []string{"dev", name, "set", "txpower", "fixed", fmt.Sprintf("%d", txpower)}); err != nil {
 			return err
 		}
 	} else if core.HasBinary("iwconfig") {

@@ -59,7 +59,7 @@ func NewIntParameter(name string, def_value string, desc string) *ModuleParam {
 }
 
 func NewDecimalParameter(name string, def_value string, desc string) *ModuleParam {
-	return NewModuleParameter(name, def_value, FLOAT, "^[\\d]+(\\.\\d+)?$", desc)
+	return NewModuleParameter(name, def_value, FLOAT, `^[\-\+]?[\d]+(\.\d+)?$`, desc)
 }
 
 func (p ModuleParam) validate(value string) (error, interface{}) {

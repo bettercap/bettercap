@@ -127,6 +127,10 @@ func New() (*Session, error) {
 		}
 	}
 
+	if bufSize := *s.Options.PcapBufSize; bufSize != -1 {
+		network.CAPTURE_DEFAULTS.Bufsize = bufSize
+	}
+
 	if s.Env, err = NewEnvironment(*s.Options.EnvFile); err != nil {
 		return nil, err
 	}
@@ -302,14 +306,15 @@ func (s *Session) Start() error {
 
 	s.startNetMon()
 
-	if *s.Options.Debug {
-		s.Events.Add("session.started", nil)
-	}
+	s.Events.Add("session.started", nil)
 
 	// register js functions here to avoid cyclic dependency between
 	// js and session
 	plugin.Defines["env"] = jsEnvFunc
 	plugin.Defines["run"] = jsRunFunc
+	plugin.Defines["fileExists"] = jsFileExistsFunc
+	plugin.Defines["loadJSON"] = jsLoadJSONFunc
+	plugin.Defines["saveJSON"] = jsSaveJSONFunc
 	plugin.Defines["onEvent"] = jsOnEventFunc
 	plugin.Defines["session"] = s
 
