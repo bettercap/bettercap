@@ -1,5 +1,5 @@
 # build stage
-FROM golang:alpine AS build-env
+FROM golang:1.16-alpine3.15 AS build-env
 
 ENV SRC_DIR $GOPATH/src/github.com/bettercap/bettercap
 
@@ -15,7 +15,7 @@ RUN mkdir -p /usr/local/share/bettercap
 RUN git clone https://github.com/bettercap/caplets /usr/local/share/bettercap/caplets
 
 # final stage
-FROM alpine
+FROM alpine:3.15
 RUN apk add --no-cache ca-certificates
 RUN apk add --no-cache bash iproute2 libpcap libusb-dev libnetfilter_queue wireless-tools
 COPY --from=build-env /go/src/github.com/bettercap/bettercap/bettercap /app/
