@@ -30,7 +30,6 @@ require (
 	github.com/hashicorp/mdns v1.0.4
 	github.com/inconshreveable/go-vhost v0.0.0-20160627193104-06d84117953b
 	github.com/jpillora/go-tld v1.1.1
-	github.com/koppacetic/go-gpsd v0.4.0
 	github.com/kr/binarydist v0.1.0 // indirect
 	github.com/malfunkt/iprange v0.9.0
 	github.com/mattn/go-isatty v0.0.13 // indirect
@@ -39,6 +38,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/robertkrimen/otto v0.0.0-20210614181706-373ff5438452
+	github.com/stratoberry/go-gpsd v1.0.0
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d

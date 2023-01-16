@@ -8,7 +8,7 @@ import (
 	"github.com/bettercap/bettercap/session"
 
 	"github.com/adrianmo/go-nmea"
-	"github.com/koppacetic/go-gpsd"
+	"github.com/stratoberry/go-gpsd"
 	"github.com/tarm/serial"
 
 	"github.com/evilsocket/islazy/str"
@@ -159,7 +159,7 @@ func (mod *GPS) readFromSerial() {
 }
 
 func (mod *GPS) runFromGPSD() {
-	mod.gpsd.Subscribe("TPV", func(r interface{}) {
+	mod.gpsd.AddFilter("TPV", func(r interface{}) {
 		report := r.(*gpsd.TPVReport)
 		mod.Session.GPS.Updated = report.Time
 		mod.Session.GPS.Latitude = report.Lat
@@ -170,14 +170,15 @@ func (mod *GPS) runFromGPSD() {
 		mod.Session.Events.Add("gps.new", mod.Session.GPS)
 	})
 
-	mod.gpsd.Subscribe("SKY", func(r interface{}) {
+	mod.gpsd.AddFilter("SKY", func(r interface{}) {
 		report := r.(*gpsd.SKYReport)
 		mod.Session.GPS.NumSatellites = int64(len(report.Satellites))
 		mod.Session.GPS.HDOP = report.Hdop
 		//mod.Session.GPS.Separation = 0
 	})
 
-	mod.gpsd.Run()
+	done := mod.gpsd.Watch()
+	<-done
 }
 
 func (mod *GPS) Start() error {
@@ -205,10 +206,12 @@ func (mod *GPS) Stop() error {
 		if mod.serial != nil {
 			// let the read fail and exit
 			mod.serial.Close()
-		} else {
-			if err := mod.gpsd.Close(); err != nil {
-				mod.Error("failed closing the connection to GPSD: %s", err)
-			}
-		}
+		} /*
+			FIXME: no Close or Stop method in github.com/stratoberry/go-gpsd
+			else {
+				if err := mod.gpsd.Close(); err != nil {
+					mod.Error("failed closing the connection to GPSD: %s", err)
+				}
+			} */
 	})
 }
