@@ -9,8 +9,8 @@ import (
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/network"
 
-	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/str"
 )
 
 type LinuxFirewall struct {
@@ -66,9 +66,12 @@ func (f LinuxFirewall) IsForwardingEnabled() bool {
 func (f LinuxFirewall) EnableForwarding(enabled bool) error {
 	if err := f.enableFeature(IPV4ForwardingFile, enabled); err != nil {
 		return err
-	} else if fs.Exists(IPV6ForwardingFile) {
+	}
+
+	if fs.Exists(IPV6ForwardingFile) {
 		return f.enableFeature(IPV6ForwardingFile, enabled)
 	}
+
 	return nil
 }
 
