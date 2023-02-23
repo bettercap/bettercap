@@ -41,8 +41,7 @@ require (
 	github.com/stratoberry/go-gpsd v1.0.0
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
-	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
+	golang.org/x/text v0.3.8 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
