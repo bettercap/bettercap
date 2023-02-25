@@ -42,7 +42,7 @@ require (
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
-	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
