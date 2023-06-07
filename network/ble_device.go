@@ -68,7 +68,7 @@ func (d *BLEDevice) Name() string {
 	name := d.DeviceName
 	if name == "" {
 		// get the name from the device
-		name := d.Device.Name()
+		name = d.Device.Name()
 		if name == "" && d.Advertisement != nil {
 			// get the name from the advertisement data
 			name = d.Advertisement.LocalName
