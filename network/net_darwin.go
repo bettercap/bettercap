@@ -41,7 +41,8 @@ func getFrequenciesFromChannels(output string) ([]int, error) {
 	if output != "" {
 		if matches := WiFiChannelParser.FindStringSubmatch(output); len(matches) == 2 {
 			for _, channel := range str.Comma(matches[1]) {
-				if channel, err := strconv.Atoi(channel); err == nil {
+				re := regexp.MustCompile(`\d+`)
+				if channel, err := strconv.Atoi(re.FindString(channel)); err == nil {
 					freqs = append(freqs, Dot11Chan2Freq(channel))
 				}
 			}
