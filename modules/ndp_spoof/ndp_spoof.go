@@ -17,6 +17,7 @@ type NDPSpoofer struct {
 	prefix       string
 	prefixLength int
 	addresses    []net.IP
+	ban          bool
 	waitGroup    *sync.WaitGroup
 }
 
@@ -24,6 +25,7 @@ func NewNDPSpoofer(s *session.Session) *NDPSpoofer {
 	mod := &NDPSpoofer{
 		SessionModule: session.NewSessionModule("ndp.spoof", s),
 		addresses:     make([]net.IP, 0),
+		ban:           false,
 		waitGroup:     &sync.WaitGroup{},
 	}
 
@@ -49,7 +51,20 @@ func NewNDPSpoofer(s *session.Session) *NDPSpoofer {
 			return mod.Start()
 		}))
 
+	mod.AddHandler(session.NewModuleHandler("ndp.ban on", "",
+		"Start NDP spoofer in ban mode, meaning the target(s) connectivity will not work.",
+		func(args []string) error {
+			mod.ban = true
+			return mod.Start()
+		}))
+
 	mod.AddHandler(session.NewModuleHandler("ndp.spoof off", "",
+		"Stop NDP spoofer.",
+		func(args []string) error {
+			return mod.Stop()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("ndp.ban off", "",
 		"Stop NDP spoofer.",
 		func(args []string) error {
 			return mod.Stop()
@@ -107,8 +122,13 @@ func (mod *NDPSpoofer) Configure() error {
 	}
 
 	if !mod.Session.Firewall.IsForwardingEnabled() {
-		mod.Info("enabling forwarding")
-		mod.Session.Firewall.EnableForwarding(true)
+		if mod.ban {
+			mod.Warning("running in ban mode, forwarding not enabled!")
+			mod.Session.Firewall.EnableForwarding(false)
+		} else {
+			mod.Info("enabling forwarding")
+			mod.Session.Firewall.EnableForwarding(true)
+		}
 	}
 
 	return nil
@@ -166,6 +186,7 @@ func (mod *NDPSpoofer) Start() error {
 func (mod *NDPSpoofer) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.Info("waiting for NDP spoofer to stop ...")
+		mod.ban = false
 		mod.waitGroup.Wait()
 	})
 }
