@@ -182,7 +182,7 @@ func (mod *NDPSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 		if hw, err := mod.Session.FindMAC(ip, probe); err == nil {
 			targets[ip.String()] = hw
 		} else {
-			mod.Info("couldn't get MAC for ip=%s, put it into the neighbour table manually e.g. ping -6")
+			mod.Info("couldn't get MAC for ip=%s, put it into the neighbour table manually e.g. ping -6", ip)
 		}
 	}
 
