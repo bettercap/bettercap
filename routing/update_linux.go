@@ -35,6 +35,11 @@ func update() ([]Route, error) {
 				continue
 			}
 
+			// skip line if no route headings found yet
+			if routeHeadings == nil {
+				continue
+			}
+
 			route := Route{}
 			for i, s := range parts {
 				switch routeHeadings[i] {
