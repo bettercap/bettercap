@@ -36,7 +36,7 @@ func NewNDPSpoofer(s *session.Session) *NDPSpoofer {
 
 	mod.AddParam(session.NewStringParameter("ndp.spoof.neighbour",
 		"fe80::1",
-		session.IPv6Validator,
+		`^([:a-fA-F0-9]{6,})?$`,
 		"Neighbour IPv6 address to spoof, clear to disable NA."))
 
 	mod.AddParam(session.NewStringParameter("ndp.spoof.prefix", "d00d::", "",
@@ -99,6 +99,8 @@ func (mod *NDPSpoofer) Configure() error {
 	} else {
 		if err, neigh = mod.StringParam("ndp.spoof.neighbour"); err != nil {
 			return err
+		} else if neigh == "" {
+			mod.neighbour = nil
 		} else if mod.neighbour = net.ParseIP(neigh); mod.neighbour == nil {
 			return fmt.Errorf("can't parse neighbour address %s", neigh)
 		}
