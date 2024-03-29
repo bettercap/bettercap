@@ -16,6 +16,7 @@ import (
 type LinuxFirewall struct {
 	iface        *network.Endpoint
 	forwarding   bool
+	restore      bool
 	redirections map[string]*Redirection
 }
 
@@ -28,6 +29,7 @@ func Make(iface *network.Endpoint) FirewallManager {
 	firewall := &LinuxFirewall{
 		iface:        iface,
 		forwarding:   false,
+		restore:      false,
 		redirections: make(map[string]*Redirection),
 	}
 
@@ -72,6 +74,7 @@ func (f LinuxFirewall) EnableForwarding(enabled bool) error {
 		return f.enableFeature(IPV6ForwardingFile, enabled)
 	}
 
+	f.restore = true
 	return nil
 }
 
@@ -156,6 +159,9 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 }
 
 func (f LinuxFirewall) Restore() {
+	if f.restore == false {
+		return
+	}
 	for _, r := range f.redirections {
 		if err := f.EnableRedirection(r, false); err != nil {
 			fmt.Printf("%s", err)

