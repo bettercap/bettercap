@@ -48,13 +48,13 @@ func CaptureWithOptions(ifName string, options CaptureOptions) (*pcap.Handle, er
 	}
 
 	if err = ihandle.SetSnapLen(options.Snaplen); err != nil {
-		return nil, fmt.Errorf("error while settng snapshot length: %s", err)
+		return nil, fmt.Errorf("error while setting snapshot length: %s", err)
 	} else if err = ihandle.SetBufferSize(options.Bufsize); err != nil {
-		return nil, fmt.Errorf("error while settng buffer size: %s", err)
+		return nil, fmt.Errorf("error while setting buffer size: %s", err)
 	} else if err = ihandle.SetPromisc(options.Promisc); err != nil {
-		return nil, fmt.Errorf("error while settng promiscuous mode to %v: %s", options.Promisc, err)
+		return nil, fmt.Errorf("error while setting promiscuous mode to %v: %s", options.Promisc, err)
 	} else if err = ihandle.SetTimeout(options.Timeout); err != nil {
-		return nil, fmt.Errorf("error while settng snapshot length: %s", err)
+		return nil, fmt.Errorf("error while setting snapshot length: %s", err)
 	}
 
 	return ihandle.Activate()
