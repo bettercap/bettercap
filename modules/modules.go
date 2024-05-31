@@ -11,6 +11,7 @@ import (
 	"github.com/bettercap/bettercap/modules/dns_spoof"
 	"github.com/bettercap/bettercap/modules/events_stream"
 	"github.com/bettercap/bettercap/modules/gps"
+	"github.com/bettercap/bettercap/modules/graph"
 	"github.com/bettercap/bettercap/modules/hid"
 	"github.com/bettercap/bettercap/modules/http_proxy"
 	"github.com/bettercap/bettercap/modules/http_server"
@@ -45,6 +46,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(dns_spoof.NewDNSSpoofer(sess))
 	sess.Register(events_stream.NewEventsStream(sess))
 	sess.Register(gps.NewGPS(sess))
+	sess.Register(graph.NewModule(sess))
 	sess.Register(http_proxy.NewHttpProxy(sess))
 	sess.Register(http_server.NewHttpServer(sess))
 	sess.Register(https_proxy.NewHttpsProxy(sess))
