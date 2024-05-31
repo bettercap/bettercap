@@ -120,9 +120,12 @@ func New() (*Session, error) {
 	}
 
 	if *s.Options.CpuProfile != "" {
-		if f, err := os.Create(*s.Options.CpuProfile); err != nil {
+		f, err := os.Create(*s.Options.CpuProfile)
+		if err != nil {
 			return nil, err
-		} else if err := pprof.StartCPUProfile(f); err != nil {
+		}
+		defer  f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
 			return nil, err
 		}
 	}
