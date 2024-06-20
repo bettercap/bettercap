@@ -94,13 +94,28 @@ type Session struct {
 	script *Script
 }
 
+func Effects() bool {
+	if wterm, exists := os.LookupEnv("WT_SESSION"); exists && wterm != "" {
+		return true
+	}
+	if vterm := os.Getenv("TERM_PROGRAM"); vterm == "vscode" {
+		return true
+	}
+	if term := os.Getenv("TERM"); term == "" {
+		return false
+	} else if term == "dumb" {
+		return false
+	}
+	return true
+}
+
 func New() (*Session, error) {
 	opts, err := core.ParseOptions()
 	if err != nil {
 		return nil, err
 	}
 
-	if *opts.NoColors || !tui.Effects() {
+	if *opts.NoColors || !Effects() {
 		tui.Disable()
 		log.NoEffects = true
 	}

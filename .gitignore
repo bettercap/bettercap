@@ -14,3 +14,6 @@ stage/
 
 /snap
 .idea
+
+*.exe
+.vscode/

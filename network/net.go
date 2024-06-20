@@ -261,11 +261,12 @@ func FindInterface(name string) (*Endpoint, error) {
 			fmt.Printf("wtf of the day: %s", err)
 			continue
 		}
-
-		for _, address := range addrs {
-			ip := address.String()
-			if !strings.HasPrefix(ip, "127.0.0.1") && IPv4BlockValidator.MatchString(ip) {
-				return buildEndpointFromInterface(iface)
+		if iface.Flags&net.FlagUp != 0 {
+			for _, address := range addrs {
+				ip := address.String()
+				if !strings.HasPrefix(ip, "127.0.0.1") && IPv4BlockValidator.MatchString(ip) {
+					return buildEndpointFromInterface(iface)
+				}
 			}
 		}
 	}
