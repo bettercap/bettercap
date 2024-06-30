@@ -20,7 +20,6 @@ require (
 	github.com/evilsocket/islazy v1.10.6
 	github.com/gobwas/glob v0.0.0-20181002190808-e7a84e9525fe
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gopacket v1.1.19
@@ -41,8 +40,6 @@ require (
 	github.com/stratoberry/go-gpsd v1.0.0
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
-	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/net v0.26.0
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
