@@ -489,6 +489,8 @@ func (mod *WiFiModule) setFrequencies(freqs []int) {
 		channels = append(channels, network.Dot11Freq2Chan(freq))
 	}
 	mod.State.Store("channels", channels)
+
+	mod.Info("channels: %v", channels)
 }
 
 func (mod *WiFiModule) Configure() error {
