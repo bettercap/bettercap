@@ -16,7 +16,6 @@ require (
 	github.com/elazarl/goproxy/ext v0.0.0-20210110162100-a92cc753f88e // indirect
 	github.com/evilsocket/islazy v1.11.0
 	github.com/gobwas/glob v0.0.0-20181002190808-e7a84e9525fe
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gopacket v1.1.19
@@ -40,5 +39,4 @@ require (
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64
 	golang.org/x/net v0.28.0
 	golang.org/x/tools v0.24.0 // indirect
-	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
