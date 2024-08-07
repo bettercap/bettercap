@@ -8,7 +8,6 @@ package network
 const char *GetSupportedFrequencies(const char *iface);
 bool SetInterfaceChannel(const char *iface, int channel);
 */
-
 import "C"
 import (
 	"encoding/json"
