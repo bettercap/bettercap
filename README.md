@@ -12,7 +12,7 @@
   <p align="center">
     <a href="https://github.com/bettercap/bettercap/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/bettercap/bettercap.svg?style=flat-square"></a>
     <a href="https://github.com/bettercap/bettercap/blob/master/LICENSE.md"><img alt="Software License" src="https://img.shields.io/badge/license-GPL3-brightgreen.svg?style=flat-square"></a>
-    <a href=""><img alt="Tests Workflow" src="https://github.com/bettercap/bettercap/actions/workflows/test.yml"></a>
+    <a href="https://github.com/bettercap/bettercap/actions/workflows/test.yml"><img alt="Test" src="https://github.com/bettercap/bettercap/actions/workflows/test.yml/badge.svg"></a>
   </p>
 </p>
 
