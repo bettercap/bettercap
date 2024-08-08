@@ -21,6 +21,10 @@ func getInterfaceName(iface net.Interface) string {
 	return iface.Name
 }
 
+func ForceMonitorMode(iface string) error {
+	return nil
+}
+
 func SetInterfaceChannel(iface string, channel int) error {
 	cIface := C.CString(iface)
 	defer C.free(unsafe.Pointer(cIface))

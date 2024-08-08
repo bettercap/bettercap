@@ -21,7 +21,6 @@ import (
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/ops"
 	"github.com/evilsocket/islazy/str"
-	"github.com/evilsocket/islazy/tui"
 )
 
 type WiFiModule struct {
@@ -581,9 +580,12 @@ func (mod *WiFiModule) Configure() error {
 				// second fatal error, just bail
 				return fmt.Errorf("error while activating handle: %s", err)
 			} else {
-				// first fatal error, try again without setting the interface in monitor mode
-				mod.Warning("error while activating handle: %s, %s", err, tui.Bold("interface might already be monitoring. retrying!"))
-				opts.Monitor = false
+				// first fatal error, forcing monitor mode 
+				// https://github.com/bettercap/bettercap/issues/819
+				opts.Monitor = false;
+				if err := network.ForceMonitorMode(ifName); err != nil {
+					return err
+				}
 			}
 		}
 	}
