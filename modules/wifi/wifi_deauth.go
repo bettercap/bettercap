@@ -5,22 +5,10 @@ import (
 	"fmt"
 	"net"
 	"sort"
-	"time"
 
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 )
-
-func (mod *WiFiModule) injectPacket(data []byte) {
-	if err := mod.handle.WritePacketData(data); err != nil {
-		mod.Error("could not inject WiFi packet: %s", err)
-		mod.Session.Queue.TrackError()
-	} else {
-		mod.Session.Queue.TrackSent(uint64(len(data)))
-	}
-	// let the network card breath a little
-	time.Sleep(10 * time.Millisecond)
-}
 
 func (mod *WiFiModule) sendDeauthPacket(ap net.HardwareAddr, client net.HardwareAddr) {
 	for seq := uint16(0); seq < 64 && mod.Running(); seq++ {
