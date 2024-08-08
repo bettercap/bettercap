@@ -10,11 +10,11 @@ require (
 	github.com/bettercap/nrf24 v0.0.0-20190219153547-aa37e6d0e0eb
 	github.com/bettercap/readline v0.0.0-20210228151553-655e48bcb7bf
 	github.com/bettercap/recording v0.0.0-20190408083647-3ce1dcf032e3
-	github.com/chifflier/nfqueue-go v0.0.0-20170228160439-61ca646babef
 	github.com/dustin/go-humanize v1.0.1
 	github.com/elazarl/goproxy v0.0.0-20240726154733-8b0c20506380
 	github.com/elazarl/goproxy/ext v0.0.0-20210110162100-a92cc753f88e // indirect
 	github.com/evilsocket/islazy v1.11.0
+	github.com/florianl/go-nfqueue/v2 v2.0.0
 	github.com/gobwas/glob v0.0.0-20181002190808-e7a84e9525fe
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.1.0 // indirect

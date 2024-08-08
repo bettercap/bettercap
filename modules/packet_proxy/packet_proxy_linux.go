@@ -2,29 +2,27 @@ package packet_proxy
 
 import (
 	"fmt"
-	"io/ioutil"
-	golog "log"
 	"plugin"
+	"context"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bettercap/bettercap/core"
 	"github.com/bettercap/bettercap/session"
 
-	"github.com/chifflier/nfqueue-go/nfqueue"
+	nfqueue "github.com/florianl/go-nfqueue/v2"
 
 	"github.com/evilsocket/islazy/fs"
-	"github.com/evilsocket/islazy/tui"
 )
 
 type PacketProxy struct {
 	session.SessionModule
-	done       chan bool
 	chainName  string
 	rule       string
-	queue      *nfqueue.Queue
+	queue      *nfqueue.Nfqueue
 	queueNum   int
-	queueCb    nfqueue.Callback
+	queueCb    nfqueue.HookFunc
 	pluginPath string
 	plugin     *plugin.Plugin
 }
@@ -37,7 +35,6 @@ var mod *PacketProxy
 func NewPacketProxy(s *session.Session) *PacketProxy {
 	mod = &PacketProxy{
 		SessionModule: session.NewSessionModule("packet.proxy", s),
-		done:          make(chan bool),
 		queue:         nil,
 		queueCb:       nil,
 		queueNum:      0,
@@ -95,13 +92,12 @@ func (mod *PacketProxy) destroyQueue() {
 		return
 	}
 
-	mod.queue.DestroyQueue()
 	mod.queue.Close()
 	mod.queue = nil
 }
 
 func (mod *PacketProxy) runRule(enable bool) (err error) {
-	action := "-A"
+	action := "-I"
 	if !enable {
 		action = "-D"
 	}
@@ -118,7 +114,6 @@ func (mod *PacketProxy) runRule(enable bool) (err error) {
 	args = append(args, []string{
 		"-j", "NFQUEUE",
 		"--queue-num", fmt.Sprintf("%d", mod.queueNum),
-		"--queue-bypass",
 	}...)
 
 	mod.Debug("iptables %s", args)
@@ -128,8 +123,6 @@ func (mod *PacketProxy) runRule(enable bool) (err error) {
 }
 
 func (mod *PacketProxy) Configure() (err error) {
-	golog.SetOutput(ioutil.Discard)
-
 	mod.destroyQueue()
 
 	if err, mod.queueNum = mod.IntParam("packet.proxy.queue.num"); err != nil {
@@ -142,53 +135,60 @@ func (mod *PacketProxy) Configure() (err error) {
 		return
 	}
 
-	if mod.pluginPath == "" {
-		return fmt.Errorf("The parameter %s can not be empty.", tui.Bold("packet.proxy.plugin"))
-	} else if !fs.Exists(mod.pluginPath) {
-		return fmt.Errorf("%s does not exist.", mod.pluginPath)
-	}
-
-	mod.Info("loading packet proxy plugin from %s ...", mod.pluginPath)
-
-	var ok bool
-	var sym plugin.Symbol
-
-	if mod.plugin, err = plugin.Open(mod.pluginPath); err != nil {
-		return
-	} else if sym, err = mod.plugin.Lookup("OnPacket"); err != nil {
-		return
-	} else if mod.queueCb, ok = sym.(func(*nfqueue.Payload) int); !ok {
-		return fmt.Errorf("Symbol OnPacket is not a valid callback function.")
-	}
-
-	if sym, err = mod.plugin.Lookup("OnStart"); err == nil {
-		var onStartCb func() int
-		if onStartCb, ok = sym.(func() int); !ok {
-			return fmt.Errorf("OnStart signature does not match expected signature: 'func() int'")
-		} else {
-			var result int
-			if result = onStartCb(); result != 0 {
-				return fmt.Errorf("OnStart returned non-zero result. result=%d", result)
+	if mod.pluginPath != "" {
+		if !fs.Exists(mod.pluginPath) {
+			return fmt.Errorf("%s does not exist.", mod.pluginPath)
+		}
+	
+		mod.Info("loading packet proxy plugin from %s ...", mod.pluginPath)
+	
+		var ok bool
+		var sym plugin.Symbol
+	
+		if mod.plugin, err = plugin.Open(mod.pluginPath); err != nil {
+			return
+		} else if sym, err = mod.plugin.Lookup("OnPacket"); err != nil {
+			return
+		} else if mod.queueCb, ok = sym.(func(nfqueue.Attribute) int); !ok {
+			return fmt.Errorf("Symbol OnPacket is not a valid callback function.")
+		}
+	
+		if sym, err = mod.plugin.Lookup("OnStart"); err == nil {
+			var onStartCb func() int
+			if onStartCb, ok = sym.(func() int); !ok {
+				return fmt.Errorf("OnStart signature does not match expected signature: 'func() int'")
+			} else {
+				var result int
+				if result = onStartCb(); result != 0 {
+					return fmt.Errorf("OnStart returned non-zero result. result=%d", result)
+				}
 			}
 		}
+	} else {
+		mod.Warning("no plugin set")
 	}
 
-	mod.queue = new(nfqueue.Queue)
-	if err = mod.queue.SetCallback(dummyCallback); err != nil {
-		return
-	} else if err = mod.queue.Init(); err != nil {
-		return
-	} else if err = mod.queue.Unbind(syscall.AF_INET); err != nil {
-		return
-	} else if err = mod.queue.Bind(syscall.AF_INET); err != nil {
-		return
-	} else if err = mod.queue.CreateQueue(mod.queueNum); err != nil {
-		return
-	} else if err = mod.queue.SetMode(nfqueue.NFQNL_COPY_PACKET); err != nil {
-		return
-	} else if err = mod.runRule(true); err != nil {
-		return
+	config := nfqueue.Config {
+		NfQueue: uint16(mod.queueNum),
+		Copymode: nfqueue.NfQnlCopyPacket,
+		AfFamily: syscall.AF_INET,
+		MaxPacketLen: 0xFFFF,
+		MaxQueueLen:  0xFF,
+		WriteTimeout: 15 * time.Millisecond,
 	}
+
+	mod.Debug("config: %+v", config)
+
+	if err = mod.runRule(true); err != nil {
+		return
+	} else if mod.queue, err = nfqueue.Open(&config); err != nil {
+		return
+	} else if err = mod.queue.RegisterWithErrorFunc(context.Background(), dummyCallback, func(e error) int {
+		mod.Error("%v", e)
+		return -1
+	}); err != nil {
+		return 
+	} 
 
 	return nil
 }
@@ -196,8 +196,17 @@ func (mod *PacketProxy) Configure() (err error) {
 // we need this because for some reason we can't directly
 // pass the symbol loaded from the plugin as a direct
 // CGO callback ... ¯\_(ツ)_/¯
-func dummyCallback(payload *nfqueue.Payload) int {
-	return mod.queueCb(payload)
+func dummyCallback(attribute nfqueue.Attribute) int {
+	if mod.queueCb != nil {
+		return mod.queueCb(attribute)
+	} else {
+		id := *attribute.PacketID
+
+		mod.Info("[%d] %v", id, *attribute.Payload)
+
+		mod.queue.SetVerdict(id, nfqueue.NfAccept)
+		return 0
+	}
 }
 
 func (mod *PacketProxy) Start() error {
@@ -209,31 +218,24 @@ func (mod *PacketProxy) Start() error {
 
 	return mod.SetRunning(true, func() {
 		mod.Info("started on queue number %d", mod.queueNum)
-
-		defer mod.destroyQueue()
-
-		mod.queue.Loop()
-
-		mod.done <- true
 	})
 }
 
 func (mod *PacketProxy) Stop() (err error) {
 	return mod.SetRunning(false, func() {
-		mod.queue.StopLoop()
 		mod.runRule(false)
 
-		var sym plugin.Symbol
-		if sym, err = mod.plugin.Lookup("OnStop"); err == nil {
-			var onStopCb func()
-			var ok bool
-			if onStopCb, ok = sym.(func()); !ok {
-				mod.Error("OnStop signature does not match expected signature: 'func()', unable to call OnStop.")
-			} else {
-				onStopCb()
+		if mod.plugin != nil {
+			var sym plugin.Symbol
+			if sym, err = mod.plugin.Lookup("OnStop"); err == nil {
+				var onStopCb func()
+				var ok bool
+				if onStopCb, ok = sym.(func()); !ok {
+					mod.Error("OnStop signature does not match expected signature: 'func()', unable to call OnStop.")
+				} else {
+					onStopCb()
+				}
 			}
 		}
-
-		<-mod.done
 	})
 }
