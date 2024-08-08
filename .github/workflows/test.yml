@@ -1,0 +1,36 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+    test:
+        runs-on: ${{ matrix.os }}
+        strategy:
+          matrix:
+            os: [ubuntu-latest, macos-latest]
+            go-version: ['1.22.x']
+    
+        steps:
+        - name: Checkout Code
+          uses: actions/checkout@v2
+    
+        - name: Set up Go
+          uses: actions/setup-go@v2
+          with:
+            go-version: ${{ matrix.go-version }}
+    
+        - name: Install Dependencies
+          if: ${{ matrix.os == 'ubuntu-latest' }}
+          run: sudo apt-get update && sudo apt-get install -y p7zip-full libpcap-dev libnetfilter-queue-dev libusb-1.0-0-dev
+    
+        - name: Install Dependencies (macOS)
+          if: ${{ matrix.os == 'macos-latest' }}
+          run: brew install libpcap libusb p7zip
+    
+        - name: Run Tests
+          run: |
+            env GO111MODULE=on make test
