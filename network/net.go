@@ -256,6 +256,11 @@ func FindInterface(name string) (*Endpoint, error) {
 	// return the first one with a valid ipv4
 	// address that does not loop back
 	for _, iface := range ifaces {
+		// if name has not been provided, avoid default to a tun interface
+		if strings.Contains(iface.Name, "tun") {
+			continue
+		}
+
 		addrs, err := iface.Addrs()
 		if err != nil {
 			fmt.Printf("wtf of the day: %s", err)

@@ -25,6 +25,7 @@ func TestNewLAN(t *testing.T) {
 	if err != nil {
 		t.Error("no iface found", err)
 	}
+
 	gateway, err := FindGateway(iface)
 	if err != nil {
 		t.Error("no gateway found", err)
