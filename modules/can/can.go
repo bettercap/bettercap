@@ -1,6 +1,7 @@
 package can
 
 import (
+	"errors"
 	"net"
 
 	"github.com/bettercap/bettercap/session"
@@ -18,6 +19,7 @@ type CANModule struct {
 
 	conn net.Conn
 	recv *socketcan.Receiver
+	send *socketcan.Transmitter
 }
 
 func NewCanModule(s *session.Session) *CANModule {
@@ -66,6 +68,15 @@ func NewCanModule(s *session.Session) *CANModule {
 		"Show a list of detected CAN devices.",
 		func(args []string) error {
 			return mod.Show()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("can.inject FRAME_EXPRESSION", `(?i)^can\.inject\s+([a-fA-F0-9#R]+)$`,
+		"Parse FRAME_EXPRESSION as 'id#data' and inject it as a CAN frame.",
+		func(args []string) error {
+			if !mod.Running() {
+				return errors.New("can module not running")
+			}
+			return mod.Inject(args[0])
 		}))
 
 	return mod

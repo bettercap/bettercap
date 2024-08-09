@@ -62,6 +62,7 @@ func (mod *CANModule) Configure() error {
 	}
 
 	mod.recv = socketcan.NewReceiver(mod.conn)
+	mod.send = socketcan.NewTransmitter(mod.conn)
 
 	return nil
 }
@@ -124,6 +125,7 @@ func (mod *CANModule) Stop() error {
 		mod.conn.Close()
 		mod.conn = nil
 		mod.recv = nil
+		mod.send = nil
 		mod.dbc = nil
 		mod.dbcPath = ""
 	}
