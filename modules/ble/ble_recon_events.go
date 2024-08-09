@@ -1,4 +1,5 @@
-// +build !windows
+//go:build !windows && !freebsd && !openbsd && !netbsd
+// +build !windows,!freebsd,!openbsd,!netbsd
 
 package ble
 

@@ -1,5 +1,5 @@
-//go:build windows
-// +build windows
+//go:build windows || freebsd || netbsd || openbsd
+// +build windows freebsd netbsd openbsd
 
 package ble
 
