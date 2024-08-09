@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/v2/core"
 )
 
 type Meta struct {

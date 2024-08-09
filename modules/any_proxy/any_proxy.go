@@ -2,11 +2,12 @@ package any_proxy
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/firewall"
-	"github.com/bettercap/bettercap/session"
-	"github.com/evilsocket/islazy/str"
 	"strconv"
 	"strings"
+
+	"github.com/bettercap/bettercap/v2/firewall"
+	"github.com/bettercap/bettercap/v2/session"
+	"github.com/evilsocket/islazy/str"
 )
 
 type AnyProxy struct {

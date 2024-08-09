@@ -3,14 +3,15 @@ package graph
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bettercap/bettercap/session"
-	"github.com/evilsocket/islazy/fs"
 	"path"
 	"sync"
 	"time"
+
+	"github.com/bettercap/bettercap/v2/session"
+	"github.com/evilsocket/islazy/fs"
 )
 
-var Loaded = (* Graph)(nil)
+var Loaded = (*Graph)(nil)
 
 type NodeCallback func(*Node)
 type EdgeCallback func(*Node, []Edge, *Node)

@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/bettercap/bettercap/js"
+	"github.com/bettercap/bettercap/v2/js"
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/log"
 	"github.com/robertkrimen/otto"

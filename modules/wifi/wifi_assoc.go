@@ -6,8 +6,8 @@ import (
 	"net"
 	"sort"
 
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/packets"
 )
 
 func (mod *WiFiModule) sendAssocPacket(ap *network.AccessPoint) {

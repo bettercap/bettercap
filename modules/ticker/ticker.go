@@ -3,7 +3,7 @@ package ticker
 import (
 	"time"
 
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/session"
 )
 
 type Ticker struct {
@@ -72,7 +72,7 @@ func (mod *Ticker) Configure() error {
 	return nil
 }
 
-type TickEvent struct {}
+type TickEvent struct{}
 
 func (mod *Ticker) Start() error {
 	if err := mod.Configure(); err != nil {

@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"github.com/bettercap/bettercap/log"
+	"github.com/bettercap/bettercap/v2/log"
 )
 
 type graphPackage struct{}

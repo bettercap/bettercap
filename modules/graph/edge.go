@@ -2,8 +2,9 @@ package graph
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/session"
 	"time"
+
+	"github.com/bettercap/bettercap/v2/session"
 )
 
 type EdgeType string

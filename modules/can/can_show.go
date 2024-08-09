@@ -3,7 +3,7 @@ package can
 import (
 	"time"
 
-	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/v2/network"
 	"github.com/dustin/go-humanize"
 	"github.com/evilsocket/islazy/tui"
 )

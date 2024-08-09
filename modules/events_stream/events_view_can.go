@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bettercap/bettercap/modules/can"
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/modules/can"
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/session"
 	"github.com/dustin/go-humanize"
 
 	"github.com/evilsocket/islazy/tui"

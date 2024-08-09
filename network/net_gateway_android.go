@@ -1,7 +1,7 @@
 package network
 
 import (
-	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/v2/core"
 
 	"github.com/evilsocket/islazy/str"
 )

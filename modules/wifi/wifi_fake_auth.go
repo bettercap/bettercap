@@ -3,11 +3,11 @@ package wifi
 import (
 	"bytes"
 	"fmt"
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/packets"
 	"net"
-)
 
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/packets"
+)
 
 func (mod *WiFiModule) isFakeAuthSilent() bool {
 	if err, is := mod.BoolParam("wifi.fake_auth.silent"); err != nil {
@@ -18,18 +18,18 @@ func (mod *WiFiModule) isFakeAuthSilent() bool {
 	return mod.csaSilent
 }
 
-func(mod *WiFiModule)sendFakeAuthPacket(bssid,client net.HardwareAddr){
-	err,pkt:=packets.NewDot11Auth(client,bssid,0)
-	if err!=nil{
+func (mod *WiFiModule) sendFakeAuthPacket(bssid, client net.HardwareAddr) {
+	err, pkt := packets.NewDot11Auth(client, bssid, 0)
+	if err != nil {
 		mod.Error("could not create authentication packet: %s", err)
 		return
 	}
-	for i:=0;i<32;i++{
+	for i := 0; i < 32; i++ {
 		mod.injectPacket(pkt)
 	}
 }
 
-func (mod *WiFiModule) startFakeAuth(bssid,client net.HardwareAddr) error {
+func (mod *WiFiModule) startFakeAuth(bssid, client net.HardwareAddr) error {
 	// if not already running, temporarily enable the pcap handle
 	// for packet injection
 	if !mod.Running() {
@@ -63,7 +63,7 @@ func (mod *WiFiModule) startFakeAuth(bssid,client net.HardwareAddr) error {
 			logger("fake authentication attack in AP: %s client: %s", ap.ESSID(), client.String())
 			// send the beacon frame with channel switch announce element id
 			mod.onChannel(ap.Channel, func() {
-				mod.sendFakeAuthPacket(bssid,client)
+				mod.sendFakeAuthPacket(bssid, client)
 			})
 		}
 	}()

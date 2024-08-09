@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/v2/packets"
 
 	"github.com/hashicorp/mdns"
 )

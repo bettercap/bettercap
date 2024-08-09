@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bettercap/bettercap/firewall"
-	"github.com/bettercap/bettercap/session"
-	btls "github.com/bettercap/bettercap/tls"
+	"github.com/bettercap/bettercap/v2/firewall"
+	"github.com/bettercap/bettercap/v2/session"
+	btls "github.com/bettercap/bettercap/v2/tls"
 
 	"github.com/elazarl/goproxy"
 	"github.com/inconshreveable/go-vhost"
@@ -175,7 +175,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRed
 
 	// check if another http(s) proxy is using sslstrip and merge strippers
 	if stripSSL {
-		for _, mname := range []string{"http.proxy", "https.proxy"}{
+		for _, mname := range []string{"http.proxy", "https.proxy"} {
 			err, m := p.Sess.Module(mname)
 			if err == nil && m.Running() {
 				var mextra interface{}

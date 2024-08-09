@@ -3,7 +3,7 @@ package syn_scan
 import (
 	"sync/atomic"
 
-	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/v2/network"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -27,8 +27,6 @@ func (mod *SynScanner) onPacket(pkt gopacket.Packet) {
 	var ip4 layers.IPv4
 	var ip6 layers.IPv6
 	var tcp layers.TCP
-
-
 
 	isIPv6 := false
 	foundLayerTypes := []gopacket.LayerType{}

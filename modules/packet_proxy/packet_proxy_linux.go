@@ -1,15 +1,15 @@
 package packet_proxy
 
 import (
+	"context"
 	"fmt"
 	"plugin"
-	"context"
 	"strings"
 	"syscall"
 	"time"
 
-	"github.com/bettercap/bettercap/core"
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/core"
+	"github.com/bettercap/bettercap/v2/session"
 
 	nfqueue "github.com/florianl/go-nfqueue/v2"
 
@@ -139,12 +139,12 @@ func (mod *PacketProxy) Configure() (err error) {
 		if !fs.Exists(mod.pluginPath) {
 			return fmt.Errorf("%s does not exist.", mod.pluginPath)
 		}
-	
+
 		mod.Info("loading packet proxy plugin from %s ...", mod.pluginPath)
-	
+
 		var ok bool
 		var sym plugin.Symbol
-	
+
 		if mod.plugin, err = plugin.Open(mod.pluginPath); err != nil {
 			return
 		} else if sym, err = mod.plugin.Lookup("OnPacket"); err != nil {
@@ -152,7 +152,7 @@ func (mod *PacketProxy) Configure() (err error) {
 		} else if mod.queueCb, ok = sym.(func(nfqueue.Attribute) int); !ok {
 			return fmt.Errorf("Symbol OnPacket is not a valid callback function.")
 		}
-	
+
 		if sym, err = mod.plugin.Lookup("OnStart"); err == nil {
 			var onStartCb func() int
 			if onStartCb, ok = sym.(func() int); !ok {
@@ -168,10 +168,10 @@ func (mod *PacketProxy) Configure() (err error) {
 		mod.Warning("no plugin set")
 	}
 
-	config := nfqueue.Config {
-		NfQueue: uint16(mod.queueNum),
-		Copymode: nfqueue.NfQnlCopyPacket,
-		AfFamily: syscall.AF_INET,
+	config := nfqueue.Config{
+		NfQueue:      uint16(mod.queueNum),
+		Copymode:     nfqueue.NfQnlCopyPacket,
+		AfFamily:     syscall.AF_INET,
 		MaxPacketLen: 0xFFFF,
 		MaxQueueLen:  0xFF,
 		WriteTimeout: 15 * time.Millisecond,
@@ -187,8 +187,8 @@ func (mod *PacketProxy) Configure() (err error) {
 		mod.Error("%v", e)
 		return -1
 	}); err != nil {
-		return 
-	} 
+		return
+	}
 
 	return nil
 }

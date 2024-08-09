@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package ble
@@ -8,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/gatt"
 
 	"github.com/evilsocket/islazy/tui"

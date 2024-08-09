@@ -2,7 +2,8 @@ package graph
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/network"
+
+	"github.com/bettercap/bettercap/v2/network"
 )
 
 func (mod *Module) createIPGraph(endpoint *network.Endpoint) (*Node, bool, error) {

@@ -1,9 +1,10 @@
+//go:build !windows
 // +build !windows
 
 package ble
 
 import (
-	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/v2/network"
 )
 
 type ByBLERSSISorter []*network.BLEDevice

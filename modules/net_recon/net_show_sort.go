@@ -1,9 +1,9 @@
 package net_recon
 
 import (
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/packets"
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/packets"
+	"github.com/bettercap/bettercap/v2/session"
 )
 
 type ByAddressSorter []*network.Endpoint

@@ -1,7 +1,7 @@
 package events_stream
 
 import (
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/session"
 
 	"github.com/evilsocket/islazy/tui"
 )

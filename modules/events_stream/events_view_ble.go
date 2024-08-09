@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package events_stream
@@ -6,8 +7,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/session"
 
 	"github.com/evilsocket/islazy/tui"
 )

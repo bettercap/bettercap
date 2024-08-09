@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"strings"
+	"text/template"
+
 	"github.com/acarl005/stripansi"
-	"github.com/bettercap/bettercap/modules/events_stream"
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/modules/events_stream"
+	"github.com/bettercap/bettercap/v2/session"
 	"github.com/evilsocket/islazy/log"
 	"github.com/evilsocket/islazy/str"
 	irc "github.com/thoj/go-ircevent"
-	"strings"
-	"text/template"
 )
 
 type settings struct {

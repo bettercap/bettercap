@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/session"
 
 	"github.com/antchfx/jsonquery"
 	"github.com/evilsocket/islazy/str"

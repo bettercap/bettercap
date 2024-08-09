@@ -1,7 +1,7 @@
 package session
 
 import (
-	"github.com/bettercap/bettercap/js"
+	"github.com/bettercap/bettercap/v2/js"
 	"github.com/robertkrimen/otto"
 )
 
@@ -30,4 +30,3 @@ func jsEnvFunc(call otto.FunctionCall) otto.Value {
 	}
 	return js.NullValue
 }
-

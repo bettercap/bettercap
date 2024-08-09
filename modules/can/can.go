@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/session"
 	"go.einride.tech/can/pkg/descriptor"
 	"go.einride.tech/can/pkg/socketcan"
 )

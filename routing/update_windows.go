@@ -1,10 +1,11 @@
 package routing
 
 import (
-	"github.com/bettercap/bettercap/core"
-	"github.com/evilsocket/islazy/str"
 	"regexp"
 	"strings"
+
+	"github.com/bettercap/bettercap/v2/core"
+	"github.com/evilsocket/islazy/str"
 )
 
 var parser = regexp.MustCompile(`^.+\d+\s+([^\s]+)\s+\d+\s+(.+)$`)

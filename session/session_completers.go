@@ -3,7 +3,7 @@ package session
 import (
 	"strings"
 
-	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/v2/network"
 )
 
 func prefixMatches(prefix, what string) bool {

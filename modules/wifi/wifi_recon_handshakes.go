@@ -3,11 +3,12 @@ package wifi
 import (
 	"bytes"
 	"fmt"
-	"github.com/bettercap/bettercap/network"
 	"net"
 	"path"
 
-	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/v2/network"
+
+	"github.com/bettercap/bettercap/v2/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -135,8 +136,8 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 
 	// quick and dirty heuristic, see thread here https://github.com/bettercap/bettercap/issues/810#issuecomment-805145392
 	if isEAPOL || (dot11.Type.MainType() != layers.Dot11TypeData && dot11.Type.MainType() != layers.Dot11TypeCtrl) {
-		target := (* network.Station)(nil)
-		targetAP := (* network.AccessPoint)(nil)
+		target := (*network.Station)(nil)
+		targetAP := (*network.AccessPoint)(nil)
 
 		// collect target bssids
 		bssids := make([]net.HardwareAddr, 0)

@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bettercap/bettercap/modules/utils"
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/packets"
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/modules/utils"
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/packets"
+	"github.com/bettercap/bettercap/v2/session"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -580,9 +580,9 @@ func (mod *WiFiModule) Configure() error {
 				// second fatal error, just bail
 				return fmt.Errorf("error while activating handle: %s", err)
 			} else {
-				// first fatal error, forcing monitor mode 
+				// first fatal error, forcing monitor mode
 				// https://github.com/bettercap/bettercap/issues/819
-				opts.Monitor = false;
+				opts.Monitor = false
 				if err := network.ForceMonitorMode(ifName); err != nil {
 					return err
 				}

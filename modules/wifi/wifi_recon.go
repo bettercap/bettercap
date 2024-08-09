@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"

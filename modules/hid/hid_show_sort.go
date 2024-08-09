@@ -1,7 +1,7 @@
 package hid
 
 import (
-	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/v2/network"
 )
 
 type ByHIDMacSorter []*network.HIDDevice

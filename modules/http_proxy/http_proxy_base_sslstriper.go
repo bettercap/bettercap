@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bettercap/bettercap/log"
-	"github.com/bettercap/bettercap/modules/dns_spoof"
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/log"
+	"github.com/bettercap/bettercap/v2/modules/dns_spoof"
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/session"
 
 	"github.com/elazarl/goproxy"
 	"github.com/google/gopacket"
@@ -163,7 +163,7 @@ func (s *SSLStripper) fixCookiesInHeader(res *http.Response) {
 	origHost := res.Request.URL.Hostname()
 	strippedHost := s.hosts.Strip(origHost /* unstripped */)
 
-	if strippedHost != nil && /*strippedHost.Hostname != origHost && */res.Header["Set-Cookie"] != nil {
+	if strippedHost != nil && /*strippedHost.Hostname != origHost && */ res.Header["Set-Cookie"] != nil {
 		// origHost is being tracked.
 		// get domains from hostnames
 		if origParts, strippedParts := strings.Split(origHost, "."), strings.Split(strippedHost.Hostname, "."); len(origParts) > 1 && len(strippedParts) > 1 {

@@ -3,7 +3,8 @@ package js
 import (
 	"math/rand"
 	"net"
-	"github.com/bettercap/bettercap/network"
+
+	"github.com/bettercap/bettercap/v2/network"
 )
 
 type randomPackage struct {

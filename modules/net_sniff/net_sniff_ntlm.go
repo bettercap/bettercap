@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/v2/packets"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
