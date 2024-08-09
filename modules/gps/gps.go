@@ -3,6 +3,7 @@ package gps
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"time"
 
 	"github.com/bettercap/bettercap/v2/session"
@@ -63,6 +64,24 @@ func NewGPS(s *session.Session) *GPS {
 		"Show the last coordinates returned by the GPS hardware.",
 		func(args []string) error {
 			return mod.Show()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("gps.set LAT LON", `(?i)^gps\.set\s+([0-9\.]+)\s+([0-9\.]+)$`,
+		"Manually set GPS location.",
+		func(args []string) error {
+
+			if lat, err := strconv.ParseFloat(args[0], 64); err != nil {
+				return err
+			} else if lon, err := strconv.ParseFloat(args[1], 64); err != nil {
+				return err
+			} else {
+				mod.Session.GPS.Updated = time.Now()
+				mod.Session.GPS.Latitude = lat
+				mod.Session.GPS.Longitude = lon
+				mod.Session.Events.Add("gps.new", mod.Session.GPS)
+			}
+
+			return nil
 		}))
 
 	return mod
