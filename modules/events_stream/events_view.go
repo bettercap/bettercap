@@ -120,6 +120,8 @@ func (mod *EventsStream) Render(output io.Writer, e session.Event) {
 		mod.viewBLEEvent(output, e)
 	} else if strings.HasPrefix(e.Tag, "hid.") {
 		mod.viewHIDEvent(output, e)
+	} else if strings.HasPrefix(e.Tag, "can.") {
+		mod.viewCANEvent(output, e)
 	} else if strings.HasPrefix(e.Tag, "gps.") {
 		mod.viewGPSEvent(output, e)
 	} else if strings.HasPrefix(e.Tag, "mod.") {

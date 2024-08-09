@@ -76,6 +76,7 @@ type Session struct {
 	WiFi      *network.WiFi
 	BLE       *network.BLE
 	HID       *network.HID
+	CAN       *network.CAN
 	Queue     *packets.Queue
 	StartedAt time.Time
 	Active    bool
@@ -124,7 +125,7 @@ func New() (*Session, error) {
 		if err != nil {
 			return nil, err
 		}
-		defer  f.Close()
+		defer f.Close()
 		if err := pprof.StartCPUProfile(f); err != nil {
 			return nil, err
 		}
@@ -271,6 +272,12 @@ func (s *Session) Start() error {
 	}
 
 	s.Firewall = firewall.Make(s.Interface)
+
+	s.CAN = network.NewCAN(s.Aliases, func(dev *network.CANDevice) {
+		s.Events.Add("can.device.new", dev)
+	}, func(dev *network.CANDevice) {
+		s.Events.Add("can.device.lost", dev)
+	})
 
 	s.HID = network.NewHID(s.Aliases, func(dev *network.HIDDevice) {
 		s.Events.Add("hid.device.new", dev)

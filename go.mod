@@ -27,8 +27,6 @@ require (
 	github.com/jpillora/go-tld v1.2.1
 	github.com/kr/binarydist v0.1.0 // indirect
 	github.com/malfunkt/iprange v0.9.0
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mdlayher/dhcp6 v0.0.0-20190311162359-2a67805d7d0b
 	github.com/miekg/dns v1.1.61
 	github.com/mitchellh/go-homedir v1.1.0
@@ -37,6 +35,7 @@ require (
 	github.com/stratoberry/go-gpsd v1.3.0
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64
+	go.einride.tech/can v0.12.0
 	golang.org/x/net v0.28.0
 	golang.org/x/tools v0.24.0 // indirect
 )

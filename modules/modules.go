@@ -6,6 +6,7 @@ import (
 	"github.com/bettercap/bettercap/modules/arp_spoof"
 	"github.com/bettercap/bettercap/modules/ble"
 	"github.com/bettercap/bettercap/modules/c2"
+	"github.com/bettercap/bettercap/modules/can"
 	"github.com/bettercap/bettercap/modules/caplets"
 	"github.com/bettercap/bettercap/modules/dhcp6_spoof"
 	"github.com/bettercap/bettercap/modules/dns_spoof"
@@ -41,6 +42,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(arp_spoof.NewArpSpoofer(sess))
 	sess.Register(api_rest.NewRestAPI(sess))
 	sess.Register(ble.NewBLERecon(sess))
+	sess.Register(can.NewCanModule(sess))
 	sess.Register(dhcp6_spoof.NewDHCP6Spoofer(sess))
 	sess.Register(net_recon.NewDiscovery(sess))
 	sess.Register(dns_spoof.NewDNSSpoofer(sess))
