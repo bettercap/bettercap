@@ -72,7 +72,11 @@ func (s *Session) setupReadline() (err error) {
 
 	history := ""
 	if !*s.Options.NoHistory {
-		history, _ = fs.Expand(HistoryFile)
+		histPath := DefaultHistoryFile
+		if fromEnv := os.Getenv(HistoryEnvVar); fromEnv != "" {
+			histPath = fromEnv
+		}
+		history, _ = fs.Expand(histPath)
 	}
 
 	cfg := readline.Config{

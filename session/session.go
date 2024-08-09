@@ -30,7 +30,8 @@ import (
 )
 
 const (
-	HistoryFile = "~/bettercap.history"
+	DefaultHistoryFile = "~/bettercap.history"
+	HistoryEnvVar      = "BETTERCAP_HISTORY"
 )
 
 var (
