@@ -1,13 +1,11 @@
 # build stage
 FROM golang:1.22-alpine3.20 AS build-env
 
-ENV SRC_DIR $GOPATH/src/github.com/bettercap/bettercap
-
 RUN apk add --no-cache ca-certificates
-RUN apk add --no-cache bash gcc g++ binutils iptables wireless-tools build-base libpcap-dev libusb-dev linux-headers libnetfilter_queue-dev git
+RUN apk add --no-cache bash gcc g++ binutils-gold iptables wireless-tools build-base libpcap-dev libusb-dev linux-headers libnetfilter_queue-dev git
 
-WORKDIR $SRC_DIR
-ADD . $SRC_DIR
+WORKDIR $GOPATH/src/github.com/bettercap/bettercap
+ADD . $GOPATH/src/github.com/bettercap/bettercap
 RUN make
 
 # get caplets
