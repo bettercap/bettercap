@@ -2,12 +2,14 @@ package hid
 
 import (
 	"fmt"
+	golog "log"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/bettercap/bettercap/v2/modules/utils"
 	"github.com/bettercap/bettercap/v2/session"
+	"github.com/evilsocket/islazy/str"
 
 	"github.com/bettercap/nrf24"
 )
@@ -164,6 +166,15 @@ func (mod HIDRecon) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com> (this module and the nrf24 client library), Bastille Research (the rfstorm firmware and original research), phikshun and infamy for JackIt."
 }
 
+type dummyWriter struct {
+	mod *HIDRecon
+}
+
+func (w dummyWriter) Write(p []byte) (n int, err error) {
+	w.mod.Debug("[hid.log] %s", str.Trim(string(p)))
+	return len(p), nil
+}
+
 func (mod *HIDRecon) Configure() error {
 	var err error
 	var n int
@@ -197,6 +208,9 @@ func (mod *HIDRecon) Configure() error {
 	} else {
 		mod.sniffPeriod = time.Duration(n) * time.Millisecond
 	}
+
+	golog.SetFlags(0)
+	golog.SetOutput(dummyWriter{mod})
 
 	if mod.dongle, err = nrf24.Open(); err != nil {
 		return fmt.Errorf("make sure that a nRF24LU1+ based USB dongle is connected and running the rfstorm firmware: %s", err)
