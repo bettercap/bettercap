@@ -5,9 +5,11 @@ import (
 	// "github.com/bettercap/gatt/linux/cmd"
 )
 
-var defaultBLEClientOptions = []gatt.Option{
-	gatt.LnxMaxConnections(255),
-	gatt.LnxDeviceID(-1, true),
+func getClientOptions(deviceID int) []gatt.Option {
+	return []gatt.Option{
+		gatt.LnxMaxConnections(255),
+		gatt.LnxDeviceID(deviceID, true),
+	}
 }
 
 /*

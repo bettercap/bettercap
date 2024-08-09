@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package ble
@@ -166,7 +167,7 @@ func (mod *BLERecon) Configure() (err error) {
 		golog.SetFlags(0)
 		golog.SetOutput(dummyWriter{mod})
 
-		if mod.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
+		if mod.gattDevice, err = gatt.NewDevice(getClientOptions(mod.deviceId)...); err != nil {
 			mod.Debug("error while creating new gatt device: %v", err)
 			return err
 		}

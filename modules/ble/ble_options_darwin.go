@@ -4,8 +4,10 @@ import (
 	"github.com/bettercap/gatt"
 )
 
-var defaultBLEClientOptions = []gatt.Option{
-	gatt.MacDeviceRole(gatt.CentralManager),
+func getClientOptions(deviceID int) []gatt.Option {
+	return []gatt.Option{
+		gatt.MacDeviceRole(gatt.CentralManager),
+	}
 }
 
 /*
