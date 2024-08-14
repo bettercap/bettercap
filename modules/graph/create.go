@@ -149,7 +149,7 @@ func (mod *Module) createDot11ProbeGraph(ssid string, station *network.Station) 
 }
 
 func (mod *Module) createBLEServerGraph(dev *network.BLEDevice) (*Node, bool, error) {
-	mac := network.NormalizeMac(dev.Device.ID())
+	mac := dev.Address
 	node, err := mod.db.FindNode(BLEServer, mac)
 	isNew := node == nil
 	if err != nil {

@@ -1,20 +1,6 @@
-//go:build !windows && !freebsd && !openbsd && !netbsd
-// +build !windows,!freebsd,!openbsd,!netbsd
-
 package ble
 
-import (
-	"encoding/binary"
-	"fmt"
-	"strconv"
-	"strings"
-
-	"github.com/bettercap/bettercap/v2/network"
-	"github.com/bettercap/gatt"
-
-	"github.com/evilsocket/islazy/tui"
-)
-
+/*
 var appearances = map[uint16]string{
 	0:    "Unknown",
 	64:   "Generic Phone",
@@ -410,3 +396,4 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 		mod.Session.Refresh()
 	}
 }
+*/

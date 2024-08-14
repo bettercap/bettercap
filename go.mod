@@ -6,7 +6,6 @@ require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/adrianmo/go-nmea v1.9.0
 	github.com/antchfx/jsonquery v1.3.5
-	github.com/bettercap/gatt v0.0.0-20240808115956-ec4935e8c4a0
 	github.com/bettercap/nrf24 v0.0.0-20190219153547-aa37e6d0e0eb
 	github.com/bettercap/readline v0.0.0-20210228151553-655e48bcb7bf
 	github.com/bettercap/recording v0.0.0-20190408083647-3ce1dcf032e3
@@ -38,4 +37,5 @@ require (
 	go.einride.tech/can v0.12.0
 	golang.org/x/net v0.28.0
 	golang.org/x/tools v0.24.0 // indirect
+	tinygo.org/x/bluetooth v0.10.0
 )

@@ -16,7 +16,7 @@ import (
 func (mod *EventsStream) viewBLEEvent(output io.Writer, e session.Event) {
 	if e.Tag == "ble.device.new" {
 		dev := e.Data.(*network.BLEDevice)
-		name := dev.Device.Name()
+		name := dev.Name
 		if name != "" {
 			name = " " + tui.Bold(name)
 		}
@@ -29,12 +29,12 @@ func (mod *EventsStream) viewBLEEvent(output io.Writer, e session.Event) {
 			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			name,
-			dev.Device.ID(),
+			dev.Address,
 			vend,
 			tui.Dim(fmt.Sprintf("%d dBm", dev.RSSI)))
 	} else if e.Tag == "ble.device.lost" {
 		dev := e.Data.(*network.BLEDevice)
-		name := dev.Device.Name()
+		name := dev.Name
 		if name != "" {
 			name = " " + tui.Bold(name)
 		}
@@ -47,7 +47,7 @@ func (mod *EventsStream) viewBLEEvent(output io.Writer, e session.Event) {
 			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			name,
-			dev.Device.ID(),
+			dev.Address,
 			vend)
 	}
 }

@@ -1,6 +1,3 @@
-//go:build !windows && !freebsd && !openbsd && !netbsd
-// +build !windows,!freebsd,!openbsd,!netbsd
-
 package ble
 
 import (
@@ -9,7 +6,6 @@ import (
 
 	"github.com/bettercap/bettercap/v2/network"
 
-	"github.com/evilsocket/islazy/ops"
 	"github.com/evilsocket/islazy/tui"
 )
 
@@ -18,10 +14,9 @@ var (
 )
 
 func (mod *BLERecon) getRow(dev *network.BLEDevice, withName bool) []string {
-	rssi := network.ColorRSSI(dev.RSSI)
-	address := network.NormalizeMac(dev.Device.ID())
-	vendor := tui.Dim(ops.Ternary(dev.Vendor == "", dev.Advertisement.Company, dev.Vendor).(string))
-	isConnectable := ops.Ternary(dev.Advertisement.Connectable, tui.Green("✔"), tui.Red("✖")).(string)
+	rssi := network.ColorRSSI(int(dev.RSSI))
+	address := dev.Address
+	vendor := tui.Dim(dev.Vendor)
 	sinceSeen := time.Since(dev.LastSeen)
 	lastSeen := dev.LastSeen.Format("15:04:05")
 
@@ -37,10 +32,8 @@ func (mod *BLERecon) getRow(dev *network.BLEDevice, withName bool) []string {
 		return []string{
 			rssi,
 			address,
-			tui.Yellow(dev.Name()),
+			tui.Yellow(dev.Name),
 			vendor,
-			dev.Advertisement.Flags.String(),
-			isConnectable,
 			lastSeen,
 		}
 	} else {
@@ -48,8 +41,6 @@ func (mod *BLERecon) getRow(dev *network.BLEDevice, withName bool) []string {
 			rssi,
 			address,
 			vendor,
-			dev.Advertisement.Flags.String(),
-			isConnectable,
 			lastSeen,
 		}
 	}
@@ -59,8 +50,8 @@ func (mod *BLERecon) doFilter(dev *network.BLEDevice) bool {
 	if mod.selector.Expression == nil {
 		return true
 	}
-	return mod.selector.Expression.MatchString(dev.Device.ID()) ||
-		mod.selector.Expression.MatchString(dev.Device.Name()) ||
+	return mod.selector.Expression.MatchString(dev.Address) ||
+		mod.selector.Expression.MatchString(dev.Name) ||
 		mod.selector.Expression.MatchString(dev.Vendor)
 }
 
@@ -109,10 +100,10 @@ func (mod *BLERecon) doSelection() (devices []*network.BLEDevice, err error) {
 }
 
 func (mod *BLERecon) colNames(withName bool) []string {
-	colNames := []string{"RSSI", "MAC", "Vendor", "Flags", "Connect", "Seen"}
+	colNames := []string{"RSSI", "MAC", "Vendor", "Seen"}
 	seenIdx := 5
 	if withName {
-		colNames = []string{"RSSI", "MAC", "Name", "Vendor", "Flags", "Connect", "Seen"}
+		colNames = []string{"RSSI", "MAC", "Name", "Vendor", "Seen"}
 		seenIdx = 6
 	}
 	switch mod.selector.SortField {
@@ -134,7 +125,7 @@ func (mod *BLERecon) Show() error {
 
 	hasName := false
 	for _, dev := range devices {
-		if dev.Name() != "" {
+		if dev.Name != "" {
 			hasName = true
 			break
 		}

@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package network
@@ -5,14 +6,12 @@ package network
 import (
 	"encoding/json"
 	"sync"
-	"time"
-
-	"github.com/bettercap/gatt"
 
 	"github.com/evilsocket/islazy/data"
+	"tinygo.org/x/bluetooth"
 )
 
-const BLEMacValidator = "([a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2}:[a-fA-F0-9]{1,2})"
+const BLEMacValidator = "([a-fA-F0-9:\\-]+)"
 
 type BLEDevNewCallback func(dev *BLEDevice)
 type BLEDevLostCallback func(dev *BLEDevice)
@@ -53,28 +52,23 @@ func (b *BLE) Get(id string) (dev *BLEDevice, found bool) {
 	return
 }
 
-func (b *BLE) AddIfNew(id string, p gatt.Peripheral, a *gatt.Advertisement, rssi int) *BLEDevice {
+func (b *BLE) AddIfNew(id string, scanResult bluetooth.ScanResult) *BLEDevice {
 	b.Lock()
 	defer b.Unlock()
 
-	id = NormalizeMac(id)
-	alias := b.aliases.GetOr(id, "")
+	devAlias := b.aliases.GetOr(id, "")
 	if dev, found := b.devices[id]; found {
-		dev.LastSeen = time.Now()
-		dev.RSSI = rssi
-		dev.Advertisement = a
-		if alias != "" {
-			dev.Alias = alias
-		}
+		dev.Update(scanResult, devAlias)
 		return dev
 	}
 
-	newDev := NewBLEDevice(p, a, rssi)
-	newDev.Alias = alias
-	b.devices[id] = newDev
+	dev := NewBLEDevice(scanResult)
+	dev.Update(scanResult, devAlias)
+
+	b.devices[id] = dev
 
 	if b.newCb != nil {
-		b.newCb(newDev)
+		b.newCb(dev)
 	}
 
 	return nil
@@ -84,7 +78,6 @@ func (b *BLE) Remove(id string) {
 	b.Lock()
 	defer b.Unlock()
 
-	id = NormalizeMac(id)
 	if dev, found := b.devices[id]; found {
 		delete(b.devices, id)
 		if b.lostCb != nil {
