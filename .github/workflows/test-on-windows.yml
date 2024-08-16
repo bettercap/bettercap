@@ -38,6 +38,7 @@ jobs:
             7z x -y "C:\wpcap-sdk.zip" -o"C:\winpcap"
             copy builder\libusb.pc C:\pkg-config\libusb.pc
             copy builder\libusb.pc C:\pkg-config\libusb-1.0.pc
+            echo "PKG_CONFIG_PATH=C:\pkg-config\" >> $GITHUB_ENV
           
         - name: Run Tests
           run: env GO111MODULE=on make test
