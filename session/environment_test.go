@@ -4,15 +4,12 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 )
 
 var (
-	// fix for weird bug on windows github action
-	testEnvFile = strings.Replace(filepath.Join(os.TempDir(), "test.env"), "C:\\Users\\RUNNER", "", 1)
+	testEnvFile = "test.env"
 	testEnvData = map[string]string{
 		"people": "shit",
 		"moo":    "boo",
