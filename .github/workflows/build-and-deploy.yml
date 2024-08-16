@@ -55,7 +55,16 @@ jobs:
       if: ${{ matrix.os == 'macos-latest' }}
       run: brew install libpcap libusb p7zip
 
-    - name: Install Dependencies (Windows)
+
+    - name: Install libusb via mingw (Windows)
+      if: ${{ matrix.os == 'windows-latest' }}
+      uses: msys2/setup-msys2@v2
+      with:
+        install: |-
+          mingw64/mingw-w64-x86_64-libusb
+          mingw64/mingw-w64-x86_64-pkg-config
+
+    - name: Install other Dependencies (Windows)
       if: ${{ matrix.os == 'windows-latest' }}
       run: |
         choco install openssl.light -y
@@ -64,14 +73,7 @@ jobs:
         choco install zadig -y
         curl -L "https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip" -o "C:\wpcap-sdk.zip"
         7z x -y "C:\wpcap-sdk.zip" -o"C:\winpcap"
-
-    - name: Install libusb via mingw
-      if: ${{ matrix.os == 'windows-latest' }}
-      uses: msys2/setup-msys2@v2
-      with:
-        install: |-
-          mingw64/mingw-w64-x86_64-libusb
-          mingw64/mingw-w64-x86_64-pkg-config
+        echo "D:\a\_temp\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Build
       run: make -e TARGET="${{ env.OUTPUT }}"
