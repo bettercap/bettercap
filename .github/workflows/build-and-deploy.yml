@@ -23,9 +23,9 @@ jobs:
             target_os: linux
             target_arch: aarch64
           - os: macos-latest
-            arch: amd64
+            arch: arm64
             target_os: darwin
-            target_arch: amd64
+            target_arch: arm64
           - os: windows-latest
             arch: amd64
             target_os: windows
@@ -83,7 +83,6 @@ jobs:
         file "${{ env.OUTPUT }}"
         openssl dgst -sha256 "${{ env.OUTPUT }}" | tee bettercap_${{ matrix.target_os }}_${{ matrix.target_arch }}_${{ env.VERSION }}.sha256
         7z a "bettercap_${{ matrix.target_os }}_${{ matrix.target_arch }}_${{ env.VERSION }}.zip" "${{ env.OUTPUT }}" "bettercap_${{ matrix.target_os }}_${{ matrix.target_arch }}_${{ env.VERSION }}.sha256"
-        ls -la bettercap*
 
   deploy:
     needs: [build]
