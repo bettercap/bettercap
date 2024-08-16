@@ -61,25 +61,20 @@ jobs:
         choco install openssl.light -y
         choco install make -y
         choco install 7zip -y
-        choco install pkgconfiglite -y
-        mkdir C:\pkg-config
         choco install zadig -y
-        curl -L "https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.7z" -o "C:\libusb.7z"
-        7z x -y "C:\libusb.7z" -o"C:\libusb"
         curl -L "https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip" -o "C:\wpcap-sdk.zip"
         7z x -y "C:\wpcap-sdk.zip" -o"C:\winpcap"
-        copy builder\libusb.pc C:\pkg-config\libusb.pc
-        copy builder\libusb.pc C:\pkg-config\libusb-1.0.pc
 
-    - name: Build on Windows
+    - name: Install libusb via mingw
       if: ${{ matrix.os == 'windows-latest' }}
-      run: |
-        env PKG_CONFIG_PATH=C:\pkg-config\ make -e TARGET="${{ env.OUTPUT }}"
+      uses: msys2/setup-msys2@v2
+      with:
+        install: |-
+          mingw64/mingw-w64-x86_64-libusb
+          mingw64/mingw-w64-x86_64-pkg-config
 
     - name: Build
-      if: ${{ matrix.os != 'windows-latest' }}
-      run: |
-        make -e TARGET="${{ env.OUTPUT }}"
+      run: make -e TARGET="${{ env.OUTPUT }}"
 
     - name: Verify Build
       run: |

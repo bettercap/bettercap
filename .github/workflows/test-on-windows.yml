@@ -24,7 +24,7 @@ jobs:
           with:
             go-version: ${{ matrix.go-version }}
     
-        - name: Install libus via mingw
+        - name: Install libusb via mingw
           uses: msys2/setup-msys2@v2
           with:
             install: |-
