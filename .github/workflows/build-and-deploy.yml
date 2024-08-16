@@ -4,7 +4,8 @@ on:
   push:
     tags:
       - 'v*.*.*'    # Match version tags
-
+  workflow_dispatch:      
+  
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -21,11 +22,6 @@ jobs:
             arch: arm64
             target_os: linux
             target_arch: aarch64
-          - os: ubuntu-latest
-            arch: amd64
-            target_os: linux
-            target_arch: armhf
-            cross_build: true
           - os: macos-latest
             arch: amd64
             target_os: darwin
@@ -75,19 +71,9 @@ jobs:
         copy builder\libusb.pc C:\pkg-config\libusb.pc
         copy builder\libusb.pc C:\pkg-config\libusb-1.0.pc
 
-    - name: Install QEMU for Cross Compilation (Linux only)
-      if: matrix.cross_build && matrix.os == 'ubuntu-latest'
-      run: |
-        wget --show-progress -qcO "qemu.deb" "https://github.com/bettercap/buildutils/raw/main/qemu-user-static_5.2_dfsg-9_amd64.deb"
-        sudo dpkg -i "qemu.deb"
-
     - name: Build
       run: |
-        if [ -n "${{matrix.cross_build}}" ]; then
-          sudo builder/arm_builder.sh bettercap make -e TARGET="${{ env.OUTPUT }}"
-        else
-          make -e TARGET="${{ env.OUTPUT }}"
-        fi
+        make -e TARGET="${{ env.OUTPUT }}"
 
     - name: Verify Build
       run: |
@@ -96,7 +82,6 @@ jobs:
         7z a "bettercap_${{ matrix.target_os }}_${{ matrix.target_arch }}_${{ env.VERSION }}.zip" "${{ env.OUTPUT }}" "bettercap_${{ matrix.target_os }}_${{ matrix.target_arch }}_${{ env.VERSION }}.sha256"
         ls -la bettercap*
 
-  # Deployment is triggered on push of version tags and the files are already zipped and hashed during the build job.
   deploy:
     needs: [build]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
