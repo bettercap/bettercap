@@ -24,21 +24,24 @@ jobs:
           with:
             go-version: ${{ matrix.go-version }}
     
-        - name: Install Dependencies
+        - name: Install libus via mingw
+          uses: msys2/setup-msys2@v2
+          with:
+            install: |-
+              mingw64/mingw-w64-x86_64-libusb
+              mingw64/mingw-w64-x86_64-pkg-config
+
+        - name: Install other dependencies
           run: |
             choco install openssl.light -y
             choco install make -y
             choco install 7zip -y
-            choco install pkgconfiglite -y
-            mkdir C:\pkg-config
             choco install zadig -y
-            curl -L "https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.7z" -o "C:\libusb.7z"
-            7z x -y "C:\libusb.7z" -o"C:\libusb"
             curl -L "https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip" -o "C:\wpcap-sdk.zip"
             7z x -y "C:\wpcap-sdk.zip" -o"C:\winpcap"
-            copy builder\libusb.pc C:\pkg-config\libusb.pc
-            copy builder\libusb.pc C:\pkg-config\libusb-1.0.pc
-          
+                       
+        - run: echo "D:\a\_temp\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
         - name: Run Tests
-          run: env GO111MODULE=on PKG_CONFIG_PATH=C:\pkg-config\ make test
+          run: env GO111MODULE=on make test
         
