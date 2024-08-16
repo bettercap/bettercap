@@ -11,6 +11,7 @@ type CANDevice struct {
 	LastSeen    time.Time
 	Name        string
 	Description string
+	Frames      uint64
 	Read        uint64
 }
 
@@ -18,7 +19,8 @@ type canDeviceJSON struct {
 	LastSeen    time.Time `json:"last_seen"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	Read        uint64    `json:"description"`
+	Frames      uint64    `json:"frames"`
+	Read        uint64    `json:"read"`
 }
 
 func NewCANDevice(name string, description string, payload []byte) *CANDevice {
@@ -27,6 +29,7 @@ func NewCANDevice(name string, description string, payload []byte) *CANDevice {
 		Name:        name,
 		Description: description,
 		Read:        uint64(len(payload)),
+		Frames:      1,
 	}
 
 	return dev
@@ -41,6 +44,7 @@ func (dev *CANDevice) MarshalJSON() ([]byte, error) {
 		Name:        dev.Name,
 		Description: dev.Description,
 		Read:        dev.Read,
+		Frames:      dev.Frames,
 	}
 
 	return json.Marshal(doc)
@@ -54,4 +58,6 @@ func (dev *CANDevice) AddPayload(payload []byte) {
 	if payload != nil && sz > 0 {
 		dev.Read += uint64(sz)
 	}
+
+	dev.Frames += 1
 }

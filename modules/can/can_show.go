@@ -1,6 +1,7 @@
 package can
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/bettercap/bettercap/v2/network"
@@ -27,6 +28,7 @@ func (mod *CANModule) getRow(dev *network.CANDevice) []string {
 	return []string{
 		dev.Name,
 		dev.Description,
+		fmt.Sprintf("%d", dev.Frames),
 		humanize.Bytes(dev.Read),
 		seen,
 	}
@@ -40,7 +42,7 @@ func (mod *CANModule) Show() (err error) {
 		rows = append(rows, mod.getRow(dev))
 	}
 
-	tui.Table(mod.Session.Events.Stdout, []string{"Name", "Description", "Data", "Seen"}, rows)
+	tui.Table(mod.Session.Events.Stdout, []string{"Name", "Description", "Frames", "Data", "Seen"}, rows)
 
 	if len(rows) > 0 {
 		mod.Session.Refresh()

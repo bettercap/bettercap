@@ -1,7 +1,6 @@
 package can
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -57,7 +56,7 @@ func (mod *CANModule) Configure() error {
 		mod.Warning("no can.dbc_path specified, messages won't be parsed")
 	}
 
-	if mod.conn, err = socketcan.DialContext(context.Background(), mod.transport, mod.deviceName); err != nil {
+	if mod.conn, err = socketcan.Dial(mod.transport, mod.deviceName); err != nil {
 		return err
 	}
 
@@ -65,6 +64,52 @@ func (mod *CANModule) Configure() error {
 	mod.send = socketcan.NewTransmitter(mod.conn)
 
 	return nil
+}
+
+func (mod *CANModule) onFrame(frame can.Frame) {
+	msg := Message{
+		Frame: frame,
+	}
+
+	// if we have a DBC database
+	if mod.dbc != nil {
+		// if the database contains this message id
+		if message, found := mod.dbc.Message(frame.ID); found {
+			msg.Name = message.Name
+
+			// find source full info in DBC nodes
+			sourceName := message.SenderNode
+			sourceDesc := ""
+			if sender, found := mod.dbc.Node(message.SenderNode); found {
+				sourceName = sender.Name
+				sourceDesc = sender.Description
+			}
+
+			// add CAN source if new
+			_, msg.Source = mod.Session.CAN.AddIfNew(sourceName, sourceDesc, frame.Data[:])
+
+			msg.Signals = make(map[string]string)
+
+			// parse signals
+			for _, signal := range message.Signals {
+				var value string
+
+				if signal.Length <= 32 && signal.IsFloat {
+					value = fmt.Sprintf("%f", signal.UnmarshalFloat(frame.Data))
+				} else if signal.Length == 1 {
+					value = fmt.Sprintf("%v", signal.UnmarshalBool(frame.Data))
+				} else if signal.IsSigned {
+					value = fmt.Sprintf("%d", signal.UnmarshalSigned(frame.Data))
+				} else {
+					value = fmt.Sprintf("%d", signal.UnmarshalUnsigned(frame.Data))
+				}
+
+				msg.Signals[signal.Name] = str.Trim(fmt.Sprintf("%s %s", value, signal.Unit))
+			}
+		}
+	}
+
+	mod.Session.Events.Add("can.message", msg)
 }
 
 func (mod *CANModule) Start() error {
@@ -77,44 +122,7 @@ func (mod *CANModule) Start() error {
 
 		for mod.recv.Receive() {
 			frame := mod.recv.Frame()
-			msg := Message{
-				Frame: frame,
-			}
-
-			if mod.dbc != nil {
-				if message, found := mod.dbc.Message(frame.ID); found {
-					msg.Name = message.Name
-
-					sourceName := message.SenderNode
-					sourceDesc := ""
-					if sender, found := mod.dbc.Node(message.SenderNode); found {
-						sourceName = sender.Name
-						sourceDesc = sender.Description
-					}
-
-					_, msg.Source = mod.Session.CAN.AddIfNew(sourceName, sourceDesc, frame.Data[:])
-
-					msg.Signals = make(map[string]string)
-
-					for _, signal := range message.Signals {
-						var value string
-
-						if signal.Length <= 32 && signal.IsFloat {
-							value = fmt.Sprintf("%f", signal.UnmarshalFloat(frame.Data))
-						} else if signal.Length == 1 {
-							value = fmt.Sprintf("%v", signal.UnmarshalBool(frame.Data))
-						} else if signal.IsSigned {
-							value = fmt.Sprintf("%d", signal.UnmarshalSigned(frame.Data))
-						} else {
-							value = fmt.Sprintf("%d", signal.UnmarshalUnsigned(frame.Data))
-						}
-
-						msg.Signals[signal.Name] = str.Trim(fmt.Sprintf("%s %s", value, signal.Unit))
-					}
-				}
-			}
-
-			mod.Session.Events.Add("can.message", msg)
+			mod.onFrame(frame)
 		}
 	})
 }
