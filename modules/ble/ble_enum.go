@@ -100,12 +100,6 @@ func (mod *BLERecon) startEnumeration(address string) error {
 					char.MTU = mtu
 				}
 
-				if props, err := ch.Properties(); err != nil {
-
-				} else {
-
-				}
-
 				mod.Session.Events.Add("ble.device.characteristic.discovered", ch)
 
 				name := char.Name
