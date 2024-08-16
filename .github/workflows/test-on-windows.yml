@@ -1,0 +1,44 @@
+name: Test on Windows
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+        matrix:
+          os: [windows-latest]
+          go-version: ['1.22.x']
+
+    steps:
+        - name: Checkout Code
+          uses: actions/checkout@v2
+    
+        - name: Set up Go
+          uses: actions/setup-go@v2
+          with:
+            go-version: ${{ matrix.go-version }}
+    
+        - name: Install Dependencies
+          run: |
+            choco install openssl.light -y
+            choco install make -y
+            choco install 7zip -y
+            choco install pkgconfiglite -y
+            mkdir C:\pkg-config
+            choco install zadig -y
+            curl -L "https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.7z" -o "C:\libusb.7z"
+            7z x -y "C:\libusb.7z" -o"C:\libusb"
+            curl -L "https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip" -o "C:\wpcap-sdk.zip"
+            7z x -y "C:\wpcap-sdk.zip" -o"C:\winpcap"
+            copy builder\libusb.pc C:\pkg-config\libusb.pc
+            copy builder\libusb.pc C:\pkg-config\libusb-1.0.pc
+          
+        - name: Run Tests
+          run: env GO111MODULE=on make test
+        
