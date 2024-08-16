@@ -12,7 +12,9 @@
   <p align="center">
     <a href="https://github.com/bettercap/bettercap/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/bettercap/bettercap.svg?style=flat-square"></a>
     <a href="https://github.com/bettercap/bettercap/blob/master/LICENSE.md"><img alt="Software License" src="https://img.shields.io/badge/license-GPL3-brightgreen.svg?style=flat-square"></a>
-    <a href="https://github.com/bettercap/bettercap/actions/workflows/test.yml"><img alt="Test" src="https://github.com/bettercap/bettercap/actions/workflows/test.yml/badge.svg"></a>
+    <a href="https://github.com/bettercap/bettercap/actions/workflows/test-on-linux.yml"><img alt="Tests on Linux" src="https://github.com/bettercap/bettercap/actions/workflows/test-on-linux.yml/badge.svg"></a>
+    <a href="https://github.com/bettercap/bettercap/actions/workflows/test-on-macos.yml"><img alt="Tests on macOS" src="https://github.com/bettercap/bettercap/actions/workflows/test-on-macos.yml/badge.svg"></a>
+    <a href="https://github.com/bettercap/bettercap/actions/workflows/test-on-windows.yml"><img alt="Tests on Windows" src="https://github.com/bettercap/bettercap/actions/workflows/test-on-windows.yml/badge.svg"></a>
     <a href="https://hub.docker.com/r/bettercap/bettercap"><img alt="Docker Hub" src="https://img.shields.io/docker/v/bettercap/bettercap?logo=docker"></a>
   </p>
 </p>

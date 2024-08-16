@@ -1,4 +1,4 @@
-name: Test on macOS
+name: macOS tests
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
     
         - name: Install Dependencies
           run: brew install libpcap libusb p7zip
-          
+
         - name: Run Tests
           run: |
             env GO111MODULE=on make test
