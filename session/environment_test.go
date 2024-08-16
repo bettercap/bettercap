@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	testEnvFile = filepath.Join(os.TempDir(), "test.env")
+	testEnvFile = "test.env"
 	testEnvData = map[string]string{
 		"people": "shit",
 		"moo":    "boo",
@@ -20,6 +20,8 @@ var (
 )
 
 func setup(t testing.TB, envFile bool, envFileData bool) {
+	testEnvFile = filepath.Join(t.TempDir(), "test.env")
+
 	teardown(t)
 
 	if envFile {
