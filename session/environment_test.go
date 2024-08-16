@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
 
 var (
-	testEnvFile = "/tmp/test.env"
+	testEnvFile = filepath.Join(os.TempDir(), "test.env")
 	testEnvData = map[string]string{
 		"people": "shit",
 		"moo":    "boo",
