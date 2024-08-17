@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"slices"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -485,8 +487,13 @@ func (mod *WiFiModule) setFrequencies(freqs []int) {
 	mod.frequencies = freqs
 	channels := []int{}
 	for _, freq := range freqs {
-		channels = append(channels, network.Dot11Freq2Chan(freq))
+		channel := network.Dot11Freq2Chan(freq)
+		if !slices.Contains(channels, channel) {
+			channels = append(channels, channel)
+		}
 	}
+	sort.Ints(channels)
+
 	mod.State.Store("channels", channels)
 
 	mod.Info("channels: %v", channels)
