@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/bettercap/bettercap/v2/session"
+	"github.com/hashicorp/go-bexpr"
 	"go.einride.tech/can/pkg/descriptor"
 	"go.einride.tech/can/pkg/socketcan"
 )
@@ -14,6 +15,8 @@ type CANModule struct {
 
 	deviceName string
 	transport  string
+	filter     string
+	filterExpr *bexpr.Evaluator
 	dbcPath    string
 	dbc        *descriptor.Database
 
@@ -26,6 +29,8 @@ func NewCanModule(s *session.Session) *CANModule {
 	mod := &CANModule{
 		SessionModule: session.NewSessionModule("can", s),
 		dbcPath:       "",
+		filter:        "",
+		filterExpr:    nil,
 		transport:     "can",
 		deviceName:    "can0",
 	}
@@ -44,6 +49,11 @@ func NewCanModule(s *session.Session) *CANModule {
 		mod.dbcPath,
 		"",
 		"Optional path to DBC file for decoding."))
+
+	mod.AddParam(session.NewStringParameter("can.filter",
+		"",
+		"",
+		"Optional boolean expression to select frames to report."))
 
 	mod.AddHandler(session.NewModuleHandler("can.recon on", "",
 		"Start CAN-bus discovery.",

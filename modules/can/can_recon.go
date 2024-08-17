@@ -8,6 +8,8 @@ import (
 	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
+	"github.com/hashicorp/go-bexpr"
 	"go.einride.tech/can"
 	"go.einride.tech/can/pkg/socketcan"
 )
@@ -17,6 +19,28 @@ type Message struct {
 	Name    string
 	Source  *network.CANDevice
 	Signals map[string]string
+}
+
+func (mod *CANModule) compileDBC() error {
+	input, err := os.ReadFile(mod.dbcPath)
+	if err != nil {
+		return fmt.Errorf("can't read %s: %v", mod.dbcPath, err)
+	}
+
+	mod.Info("compiling %s ...", mod.dbcPath)
+
+	result, err := dbcCompile(mod.dbcPath, input)
+	if err != nil {
+		return fmt.Errorf("can't compile %s: %v", mod.dbcPath, err)
+	}
+
+	for _, warning := range result.Warnings {
+		mod.Warning("%v", warning)
+	}
+
+	mod.dbc = result.Database
+
+	return nil
 }
 
 func (mod *CANModule) Configure() error {
@@ -32,28 +56,23 @@ func (mod *CANModule) Configure() error {
 		return errors.New("invalid transport")
 	} else if err, mod.dbcPath = mod.StringParam("can.dbc_path"); err != nil {
 		return err
+	} else if err, mod.filter = mod.StringParam("can.filter"); err != nil {
+		return err
 	}
 
 	if mod.dbcPath != "" {
-		input, err := os.ReadFile(mod.dbcPath)
-		if err != nil {
-			return fmt.Errorf("can't read %s: %v", mod.dbcPath, err)
+		if err := mod.compileDBC(); err != nil {
+			return err
 		}
-
-		mod.Info("compiling %s ...", mod.dbcPath)
-
-		result, err := dbcCompile(mod.dbcPath, input)
-		if err != nil {
-			return fmt.Errorf("can't compile %s: %v", mod.dbcPath, err)
-		}
-
-		for _, warning := range result.Warnings {
-			mod.Warning("%v", warning)
-		}
-
-		mod.dbc = result.Database
 	} else {
 		mod.Warning("no can.dbc_path specified, messages won't be parsed")
+	}
+
+	if mod.filter != "" {
+		if mod.filterExpr, err = bexpr.CreateEvaluator(mod.filter); err != nil {
+			return err
+		}
+		mod.Warning("filtering frames with expression %s", tui.Bold(mod.filter))
 	}
 
 	if mod.conn, err = socketcan.Dial(mod.transport, mod.deviceName); err != nil {
@@ -109,6 +128,19 @@ func (mod *CANModule) onFrame(frame can.Frame) {
 		}
 	}
 
+	// if we have an active filter
+	if mod.filter != "" {
+		if res, err := mod.filterExpr.Evaluate(map[string]interface{}{
+			"message": msg,
+			"frame":   frame,
+		}); err != nil {
+			mod.Error("error evaluating '%s': %v", mod.filter, err)
+		} else if !res {
+			mod.Debug("skipping can message %+v", msg)
+			return
+		}
+	}
+
 	mod.Session.Events.Add("can.message", msg)
 }
 
@@ -128,14 +160,16 @@ func (mod *CANModule) Start() error {
 }
 
 func (mod *CANModule) Stop() error {
-	if mod.conn != nil {
-		mod.recv.Close()
-		mod.conn.Close()
-		mod.conn = nil
-		mod.recv = nil
-		mod.send = nil
-		mod.dbc = nil
-		mod.dbcPath = ""
-	}
-	return nil
+	return mod.SetRunning(false, func() {
+		if mod.conn != nil {
+			mod.recv.Close()
+			mod.conn.Close()
+			mod.conn = nil
+			mod.recv = nil
+			mod.send = nil
+			mod.dbc = nil
+			mod.dbcPath = ""
+			mod.filter = ""
+		}
+	})
 }
