@@ -86,10 +86,14 @@ func (mod *HIDRecon) devPruner() {
 	}
 }
 
+const hidPrompt = "{by}{fw}HID {fb}{reset} {bold}» {reset}"
+
 func (mod *HIDRecon) Start() error {
 	if err := mod.Configure(); err != nil {
 		return err
 	}
+
+	mod.SetPrompt(hidPrompt)
 
 	return mod.SetRunning(true, func() {
 		mod.waitGroup.Add(1)

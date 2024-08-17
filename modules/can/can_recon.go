@@ -144,10 +144,14 @@ func (mod *CANModule) onFrame(frame can.Frame) {
 	mod.Session.Events.Add("can.message", msg)
 }
 
+const canPrompt = "{br}{fw}{env.can.device} {fb}{reset} {bold}» {reset}"
+
 func (mod *CANModule) Start() error {
 	if err := mod.Configure(); err != nil {
 		return err
 	}
+
+	mod.SetPrompt(canPrompt)
 
 	return mod.SetRunning(true, func() {
 		mod.Info("started on %s ...", mod.deviceName)
@@ -160,6 +164,8 @@ func (mod *CANModule) Start() error {
 }
 
 func (mod *CANModule) Stop() error {
+	mod.SetPrompt(session.DefaultPrompt)
+
 	return mod.SetRunning(false, func() {
 		if mod.conn != nil {
 			mod.recv.Close()

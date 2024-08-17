@@ -666,10 +666,14 @@ func (mod *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) 
 	}
 }
 
+const wifiPrompt = "{by}{fb}{env.iface.name} {reset} {bold}» {reset}"
+
 func (mod *WiFiModule) Start() error {
 	if err := mod.Configure(); err != nil {
 		return err
 	}
+
+	mod.SetPrompt(wifiPrompt)
 
 	mod.SetRunning(true, func() {
 		// start channel hopper if needed
@@ -721,6 +725,8 @@ func (mod *WiFiModule) Start() error {
 }
 
 func (mod *WiFiModule) forcedStop() error {
+	mod.SetPrompt(session.DefaultPromptMonitor)
+
 	return mod.SetRunning(false, func() {
 		// signal the main for loop we want to exit
 		if !mod.pktSourceChanClosed {
@@ -732,6 +738,8 @@ func (mod *WiFiModule) forcedStop() error {
 }
 
 func (mod *WiFiModule) Stop() error {
+	mod.SetPrompt(session.DefaultPromptMonitor)
+
 	return mod.SetRunning(false, func() {
 		// wait any pending write operation
 		mod.writes.Wait()

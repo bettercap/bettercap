@@ -81,7 +81,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 		"Enumerate services and characteristics for the given BLE device.",
 		func(args []string) error {
 			if mod.isEnumerating() {
-				return fmt.Errorf("An enumeration for %s is already running, please wait.", mod.currDevice.Device.ID())
+				return fmt.Errorf("an enumeration for %s is already running, please wait.", mod.currDevice.Device.ID())
 			}
 
 			mod.writeData = nil
@@ -100,11 +100,11 @@ func NewBLERecon(s *session.Session) *BLERecon {
 			mac := network.NormalizeMac(args[0])
 			uuid, err := gatt.ParseUUID(args[1])
 			if err != nil {
-				return fmt.Errorf("Error parsing %s: %s", args[1], err)
+				return fmt.Errorf("error parsing %s: %s", args[1], err)
 			}
 			data, err := hex.DecodeString(args[2])
 			if err != nil {
-				return fmt.Errorf("Error parsing %s: %s", args[2], err)
+				return fmt.Errorf("error parsing %s: %s", args[2], err)
 			}
 
 			return mod.writeBuffer(mac, uuid, data)
@@ -190,10 +190,14 @@ func (mod *BLERecon) Configure() (err error) {
 	return nil
 }
 
+const blePrompt = "{blb}{fw}BLE {fb}{reset} {bold}» {reset}"
+
 func (mod *BLERecon) Start() error {
 	if err := mod.Configure(); err != nil {
 		return err
 	}
+
+	mod.SetPrompt(blePrompt)
 
 	return mod.SetRunning(true, func() {
 		go mod.pruner()
@@ -221,6 +225,8 @@ func (mod *BLERecon) Start() error {
 }
 
 func (mod *BLERecon) Stop() error {
+	mod.SetPrompt(session.DefaultPrompt)
+
 	return mod.SetRunning(false, func() {
 		mod.quit <- true
 		<-mod.done

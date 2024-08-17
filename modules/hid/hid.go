@@ -237,6 +237,8 @@ func (mod *HIDRecon) forceStop() error {
 	})
 }
 func (mod *HIDRecon) Stop() error {
+	mod.SetPrompt(session.DefaultPrompt)
+
 	return mod.SetRunning(false, func() {
 		mod.waitGroup.Wait()
 		if mod.dongle != nil {

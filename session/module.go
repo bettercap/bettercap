@@ -17,6 +17,7 @@ type Module interface {
 	Name() string
 	Description() string
 	Author() string
+	Prompt() string
 	Handlers() []ModuleHandler
 	Parameters() map[string]*ModuleParam
 
@@ -29,33 +30,6 @@ type Module interface {
 
 type ModuleList []Module
 
-type moduleJSON struct {
-	Name        string                  `json:"name"`
-	Description string                  `json:"description"`
-	Author      string                  `json:"author"`
-	Parameters  map[string]*ModuleParam `json:"parameters"`
-	Handlers    []ModuleHandler         `json:"handlers"`
-	Running     bool                    `json:"running"`
-	State       map[string]interface{}  `json:"state"`
-}
-
-func (mm ModuleList) MarshalJSON() ([]byte, error) {
-	mods := []moduleJSON{}
-	for _, m := range mm {
-		mJSON := moduleJSON{
-			Name:        m.Name(),
-			Description: m.Description(),
-			Author:      m.Author(),
-			Parameters:  m.Parameters(),
-			Handlers:    m.Handlers(),
-			Running:     m.Running(),
-			State:       m.Extra(),
-		}
-		mods = append(mods, mJSON)
-	}
-	return json.Marshal(mods)
-}
-
 type SessionModule struct {
 	Name       string
 	Session    *Session
@@ -67,6 +41,7 @@ type SessionModule struct {
 	params   map[string]*ModuleParam
 	requires []string
 	tag      string
+	prompt   string
 }
 
 func AsTag(name string) string {
@@ -215,7 +190,7 @@ func (m SessionModule) DecParam(name string) (error, float64) {
 		}
 
 	} else {
-		return fmt.Errorf("Parameter %s does not exist.", name), 0
+		return fmt.Errorf("parameter %s does not exist", name), 0
 	}
 }
 
@@ -225,6 +200,14 @@ func (m SessionModule) BoolParam(name string) (error, bool) {
 	} else {
 		return nil, v.(bool)
 	}
+}
+
+func (m *SessionModule) SetPrompt(prompt string) {
+	m.prompt = prompt
+}
+
+func (m *SessionModule) Prompt() string {
+	return m.prompt
 }
 
 func (m *SessionModule) AddHandler(h ModuleHandler) {
@@ -301,4 +284,31 @@ func (m *SessionModule) SetRunning(running bool, cb func()) error {
 	}
 
 	return nil
+}
+
+type moduleJSON struct {
+	Name        string                  `json:"name"`
+	Description string                  `json:"description"`
+	Author      string                  `json:"author"`
+	Parameters  map[string]*ModuleParam `json:"parameters"`
+	Handlers    []ModuleHandler         `json:"handlers"`
+	Running     bool                    `json:"running"`
+	State       map[string]interface{}  `json:"state"`
+}
+
+func (mm ModuleList) MarshalJSON() ([]byte, error) {
+	mods := []moduleJSON{}
+	for _, m := range mm {
+		mJSON := moduleJSON{
+			Name:        m.Name(),
+			Description: m.Description(),
+			Author:      m.Author(),
+			Parameters:  m.Parameters(),
+			Handlers:    m.Handlers(),
+			Running:     m.Running(),
+			State:       m.Extra(),
+		}
+		mods = append(mods, mJSON)
+	}
+	return json.Marshal(mods)
 }
