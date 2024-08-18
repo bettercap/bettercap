@@ -181,7 +181,7 @@ func (mod *WiFiModule) doSelection() (err error, stations []*network.Station) {
 		if ap, found := mod.Session.WiFi.Get(mod.ap.HwAddress); found {
 			stations = ap.Clients()
 		} else {
-			err = fmt.Errorf("Could not find station %s", mod.ap.HwAddress)
+			err = fmt.Errorf("could not find station %s", mod.ap.HwAddress)
 			return
 		}
 	} else {
@@ -315,10 +315,6 @@ func (mod *WiFiModule) showStatusBar() {
 }
 
 func (mod *WiFiModule) Show() (err error) {
-	if mod.Running() == false {
-		return session.ErrAlreadyStopped(mod.Name())
-	}
-
 	var stations []*network.Station
 	if err, stations = mod.doSelection(); err != nil {
 		return

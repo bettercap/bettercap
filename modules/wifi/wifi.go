@@ -29,6 +29,7 @@ type WiFiModule struct {
 	session.SessionModule
 
 	iface               *network.Endpoint
+	bruteforce          *bruteforceConfig
 	handle              *pcap.Handle
 	source              string
 	region              string
@@ -73,6 +74,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	mod := &WiFiModule{
 		SessionModule:   session.NewSessionModule("wifi", s),
 		iface:           s.Interface,
+		bruteforce:      NewBruteForceConfig(),
 		minRSSI:         -200,
 		apTTL:           300,
 		staTTL:          300,
@@ -119,6 +121,44 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			return mod.Stop()
 		}))
 
+	mod.AddParam(session.NewStringParameter("wifi.bruteforce.target",
+		mod.bruteforce.target,
+		"",
+		"One or more comma separated targets to bruteforce as ESSID or BSSID. Leave empty to bruteforce all visibile access points."))
+
+	mod.AddParam(session.NewStringParameter("wifi.bruteforce.wordlist",
+		mod.bruteforce.wordlist,
+		"",
+		"Wordlist file to use for bruteforcing."))
+
+	mod.AddParam(session.NewIntParameter("wifi.bruteforce.workers",
+		fmt.Sprintf("%d", mod.bruteforce.workers),
+		"How many parallel workers. WARNING: Some routers will ban multiple concurrent attempts."))
+
+	mod.AddParam(session.NewBoolParameter("wifi.bruteforce.wide",
+		fmt.Sprintf("%v", mod.bruteforce.wide),
+		"Attempt a password for each access point before moving to the next one."))
+
+	mod.AddParam(session.NewBoolParameter("wifi.bruteforce.stop_at_first",
+		fmt.Sprintf("%v", mod.bruteforce.stop_at_first),
+		"Stop bruteforcing after the first successful attempt."))
+
+	mod.AddParam(session.NewIntParameter("wifi.bruteforce.timeout",
+		fmt.Sprintf("%d", mod.bruteforce.timeout),
+		"Timeout in seconds for each association attempt."))
+
+	mod.AddHandler(session.NewModuleHandler("wifi.bruteforce on", "",
+		"Attempts to bruteforce WiFi authentication.",
+		func(args []string) error {
+			return mod.startBruteforce()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("wifi.bruteforce off", "",
+		"Stop previously started bruteforcing.",
+		func(args []string) error {
+			return mod.stopBruteforce()
+		}))
+
 	mod.AddHandler(session.NewModuleHandler("wifi.clear", "",
 		"Clear all access points collected by the WiFi discovery module.",
 		func(args []string) error {
@@ -137,7 +177,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				mod.stickChan = ap.Channel
 				return nil
 			}
-			return fmt.Errorf("Could not find station with BSSID %s", args[0])
+			return fmt.Errorf("could not find station with BSSID %s", args[0])
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("wifi.recon clear", "",
@@ -420,7 +460,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 						return err
 					} else {
 						if f := network.Dot11Chan2Freq(ch); f == 0 {
-							return fmt.Errorf("%d is not a valid wifi channel.", ch)
+							return fmt.Errorf("%d is not a valid wifi channel", ch)
 						} else {
 							freqs = append(freqs, f)
 						}

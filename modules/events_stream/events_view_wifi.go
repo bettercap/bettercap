@@ -132,6 +132,16 @@ func (mod *EventsStream) viewWiFiDeauthEvent(output io.Writer, e session.Event) 
 		deauth.RSSI)
 }
 
+func (mod *EventsStream) viewWiFiBruteforceEvent(output io.Writer, e session.Event) {
+	success := e.Data.(wifi.BruteforceSuccess)
+	fmt.Fprintf(output, "[%s] [%s] target='%s' password='%s' auth_in=%v\n",
+		e.Time.Format(mod.timeFormat),
+		tui.Green(tui.Bold(e.Tag)),
+		tui.Bold(success.Target),
+		tui.Bold(success.Password),
+		success.Elapsed)
+}
+
 func (mod *EventsStream) viewWiFiEvent(output io.Writer, e session.Event) {
 	if strings.HasPrefix(e.Tag, "wifi.ap.") {
 		mod.viewWiFiApEvent(output, e)
@@ -143,6 +153,8 @@ func (mod *EventsStream) viewWiFiEvent(output io.Writer, e session.Event) {
 		mod.viewWiFiHandshakeEvent(output, e)
 	} else if e.Tag == "wifi.client.new" || e.Tag == "wifi.client.lost" {
 		mod.viewWiFiClientEvent(output, e)
+	} else if e.Tag == "wifi.bruteforce.success" {
+		mod.viewWiFiBruteforceEvent(output, e)
 	} else {
 		fmt.Fprintf(output, "[%s] [%s] %#v\n", e.Time.Format(mod.timeFormat), tui.Green(e.Tag), e)
 	}
