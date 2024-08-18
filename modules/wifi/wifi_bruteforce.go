@@ -60,7 +60,7 @@ func NewBruteForceConfig() *bruteforceConfig {
 		workers:       1,
 		wide:          false,
 		stop_at_first: true,
-		timeout:       10,
+		timeout:       15,
 		queue:         nil,
 		done:          atomic.Uint64{},
 		todo:          0,
@@ -196,7 +196,7 @@ func (mod *WiFiModule) startBruteforce() (err error) {
 		return fmt.Errorf("could not find interface %s", ifName)
 	}
 
-	mod.Info("using interface %s (%s)", ifName, mod.iface.HwAddress)
+	mod.Info("using interface %s", ifName)
 
 	mod.bruteforce.todo = uint64(len(mod.bruteforce.passwords) * len(mod.bruteforce.targets))
 	mod.bruteforce.done.Store(0)
@@ -242,6 +242,8 @@ func (mod *WiFiModule) startBruteforce() (err error) {
 			time.Sleep(time.Second * time.Duration(mod.bruteforce.timeout))
 			mod.showBruteforceProgress()
 		}
+
+		mod.bruteforce.running.Store(false)
 
 		if mod.bruteforce.done.Load() == mod.bruteforce.todo {
 			mod.Info("bruteforcing completed")

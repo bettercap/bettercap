@@ -9,7 +9,6 @@ import (
 	"github.com/evilsocket/islazy/async"
 )
 
-// networksetup -setairportnetwork interface 'network name' 'password'
 func wifiBruteforce(mod *WiFiModule, job bruteforceJob) (bool, error) {
 	networksetup, err := exec.LookPath("networksetup")
 	if err != nil {
