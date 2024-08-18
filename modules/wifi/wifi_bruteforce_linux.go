@@ -21,10 +21,9 @@ func wifiBruteforce(mod *WiFiModule, job bruteforceJob) (bool, error) {
 	}
 
 	config := fmt.Sprintf(`p2p_disabled=1 
-	
 	network={
-		ssid="%s"
-		psk="%s"
+		ssid=%s
+		psk=%s
 	}`, strconv.Quote(job.essid), strconv.Quote(job.password))
 
 	file, err := os.CreateTemp("", "bettercap-wpa-config")
