@@ -20,10 +20,11 @@ func wifiBruteforce(mod *WiFiModule, job bruteforceJob) (bool, error) {
 		return false, errors.New("could not find wpa_supplicant in $PATH")
 	}
 
-	config := fmt.Sprintf(`network={
+	config := fmt.Sprintf(`p2p_disabled=1 
+	
+	network={
 		ssid="%s"
 		psk="%s"
-		p2p_disabled=1
 	}`, strconv.Quote(job.essid), strconv.Quote(job.password))
 
 	file, err := os.CreateTemp("", "bettercap-wpa-config")
