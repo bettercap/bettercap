@@ -82,6 +82,11 @@ func (mod *MacChanger) Configure() (err error) {
 }
 
 func (mod *MacChanger) setMac(mac net.HardwareAddr) error {
+	core.Exec("ifconfig", []string{mod.iface, "down"})
+	defer func() {
+		core.Exec("ifconfig", []string{mod.iface, "up"})
+	}()
+
 	var args []string
 
 	os := runtime.GOOS
@@ -90,12 +95,14 @@ func (mod *MacChanger) setMac(mac net.HardwareAddr) error {
 	} else if os == "linux" || os == "android" {
 		args = []string{mod.iface, "hw", "ether", mac.String()}
 	} else {
-		return fmt.Errorf("OS %s is not supported by mac.changer module.", os)
+		return fmt.Errorf("%s is not supported by this module", os)
 	}
 
-	_, err := core.Exec("ifconfig", args)
+	out, err := core.Exec("ifconfig", args)
 	if err == nil {
 		mod.Session.Interface.HW = mac
+	} else {
+		mod.Warning("%v: %s", err, out)
 	}
 
 	return err
