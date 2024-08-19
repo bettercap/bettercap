@@ -2,6 +2,7 @@ package wifi
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net"
 	"regexp"
@@ -716,7 +717,9 @@ func (mod *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) 
 const wifiPrompt = "{by}{fb}{env.iface.name} {reset} {bold}» {reset}"
 
 func (mod *WiFiModule) Start() error {
-	if err := mod.Configure(); err != nil {
+	if mod.bruteforce.running.Load() {
+		return errors.New("stop wifi.bruteforce first")
+	} else if err := mod.Configure(); err != nil {
 		return err
 	}
 
