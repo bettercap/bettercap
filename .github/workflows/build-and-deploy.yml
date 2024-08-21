@@ -41,6 +41,8 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v2
+      with:
+        submodules: true
 
     - name: Set up Go
       uses: actions/setup-go@v2
@@ -92,6 +94,8 @@ jobs:
     steps:
         - name: Checkout Code
           uses: actions/checkout@v2
+          with:
+            submodules: true
 
         - name: Upload Release Assets
           uses: softprops/action-gh-release@v1
