@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/bettercap/bettercap/v2/session"
+	"github.com/evilsocket/islazy/fs"
 
 	"github.com/gorilla/mux"
 )
@@ -426,7 +427,14 @@ func (mod *RestAPI) fileRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var err error
+
 	fileName := r.URL.Query().Get("name")
+	if fileName, err = fs.Expand(fileName); err != nil {
+		mod.Warning("can't expand %s: %v", fileName, err)
+		http.Error(w, "Bad Request", 400)
+		return
+	}
 
 	if fileName != "" && r.Method == "GET" {
 		mod.readFile(fileName, w, r)
