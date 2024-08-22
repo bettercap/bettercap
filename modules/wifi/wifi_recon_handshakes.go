@@ -23,6 +23,15 @@ func allZeros(s []byte) bool {
 	return true
 }
 
+func (mod *WiFiModule) getHandshakeFileFor(ap *network.AccessPoint) string {
+	shakesFileName := mod.shakesFile
+	if !mod.shakesAggregate {
+		parentDir := path.Dir(shakesFileName)
+		shakesFileName = path.Join(parentDir, fmt.Sprintf("%s.pcap", ap.PathFriendlyName()))
+	}
+	return shakesFileName
+}
+
 func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
 	isEAPOL := false
 
@@ -94,10 +103,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 
 		// if we have unsaved packets as part of the handshake, save them.
 		numUnsaved := station.Handshake.NumUnsaved()
-		shakesFileName := mod.shakesFile
-		if mod.shakesAggregate == false {
-			shakesFileName = path.Join(shakesFileName, fmt.Sprintf("%s.pcap", ap.PathFriendlyName()))
-		}
+		shakesFileName := mod.getHandshakeFileFor(ap)
 		doSave := numUnsaved > 0
 		if doSave && shakesFileName != "" {
 			mod.Debug("(aggregate %v) saving handshake frames to %s", mod.shakesAggregate, shakesFileName)
@@ -176,10 +182,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 
 			target.Handshake.AddExtra(packet)
 
-			shakesFileName := mod.shakesFile
-			if mod.shakesAggregate == false {
-				shakesFileName = path.Join(shakesFileName, fmt.Sprintf("%s.pcap", targetAP.PathFriendlyName()))
-			}
+			shakesFileName := mod.getHandshakeFileFor(targetAP)
 			if shakesFileName != "" {
 				mod.Debug("(aggregate %v) saving handshake frames to %s", mod.shakesAggregate, shakesFileName)
 				if err := mod.Session.WiFi.SaveHandshakesTo(shakesFileName, mod.handle.LinkType()); err != nil {
