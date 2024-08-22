@@ -104,6 +104,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	}
 
 	mod.InitState("channels")
+	mod.State.Store("channels", []int{})
 
 	mod.AddParam(session.NewStringParameter("wifi.interface",
 		"",
