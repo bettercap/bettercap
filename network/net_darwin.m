@@ -18,8 +18,9 @@ int chan2freq(int channel) {
 const char *GetSupportedFrequencies(const char *iface) {
     @autoreleasepool {
         NSString *interfaceName = [NSString stringWithUTF8String:iface];
-        CWInterface *interface = [CWInterface interfaceWithName:interfaceName];
+        CWInterface *interface = [[CWWiFiClient sharedWiFiClient] interfaceWithName: interfaceName];
         if (!interface) {
+            NSLog(@"failed to serialize get interface by nmae: %@", interfaceName);
             return NULL;
         }
 
@@ -34,7 +35,7 @@ const char *GetSupportedFrequencies(const char *iface) {
         NSError *error = nil;
         NSData *jsonData = [NSJSONSerialization dataWithJSONObject:frequencies options:0 error:&error];
         if (!jsonData) {
-            NSLog(@"Failed to serialize frequencies: %@", error);
+            NSLog(@"failed to serialize frequencies: %@", error);
             return NULL;
         }
 
@@ -46,8 +47,9 @@ const char *GetSupportedFrequencies(const char *iface) {
 bool SetInterfaceChannel(const char *iface, int channel) {
     @autoreleasepool {
         NSString *interfaceName = [NSString stringWithUTF8String:iface];
-        CWInterface *interface = [CWInterface interfaceWithName:interfaceName];
+        CWInterface *interface = [[CWWiFiClient sharedWiFiClient] interfaceWithName: interfaceName];
         if (!interface) {
+            NSLog(@"failed to serialize get interface by nmae: %@", interfaceName);
             return false;
         }
 
@@ -58,7 +60,7 @@ bool SetInterfaceChannel(const char *iface, int channel) {
             if ([channelObj channelNumber] == channel) {
                 [interface setWLANChannel:channelObj error:nil];
                  if (error) {
-                    NSLog(@"Failed to set channel: %@", error);
+                    NSLog(@"failed to set channel: %@", error);
                     return false;
                 }
                 return true;
