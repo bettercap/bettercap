@@ -315,6 +315,13 @@ func (mod *WiFiModule) showStatusBar() {
 }
 
 func (mod *WiFiModule) Show() (err error) {
+	// module has not been started yet
+	if mod.iface == nil {
+		if err := mod.Configure(); err != nil {
+			return err
+		}
+	}
+
 	var stations []*network.Station
 	if err, stations = mod.doSelection(); err != nil {
 		return
