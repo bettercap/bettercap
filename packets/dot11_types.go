@@ -7,55 +7,96 @@ import (
 
 type Dot11CipherType uint8
 
-const (
-	Dot11CipherWep    Dot11CipherType = 1
-	Dot11CipherTkip   Dot11CipherType = 2
-	Dot11CipherWrap   Dot11CipherType = 3
-	Dot11CipherCcmp   Dot11CipherType = 4
-	Dot11CipherWep104 Dot11CipherType = 5
-)
-
 func (a Dot11CipherType) String() string {
 	switch a {
-	case Dot11CipherWep:
-		return "WEP"
-	case Dot11CipherTkip:
+	case 0:
+		return "NONE"
+	case 1:
+		return "WEP-40-bit"
+	case 2:
 		return "TKIP"
-	case Dot11CipherWrap:
-		return "WRAP"
-	case Dot11CipherCcmp:
-		return "CCMP"
-	case Dot11CipherWep104:
-		return "WEP104"
+	case 3:
+		return "AES-OCB"
+	case 4:
+		return "AES-CCM"
+	case 5:
+		return "WEP-104-bit"
+	case 6:
+		return "BIP-128"
+	case 7:
+		return "Group addressed traffic not allowed"
+	case 8:
+		return "GCMP-128"
+	case 9:
+		return "GCMP-256"
+	case 10:
+		return "CCMP-256"
+	case 11:
+		return "BIP-GMAC-128"
+	case 12:
+		return "BIP-GMAC-256"
+	case 13:
+		return "BIP-CMAC-256"
 	default:
-		return fmt.Sprintf("UNK CIPHER %d", a)
+		return fmt.Sprintf("CIPHER %d", a)
 	}
 }
 
 type Dot11AuthType uint8
 
-const (
-	Dot11AuthNone    Dot11AuthType = 0
-	Dot11AuthWPA     Dot11AuthType = 1
-	Dot11AuthPSK     Dot11AuthType = 2
-	Dot11AuthFT8021X Dot11AuthType = 3
-	Dot11AuthFTPSK   Dot11AuthType = 4
-)
-
 func (a Dot11AuthType) String() string {
+	// https://raw.githubusercontent.com/wireshark/wireshark/master/epan/dissectors/packet-ieee80211.c
 	switch a {
-	case Dot11AuthNone:
+	case 0:
 		return "NONE"
-	case Dot11AuthWPA:
+	case 1:
 		return "WPA"
-	case Dot11AuthPSK:
+	case 2:
 		return "PSK"
-	case Dot11AuthFT8021X:
-		return "FT 802.1X"
-	case Dot11AuthFTPSK:
-		return "FT PSK"
+	case 3:
+		return "FT over IEEE 802.1X"
+	case 4:
+		return "FT using PSK"
+	case 5:
+		return "WPA (SHA256)"
+	case 6:
+		return "PSK (SHA256)"
+	case 7:
+		return "TDLS / TPK Handshake (SHA256)"
+	case 8:
+		return "SAE (SHA256)"
+	case 9:
+		return "FT using SAE (SHA256)"
+	case 10:
+		return "APPeerKey (SHA256)"
+	case 11:
+		return "WPA (SHA256-SuiteB)"
+	case 12:
+		return "WPA (SHA384-SuiteB)"
+	case 13:
+		return "FT over IEEE 802.1X (SHA384)"
+	case 14:
+		return "FILS (SHA256 and AES-SIV-256)"
+	case 15:
+		return "FILS (SHA384 and AES-SIV-512)"
+	case 16:
+		return "FT over FILS (SHA256 and AES-SIV-256)"
+	case 17:
+		return "FT over FILS (SHA384 and AES-SIV-512)"
+	case 18:
+		return "Opportunistic Wireless Encryption"
+	case 19:
+		return "FT using PSK (SHA384)"
+	case 20:
+		return "PSK (SHA384)"
+	case 21:
+		return "PASN"
+	case 24:
+		return "SAE (GROUP-DEPEND)"
+	case 25:
+		return "FT using SAE (GROUP-DEPEND)"
 	default:
-		return fmt.Sprintf("UNK AUTH %d", a)
+		return fmt.Sprintf("AUTH %d", a)
 	}
 }
 
