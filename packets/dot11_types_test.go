@@ -46,8 +46,8 @@ func TestDot11AuthTypes(t *testing.T) {
 		got interface{}
 		exp interface{}
 	}{
-		{uint8(Dot11AuthMgt), uint8(1)},
-		{uint8(Dot11AuthPsk), uint8(2)},
+		{uint8(Dot11AuthWPA), uint8(1)},
+		{uint8(Dot11AuthPSK), uint8(2)},
 	}
 	for _, u := range units {
 		if !reflect.DeepEqual(u.exp, u.got) {
@@ -61,8 +61,8 @@ func TestDot11AuthTypesAsString(t *testing.T) {
 		got interface{}
 		exp interface{}
 	}{
-		{Dot11AuthMgt.String(), "MGT"},
-		{Dot11AuthPsk.String(), "PSK"},
+		{Dot11AuthWPA.String(), "WPA"},
+		{Dot11AuthPSK.String(), "PSK"},
 	}
 	for _, u := range units {
 		if !reflect.DeepEqual(u.exp, u.got) {

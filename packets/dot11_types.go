@@ -28,25 +28,34 @@ func (a Dot11CipherType) String() string {
 	case Dot11CipherWep104:
 		return "WEP104"
 	default:
-		return "UNK"
+		return fmt.Sprintf("UNK CIPHER %d", a)
 	}
 }
 
 type Dot11AuthType uint8
 
 const (
-	Dot11AuthMgt Dot11AuthType = 1
-	Dot11AuthPsk Dot11AuthType = 2
+	Dot11AuthNone    Dot11AuthType = 0
+	Dot11AuthWPA     Dot11AuthType = 1
+	Dot11AuthPSK     Dot11AuthType = 2
+	Dot11AuthFT8021X Dot11AuthType = 3
+	Dot11AuthFTPSK   Dot11AuthType = 4
 )
 
 func (a Dot11AuthType) String() string {
 	switch a {
-	case Dot11AuthMgt:
-		return "MGT"
-	case Dot11AuthPsk:
+	case Dot11AuthNone:
+		return "NONE"
+	case Dot11AuthWPA:
+		return "WPA"
+	case Dot11AuthPSK:
 		return "PSK"
+	case Dot11AuthFT8021X:
+		return "FT 802.1X"
+	case Dot11AuthFTPSK:
+		return "FT PSK"
 	default:
-		return "UNK"
+		return fmt.Sprintf("UNK AUTH %d", a)
 	}
 }
 
