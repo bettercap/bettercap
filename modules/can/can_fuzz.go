@@ -10,7 +10,6 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"go.einride.tech/can"
-	"go.einride.tech/can/pkg/descriptor"
 )
 
 func (mod *CANModule) Fuzz(id string) error {
@@ -25,15 +24,9 @@ func (mod *CANModule) Fuzz(id string) error {
 	if err != nil {
 		if mod.dbc != nil {
 			// not a number, use as node name
-			fromSender := make([]*descriptor.Message, 0)
-			for _, msg := range mod.dbc.Messages {
-				if msg.SenderNode == id {
-					fromSender = append(fromSender, msg)
-				}
-			}
-
+			fromSender := mod.dbc.MessagesBySender(id)
 			if len(fromSender) == 0 {
-				return fmt.Errorf("no messages defined in DBC file for node %s", id)
+				return fmt.Errorf("no messages defined in DBC file for node %s, available nodes: %s", id, mod.dbc.Senders())
 			}
 
 			idx := rng.Intn(len(fromSender))
@@ -46,8 +39,8 @@ func (mod *CANModule) Fuzz(id string) error {
 	}
 
 	// if we have a DBC
-	if mod.dbc != nil {
-		if message, found := mod.dbc.Message(uint32(frameID)); found {
+	if mod.dbc.Loaded() {
+		if message := mod.dbc.MessageById(uint32(frameID)); message != nil {
 			mod.Info("found as %s", message.Name)
 
 			dataLen = int(message.Length)
@@ -57,7 +50,7 @@ func (mod *CANModule) Fuzz(id string) error {
 			}
 		} else {
 			avail := []string{}
-			for _, msg := range mod.dbc.Messages {
+			for _, msg := range mod.dbc.Messages() {
 				avail = append(avail, fmt.Sprintf("%d (%s)", msg.ID, msg.Name))
 			}
 			return fmt.Errorf("message with id %d not found in DBC file, available ids: %v", frameID, strings.Join(avail, ", "))
@@ -70,7 +63,7 @@ func (mod *CANModule) Fuzz(id string) error {
 			return err
 		}
 
-		mod.Warning("no can.dbc_path is set, creating frame with %d bytes of random data", dataLen)
+		mod.Warning("no dbc loaded, creating frame with %d bytes of random data", dataLen)
 	}
 
 	frame := can.Frame{

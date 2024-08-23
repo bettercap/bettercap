@@ -6,7 +6,6 @@ import (
 
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/hashicorp/go-bexpr"
-	"go.einride.tech/can/pkg/descriptor"
 	"go.einride.tech/can/pkg/socketcan"
 )
 
@@ -17,19 +16,17 @@ type CANModule struct {
 	transport  string
 	filter     string
 	filterExpr *bexpr.Evaluator
-	dbcPath    string
-	dbc        *descriptor.Database
-
-	conn net.Conn
-	recv *socketcan.Receiver
-	send *socketcan.Transmitter
+	dbc        *DBC
+	conn       net.Conn
+	recv       *socketcan.Receiver
+	send       *socketcan.Transmitter
 }
 
 func NewCanModule(s *session.Session) *CANModule {
 	mod := &CANModule{
 		SessionModule: session.NewSessionModule("can", s),
-		dbcPath:       "",
 		filter:        "",
+		dbc:           &DBC{},
 		filterExpr:    nil,
 		transport:     "can",
 		deviceName:    "can0",
@@ -45,11 +42,6 @@ func NewCanModule(s *session.Session) *CANModule {
 		"",
 		"Network type, can be 'can' for SocketCAN or 'udp'."))
 
-	mod.AddParam(session.NewStringParameter("can.dbc_path",
-		mod.dbcPath,
-		"",
-		"Optional path to DBC file for decoding."))
-
 	mod.AddParam(session.NewStringParameter("can.filter",
 		"",
 		"",
@@ -59,6 +51,18 @@ func NewCanModule(s *session.Session) *CANModule {
 		"Start CAN-bus discovery.",
 		func(args []string) error {
 			return mod.Start()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("can.load_dbc PATH", "",
+		"Start CAN-bus discovery.",
+		func(args []string) error {
+			return mod.Start()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("can.dbc.load NAME", "can.dbc.load (.+)",
+		"Load a DBC file from the list of available ones or from disk.",
+		func(args []string) error {
+			return mod.dbcLoad(args[0])
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("can.recon off", "",

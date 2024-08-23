@@ -2,12 +2,9 @@ package can
 
 import (
 	"errors"
-	"fmt"
-	"os"
 
 	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/session"
-	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 	"github.com/hashicorp/go-bexpr"
 	"go.einride.tech/can"
@@ -21,28 +18,6 @@ type Message struct {
 	Signals map[string]string
 }
 
-func (mod *CANModule) compileDBC() error {
-	input, err := os.ReadFile(mod.dbcPath)
-	if err != nil {
-		return fmt.Errorf("can't read %s: %v", mod.dbcPath, err)
-	}
-
-	mod.Info("compiling %s ...", mod.dbcPath)
-
-	result, err := dbcCompile(mod.dbcPath, input)
-	if err != nil {
-		return fmt.Errorf("can't compile %s: %v", mod.dbcPath, err)
-	}
-
-	for _, warning := range result.Warnings {
-		mod.Warning("%v", warning)
-	}
-
-	mod.dbc = result.Database
-
-	return nil
-}
-
 func (mod *CANModule) Configure() error {
 	var err error
 
@@ -54,18 +29,8 @@ func (mod *CANModule) Configure() error {
 		return err
 	} else if mod.transport != "can" && mod.transport != "udp" {
 		return errors.New("invalid transport")
-	} else if err, mod.dbcPath = mod.StringParam("can.dbc_path"); err != nil {
-		return err
 	} else if err, mod.filter = mod.StringParam("can.filter"); err != nil {
 		return err
-	}
-
-	if mod.dbcPath != "" {
-		if err := mod.compileDBC(); err != nil {
-			return err
-		}
-	} else {
-		mod.Warning("no can.dbc_path specified, messages won't be parsed")
 	}
 
 	if mod.filter != "" {
@@ -85,49 +50,7 @@ func (mod *CANModule) Configure() error {
 	return nil
 }
 
-func (mod *CANModule) onFrame(frame can.Frame) {
-	msg := Message{
-		Frame: frame,
-	}
-
-	// if we have a DBC database
-	if mod.dbc != nil {
-		// if the database contains this message id
-		if message, found := mod.dbc.Message(frame.ID); found {
-			msg.Name = message.Name
-
-			// find source full info in DBC nodes
-			sourceName := message.SenderNode
-			sourceDesc := ""
-			if sender, found := mod.dbc.Node(message.SenderNode); found {
-				sourceName = sender.Name
-				sourceDesc = sender.Description
-			}
-
-			// add CAN source if new
-			_, msg.Source = mod.Session.CAN.AddIfNew(sourceName, sourceDesc, frame.Data[:])
-
-			msg.Signals = make(map[string]string)
-
-			// parse signals
-			for _, signal := range message.Signals {
-				var value string
-
-				if signal.Length <= 32 && signal.IsFloat {
-					value = fmt.Sprintf("%f", signal.UnmarshalFloat(frame.Data))
-				} else if signal.Length == 1 {
-					value = fmt.Sprintf("%v", signal.UnmarshalBool(frame.Data))
-				} else if signal.IsSigned {
-					value = fmt.Sprintf("%d", signal.UnmarshalSigned(frame.Data))
-				} else {
-					value = fmt.Sprintf("%d", signal.UnmarshalUnsigned(frame.Data))
-				}
-
-				msg.Signals[signal.Name] = str.Trim(fmt.Sprintf("%s %s", value, signal.Unit))
-			}
-		}
-	}
-
+func (mod *CANModule) isFilteredOut(frame can.Frame, msg Message) bool {
 	// if we have an active filter
 	if mod.filter != "" {
 		if res, err := mod.filterExpr.Evaluate(map[string]interface{}{
@@ -137,11 +60,24 @@ func (mod *CANModule) onFrame(frame can.Frame) {
 			mod.Error("error evaluating '%s': %v", mod.filter, err)
 		} else if !res {
 			mod.Debug("skipping can message %+v", msg)
-			return
+			return true
 		}
 	}
 
-	mod.Session.Events.Add("can.message", msg)
+	return false
+}
+
+func (mod *CANModule) onFrame(frame can.Frame) {
+	msg := Message{
+		Frame: frame,
+	}
+
+	// try to parse with DBC if we have any
+	mod.dbc.Parse(mod, frame, &msg)
+
+	if !mod.isFilteredOut(frame, msg) {
+		mod.Session.Events.Add("can.message", msg)
+	}
 }
 
 const canPrompt = "{br}{fw}{env.can.device} {fb}{reset} {bold}» {reset}"
@@ -173,8 +109,6 @@ func (mod *CANModule) Stop() error {
 			mod.conn = nil
 			mod.recv = nil
 			mod.send = nil
-			mod.dbc = nil
-			mod.dbcPath = ""
 			mod.filter = ""
 		}
 	})
