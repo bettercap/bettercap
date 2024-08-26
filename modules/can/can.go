@@ -2,6 +2,7 @@ package can
 
 import (
 	"errors"
+	"fmt"
 	"net"
 
 	"github.com/bettercap/bettercap/v2/session"
@@ -13,6 +14,8 @@ type CANModule struct {
 	session.SessionModule
 
 	deviceName string
+	dumpName   string
+	dumpInject bool
 	transport  string
 	filter     string
 	filterExpr *bexpr.Evaluator
@@ -30,12 +33,23 @@ func NewCanModule(s *session.Session) *CANModule {
 		filterExpr:    nil,
 		transport:     "can",
 		deviceName:    "can0",
+		dumpName:      "",
+		dumpInject:    false,
 	}
 
 	mod.AddParam(session.NewStringParameter("can.device",
 		mod.deviceName,
 		"",
 		"CAN-bus device."))
+
+	mod.AddParam(session.NewStringParameter("can.dump",
+		mod.dumpName,
+		"",
+		"Load CAN traffic from this candump log file."))
+
+	mod.AddParam(session.NewBoolParameter("can.dump.inject",
+		fmt.Sprintf("%v", mod.dumpInject),
+		"Write CAN traffic read form the candump log file to the selected can.device."))
 
 	mod.AddParam(session.NewStringParameter("can.transport",
 		mod.transport,
@@ -51,18 +65,6 @@ func NewCanModule(s *session.Session) *CANModule {
 		"Start CAN-bus discovery.",
 		func(args []string) error {
 			return mod.Start()
-		}))
-
-	mod.AddHandler(session.NewModuleHandler("can.load_dbc PATH", "",
-		"Start CAN-bus discovery.",
-		func(args []string) error {
-			return mod.Start()
-		}))
-
-	mod.AddHandler(session.NewModuleHandler("can.dbc.load NAME", "can.dbc.load (.+)",
-		"Load a DBC file from the list of available ones or from disk.",
-		func(args []string) error {
-			return mod.dbcLoad(args[0])
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("can.recon off", "",
@@ -82,6 +84,12 @@ func NewCanModule(s *session.Session) *CANModule {
 		"Show a list of detected CAN devices.",
 		func(args []string) error {
 			return mod.Show()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("can.dbc.load NAME", "can.dbc.load (.+)",
+		"Load a DBC file from the list of available ones or from disk.",
+		func(args []string) error {
+			return mod.dbcLoad(args[0])
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("can.inject FRAME_EXPRESSION", `(?i)^can\.inject\s+([a-fA-F0-9#R]+)$`,

@@ -25,6 +25,10 @@ func (mod *CANModule) Configure() error {
 		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, mod.deviceName = mod.StringParam("can.device"); err != nil {
 		return err
+	} else if err, mod.dumpName = mod.StringParam("can.dump"); err != nil {
+		return err
+	} else if err, mod.dumpInject = mod.BoolParam("can.dump.inject"); err != nil {
+		return err
 	} else if err, mod.transport = mod.StringParam("can.transport"); err != nil {
 		return err
 	} else if mod.transport != "can" && mod.transport != "udp" {
@@ -43,9 +47,14 @@ func (mod *CANModule) Configure() error {
 	if mod.conn, err = socketcan.Dial(mod.transport, mod.deviceName); err != nil {
 		return err
 	}
-
 	mod.recv = socketcan.NewReceiver(mod.conn)
 	mod.send = socketcan.NewTransmitter(mod.conn)
+
+	if mod.dumpName != "" {
+		if err = mod.startDumpReader(); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
