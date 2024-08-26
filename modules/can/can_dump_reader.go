@@ -3,8 +3,12 @@ package can
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"os"
 	"regexp"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/evilsocket/islazy/str"
 	"go.einride.tech/can"
@@ -14,9 +18,28 @@ import (
 var dumpLineParser = regexp.MustCompile(`(?m)^\(([\d\.]+)\)\s+([^\s]+)\s+(.+)`)
 
 type dumpEntry struct {
-	Time   string
+	Time   time.Time
 	Device string
 	Frame  string
+}
+
+func parseTimeval(timeval string) (time.Time, error) {
+	parts := strings.Split(timeval, ".")
+	if len(parts) != 2 {
+		return time.Time{}, fmt.Errorf("invalid timeval format")
+	}
+
+	seconds, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid seconds value: %v", err)
+	}
+
+	microseconds, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid microseconds value: %v", err)
+	}
+
+	return time.Unix(seconds, microseconds*1000), nil
 }
 
 func (mod *CANModule) startDumpReader() error {
@@ -36,9 +59,11 @@ func (mod *CANModule) startDumpReader() error {
 		if line != "" {
 			if m := dumpLineParser.FindStringSubmatch(line); len(m) != 4 {
 				mod.Warning("unexpected line: '%s' -> %d matches", line, len(m))
+			} else if timeval, err := parseTimeval(m[1]); err != nil {
+				mod.Warning("can't parse (seconds.microseconds) from line: '%s': %v", line, err)
 			} else {
 				entries = append(entries, dumpEntry{
-					Time:   m[1],
+					Time:   timeval,
 					Device: m[2],
 					Frame:  m[3],
 				})
@@ -50,12 +75,15 @@ func (mod *CANModule) startDumpReader() error {
 		return err
 	}
 
-	mod.Info("loaded %d entries from candump log", len(entries))
+	numEntries := len(entries)
+	lastEntry := numEntries - 1
+
+	mod.Info("loaded %d entries from candump log", numEntries)
 
 	go func() {
 		mod.Info("candump reader started ...")
 
-		for _, entry := range entries {
+		for i, entry := range entries {
 			frame := can.Frame{}
 			if err := frame.UnmarshalString(entry.Frame); err != nil {
 				mod.Error("could not unmarshal CAN frame: %v", err)
@@ -68,6 +96,13 @@ func (mod *CANModule) startDumpReader() error {
 				}
 			} else {
 				mod.onFrame(frame)
+			}
+
+			// compute delay before the next frame
+			if i < lastEntry {
+				next := entries[i+1]
+				diff := next.Time.Sub(entry.Time)
+				time.Sleep(diff)
 			}
 		}
 	}()
