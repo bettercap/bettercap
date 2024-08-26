@@ -104,6 +104,10 @@ func (mod *CANModule) startDumpReader() error {
 				diff := next.Time.Sub(entry.Time)
 				time.Sleep(diff)
 			}
+
+			if !mod.Running() {
+				break
+			}
 		}
 	}()
 
