@@ -13,10 +13,10 @@ import (
 type CANModule struct {
 	session.SessionModule
 
+	transport  string
 	deviceName string
 	dumpName   string
 	dumpInject bool
-	transport  string
 	filter     string
 	filterExpr *bexpr.Evaluator
 	dbc        *DBC
@@ -101,13 +101,14 @@ func NewCanModule(s *session.Session) *CANModule {
 			return mod.Inject(args[0])
 		}))
 
-	mod.AddHandler(session.NewModuleHandler("can.fuzz ID_OR_NODE_NAME", `(?i)^can\.fuzz\s+(.+)$`,
+	mod.AddHandler(session.NewModuleHandler("can.fuzz ID_OR_NODE_NAME OPTIONAL_SIZE", `(?i)^can\.fuzz\s+([^\s]+)\s*(\d*)$`,
 		"If an hexadecimal frame ID is specified, create a randomized version of it and inject it. If a node name is specified, a random message for the given node will be instead used.",
 		func(args []string) error {
 			if !mod.Running() {
 				return errors.New("can module not running")
 			}
-			return mod.Fuzz(args[0])
+
+			return mod.Fuzz(args[0], args[1])
 		}))
 
 	return mod

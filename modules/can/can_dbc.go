@@ -147,6 +147,14 @@ func (dbc *DBC) Messages() []*descriptor.Message {
 	return dbc.db.Messages
 }
 
+func (dbc *DBC) AvailableMessages() []string {
+	avail := []string{}
+	for _, msg := range dbc.Messages() {
+		avail = append(avail, fmt.Sprintf("%d (%s)", msg.ID, msg.Name))
+	}
+	return avail
+}
+
 func (dbc *DBC) Senders() []string {
 	dbc.RLock()
 	defer dbc.RUnlock()
