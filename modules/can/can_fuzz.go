@@ -16,8 +16,9 @@ func (mod *CANModule) Fuzz(id string) error {
 	rncSource := rand.NewSource(time.Now().Unix())
 	rng := rand.New(rncSource)
 
-	// let's try as number first
-	frameID, err := strconv.Atoi(id)
+	// let's try as an hex number first
+	// frameID, err := strconv.Atoi(id)
+	frameID, err := strconv.ParseUint(id, 16, 32)
 	dataLen := 0
 	frameData := ([]byte)(nil)
 
@@ -32,7 +33,7 @@ func (mod *CANModule) Fuzz(id string) error {
 			idx := rng.Intn(len(fromSender))
 			selected := fromSender[idx]
 			mod.Info("selected %s > (%d) %s", id, selected.ID, selected.Name)
-			frameID = int(selected.ID)
+			frameID = uint64(selected.ID)
 		} else {
 			return err
 		}

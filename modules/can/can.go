@@ -102,7 +102,7 @@ func NewCanModule(s *session.Session) *CANModule {
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("can.fuzz ID_OR_NODE_NAME", `(?i)^can\.fuzz\s+(.+)$`,
-		"If an integer frame ID is specified, create a randomized version of it and inject it. If a node name is specified, a random message for the given node will be instead used.",
+		"If an hexadecimal frame ID is specified, create a randomized version of it and inject it. If a node name is specified, a random message for the given node will be instead used.",
 		func(args []string) error {
 			if !mod.Running() {
 				return errors.New("can module not running")
