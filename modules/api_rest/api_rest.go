@@ -230,6 +230,7 @@ func (mod *RestAPI) Configure() error {
 		}
 	}
 
+	mod.server = &http.Server{}
 	mod.server.Addr = fmt.Sprintf("%s:%d", ip, port)
 
 	router := mux.NewRouter()
