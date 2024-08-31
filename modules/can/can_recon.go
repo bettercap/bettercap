@@ -3,7 +3,6 @@ package can
 import (
 	"errors"
 
-	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/evilsocket/islazy/tui"
 	"github.com/hashicorp/go-bexpr"
@@ -11,15 +10,9 @@ import (
 	"go.einride.tech/can/pkg/socketcan"
 )
 
-type Message struct {
-	Frame   can.Frame
-	Name    string
-	Source  *network.CANDevice
-	Signals map[string]string
-}
-
 func (mod *CANModule) Configure() error {
 	var err error
+	var parseOBD bool
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
@@ -29,6 +22,8 @@ func (mod *CANModule) Configure() error {
 		return err
 	} else if err, mod.dumpInject = mod.BoolParam("can.dump.inject"); err != nil {
 		return err
+	} else if err, parseOBD = mod.BoolParam("can.parse.obd2"); err != nil {
+		return err
 	} else if err, mod.transport = mod.StringParam("can.transport"); err != nil {
 		return err
 	} else if mod.transport != "can" && mod.transport != "udp" {
@@ -36,6 +31,8 @@ func (mod *CANModule) Configure() error {
 	} else if err, mod.filter = mod.StringParam("can.filter"); err != nil {
 		return err
 	}
+
+	mod.obd2.Enable(parseOBD)
 
 	if mod.filter != "" {
 		if mod.filterExpr, err = bexpr.CreateEvaluator(mod.filter); err != nil {
@@ -77,12 +74,13 @@ func (mod *CANModule) isFilteredOut(frame can.Frame, msg Message) bool {
 }
 
 func (mod *CANModule) onFrame(frame can.Frame) {
-	msg := Message{
-		Frame: frame,
-	}
+	msg := NewCanMessage(frame)
 
 	// try to parse with DBC if we have any
-	mod.dbc.Parse(mod, frame, &msg)
+	if !mod.dbc.Parse(mod, &msg) {
+		// not parsed, if enabled try ODB2
+		mod.obd2.Parse(mod, &msg)
+	}
 
 	if !mod.isFilteredOut(frame, msg) {
 		mod.Session.Events.Add("can.message", msg)

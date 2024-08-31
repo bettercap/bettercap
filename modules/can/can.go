@@ -20,6 +20,7 @@ type CANModule struct {
 	filter     string
 	filterExpr *bexpr.Evaluator
 	dbc        *DBC
+	obd2       *OBD2
 	conn       net.Conn
 	recv       *socketcan.Receiver
 	send       *socketcan.Transmitter
@@ -30,6 +31,7 @@ func NewCanModule(s *session.Session) *CANModule {
 		SessionModule: session.NewSessionModule("can", s),
 		filter:        "",
 		dbc:           &DBC{},
+		obd2:          &OBD2{},
 		filterExpr:    nil,
 		transport:     "can",
 		deviceName:    "can0",
@@ -60,6 +62,10 @@ func NewCanModule(s *session.Session) *CANModule {
 		"",
 		"",
 		"Optional boolean expression to select frames to report."))
+
+	mod.AddParam(session.NewBoolParameter("can.parse.obd2",
+		"false",
+		"Enable built in OBD2 PID parsing."))
 
 	mod.AddHandler(session.NewModuleHandler("can.recon on", "",
 		"Start CAN-bus discovery.",

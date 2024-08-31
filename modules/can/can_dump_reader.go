@@ -55,8 +55,7 @@ func (mod *CANModule) startDumpReader() error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := str.Trim(scanner.Text())
-		if line != "" {
+		if line := str.Trim(scanner.Text()); line != "" {
 			if m := dumpLineParser.FindStringSubmatch(line); len(m) != 4 {
 				mod.Warning("unexpected line: '%s' -> %d matches", line, len(m))
 			} else if timeval, err := parseTimeval(m[1]); err != nil {

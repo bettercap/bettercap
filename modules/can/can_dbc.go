@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/evilsocket/islazy/str"
-	"go.einride.tech/can"
 	"go.einride.tech/can/pkg/descriptor"
 )
 
@@ -54,7 +53,7 @@ func (dbc *DBC) LoadData(mod *CANModule, name string, input []byte) error {
 	return nil
 }
 
-func (dbc *DBC) Parse(mod *CANModule, frame can.Frame, msg *Message) bool {
+func (dbc *DBC) Parse(mod *CANModule, msg *Message) bool {
 	dbc.RLock()
 	defer dbc.RUnlock()
 
@@ -64,7 +63,7 @@ func (dbc *DBC) Parse(mod *CANModule, frame can.Frame, msg *Message) bool {
 	}
 
 	// if the database contains this message id
-	if message, found := dbc.db.Message(frame.ID); found {
+	if message, found := dbc.db.Message(msg.Frame.ID); found {
 		msg.Name = message.Name
 
 		// find source full info in DBC nodes
@@ -76,24 +75,21 @@ func (dbc *DBC) Parse(mod *CANModule, frame can.Frame, msg *Message) bool {
 		}
 
 		// add CAN source if new
-		_, msg.Source = mod.Session.CAN.AddIfNew(sourceName, sourceDesc, frame.Data[:])
-
-		msg.Signals = make(map[string]string)
+		_, msg.Source = mod.Session.CAN.AddIfNew(sourceName, sourceDesc, msg.Frame.Data[:])
 
 		// parse signals
 		for _, signal := range message.Signals {
 			var value string
 
 			if signal.Length <= 32 && signal.IsFloat {
-				value = fmt.Sprintf("%f", signal.UnmarshalFloat(frame.Data))
+				value = fmt.Sprintf("%f", signal.UnmarshalFloat(msg.Frame.Data))
 			} else if signal.Length == 1 {
-				value = fmt.Sprintf("%v", signal.UnmarshalBool(frame.Data))
+				value = fmt.Sprintf("%v", signal.UnmarshalBool(msg.Frame.Data))
 			} else if signal.IsSigned {
-				value = fmt.Sprintf("%d", signal.UnmarshalSigned(frame.Data))
+				value = fmt.Sprintf("%d", signal.UnmarshalSigned(msg.Frame.Data))
 			} else {
-				value = fmt.Sprintf("%d", signal.UnmarshalUnsigned(frame.Data))
+				value = fmt.Sprintf("%d", signal.UnmarshalUnsigned(msg.Frame.Data))
 			}
-
 			msg.Signals[signal.Name] = str.Trim(fmt.Sprintf("%s %s", value, signal.Unit))
 		}
 
