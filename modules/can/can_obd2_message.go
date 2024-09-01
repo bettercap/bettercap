@@ -13,10 +13,12 @@ import (
 
 // https://github.com/ejvaughan/obdii/blob/master/src/OBDII.c
 
-// TODO: add support for 29bit identifiers
 const OBD2BroadcastRequestID = 0x7DF
 const OBD2ECUResponseMinID = 0x7E0
 const OBD2ECUResponseMaxID = 0x7EF
+const OBD2BroadcastRequestID29bit = 0x18DB33F1
+const OBD2ECUResponseMinID29bit = 0x18DAF100
+const OBD2ECUResponseMaxID29bit = 0x18DAF1FF
 
 type OBD2Service uint8
 

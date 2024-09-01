@@ -34,13 +34,14 @@ func (obd *OBD2) Parse(mod *CANModule, msg *Message) bool {
 
 	odbMessage := &OBD2Message{}
 
-	if msg.Frame.ID == OBD2BroadcastRequestID {
+	if msg.Frame.ID == OBD2BroadcastRequestID || msg.Frame.ID == OBD2BroadcastRequestID29bit {
 		// parse as request
 		if odbMessage.ParseRequest(msg.Frame) {
 			msg.OBD2 = odbMessage
 			return true
 		}
-	} else if msg.Frame.ID >= OBD2ECUResponseMinID && msg.Frame.ID <= OBD2ECUResponseMaxID {
+	} else if (msg.Frame.ID >= OBD2ECUResponseMinID && msg.Frame.ID <= OBD2ECUResponseMaxID) ||
+		(msg.Frame.ID >= OBD2ECUResponseMinID29bit && msg.Frame.ID <= OBD2ECUResponseMaxID29bit) {
 		// parse as response
 		if odbMessage.ParseResponse(msg.Frame) {
 			msg.OBD2 = odbMessage
