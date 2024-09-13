@@ -17,6 +17,7 @@ import (
 	"github.com/bettercap/bettercap/v2/caplets"
 	"github.com/bettercap/bettercap/v2/core"
 	"github.com/bettercap/bettercap/v2/firewall"
+	my_log "github.com/bettercap/bettercap/v2/log"
 	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/packets"
 
@@ -150,6 +151,7 @@ func New() (*Session, error) {
 
 	if I == nil {
 		I = s
+		my_log.Logger = s.Events.Log
 	}
 
 	return s, nil
