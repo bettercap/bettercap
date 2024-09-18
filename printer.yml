@@ -1,0 +1,199 @@
+EPSON\ XP-666\ Series._http._tcp.local.:
+    name: EPSON\ XP-666\ Series._http._tcp.local.
+    host: EPSON59F5BA.local.
+    addrv4: 192.168.50.21
+    addrv6: fe80::46d2:44ff:fe59:f5ba
+    addrv6ipaddr:
+        ip: fe80::46d2:44ff:fe59:f5ba
+        zone: ""
+    port: 80
+    info: ""
+    infofields:
+        - ""
+    addr: fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-666\ Series._ipp._tcp.local.:
+    name: EPSON\ XP-666\ Series._ipp._tcp.local.
+    host: EPSON59F5BA.local.
+    addrv4: 192.168.50.21
+    addrv6: fe80::46d2:44ff:fe59:f5ba
+    addrv6ipaddr:
+        ip: fe80::46d2:44ff:fe59:f5ba
+        zone: ""
+    port: 631
+    info: txtvers=1|ty=EPSON XP-666 Series|usb_MFG=EPSON|usb_MDL=XP-666 Series|product=(EPSON XP-666 Series)|pdl=application/octet-stream,image/pwg-raster,image/urf,image/jpeg|rp=ipp/print|qtotal=1|Color=T|Duplex=T|Scan=T|Fax=F|kind=document,envelope,label,photo|PaperMax=legal-A4|URF=CP1,MT1-3-5-8-10-11-12,PQ4-5,OB9,OFU0,RS360,SRGB24,W8,DM3,IS1-7,V1.4|mopria-certified=1.2|priority=30|adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR|note=|UUID=cff92100-67f4-11d4-a45f-44d24459f5ba|TLS=1.2
+    infofields:
+        - txtvers=1
+        - ty=EPSON XP-666 Series
+        - usb_MFG=EPSON
+        - usb_MDL=XP-666 Series
+        - product=(EPSON XP-666 Series)
+        - pdl=application/octet-stream,image/pwg-raster,image/urf,image/jpeg
+        - rp=ipp/print
+        - qtotal=1
+        - Color=T
+        - Duplex=T
+        - Scan=T
+        - Fax=F
+        - kind=document,envelope,label,photo
+        - PaperMax=legal-A4
+        - URF=CP1,MT1-3-5-8-10-11-12,PQ4-5,OB9,OFU0,RS360,SRGB24,W8,DM3,IS1-7,V1.4
+        - mopria-certified=1.2
+        - priority=30
+        - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
+        - note=
+        - UUID=cff92100-67f4-11d4-a45f-44d24459f5ba
+        - TLS=1.2
+    addr: fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-666\ Series._ipps._tcp.local.:
+    name: EPSON\ XP-666\ Series._ipps._tcp.local.
+    host: EPSON59F5BA.local.
+    addrv4: 192.168.50.21
+    addrv6: fe80::46d2:44ff:fe59:f5ba
+    addrv6ipaddr:
+        ip: fe80::46d2:44ff:fe59:f5ba
+        zone: ""
+    port: 631
+    info: txtvers=1|ty=EPSON XP-666 Series|usb_MFG=EPSON|usb_MDL=XP-666 Series|product=(EPSON XP-666 Series)|pdl=application/octet-stream,image/pwg-raster,image/urf,image/jpeg|rp=ipp/print|qtotal=1|Color=T|Duplex=T|Scan=T|Fax=F|kind=document,envelope,label,photo|PaperMax=legal-A4|URF=CP1,MT1-3-5-8-10-11-12,PQ4-5,OB9,OFU0,RS360,SRGB24,W8,DM3,IS1-7,V1.4|mopria-certified=1.2|priority=30|adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR|note=|UUID=cff92100-67f4-11d4-a45f-44d24459f5ba|TLS=1.2
+    infofields:
+        - txtvers=1
+        - ty=EPSON XP-666 Series
+        - usb_MFG=EPSON
+        - usb_MDL=XP-666 Series
+        - product=(EPSON XP-666 Series)
+        - pdl=application/octet-stream,image/pwg-raster,image/urf,image/jpeg
+        - rp=ipp/print
+        - qtotal=1
+        - Color=T
+        - Duplex=T
+        - Scan=T
+        - Fax=F
+        - kind=document,envelope,label,photo
+        - PaperMax=legal-A4
+        - URF=CP1,MT1-3-5-8-10-11-12,PQ4-5,OB9,OFU0,RS360,SRGB24,W8,DM3,IS1-7,V1.4
+        - mopria-certified=1.2
+        - priority=30
+        - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
+        - note=
+        - UUID=cff92100-67f4-11d4-a45f-44d24459f5ba
+        - TLS=1.2
+    addr: fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-666\ Series._pdl-datastream._tcp.local.:
+    name: EPSON\ XP-666\ Series._pdl-datastream._tcp.local.
+    host: EPSON59F5BA.local.
+    addrv4: 192.168.50.21
+    addrv6: fe80::46d2:44ff:fe59:f5ba
+    addrv6ipaddr:
+        ip: fe80::46d2:44ff:fe59:f5ba
+        zone: ""
+    port: 9100
+    info: txtvers=1|priority=40|ty=EPSON XP-666 Series|usb_MFG=EPSON|usb_MDL=XP-666 Series|product=(EPSON XP-666 Series)|pdl=raw|qtotal=1|adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR|note=
+    infofields:
+        - txtvers=1
+        - priority=40
+        - ty=EPSON XP-666 Series
+        - usb_MFG=EPSON
+        - usb_MDL=XP-666 Series
+        - product=(EPSON XP-666 Series)
+        - pdl=raw
+        - qtotal=1
+        - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
+        - note=
+    addr: fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-666\ Series._printer._tcp.local.:
+    name: EPSON\ XP-666\ Series._printer._tcp.local.
+    host: EPSON59F5BA.local.
+    addrv4: 192.168.50.21
+    addrv6: fe80::46d2:44ff:fe59:f5ba
+    addrv6ipaddr:
+        ip: fe80::46d2:44ff:fe59:f5ba
+        zone: ""
+    port: 515
+    info: txtvers=1|priority=50|ty=EPSON XP-666 Series|usb_MFG=EPSON|usb_MDL=XP-666 Series|product=(EPSON XP-666 Series)|pdl=raw|rp=auto|qtotal=1|adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR|note=
+    infofields:
+        - txtvers=1
+        - priority=50
+        - ty=EPSON XP-666 Series
+        - usb_MFG=EPSON
+        - usb_MDL=XP-666 Series
+        - product=(EPSON XP-666 Series)
+        - pdl=raw
+        - rp=auto
+        - qtotal=1
+        - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
+        - note=
+    addr: fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-666\ Series._privet._tcp.local.:
+    name: EPSON\ XP-666\ Series._privet._tcp.local.
+    host: EPSON59F5BA.local.
+    addrv4: 192.168.50.21
+    addrv6: fe80::46d2:44ff:fe59:f5ba
+    addrv6ipaddr:
+        ip: fe80::46d2:44ff:fe59:f5ba
+        zone: ""
+    port: 80
+    info: txtvers=1|ty=EPSON XP-666 Series (EPSON59F5BA)|url=https://www.google.com/cloudprint|type=printer|id=0936a89f-33d7-80f5-c1bc-7421d40a78b5|cs=offline
+    infofields:
+        - txtvers=1
+        - ty=EPSON XP-666 Series (EPSON59F5BA)
+        - url=https://www.google.com/cloudprint
+        - type=printer
+        - id=0936a89f-33d7-80f5-c1bc-7421d40a78b5
+        - cs=offline
+    addr: fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-666\ Series._scanner._tcp.local.:
+    name: EPSON\ XP-666\ Series._scanner._tcp.local.
+    host: EPSON59F5BA.local.
+    addrv4: 192.168.50.21
+    addrv6: fe80::46d2:44ff:fe59:f5ba
+    addrv6ipaddr:
+        ip: fe80::46d2:44ff:fe59:f5ba
+        zone: ""
+    port: 1865
+    info: txtvers=1|ty=EPSON XP-666 Series|adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR|mfg=EPSON|mdl=XP-666 Series|UUID=cff92100-67f4-11d4-a45f-44d24459f5ba|scannerAvailable=0|note=
+    infofields:
+        - txtvers=1
+        - ty=EPSON XP-666 Series
+        - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
+        - mfg=EPSON
+        - mdl=XP-666 Series
+        - UUID=cff92100-67f4-11d4-a45f-44d24459f5ba
+        - scannerAvailable=0
+        - note=
+    addr: fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-666\ Series._smb._tcp.local.:
+    name: EPSON\ XP-666\ Series._smb._tcp.local.
+    host: EPSON59F5BA.local.
+    addrv4: 192.168.50.21
+    addrv6: fe80::46d2:44ff:fe59:f5ba
+    addrv6ipaddr:
+        ip: fe80::46d2:44ff:fe59:f5ba
+        zone: ""
+    port: 445
+    info: ""
+    infofields:
+        - ""
+    addr: fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-666\ Series._uscan._tcp.local.:
+    name: EPSON\ XP-666\ Series._uscan._tcp.local.
+    host: EPSON59F5BA.local.
+    addrv4: 192.168.50.21
+    addrv6: fe80::46d2:44ff:fe59:f5ba
+    addrv6ipaddr:
+        ip: fe80::46d2:44ff:fe59:f5ba
+        zone: ""
+    port: 443
+    info: txtvers=1|vers=2.5|representation=/PRESENTATION/AIRPRINT/PRINTER_128.PNG|rs=eSCL|ty=EPSON XP-666 Series|pdl=application/pdf,image/jpeg|cs=color,grayscale,binary|is=platen|duplex=F|adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR|UUID=cff92100-67f4-11d4-a45f-44d24459f5ba|note=
+    infofields:
+        - txtvers=1
+        - vers=2.5
+        - representation=/PRESENTATION/AIRPRINT/PRINTER_128.PNG
+        - rs=eSCL
+        - ty=EPSON XP-666 Series
+        - pdl=application/pdf,image/jpeg
+        - cs=color,grayscale,binary
+        - is=platen
+        - duplex=F
+        - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
+        - UUID=cff92100-67f4-11d4-a45f-44d24459f5ba
+        - note=
+    addr: fe80::46d2:44ff:fe59:f5ba

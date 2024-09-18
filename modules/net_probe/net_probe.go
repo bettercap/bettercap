@@ -118,7 +118,7 @@ func (mod *Prober) Start() error {
 		}
 
 		if mod.probes.MDNS {
-			go mod.mdnsProber()
+			mod.Session.Run("mdns.discovery on")
 		}
 
 		fromIP := mod.Session.Interface.IP
@@ -129,9 +129,6 @@ func (mod *Prober) Start() error {
 		mod.Info("probing %d addresses on %s", len(addresses), cidr)
 
 		for mod.Running() {
-			if mod.probes.MDNS {
-				mod.sendProbeMDNS(fromIP, fromHW)
-			}
 
 			if mod.probes.UPNP {
 				mod.sendProbeUPNP(fromIP, fromHW)
@@ -160,6 +157,10 @@ func (mod *Prober) Start() error {
 
 func (mod *Prober) Stop() error {
 	return mod.SetRunning(false, func() {
+		if mod.probes.MDNS {
+			mod.Session.Run("mdns.discovery off")
+		}
+
 		mod.waitGroup.Wait()
 	})
 }

@@ -23,7 +23,6 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/go-bexpr v0.1.14
-	github.com/hashicorp/mdns v1.0.5
 	github.com/inconshreveable/go-vhost v1.0.0
 	github.com/jpillora/go-tld v1.2.1
 	github.com/malfunkt/iprange v0.9.0
@@ -36,6 +35,7 @@ require (
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64
 	go.einride.tech/can v0.12.0
 	golang.org/x/net v0.28.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
