@@ -49,6 +49,33 @@ var IPP_REQUEST_NAMES = map[int16]string{
 	0x400D: "CUPS-Move-Job",
 }
 
+func init() {
+	ipp.AttributeTagMapping["printer-uri-supported"] = ipp.TagUri
+	ipp.AttributeTagMapping["uri-authentication-supported"] = ipp.TagKeyword
+	ipp.AttributeTagMapping["uri-security-supported"] = ipp.TagKeyword
+	ipp.AttributeTagMapping["printer-name"] = ipp.TagName
+	ipp.AttributeTagMapping["printer-info"] = ipp.TagText
+	ipp.AttributeTagMapping["printer-make-and-model"] = ipp.TagText
+	ipp.AttributeTagMapping["printer-state"] = ipp.TagEnum
+	ipp.AttributeTagMapping["printer-state-reasons"] = ipp.TagKeyword
+	ipp.AttributeTagMapping["ipp-versions-supported"] = ipp.TagKeyword
+	ipp.AttributeTagMapping["operations-supported"] = ipp.TagEnum
+	ipp.AttributeTagMapping["multiple-document-jobs-supported"] = ipp.TagBoolean
+	ipp.AttributeTagMapping["charset-configured"] = ipp.TagCharset
+	ipp.AttributeTagMapping["charset-supported"] = ipp.TagCharset
+	ipp.AttributeTagMapping["natural-language-configured"] = ipp.TagLanguage
+	ipp.AttributeTagMapping["generated-natural-language-supported"] = ipp.TagLanguage
+	ipp.AttributeTagMapping["document-format-default"] = ipp.TagMimeType
+	ipp.AttributeTagMapping["document-format-supported"] = ipp.TagMimeType
+	ipp.AttributeTagMapping["printer-is-accepting-jobs"] = ipp.TagBoolean
+	ipp.AttributeTagMapping["queued-job-count"] = ipp.TagInteger
+	ipp.AttributeTagMapping["pdl-override-supported"] = ipp.TagKeyword
+	ipp.AttributeTagMapping["printer-up-time"] = ipp.TagInteger
+	ipp.AttributeTagMapping["compression-supported"] = ipp.TagKeyword
+	ipp.AttributeTagMapping["printer-privacy-policy-uri"] = ipp.TagUri
+	ipp.AttributeTagMapping["printer-location"] = ipp.TagText
+}
+
 func ippClientHandler(mod *ZeroGod, client net.Conn, srvHost string, srvPort int, srvTLS bool) {
 	defer client.Close()
 
@@ -184,50 +211,55 @@ func ippOnGetPrinterAttributes(mod *ZeroGod, client net.Conn, ipp_req *ipp.Reque
 		},
 	}
 
-	// rfc2911 section 4.4
-	ipp.AttributeTagMapping["printer-uri-supported"] = ipp.TagUri
-	ipp.AttributeTagMapping["uri-authentication-supported"] = ipp.TagKeyword
-	ipp.AttributeTagMapping["uri-security-supported"] = ipp.TagKeyword
-	ipp.AttributeTagMapping["printer-name"] = ipp.TagName
-	ipp.AttributeTagMapping["printer-info"] = ipp.TagText
-	ipp.AttributeTagMapping["printer-make-and-model"] = ipp.TagText
-	ipp.AttributeTagMapping["printer-state"] = ipp.TagEnum
-	ipp.AttributeTagMapping["printer-state-reasons"] = ipp.TagKeyword
-	ipp.AttributeTagMapping["ipp-versions-supported"] = ipp.TagKeyword
-	ipp.AttributeTagMapping["operations-supported"] = ipp.TagEnum
-	ipp.AttributeTagMapping["multiple-document-jobs-supported"] = ipp.TagBoolean
-	ipp.AttributeTagMapping["charset-configured"] = ipp.TagCharset
-	ipp.AttributeTagMapping["charset-supported"] = ipp.TagCharset
-	ipp.AttributeTagMapping["natural-language-configured"] = ipp.TagLanguage
-	ipp.AttributeTagMapping["generated-natural-language-supported"] = ipp.TagLanguage
-	ipp.AttributeTagMapping["document-format-default"] = ipp.TagMimeType
-	ipp.AttributeTagMapping["document-format-supported"] = ipp.TagMimeType
-	ipp.AttributeTagMapping["printer-is-accepting-jobs"] = ipp.TagBoolean
-	ipp.AttributeTagMapping["queued-job-count"] = ipp.TagInteger
-	ipp.AttributeTagMapping["pdl-override-supported"] = ipp.TagKeyword
-	ipp.AttributeTagMapping["printer-up-time"] = ipp.TagInteger
-	ipp.AttributeTagMapping["compression-supported"] = ipp.TagKeyword
+	/*
 
+	   """
+	   marker-names (1setOf nameWithoutLanguage) = Black ink,Cyan ink,Magenta ink,Yellow ink
+	   marker-colors (1setOf nameWithoutLanguage) = #000000,#00FFFF,#FF00FF,#FFFF00
+	   marker-types (1setOf keyword) = ink-cartridge,ink-cartridge,ink-cartridge,ink-cartridge
+	   marker-low-levels (1setOf integer) = 15,15,15,15
+	   marker-high-levels (1setOf integer) = 100,100,100,100
+	   marker-levels (1setOf integer) = 57,94,95,95
+	   """
+
+	   markers = {
+	       (
+	           SectionEnum.printer,
+	           b'marker-names',
+	           TagEnum.text_without_language
+	       ): [b'TestMarker'],
+	       (
+	           SectionEnum.printer,
+	           b'marker-colors',
+	           TagEnum.text_without_language
+	       ): [b'#FF0000'],
+	       (
+	           SectionEnum.printer,
+	           b'marker-types',
+	           TagEnum.text_without_language
+	       ): [b'ink-cartridge'],
+	       (
+	           SectionEnum.printer,
+	           b'marker-low-levels',
+	           TagEnum.integer
+	       ): [Integer(15).bytes()],
+	       (
+	           SectionEnum.printer,
+	           b'marker-high-levels',
+	           TagEnum.integer
+	       ): [Integer(100).bytes()],
+	       (
+	           SectionEnum.printer,
+	           b'marker-levels',
+	           TagEnum.integer
+	       ): [Integer(66).bytes()],
+	   }
+	*/
+
+	// rfc2911 section 4.4
 	ipp_resp.PrinterAttributes = []ipp.Attributes{
 		{
-			"printer-uri-supported": []ipp.Attribute{
-				{
-					Value: fmt.Sprintf("%s://%s:%d/printer", ops.Ternary(srvTLS, "ipps", "ipp"), srvHost, srvPort),
-					Tag:   ipp.TagUri,
-				},
-			},
-			"uri-authentication-supported": []ipp.Attribute{
-				{
-					Value: "none",
-					Tag:   ipp.TagKeyword,
-				},
-			},
-			"uri-security-supported": []ipp.Attribute{
-				{
-					Value: ops.Ternary(srvTLS, "tls", "none"),
-					Tag:   ipp.TagKeyword,
-				},
-			},
+			// custom
 			"printer-name": []ipp.Attribute{
 				{
 					Value: "PRINTER_NAME",
@@ -244,6 +276,45 @@ func ippOnGetPrinterAttributes(mod *ZeroGod, client net.Conn, ipp_req *ipp.Reque
 				{
 					Value: "PRINTER_MAKE PRINTER_MODEL",
 					Tag:   ipp.TagText,
+				},
+			},
+			"printer-location": []ipp.Attribute{
+				{
+					Value: "PRINTER_LOCATION",
+					Tag:   ipp.TagText,
+				},
+			},
+			"printer-privacy-policy-uri": []ipp.Attribute{
+				{
+					Value: "https://www.google.com/",
+					Tag:   ipp.TagUri,
+				},
+			},
+			// constants
+			/*
+				"ppd-name": []ipp.Attribute{
+					{
+						Value: "everywhere",
+						Tag:   ipp.TagName,
+					},
+				},
+			*/
+			"printer-uri-supported": []ipp.Attribute{
+				{
+					Value: fmt.Sprintf("%s://%s:%d/printer", ops.Ternary(srvTLS, "ipps", "ipp"), srvHost, srvPort),
+					Tag:   ipp.TagUri,
+				},
+			},
+			"uri-authentication-supported": []ipp.Attribute{
+				{
+					Value: "none",
+					Tag:   ipp.TagKeyword,
+				},
+			},
+			"uri-security-supported": []ipp.Attribute{
+				{
+					Value: ops.Ternary(srvTLS, "tls", "none"),
+					Tag:   ipp.TagKeyword,
 				},
 			},
 			"printer-state": []ipp.Attribute{

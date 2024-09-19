@@ -113,6 +113,8 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 
 	svcChan := make(chan setupResult)
 
+	// TODO: support external responders
+
 	// paralleize initialization
 	for key, svc := range mapping {
 		go func(key string, svc zeroconf.ServiceEntry) {
