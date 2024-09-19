@@ -75,14 +75,14 @@ func (lan *LAN) GetByIp(ip string) *Endpoint {
 	lan.Lock()
 	defer lan.Unlock()
 
-	if ip == lan.iface.IpAddress {
+	if ip == lan.iface.IpAddress || ip == lan.iface.Ip6Address {
 		return lan.iface
-	} else if ip == lan.gateway.IpAddress {
+	} else if ip == lan.gateway.IpAddress || ip == lan.gateway.Ip6Address {
 		return lan.gateway
 	}
 
 	for _, e := range lan.hosts {
-		if e.IpAddress == ip {
+		if e.IpAddress == ip || e.Ip6Address == ip {
 			return e
 		}
 	}

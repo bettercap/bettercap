@@ -11,13 +11,13 @@ import (
 
 func (mod *EventsStream) viewMDNSEvent(output io.Writer, e session.Event) {
 	event := e.Data.(mdns.ServiceDiscoveryEvent)
-	fmt.Fprintf(output, "[%s] [%s] service %s detected for %s (%s):%d : %s\n",
+	fmt.Fprintf(output, "[%s] [%s] service %s detected for %s (%s):%d with %d records\n",
 		e.Time.Format(mod.timeFormat),
 		tui.Green(e.Tag),
-		tui.Bold(event.Service.Name),
-		event.Service.AddrV4.String(),
-		tui.Dim(event.Service.Host),
+		tui.Bold(event.Service.ServiceInstanceName()),
+		event.Service.AddrIPv4,
+		tui.Dim(event.Service.HostName),
 		event.Service.Port,
-		event.Service.Info,
+		len(event.Service.Text),
 	)
 }

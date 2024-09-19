@@ -1,22 +1,23 @@
-_http:
+EPSON\ XP-630\ Series-59F5BA._http._tcp.local.:
     servicerecord:
-        instance: EPSON\ XP-630\ Series
+        instance: EPSON\ XP-630\ Series-59F5BA
         service: _http._tcp
         domain: local.
+    hostname: EPSON59F5BA.local.
     port: 80
-
-_ipp:
+    text:
+        - ""
+    ttl: 4500
+    addripv4:
+        - 192.168.50.21
+    addripv6:
+        - fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-630\ Series-59F5BA._ipp._tcp.local.:
     servicerecord:
-        instance: EPSON\ XP-630\ Series
+        instance: EPSON\ XP-630\ Series-59F5BA
         service: _ipp._tcp
         domain: local.
-    port: 631
-
-_ipps:
-    servicerecord:
-        instance: EPSON\ XP-630\ Series
-        service: _ipps._tcp
-        domain: local.
+    hostname: EPSON59F5BA.local.
     port: 631
     text:
         - txtvers=1
@@ -40,12 +41,30 @@ _ipps:
         - note=
         - UUID=cfe92100-67c4-11d4-a45f-44d24459f5ba
         - TLS=1.2
-   
-_pdl-datastream:
+    ttl: 4500
+    addripv4:
+        - 192.168.50.21
+    addripv6:
+        - fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-630\ Series-59F5BA._ipps._tcp.local.:
     servicerecord:
-        instance: EPSON\ XP-630\ Series
+        instance: EPSON\ XP-630\ Series-59F5BA
+        service: _ipps._tcp
+        domain: local.
+    hostname: EPSON59F5BA.local.
+    port: 631
+    text: []
+    ttl: 120
+    addripv4:
+        - 192.168.50.21
+    addripv6:
+        - fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-630\ Series-59F5BA._pdl-datastream._tcp.local.:
+    servicerecord:
+        instance: EPSON\ XP-630\ Series-59F5BA
         service: _pdl-datastream._tcp
         domain: local.
+    hostname: EPSON59F5BA.local.
     port: 9100
     text:
         - txtvers=1
@@ -58,12 +77,17 @@ _pdl-datastream:
         - qtotal=1
         - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
         - note=
-
-_printer:
+    ttl: 4500
+    addripv4:
+        - 192.168.50.21
+    addripv6:
+        - fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-630\ Series-59F5BA._printer._tcp.local.:
     servicerecord:
-        instance: EPSON\ XP-630\ Series
+        instance: EPSON\ XP-630\ Series-59F5BA
         service: _printer._tcp
         domain: local.
+    hostname: EPSON59F5BA.local.
     port: 515
     text:
         - txtvers=1
@@ -77,12 +101,17 @@ _printer:
         - qtotal=1
         - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
         - note=
-
-_privet:
+    ttl: 4500
+    addripv4:
+        - 192.168.50.21
+    addripv6:
+        - fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-630\ Series-59F5BA._privet._tcp.local.:
     servicerecord:
-        instance: EPSON\ XP-630\ Series
+        instance: EPSON\ XP-630\ Series-59F5BA
         service: _privet._tcp
         domain: local.
+    hostname: EPSON59F5BA.local.
     port: 80
     text:
         - txtvers=1
@@ -91,12 +120,17 @@ _privet:
         - type=printer
         - id=0936a89f-33d7-80f5-c1bc-7421d40a78b5
         - cs=offline
-   
-_scanner:
+    ttl: 4500
+    addripv4:
+        - 192.168.50.21
+    addripv6:
+        - fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-630\ Series-59F5BA._scanner._tcp.local.:
     servicerecord:
-        instance: EPSON\ XP-630\ Series
+        instance: EPSON\ XP-630\ Series-59F5BA
         service: _scanner._tcp
         domain: local.
+    hostname: EPSON59F5BA.local.
     port: 1865
     text:
         - txtvers=1
@@ -107,12 +141,31 @@ _scanner:
         - UUID=cfe92100-67c4-11d4-a45f-44d24459f5ba
         - scannerAvailable=0
         - note=
-    
-_uscan:
+    ttl: 4500
+    addripv4:
+        - 192.168.50.21
+    addripv6:
+        - fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-630\ Series-59F5BA._smb._tcp.local.:
     servicerecord:
-        instance: EPSON\ XP-630\ Series
+        instance: EPSON\ XP-630\ Series-59F5BA
+        service: _smb._tcp
+        domain: local.
+    hostname: EPSON59F5BA.local.
+    port: 445
+    text:
+        - ""
+    ttl: 4500
+    addripv4:
+        - 192.168.50.21
+    addripv6:
+        - fe80::46d2:44ff:fe59:f5ba
+EPSON\ XP-630\ Series-59F5BA._uscan._tcp.local.:
+    servicerecord:
+        instance: EPSON\ XP-630\ Series-59F5BA
         service: _uscan._tcp
         domain: local.
+    hostname: EPSON59F5BA.local.
     port: 443
     text:
         - txtvers=1
@@ -127,3 +180,8 @@ _uscan:
         - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
         - UUID=cfe92100-67c4-11d4-a45f-44d24459f5ba
         - note=
+    ttl: 4500
+    addripv4:
+        - 192.168.50.21
+    addripv6:
+        - fe80::46d2:44ff:fe59:f5ba

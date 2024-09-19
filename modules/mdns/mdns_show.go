@@ -6,11 +6,12 @@ import (
 
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
+	"github.com/grandcat/zeroconf"
 )
 
 type entry struct {
 	ip       string
-	services map[string]*ServiceEntry
+	services map[string]*zeroconf.ServiceEntry
 }
 
 func (mod *MDNSModule) show(filter string, withData bool) error {
@@ -30,7 +31,7 @@ func (mod *MDNSModule) show(filter string, withData bool) error {
 
 	for _, entry := range entries {
 		if endpoint := mod.Session.Lan.GetByIp(entry.ip); endpoint != nil {
-			fmt.Fprintf(mod.Session.Events.Stdout, "* %s (%s)\n", endpoint.IpAddress, tui.Dim(endpoint.Vendor))
+			fmt.Fprintf(mod.Session.Events.Stdout, "* %s (%s)\n", tui.Bold(endpoint.IpAddress), tui.Dim(endpoint.Vendor))
 		} else {
 			fmt.Fprintf(mod.Session.Events.Stdout, "* %s\n", tui.Bold(entry.ip))
 		}
@@ -38,16 +39,16 @@ func (mod *MDNSModule) show(filter string, withData bool) error {
 		for name, svc := range entry.services {
 			fmt.Fprintf(mod.Session.Events.Stdout, "  %s (%s) [%v / %v]:%s\n",
 				tui.Green(name),
-				tui.Dim(svc.Host),
-				svc.AddrV4,
-				svc.AddrV6,
+				tui.Dim(svc.HostName),
+				svc.AddrIPv4,
+				svc.AddrIPv6,
 				tui.Red(fmt.Sprintf("%d", svc.Port)),
 			)
 
-			numFields := len(svc.InfoFields)
+			numFields := len(svc.Text)
 			if withData {
 				if numFields > 0 {
-					for _, field := range svc.InfoFields {
+					for _, field := range svc.Text {
 						if field = str.Trim(field); len(field) > 0 {
 							fmt.Fprintf(mod.Session.Events.Stdout, "    %s\n", field)
 						}

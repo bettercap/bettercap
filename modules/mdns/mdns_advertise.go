@@ -4,34 +4,57 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"strings"
 
-	"github.com/miekg/dns"
+	"github.com/evilsocket/islazy/tui"
+	"github.com/grandcat/zeroconf"
 	yaml "gopkg.in/yaml.v3"
 )
 
+/*
 type multiService struct {
+	mod      *MDNSModule
 	services []*MDNSService
 }
 
 func (m multiService) Records(q dns.Question) []dns.RR {
 	records := make([]dns.RR, 0)
 
-	for _, svc := range m.services {
-		records = append(records, svc.Records(q)...)
+	m.mod.Debug("QUESTION: %+v", q)
+
+	if strings.HasPrefix(q.Name, "_services._dns-sd._udp.") {
+		for _, svc := range m.services {
+			records = append(records, svc.Records(q)...)
+		}
+	} else {
+		for _, svc := range m.services {
+			if svcRecords := svc.Records(q); len(svcRecords) > 0 {
+				records = svcRecords
+				break
+			}
+		}
+	}
+
+	if num := len(records); num == 0 {
+		m.mod.Debug("unhandled service %+v", q)
+	} else {
+		m.mod.Info("responding to query %s with %d records", tui.Green(q.Name), num)
+		if q.Name == "_services._dns-sd._udp.local." {
+			for _, r := range records {
+				m.mod.Info("  %+v", r)
+			}
+		}
 	}
 
 	return records
 }
+*/
 
 type Advertiser struct {
 	Filename string
-	Mapping  map[string]ServiceEntry
-
-	Service multiService
-	Server  *Server
+	Mapping  map[string]zeroconf.ServiceEntry
+	Servers  map[string]*zeroconf.Server
 }
 
 func (mod *MDNSModule) startAdvertiser(fileName string) error {
@@ -44,7 +67,7 @@ func (mod *MDNSModule) startAdvertiser(fileName string) error {
 		return fmt.Errorf("could not read %s: %v", fileName, err)
 	}
 
-	mapping := make(map[string]ServiceEntry)
+	mapping := make(map[string]zeroconf.ServiceEntry)
 	if err = yaml.Unmarshal(data, &mapping); err != nil {
 		return fmt.Errorf("could not deserialize %s: %v", fileName, err)
 	}
@@ -53,54 +76,41 @@ func (mod *MDNSModule) startAdvertiser(fileName string) error {
 	if err != nil {
 		return fmt.Errorf("could not get hostname: %v", err)
 	}
-
 	if !strings.HasSuffix(hostName, ".") {
 		hostName += "."
 	}
 
-	mod.Info("loaded %d services from %s, advertising with: host=%s ipv4=%s ipv6=%s",
+	ifName := mod.Session.Interface.Name()
+	/*
+		iface, err := net.InterfaceByName(ifName)
+		if err != nil {
+			return fmt.Errorf("error getting interface %s: %v", ifName, err)
+		}
+	*/
+
+	mod.Info("loaded %d services from %s, advertising with host=%s iface=%s ipv4=%s ipv6=%s",
 		len(mapping),
 		fileName,
 		hostName,
+		ifName,
 		mod.Session.Interface.IpAddress,
 		mod.Session.Interface.Ip6Address)
 
 	advertiser := &Advertiser{
 		Filename: fileName,
 		Mapping:  mapping,
-		Service: multiService{
-			services: make([]*MDNSService, 0),
-		},
+		Servers:  make(map[string]*zeroconf.Server),
 	}
 
-	for _, svcData := range mapping {
-		svcParts := strings.SplitN(svcData.Name, ".", 2)
-		svcInstance := svcParts[0]
-		svcService := strings.Replace(svcParts[1], ".local.", "", 1)
-
-		// TODO: patch UUID
-
-		service, err := NewMDNSService(
-			mod,
-			svcInstance,
-			svcService,
-			"local.",
-			hostName,
-			svcData.Port,
-			[]net.IP{
-				mod.Session.Interface.IP,
-				mod.Session.Interface.IPv6,
-			},
-			svcData.InfoFields)
+	for key, svc := range mapping {
+		server, err := zeroconf.Register(svc.Instance, svc.Service, svc.Domain, svc.Port, svc.Text, nil)
 		if err != nil {
-			return fmt.Errorf("could not create service %s: %v", svcData.Name, err)
+			return fmt.Errorf("could not create service %s: %v", svc.Instance, err)
 		}
 
-		advertiser.Service.services = append(advertiser.Service.services, service)
-	}
+		mod.Info("advertising service %s", tui.Yellow(svc.Service))
 
-	if advertiser.Server, err = NewServer(mod, &Config{Zone: advertiser.Service}); err != nil {
-		return fmt.Errorf("could not create server: %v", err)
+		advertiser.Servers[key] = server
 	}
 
 	mod.advertiser = advertiser
@@ -117,7 +127,12 @@ func (mod *MDNSModule) stopAdvertiser() error {
 
 	mod.Info("stopping %d services ...", len(mod.advertiser.Mapping))
 
-	mod.advertiser.Server.Shutdown()
+	for key, server := range mod.advertiser.Servers {
+		mod.Info("stopping %s ...", key)
+		server.Shutdown()
+	}
+
+	mod.Info("all services stopped")
 
 	mod.advertiser = nil
 	return nil

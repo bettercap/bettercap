@@ -40,12 +40,14 @@ require (
 
 require (
 	github.com/antchfx/xpath v1.3.1 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/chzyer/logex v1.2.1 // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20210110162100-a92cc753f88e // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/grandcat/zeroconf v1.0.0 // indirect
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/kr/binarydist v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

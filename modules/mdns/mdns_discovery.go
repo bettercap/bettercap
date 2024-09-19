@@ -1,31 +1,34 @@
 package mdns
 
 import (
+	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/bettercap/bettercap/v2/modules/syn_scan"
 	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
+
+	"github.com/grandcat/zeroconf"
 )
 
 type MDNSModule struct {
 	session.SessionModule
 
-	advertiser   *Advertiser
-	discoChannel chan *ServiceEntry
-	mapping      map[string]map[string]*ServiceEntry
+	advertiser  *Advertiser
+	rootContext context.Context
+	rootCancel  context.CancelFunc
+	resolvers   map[string]*zeroconf.Resolver
+	mapping     map[string]map[string]*zeroconf.ServiceEntry
 }
 
 func NewMDNSModule(s *session.Session) *MDNSModule {
 	mod := &MDNSModule{
 		SessionModule: session.NewSessionModule("mdns", s),
-		discoChannel:  make(chan *ServiceEntry),
-		mapping:       make(map[string]map[string]*ServiceEntry),
-		advertiser:    nil,
+		mapping:       make(map[string]map[string]*zeroconf.ServiceEntry),
+		resolvers:     make(map[string]*zeroconf.Resolver),
 	}
 
 	mod.SessionModule.Requires("net.recon")
@@ -108,42 +111,47 @@ func (mod *MDNSModule) Configure() (err error) {
 		return session.ErrAlreadyStarted(mod.Name())
 	}
 
-	if mod.discoChannel != nil {
-		close(mod.discoChannel)
+	if mod.rootContext != nil {
+		mod.rootCancel()
 	}
-	mod.discoChannel = make(chan *ServiceEntry)
-	mod.mapping = make(map[string]map[string]*ServiceEntry)
+
+	mod.mapping = make(map[string]map[string]*zeroconf.ServiceEntry)
+	mod.resolvers = make(map[string]*zeroconf.Resolver)
+	mod.rootContext, mod.rootCancel = context.WithCancel(context.Background())
 
 	return
 }
 
 type ServiceDiscoveryEvent struct {
-	Service  ServiceEntry      `json:"service"`
-	Endpoint *network.Endpoint `json:"endpoint"`
+	Service  zeroconf.ServiceEntry `json:"service"`
+	Endpoint *network.Endpoint     `json:"endpoint"`
 }
 
-func (mod *MDNSModule) updateEndpointMeta(address string, endpoint *network.Endpoint, svc *ServiceEntry) {
+func (mod *MDNSModule) updateEndpointMeta(address string, endpoint *network.Endpoint, svc *zeroconf.ServiceEntry) {
 	mod.Debug("found endpoint %s for address %s", endpoint.HwAddress, address)
+
+	// TODO: this is shit and needs to be refactored
 
 	// update mdns metadata
 	meta := make(map[string]string)
 
-	svcType := strings.SplitN(svc.Name, ".", 2)[1]
+	svcType := svc.Service
 
-	meta[fmt.Sprintf("mdns:%s:name", svcType)] = svc.Name
-	meta[fmt.Sprintf("mdns:%s:hostname", svcType)] = svc.Host
+	meta[fmt.Sprintf("mdns:%s:name", svcType)] = svc.ServiceName()
+	meta[fmt.Sprintf("mdns:%s:hostname", svcType)] = svc.HostName
 
-	if svc.AddrV4 != nil {
-		meta[fmt.Sprintf("mdns:%s:ipv4", svcType)] = svc.AddrV4.String()
+	// TODO: include all
+	if len(svc.AddrIPv4) > 0 {
+		meta[fmt.Sprintf("mdns:%s:ipv4", svcType)] = svc.AddrIPv4[0].String()
 	}
 
-	if svc.AddrV6 != nil {
-		meta[fmt.Sprintf("mdns:%s:ipv6", svcType)] = svc.AddrV6.String()
+	if len(svc.AddrIPv6) > 0 {
+		meta[fmt.Sprintf("mdns:%s:ipv6", svcType)] = svc.AddrIPv6[0].String()
 	}
 
 	meta[fmt.Sprintf("mdns:%s:port", svcType)] = fmt.Sprintf("%d", svc.Port)
 
-	for _, field := range svc.InfoFields {
+	for _, field := range svc.Text {
 		field = str.Trim(field)
 		if len(field) == 0 {
 			continue
@@ -180,43 +188,89 @@ func (mod *MDNSModule) updateEndpointMeta(address string, endpoint *network.Endp
 	endpoint.Meta.Set("ports", ports)
 }
 
-func (mod *MDNSModule) onServiceDiscovered(svc *ServiceEntry) {
-	mod.Debug("discovered service %s (%s) [%v / %v]:%d", tui.Green(svc.Name), tui.Dim(svc.Host), svc.AddrV4, svc.AddrV6, svc.Port)
+func (mod *MDNSModule) onServiceDiscovered(svc *zeroconf.ServiceEntry) {
+	mod.Debug("%++v", *svc)
+
+	if svc.Service == "_services._dns-sd._udp" && len(svc.AddrIPv4) == 0 && len(svc.AddrIPv6) == 0 {
+		svcName := strings.Replace(svc.Instance, ".local", "", 1)
+		if _, found := mod.resolvers[svcName]; !found {
+			mod.Debug("discovered service %s", tui.Green(svcName))
+			if err := mod.startResolver(svcName); err != nil {
+				mod.Error("%v", err)
+			}
+		}
+		return
+	}
+
+	mod.Debug("discovered instance %s (%s) [%v / %v]:%d",
+		tui.Green(svc.ServiceInstanceName()),
+		tui.Dim(svc.HostName),
+		svc.AddrIPv4,
+		svc.AddrIPv6,
+		svc.Port)
 
 	event := ServiceDiscoveryEvent{
 		Service:  *svc,
 		Endpoint: nil,
 	}
 
-	addresses := []string{}
-	if svc.AddrV4 != nil {
-		addresses = append(addresses, svc.AddrV4.String())
-	}
-	if svc.AddrV6 != nil {
-		addresses = append(addresses, svc.AddrV6.String())
-	}
+	addresses := append(svc.AddrIPv4, svc.AddrIPv6...)
 
-	for _, address := range addresses {
+	for _, ip := range addresses {
+		address := ip.String()
 		if event.Endpoint = mod.Session.Lan.GetByIp(address); event.Endpoint != nil {
 			// update endpoint metadata
 			mod.updateEndpointMeta(address, event.Endpoint, svc)
 
 			// update internal module mapping
 			if ipServices, found := mod.mapping[address]; found {
-				ipServices[svc.Name] = svc
+				ipServices[svc.ServiceInstanceName()] = svc
 			} else {
-				mod.mapping[address] = map[string]*ServiceEntry{
-					svc.Name: svc,
+				mod.mapping[address] = map[string]*zeroconf.ServiceEntry{
+					svc.ServiceInstanceName(): svc,
 				}
 			}
 			break
-		} else {
-			mod.Warning("got mdns entry for unknown ip %s", svc.AddrV4)
 		}
+	}
+
+	if event.Endpoint == nil {
+		// TODO: this is probably an IPv6 only record, try to somehow check which known IPv4 it is
+		mod.Debug("got mdns entry for unknown ip: %++v", *svc)
 	}
 
 	session.I.Events.Add("mdns.service", event)
 	session.I.Refresh()
+}
+
+func (mod *MDNSModule) startResolver(service string) error {
+	mod.Debug("starting resolver for service %s", tui.Yellow(service))
+
+	resolver, err := zeroconf.NewResolver(nil)
+	if err != nil {
+		return err
+	}
+
+	// start listening
+	channel := make(chan *zeroconf.ServiceEntry)
+	go func() {
+		for entry := range channel {
+			mod.onServiceDiscovered(entry)
+		}
+	}()
+
+	// start browsing
+	go func() {
+		err = resolver.Browse(mod.rootContext, service, "local.", channel)
+		if err != nil {
+			mod.Error("%v", err)
+		}
+		mod.Debug("resolver for service %s stopped", tui.Yellow(service))
+	}()
+
+	mod.resolvers[service] = resolver
+
+	return nil
 }
 
 func (mod *MDNSModule) Start() (err error) {
@@ -224,42 +278,32 @@ func (mod *MDNSModule) Start() (err error) {
 		return err
 	}
 
-	// start the discovery
-	service := "_services._dns-sd._udp"
-	params := DefaultParams(service)
-
-	params.Module = mod
-	params.Service = service
-	params.Domain = "local"
-	params.Entries = mod.discoChannel
-	params.DisableIPv6 = true // https://github.com/hashicorp/mdns/issues/35
-	params.Timeout = time.Duration(10) * time.Minute
-
-	go func() {
-		mod.Info("starting query routine ...")
-		if err := Query(params); err != nil {
-			mod.Error("service discovery query: %v", err)
-		}
-		mod.Info("stopping query routine ...")
-	}()
+	// start the root discovery
+	if err = mod.startResolver("_services._dns-sd._udp"); err != nil {
+		return err
+	}
 
 	return mod.SetRunning(true, func() {
-		mod.Info("mDNS service discovery started")
+		mod.Info("service discovery started")
 
-		for entry := range mod.discoChannel {
-			mod.onServiceDiscovered(entry)
-		}
+		<-mod.rootContext.Done()
 
-		mod.Info("mDNS service discovery stopped")
+		mod.Info("service discovery stopped")
 	})
 }
 
 func (mod *MDNSModule) Stop() error {
 	return mod.SetRunning(false, func() {
-		if mod.discoChannel != nil {
-			mod.Info("closing mDNS discovery channel")
-			close(mod.discoChannel)
-			mod.discoChannel = nil
+		if mod.rootCancel != nil {
+			mod.Debug("stopping mDNS discovery")
+
+			mod.rootCancel()
+			<-mod.rootContext.Done()
+
+			mod.Debug("stopped")
+
+			mod.rootContext = nil
+			mod.rootCancel = nil
 		}
 	})
 }
