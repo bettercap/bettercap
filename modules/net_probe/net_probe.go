@@ -118,7 +118,7 @@ func (mod *Prober) Start() error {
 		}
 
 		if mod.probes.MDNS {
-			mod.Session.Run("mdns.discovery on")
+			mod.Session.Run("zerogod.discovery on")
 		}
 
 		fromIP := mod.Session.Interface.IP
@@ -158,7 +158,7 @@ func (mod *Prober) Start() error {
 func (mod *Prober) Stop() error {
 	return mod.SetRunning(false, func() {
 		if mod.probes.MDNS {
-			mod.Session.Run("mdns.discovery off")
+			mod.Session.Run("zerogod.discovery off")
 		}
 
 		mod.waitGroup.Wait()

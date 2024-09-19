@@ -1,4 +1,4 @@
-package mdns
+package zerogod
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
-func (mod *MDNSModule) save(address, filename string) error {
+func (mod *ZeroGod) save(address, filename string) error {
 	if address == "" {
 		return fmt.Errorf("address cannot be empty")
 	}

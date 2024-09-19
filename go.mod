@@ -22,6 +22,7 @@ require (
 	github.com/google/gousb v1.1.3
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
+	github.com/grandcat/zeroconf v1.0.0
 	github.com/hashicorp/go-bexpr v0.1.14
 	github.com/inconshreveable/go-vhost v1.0.0
 	github.com/jpillora/go-tld v1.2.1
@@ -29,6 +30,7 @@ require (
 	github.com/mdlayher/dhcp6 v0.0.0-20190311162359-2a67805d7d0b
 	github.com/miekg/dns v1.1.61
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/phin1x/go-ipp v1.6.1
 	github.com/robertkrimen/otto v0.4.0
 	github.com/stratoberry/go-gpsd v1.3.0
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
@@ -47,7 +49,6 @@ require (
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/grandcat/zeroconf v1.0.0 // indirect
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/kr/binarydist v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

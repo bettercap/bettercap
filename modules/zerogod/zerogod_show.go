@@ -1,4 +1,4 @@
-package mdns
+package zerogod
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ type entry struct {
 	services map[string]*zeroconf.ServiceEntry
 }
 
-func (mod *MDNSModule) show(filter string, withData bool) error {
+func (mod *ZeroGod) show(filter string, withData bool) error {
 	fmt.Fprintf(mod.Session.Events.Stdout, "\n")
 
 	// convert to list for sorting
