@@ -1,0 +1,26 @@
+- name: TEST_NAME
+  service: _ipps._tcp
+  domain: local.
+  port: 6631
+  records:
+    - txtvers=1
+    - ty=EPSON XP-630 Series
+    - usb_MFG=EPSON
+    - usb_MDL=XP-630 Series
+    - product=(EPSON XP-630 Series)
+    - pdl=application/octet-stream,image/pwg-raster,image/urf,image/jpeg
+    - rp=ipp/print
+    - qtotal=1
+    - Color=T
+    - Duplex=T
+    - Scan=T
+    - Fax=F
+    - kind=document,envelope,label,photo
+    - PaperMax=legal-A4
+    - URF=CP1,MT1-3-5-8-10-11-12,PQ4-5,OB9,OFU0,RS360,SRGB24,W8,DM3,IS1-7,V1.4
+    - mopria-certified=1.2
+    - priority=30
+    - adminurl=http://EPSON59F5BA.local.:80/PRESENTATION/BONJOUR
+    - note=
+    - UUID=cfe92100-67c4-11d4-a45f-44d24459f5ba
+    - TLS=1.2

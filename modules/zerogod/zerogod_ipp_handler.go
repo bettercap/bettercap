@@ -256,6 +256,8 @@ func ippOnGetPrinterAttributes(mod *ZeroGod, client net.Conn, ipp_req *ipp.Reque
 	   }
 	*/
 
+	// TODO: allow customization of these attributes.
+
 	// rfc2911 section 4.4
 	ipp_resp.PrinterAttributes = []ipp.Attributes{
 		{

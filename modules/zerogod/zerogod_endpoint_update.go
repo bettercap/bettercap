@@ -6,8 +6,8 @@ import (
 
 	"github.com/bettercap/bettercap/v2/modules/syn_scan"
 	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/zeroconf"
 	"github.com/evilsocket/islazy/str"
-	"github.com/grandcat/zeroconf"
 )
 
 func (mod *ZeroGod) updateEndpointMeta(address string, endpoint *network.Endpoint, svc *zeroconf.ServiceEntry) {

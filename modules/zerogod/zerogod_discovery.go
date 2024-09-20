@@ -7,9 +7,8 @@ import (
 	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/bettercap/bettercap/v2/tls"
+	"github.com/bettercap/bettercap/v2/zeroconf"
 	"github.com/evilsocket/islazy/tui"
-
-	"github.com/grandcat/zeroconf"
 )
 
 type ZeroGod struct {

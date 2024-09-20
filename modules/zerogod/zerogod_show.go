@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/bettercap/bettercap/v2/zeroconf"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
-	"github.com/grandcat/zeroconf"
 )
 
 type entry struct {

@@ -5,63 +5,60 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"strings"
 	"time"
 
 	tls_utils "github.com/bettercap/bettercap/v2/tls"
+	"github.com/bettercap/bettercap/v2/zeroconf"
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/tui"
-	"github.com/grandcat/zeroconf"
 	yaml "gopkg.in/yaml.v3"
 )
 
 type Advertiser struct {
-	Filename  string
-	Mapping   map[string]zeroconf.ServiceEntry
-	Servers   map[string]*zeroconf.Server
-	Acceptors map[string]*Acceptor
+	Filename string
+
+	Services  []ServiceData
+	Servers   []*zeroconf.Server
+	Acceptors []*Acceptor
 }
 
 type setupResult struct {
 	err    error
-	key    string
 	server *zeroconf.Server
 }
 
-func (mod *ZeroGod) startAdvertiser(fileName string) error {
-	if mod.advertiser != nil {
-		return fmt.Errorf("advertiser already started for %s", mod.advertiser.Filename)
-	}
-
+func (mod *ZeroGod) loadTLSConfig() (*tls.Config, error) {
 	var certFile string
 	var keyFile string
 	var err error
 
 	// read tls configuration
 	if err, certFile = mod.StringParam("zerogod.advertise.certificate"); err != nil {
-		return err
+		return nil, err
 	} else if certFile, err = fs.Expand(certFile); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err, keyFile = mod.StringParam("zerogod.advertise.key"); err != nil {
-		return err
+		return nil, err
 	} else if keyFile, err = fs.Expand(keyFile); err != nil {
-		return err
+		return nil, err
 	}
 
 	if !fs.Exists(certFile) || !fs.Exists(keyFile) {
 		cfg, err := tls_utils.CertConfigFromModule("zerogod.advertise", mod.SessionModule)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		mod.Debug("%+v", cfg)
 		mod.Info("generating server TLS key to %s", keyFile)
 		mod.Info("generating server TLS certificate to %s", certFile)
 		if err := tls_utils.Generate(cfg, certFile, keyFile, false); err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		mod.Info("loading server TLS key from %s", keyFile)
@@ -70,22 +67,23 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	tlsConfig := tls.Config{
+	return &tls.Config{
 		Certificates:       []tls.Certificate{cert},
 		InsecureSkipVerify: true,
+	}, nil
+}
+
+func (mod *ZeroGod) startAdvertiser(fileName string) error {
+	if mod.advertiser != nil {
+		return fmt.Errorf("advertiser already started for %s", mod.advertiser.Filename)
 	}
 
-	data, err := ioutil.ReadFile(fileName)
+	tlsConfig, err := mod.loadTLSConfig()
 	if err != nil {
-		return fmt.Errorf("could not read %s: %v", fileName, err)
-	}
-
-	mapping := make(map[string]zeroconf.ServiceEntry)
-	if err = yaml.Unmarshal(data, &mapping); err != nil {
-		return fmt.Errorf("could not deserialize %s: %v", fileName, err)
+		return err
 	}
 
 	hostName, err := os.Hostname()
@@ -96,73 +94,121 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 		hostName += "."
 	}
 
-	mod.Info("loaded %d services from %s, advertising with host=%s iface=%s ipv4=%s ipv6=%s",
-		len(mapping),
-		fileName,
-		hostName,
-		mod.Session.Interface.Name(),
-		mod.Session.Interface.IpAddress,
-		mod.Session.Interface.Ip6Address)
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return fmt.Errorf("could not read %s: %v", fileName, err)
+	}
+
+	var services []ServiceData
+	if err = yaml.Unmarshal(data, &services); err != nil {
+		return fmt.Errorf("could not deserialize %s: %v", fileName, err)
+	}
+
+	mod.Info("loaded %d services from %s", len(services), fileName)
 
 	advertiser := &Advertiser{
 		Filename:  fileName,
-		Mapping:   mapping,
-		Servers:   make(map[string]*zeroconf.Server),
-		Acceptors: make(map[string]*Acceptor),
+		Services:  services,
+		Servers:   make([]*zeroconf.Server, 0),
+		Acceptors: make([]*Acceptor, 0),
 	}
 
 	svcChan := make(chan setupResult)
 
-	// TODO: support external responders
-
 	// paralleize initialization
-	for key, svc := range mapping {
-		go func(key string, svc zeroconf.ServiceEntry) {
-			mod.Info("unregistering instance %s ...", tui.Yellow(fmt.Sprintf("%s.%s.%s", svc.Instance, svc.Service, svc.Domain)))
+	for _, svc := range services {
+		go func(svc ServiceData) {
+			mod.Info("unregistering instance %s ...", tui.Yellow(svc.FullName()))
 
-			// create a first instance just to deregister it from the network
-			server, err := zeroconf.Register(svc.Instance, svc.Service, svc.Domain, svc.Port, svc.Text, nil)
-			if err != nil {
-				svcChan <- setupResult{err: fmt.Errorf("could not create service %s: %v", svc.Instance, err)}
+			// deregister the service from the network first
+			if err := svc.Unregister(); err != nil {
+				svcChan <- setupResult{err: fmt.Errorf("could not unregister service %s: %v", svc.FullName(), err)}
 				return
 			}
-			server.Shutdown()
 
 			// give some time to the network to adjust
 			time.Sleep(time.Duration(1) * time.Second)
 
-			// now create it again to actually advertise
-			if server, err = zeroconf.Register(svc.Instance, svc.Service, svc.Domain, svc.Port, svc.Text, nil); err != nil {
-				svcChan <- setupResult{err: fmt.Errorf("could not create service %s: %v", svc.Instance, err)}
-				return
-			}
+			var server *zeroconf.Server
 
-			mod.Info("advertising service %s", tui.Yellow(svc.Service))
+			// now create it again to actually advertise
+			if svc.Responder == "" {
+				// use our own IP
+				if server, err = zeroconf.Register(
+					svc.Name,
+					svc.Service,
+					svc.Domain,
+					svc.Port,
+					svc.Records,
+					nil); err != nil {
+					svcChan <- setupResult{err: fmt.Errorf("could not create service %s: %v", svc.FullName(), err)}
+					return
+				}
+				mod.Info("advertising %s with responder=%s port=%d",
+					tui.Yellow(svc.FullName()),
+					tui.Red(svc.Responder),
+					svc.Port)
+			} else {
+				responderHostName := ""
+
+				// try first to do a reverse DNS of the ip
+				if addr, err := net.LookupAddr(svc.Responder); err == nil && len(addr) > 0 {
+					responderHostName = addr[0]
+				} else {
+					mod.Debug("could not get responder %s reverse dns entry: %v", svc.Responder, err)
+				}
+
+				// if we don't have a host, create a .nip.io representation
+				if responderHostName == "" {
+					responderHostName = fmt.Sprintf("%s.nip.io.", strings.ReplaceAll(svc.Responder, ".", "-"))
+				}
+
+				// use external responder
+				if server, err = zeroconf.RegisterExternalResponder(
+					svc.Name,
+					svc.Service,
+					svc.Domain,
+					svc.Port,
+					responderHostName,
+					[]string{svc.Responder},
+					svc.Records,
+					nil); err != nil {
+					svcChan <- setupResult{err: fmt.Errorf("could not create service %s: %v", svc.FullName(), err)}
+					return
+				}
+
+				mod.Info("advertising %s with responder=%s hostname=%s port=%d",
+					tui.Yellow(svc.FullName()),
+					tui.Red(svc.Responder),
+					tui.Yellow(responderHostName),
+					svc.Port)
+			}
 
 			svcChan <- setupResult{
-				key:    key,
 				server: server,
 			}
-		}(key, svc)
+		}(svc)
 	}
 
 	for res := range svcChan {
 		if res.err != nil {
 			return res.err
 		}
-		advertiser.Servers[res.key] = res.server
-		if len(advertiser.Servers) == len(mapping) {
+		advertiser.Servers = append(advertiser.Servers, res.server)
+		if len(advertiser.Servers) == len(advertiser.Services) {
 			break
 		}
 	}
 
-	// now create the tcp acceptors
-	for key, svc := range mapping {
-		acceptor := NewAcceptor(mod, key, hostName, uint16(svc.Port), &tlsConfig)
-		if err := acceptor.Start(); err != nil {
-			return err
+	// now create the tcp acceptors for entries without an explicit responder address
+	for _, svc := range advertiser.Services {
+		if svc.Responder == "" {
+			acceptor := NewAcceptor(mod, svc.FullName(), hostName, uint16(svc.Port), tlsConfig)
+			if err := acceptor.Start(); err != nil {
+				return err
+			}
+			advertiser.Acceptors = append(advertiser.Acceptors, acceptor)
 		}
-		advertiser.Acceptors[key] = acceptor
 	}
 
 	mod.advertiser = advertiser
@@ -177,7 +223,7 @@ func (mod *ZeroGod) stopAdvertiser() error {
 		return errors.New("advertiser not started")
 	}
 
-	mod.Info("stopping %d services ...", len(mod.advertiser.Mapping))
+	mod.Info("stopping %d services ...", len(mod.advertiser.Services))
 
 	for key, server := range mod.advertiser.Servers {
 		mod.Info("stopping %s ...", key)

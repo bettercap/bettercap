@@ -12,6 +12,7 @@ require (
 	github.com/bettercap/nrf24 v0.0.0-20190219153547-aa37e6d0e0eb
 	github.com/bettercap/readline v0.0.0-20210228151553-655e48bcb7bf
 	github.com/bettercap/recording v0.0.0-20190408083647-3ce1dcf032e3
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/elazarl/goproxy v0.0.0-20240726154733-8b0c20506380
 	github.com/evilsocket/islazy v1.11.0
@@ -42,7 +43,6 @@ require (
 
 require (
 	github.com/antchfx/xpath v1.3.1 // indirect
-	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/chzyer/logex v1.2.1 // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20210110162100-a92cc753f88e // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
