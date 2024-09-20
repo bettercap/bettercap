@@ -28,7 +28,7 @@ func (svc ServiceData) FullName() string {
 		strings.Trim(svc.Domain, "."))
 }
 
-func (svc *ServiceData) Register(mod *ZeroGod) (err error) {
+func (svc *ServiceData) Register(mod *ZeroGod, localHostName string) (err error) {
 	// now create it again to actually advertise
 	if svc.Responder == "" {
 		// use our own IP
@@ -42,9 +42,11 @@ func (svc *ServiceData) Register(mod *ZeroGod) (err error) {
 			return fmt.Errorf("could not create service %s: %v", svc.FullName(), err)
 		}
 
-		mod.Info("advertising %s with responder=%s port=%d",
+		mod.Info("advertising %s with hostname=%s ipv4=%s ipv6=%s port=%d",
 			tui.Yellow(svc.FullName()),
-			tui.Red(svc.Responder),
+			tui.Red(localHostName),
+			tui.Red(mod.Session.Interface.IpAddress),
+			tui.Red(mod.Session.Interface.Ip6Address),
 			svc.Port)
 	} else {
 		responderHostName := ""

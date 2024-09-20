@@ -42,6 +42,7 @@ type Acceptor struct {
 }
 
 type HandlerContext struct {
+	service       string
 	mod           *ZeroGod
 	client        net.Conn
 	srvHost       string
@@ -100,8 +101,9 @@ func (a *Acceptor) Start() (err error) {
 					a.mod.Error("%v", err)
 				}
 			} else {
-				a.mod.Info("accepted connection for service %s (port %d): %v", tui.Green(a.service), a.port, conn.RemoteAddr())
+				a.mod.Debug("accepted connection for service %s (port %d): %v", tui.Green(a.service), a.port, conn.RemoteAddr())
 				go a.handler.Handle(&HandlerContext{
+					service:       a.service,
 					mod:           a.mod,
 					client:        conn,
 					srvHost:       a.srvHost,

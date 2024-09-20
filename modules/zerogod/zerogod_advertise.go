@@ -101,7 +101,9 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 		return fmt.Errorf("could not deserialize %s: %v", fileName, err)
 	}
 
-	mod.Info("loaded %d services from %s", len(services), fileName)
+	numServices := len(services)
+
+	mod.Info("loaded %d services from %s", numServices, fileName)
 
 	advertiser := &Advertiser{
 		Filename:  fileName,
@@ -110,35 +112,28 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 	}
 
 	// paralleize initialization
-	svcChan := make(chan error)
+	svcChan := make(chan error, numServices)
 	for _, svc := range advertiser.Services {
 		go func(svc *ServiceData) {
 			// deregister the service from the network first
 			if err := svc.Unregister(mod); err != nil {
 				svcChan <- fmt.Errorf("could not unregister service %s: %v", svc.FullName(), err)
-				return
-			}
-
-			// give some time to the network to adjust
-			time.Sleep(time.Duration(1) * time.Second)
-
-			// register it
-			if err := svc.Register(mod); err != nil {
-				svcChan <- err
 			} else {
-				svcChan <- nil
+				// give some time to the network to adjust
+				time.Sleep(time.Duration(1) * time.Second)
+				// register it
+				if err := svc.Register(mod, hostName); err != nil {
+					svcChan <- err
+				} else {
+					svcChan <- nil
+				}
 			}
 		}(svc)
 	}
 
-	got := 0
-	for err := range svcChan {
-		if err != nil {
+	for i := 0; i < numServices; i++ {
+		if err := <-svcChan; err != nil {
 			return err
-		}
-		got++
-		if got == len(advertiser.Services) {
-			break
 		}
 	}
 

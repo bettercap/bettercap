@@ -100,6 +100,11 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 
 	tls.CertConfigToModule("zerogod.advertise", &mod.SessionModule, tls.DefaultLegitConfig)
 
+	mod.AddParam(session.NewStringParameter("zerogod.ipp.save_path",
+		"~/.bettercap/zerogod/documents/",
+		"",
+		"If an IPP acceptor is started, this setting defines where to save documents received for printing."))
+
 	return mod
 }
 
