@@ -42,7 +42,6 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 			return mod.Stop()
 		}))
 
-	// TODO: add autocomplete
 	mod.AddHandler(session.NewModuleHandler("zerogod.show", "",
 		"Show discovered services.",
 		func(args []string) error {
@@ -55,6 +54,7 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 			return mod.show("", true)
 		}))
 
+	// TODO: add autocomplete
 	mod.AddHandler(session.NewModuleHandler("zerogod.show ADDRESS", "zerogod.show (.+)",
 		"Show discovered services given an ip address.",
 		func(args []string) error {

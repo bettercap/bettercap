@@ -12,10 +12,10 @@ import (
 
 type Handler struct {
 	TLS    bool
-	Handle func(mod *ZeroGod, client net.Conn, srvHost string, srvPort int, srvTLS bool)
+	Handle func(ctx *HandlerContext)
 }
 
-// TODO: add more and possibly autodetect from peeking at the first bytes sent by the client
+// TODO: possibly autodetect from peeking at the first bytes sent by the client
 var TCP_HANDLERS = map[string]Handler{
 	"_ipp": {
 		Handle: ippClientHandler,
@@ -28,27 +28,38 @@ var TCP_HANDLERS = map[string]Handler{
 }
 
 type Acceptor struct {
-	mod       *ZeroGod
-	srvHost   string
-	port      uint16
-	service   string
-	tlsConfig *tls.Config
-	listener  net.Listener
-	running   bool
-	context   context.Context
-	ctxCancel context.CancelFunc
-	handler   Handler
+	mod           *ZeroGod
+	srvHost       string
+	port          uint16
+	service       string
+	tlsConfig     *tls.Config
+	listener      net.Listener
+	running       bool
+	context       context.Context
+	ctxCancel     context.CancelFunc
+	handler       Handler
+	ippAttributes map[string]string
 }
 
-func NewAcceptor(mod *ZeroGod, service string, srvHost string, port uint16, tlsConfig *tls.Config) *Acceptor {
+type HandlerContext struct {
+	mod           *ZeroGod
+	client        net.Conn
+	srvHost       string
+	srvPort       int
+	srvTLS        bool
+	ippAttributes map[string]string
+}
+
+func NewAcceptor(mod *ZeroGod, service string, srvHost string, port uint16, tlsConfig *tls.Config, ippAttributes map[string]string) *Acceptor {
 	context, ctcCancel := context.WithCancel(context.Background())
 	acceptor := Acceptor{
-		mod:       mod,
-		port:      port,
-		service:   service,
-		context:   context,
-		ctxCancel: ctcCancel,
-		srvHost:   srvHost,
+		mod:           mod,
+		port:          port,
+		service:       service,
+		context:       context,
+		ctxCancel:     ctcCancel,
+		srvHost:       srvHost,
+		ippAttributes: ippAttributes,
 	}
 
 	for svcName, svcHandler := range TCP_HANDLERS {
@@ -90,7 +101,14 @@ func (a *Acceptor) Start() (err error) {
 				}
 			} else {
 				a.mod.Info("accepted connection for service %s (port %d): %v", tui.Green(a.service), a.port, conn.RemoteAddr())
-				go a.handler.Handle(a.mod, conn, a.srvHost, int(a.port), a.tlsConfig != nil)
+				go a.handler.Handle(&HandlerContext{
+					mod:           a.mod,
+					client:        conn,
+					srvHost:       a.srvHost,
+					srvPort:       int(a.port),
+					srvTLS:        a.tlsConfig != nil,
+					ippAttributes: a.ippAttributes,
+				})
 			}
 		}
 		a.mod.Debug("tcp listener for port %d (%s) stopped", a.port, tui.Green(a.service))

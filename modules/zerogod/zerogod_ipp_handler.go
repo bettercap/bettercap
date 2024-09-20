@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"time"
 
@@ -49,6 +48,15 @@ var IPP_REQUEST_NAMES = map[int16]string{
 	0x400D: "CUPS-Move-Job",
 }
 
+var IPP_USER_ATTRIBUTES = map[string]string{
+	"printer-name":               "PRINTER_NAME",
+	"printer-info":               "PRINTER_INFO",
+	"printer-make-and-model":     "PRINTER_MAKE PRINTER_MODEL",
+	"printer-location":           "PRINTER_LOCATION",
+	"printer-privacy-policy-uri": "https://www.bettercap.org/",
+	"ppd-name":                   "everywhere",
+}
+
 func init() {
 	ipp.AttributeTagMapping["printer-uri-supported"] = ipp.TagUri
 	ipp.AttributeTagMapping["uri-authentication-supported"] = ipp.TagKeyword
@@ -74,56 +82,57 @@ func init() {
 	ipp.AttributeTagMapping["compression-supported"] = ipp.TagKeyword
 	ipp.AttributeTagMapping["printer-privacy-policy-uri"] = ipp.TagUri
 	ipp.AttributeTagMapping["printer-location"] = ipp.TagText
+	ipp.AttributeTagMapping["ppd-name"] = ipp.TagName
 }
 
-func ippClientHandler(mod *ZeroGod, client net.Conn, srvHost string, srvPort int, srvTLS bool) {
-	defer client.Close()
+func ippClientHandler(ctx *HandlerContext) {
+	defer ctx.client.Close()
 
 	buf := make([]byte, 4096)
 
 	// read raw request
-	read, err := client.Read(buf)
+	read, err := ctx.client.Read(buf)
 	if err != nil {
 		if err == io.EOF {
 			return
 		}
-		mod.Error("error while reading from %v: %v", client.RemoteAddr(), err)
+		ctx.mod.Error("error while reading from %v: %v", ctx.client.RemoteAddr(), err)
 		return
 	} else if read == 0 {
-		mod.Error("error while reading from %v: no data", client.RemoteAddr())
+		ctx.mod.Error("error while reading from %v: no data", ctx.client.RemoteAddr())
 		return
 	}
 
 	raw_req := buf[0:read]
 
-	mod.Debug("read %d bytes from %v:\n%s\n", read, client.RemoteAddr(), Dump(raw_req))
+	ctx.mod.Debug("read %d bytes from %v:\n%s\n", read, ctx.client.RemoteAddr(), Dump(raw_req))
 
 	// parse as http
 	reader := bufio.NewReader(bytes.NewReader(raw_req))
 	http_req, err := http.ReadRequest(reader)
 	if err != nil {
-		mod.Error("error while parsing http request from %v: %v", client.RemoteAddr(), err)
+		ctx.mod.Error("error while parsing http request from %v: %v", ctx.client.RemoteAddr(), err)
 		return
 	}
 
-	mod.Info("%v -> %s", client.RemoteAddr(), tui.Green(http_req.UserAgent()))
+	ctx.mod.Info("%v -> %s", ctx.client.RemoteAddr(), tui.Green(http_req.UserAgent()))
 
 	ipp_body := http_req.Body
 
 	// check for an Expect 100-continue
 	if http_req.Header.Get("Expect") == "100-continue" {
 		// inform the client we're ready to read the request body
-		client.Write([]byte("HTTP/1.1 100 Continue\r\n\r\n"))
+		ctx.client.Write([]byte("HTTP/1.1 100 Continue\r\n\r\n"))
 		// read the body
-		read, err := client.Read(buf)
+		read, err := ctx.client.Read(buf)
 		if err != nil {
 			if err == io.EOF {
 				return
 			}
-			mod.Error("error while reading ipp body from %v: %v", client.RemoteAddr(), err)
+			ctx.mod.Error("error while reading ipp body from %v: %v", ctx.client.RemoteAddr(), err)
 			return
 		} else if read == 0 {
-			mod.Error("error while reading ipp body from %v: no data", client.RemoteAddr())
+			ctx.mod.Error("error while reading ipp body from %v: no data", ctx.client.RemoteAddr())
 			return
 		}
 
@@ -133,7 +142,7 @@ func ippClientHandler(mod *ZeroGod, client net.Conn, srvHost string, srvPort int
 	// parse as IPP
 	ipp_req, err := ipp.NewRequestDecoder(ipp_body).Decode(nil)
 	if err != nil {
-		mod.Error("error while parsing ip request from %v: %v", client.RemoteAddr(), err)
+		ctx.mod.Error("error while parsing ip request from %v: %v", ctx.client.RemoteAddr(), err)
 		return
 	}
 
@@ -142,24 +151,24 @@ func ippClientHandler(mod *ZeroGod, client net.Conn, srvHost string, srvPort int
 		ipp_op_name = name
 	}
 
-	mod.Info("%v op=%s attributes=%v", client.RemoteAddr(), tui.Bold(ipp_op_name), ipp_req.OperationAttributes)
+	ctx.mod.Info("%v op=%s attributes=%v", ctx.client.RemoteAddr(), tui.Bold(ipp_op_name), ipp_req.OperationAttributes)
 
 	switch ipp_req.Operation {
 	// Get-Printer-Attributes
 	case 0x000B:
-		ippOnGetPrinterAttributes(mod, client, ipp_req, srvHost, srvPort, srvTLS)
+		ippOnGetPrinterAttributes(ctx, ipp_req)
 
 	default:
-		ippOnUnhandledRequest(mod, client, ipp_req, ipp_op_name)
+		ippOnUnhandledRequest(ctx, ipp_req, ipp_op_name)
 	}
 }
 
-func ippSendResponse(mod *ZeroGod, client net.Conn, response *ipp.Response) {
-	mod.Debug("SENDING %++v", *response)
+func ippSendResponse(ctx *HandlerContext, response *ipp.Response) {
+	ctx.mod.Debug("SENDING %++v", *response)
 
 	resp_data, err := response.Encode()
 	if err != nil {
-		mod.Error("error while encoding ipp response: %v", err)
+		ctx.mod.Error("error while encoding ipp response: %v", err)
 		return
 	}
 
@@ -172,29 +181,29 @@ func ippSendResponse(mod *ZeroGod, client net.Conn, response *ipp.Response) {
 	}
 
 	for _, header := range headers {
-		if _, err := client.Write(header); err != nil {
-			mod.Error("error while writing header: %v", err)
+		if _, err := ctx.client.Write(header); err != nil {
+			ctx.mod.Error("error while writing header: %v", err)
 			return
 		}
 	}
 
-	if _, err = client.Write(resp_data); err != nil {
-		mod.Error("error while writing ipp response data: %v", err)
+	if _, err = ctx.client.Write(resp_data); err != nil {
+		ctx.mod.Error("error while writing ipp response data: %v", err)
 		return
 	}
 
-	mod.Debug("sent %d of ipp response to %v", len(resp_data), client.RemoteAddr())
+	ctx.mod.Debug("sent %d of ipp response to %v", len(resp_data), ctx.client.RemoteAddr())
 }
 
-func ippOnUnhandledRequest(mod *ZeroGod, client net.Conn, ipp_req *ipp.Request, ipp_op_name string) {
-	ipp_resp := ipp.NewResponse(ipp.StatusErrorOperationNotSupported, ipp_req.RequestId)
+func ippOnUnhandledRequest(ctx *HandlerContext, ipp_req *ipp.Request, ipp_op_name string) {
+	ctx.mod.Warning("unhandled request from %v: operation=%s", ctx.client.RemoteAddr(), ipp_op_name)
 
-	ippSendResponse(mod, client, ipp_resp)
-
-	mod.Warning("unhandled request from %v: operation=%s", client.RemoteAddr(), ipp_op_name)
+	ippSendResponse(ctx, ipp.NewResponse(
+		ipp.StatusErrorOperationNotSupported,
+		ipp_req.RequestId))
 }
 
-func ippOnGetPrinterAttributes(mod *ZeroGod, client net.Conn, ipp_req *ipp.Request, srvHost string, srvPort int, srvTLS bool) {
+func ippOnGetPrinterAttributes(ctx *HandlerContext, ipp_req *ipp.Request) {
 	ipp_resp := ipp.NewResponse(ipp.StatusOk, ipp_req.RequestId)
 
 	// https://tools.ietf.org/html/rfc2911 section 3.1.4.2 Response Operation Attributes
@@ -211,52 +220,15 @@ func ippOnGetPrinterAttributes(mod *ZeroGod, client net.Conn, ipp_req *ipp.Reque
 		},
 	}
 
-	/*
-
-	   """
-	   marker-names (1setOf nameWithoutLanguage) = Black ink,Cyan ink,Magenta ink,Yellow ink
-	   marker-colors (1setOf nameWithoutLanguage) = #000000,#00FFFF,#FF00FF,#FFFF00
-	   marker-types (1setOf keyword) = ink-cartridge,ink-cartridge,ink-cartridge,ink-cartridge
-	   marker-low-levels (1setOf integer) = 15,15,15,15
-	   marker-high-levels (1setOf integer) = 100,100,100,100
-	   marker-levels (1setOf integer) = 57,94,95,95
-	   """
-
-	   markers = {
-	       (
-	           SectionEnum.printer,
-	           b'marker-names',
-	           TagEnum.text_without_language
-	       ): [b'TestMarker'],
-	       (
-	           SectionEnum.printer,
-	           b'marker-colors',
-	           TagEnum.text_without_language
-	       ): [b'#FF0000'],
-	       (
-	           SectionEnum.printer,
-	           b'marker-types',
-	           TagEnum.text_without_language
-	       ): [b'ink-cartridge'],
-	       (
-	           SectionEnum.printer,
-	           b'marker-low-levels',
-	           TagEnum.integer
-	       ): [Integer(15).bytes()],
-	       (
-	           SectionEnum.printer,
-	           b'marker-high-levels',
-	           TagEnum.integer
-	       ): [Integer(100).bytes()],
-	       (
-	           SectionEnum.printer,
-	           b'marker-levels',
-	           TagEnum.integer
-	       ): [Integer(66).bytes()],
-	   }
-	*/
-
-	// TODO: allow customization of these attributes.
+	// collect user attributes
+	userProps := make(map[string]string)
+	for name, defaultValue := range IPP_USER_ATTRIBUTES {
+		if value, found := ctx.ippAttributes[name]; found {
+			userProps[name] = value
+		} else {
+			userProps[name] = defaultValue
+		}
+	}
 
 	// rfc2911 section 4.4
 	ipp_resp.PrinterAttributes = []ipp.Attributes{
@@ -264,58 +236,55 @@ func ippOnGetPrinterAttributes(mod *ZeroGod, client net.Conn, ipp_req *ipp.Reque
 			// custom
 			"printer-name": []ipp.Attribute{
 				{
-					Value: "PRINTER_NAME",
+					Value: userProps["printer-name"],
 					Tag:   ipp.TagName,
 				},
 			},
 			"printer-info": []ipp.Attribute{
 				{
-					Value: "PRINTER_INFO",
+					Value: userProps["printer-info"],
 					Tag:   ipp.TagText,
 				},
 			},
 			"printer-make-and-model": []ipp.Attribute{
 				{
-					Value: "PRINTER_MAKE PRINTER_MODEL",
+					Value: userProps["printer-make-and-model"],
 					Tag:   ipp.TagText,
 				},
 			},
 			"printer-location": []ipp.Attribute{
 				{
-					Value: "PRINTER_LOCATION",
+					Value: userProps["printer-location"],
 					Tag:   ipp.TagText,
 				},
 			},
 			"printer-privacy-policy-uri": []ipp.Attribute{
 				{
-					Value: "https://www.google.com/",
+					Value: userProps["printer-privacy-policy-uri"],
 					Tag:   ipp.TagUri,
 				},
 			},
-			// constants
-			/*
-				"ppd-name": []ipp.Attribute{
-					{
-						Value: "everywhere",
-						Tag:   ipp.TagName,
-					},
+			"ppd-name": []ipp.Attribute{
+				{
+					Value: userProps["ppd-name"],
+					Tag:   ipp.TagName,
 				},
-			*/
+			},
 			"printer-uri-supported": []ipp.Attribute{
 				{
-					Value: fmt.Sprintf("%s://%s:%d/printer", ops.Ternary(srvTLS, "ipps", "ipp"), srvHost, srvPort),
+					Value: fmt.Sprintf("%s://%s:%d/printer", ops.Ternary(ctx.srvTLS, "ipps", "ipp"), ctx.srvHost, ctx.srvPort),
 					Tag:   ipp.TagUri,
+				},
+			},
+			"uri-security-supported": []ipp.Attribute{
+				{
+					Value: ops.Ternary(ctx.srvTLS, "tls", "none"),
+					Tag:   ipp.TagKeyword,
 				},
 			},
 			"uri-authentication-supported": []ipp.Attribute{
 				{
 					Value: "none",
-					Tag:   ipp.TagKeyword,
-				},
-			},
-			"uri-security-supported": []ipp.Attribute{
-				{
-					Value: ops.Ternary(srvTLS, "tls", "none"),
 					Tag:   ipp.TagKeyword,
 				},
 			},
@@ -424,5 +393,5 @@ func ippOnGetPrinterAttributes(mod *ZeroGod, client net.Conn, ipp_req *ipp.Reque
 		},
 	}
 
-	ippSendResponse(mod, client, ipp_resp)
+	ippSendResponse(ctx, ipp_resp)
 }

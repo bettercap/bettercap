@@ -23,13 +23,11 @@ func (mod *ZeroGod) updateEndpointMeta(address string, endpoint *network.Endpoin
 	meta[fmt.Sprintf("mdns:%s:name", svcType)] = svc.ServiceName()
 	meta[fmt.Sprintf("mdns:%s:hostname", svcType)] = svc.HostName
 
-	// TODO: include all
-	if len(svc.AddrIPv4) > 0 {
-		meta[fmt.Sprintf("mdns:%s:ipv4", svcType)] = svc.AddrIPv4[0].String()
+	for i, ip := range svc.AddrIPv4 {
+		meta[fmt.Sprintf("mdns:%s:ipv4[%d]", svcType, i)] = ip.String()
 	}
-
-	if len(svc.AddrIPv6) > 0 {
-		meta[fmt.Sprintf("mdns:%s:ipv6", svcType)] = svc.AddrIPv6[0].String()
+	for i, ip := range svc.AddrIPv6 {
+		meta[fmt.Sprintf("mdns:%s:ipv6[%d]", svcType, i)] = ip.String()
 	}
 
 	meta[fmt.Sprintf("mdns:%s:port", svcType)] = fmt.Sprintf("%d", svc.Port)

@@ -16,3 +16,4 @@ stage/
 .idea
 /cover.out
 /can-data
+/test*.yml

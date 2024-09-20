@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"strings"
 	"time"
@@ -13,15 +12,13 @@ import (
 	tls_utils "github.com/bettercap/bettercap/v2/tls"
 	"github.com/bettercap/bettercap/v2/zeroconf"
 	"github.com/evilsocket/islazy/fs"
-	"github.com/evilsocket/islazy/tui"
 	yaml "gopkg.in/yaml.v3"
 )
 
 type Advertiser struct {
 	Filename string
 
-	Services  []ServiceData
-	Servers   []*zeroconf.Server
+	Services  []*ServiceData
 	Acceptors []*Acceptor
 }
 
@@ -99,7 +96,7 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 		return fmt.Errorf("could not read %s: %v", fileName, err)
 	}
 
-	var services []ServiceData
+	var services []*ServiceData
 	if err = yaml.Unmarshal(data, &services); err != nil {
 		return fmt.Errorf("could not deserialize %s: %v", fileName, err)
 	}
@@ -109,101 +106,47 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 	advertiser := &Advertiser{
 		Filename:  fileName,
 		Services:  services,
-		Servers:   make([]*zeroconf.Server, 0),
 		Acceptors: make([]*Acceptor, 0),
 	}
 
-	svcChan := make(chan setupResult)
-
 	// paralleize initialization
-	for _, svc := range services {
-		go func(svc ServiceData) {
-			mod.Info("unregistering instance %s ...", tui.Yellow(svc.FullName()))
-
+	svcChan := make(chan error)
+	for _, svc := range advertiser.Services {
+		go func(svc *ServiceData) {
 			// deregister the service from the network first
-			if err := svc.Unregister(); err != nil {
-				svcChan <- setupResult{err: fmt.Errorf("could not unregister service %s: %v", svc.FullName(), err)}
+			if err := svc.Unregister(mod); err != nil {
+				svcChan <- fmt.Errorf("could not unregister service %s: %v", svc.FullName(), err)
 				return
 			}
 
 			// give some time to the network to adjust
 			time.Sleep(time.Duration(1) * time.Second)
 
-			var server *zeroconf.Server
-
-			// now create it again to actually advertise
-			if svc.Responder == "" {
-				// use our own IP
-				if server, err = zeroconf.Register(
-					svc.Name,
-					svc.Service,
-					svc.Domain,
-					svc.Port,
-					svc.Records,
-					nil); err != nil {
-					svcChan <- setupResult{err: fmt.Errorf("could not create service %s: %v", svc.FullName(), err)}
-					return
-				}
-				mod.Info("advertising %s with responder=%s port=%d",
-					tui.Yellow(svc.FullName()),
-					tui.Red(svc.Responder),
-					svc.Port)
+			// register it
+			if err := svc.Register(mod); err != nil {
+				svcChan <- err
 			} else {
-				responderHostName := ""
-
-				// try first to do a reverse DNS of the ip
-				if addr, err := net.LookupAddr(svc.Responder); err == nil && len(addr) > 0 {
-					responderHostName = addr[0]
-				} else {
-					mod.Debug("could not get responder %s reverse dns entry: %v", svc.Responder, err)
-				}
-
-				// if we don't have a host, create a .nip.io representation
-				if responderHostName == "" {
-					responderHostName = fmt.Sprintf("%s.nip.io.", strings.ReplaceAll(svc.Responder, ".", "-"))
-				}
-
-				// use external responder
-				if server, err = zeroconf.RegisterExternalResponder(
-					svc.Name,
-					svc.Service,
-					svc.Domain,
-					svc.Port,
-					responderHostName,
-					[]string{svc.Responder},
-					svc.Records,
-					nil); err != nil {
-					svcChan <- setupResult{err: fmt.Errorf("could not create service %s: %v", svc.FullName(), err)}
-					return
-				}
-
-				mod.Info("advertising %s with responder=%s hostname=%s port=%d",
-					tui.Yellow(svc.FullName()),
-					tui.Red(svc.Responder),
-					tui.Yellow(responderHostName),
-					svc.Port)
-			}
-
-			svcChan <- setupResult{
-				server: server,
+				svcChan <- nil
 			}
 		}(svc)
 	}
 
-	for res := range svcChan {
-		if res.err != nil {
-			return res.err
+	got := 0
+	for err := range svcChan {
+		if err != nil {
+			return err
 		}
-		advertiser.Servers = append(advertiser.Servers, res.server)
-		if len(advertiser.Servers) == len(advertiser.Services) {
+		got++
+		if got == len(advertiser.Services) {
 			break
 		}
 	}
 
 	// now create the tcp acceptors for entries without an explicit responder address
 	for _, svc := range advertiser.Services {
+		// if no external responder has been specified
 		if svc.Responder == "" {
-			acceptor := NewAcceptor(mod, svc.FullName(), hostName, uint16(svc.Port), tlsConfig)
+			acceptor := NewAcceptor(mod, svc.FullName(), hostName, uint16(svc.Port), tlsConfig, svc.IPP)
 			if err := acceptor.Start(); err != nil {
 				return err
 			}
@@ -225,9 +168,8 @@ func (mod *ZeroGod) stopAdvertiser() error {
 
 	mod.Info("stopping %d services ...", len(mod.advertiser.Services))
 
-	for key, server := range mod.advertiser.Servers {
-		mod.Info("stopping %s ...", key)
-		server.Shutdown()
+	for _, service := range mod.advertiser.Services {
+		service.Unregister(mod)
 	}
 
 	mod.Info("all services stopped")

@@ -2,7 +2,6 @@ package zerogod
 
 import (
 	"fmt"
-	"net"
 )
 
 func Dump(by []byte) string {
@@ -51,19 +50,19 @@ func viewString(b []byte) string {
 	return string(r)
 }
 
-func handleGenericTCP(mod *ZeroGod, client net.Conn, srvHost string, srvPort int, srvTLS bool) {
-	defer client.Close()
+func handleGenericTCP(ctx *HandlerContext) {
+	defer ctx.client.Close()
 
 	buf := make([]byte, 1024)
 	for {
-		if read, err := client.Read(buf); err != nil {
-			mod.Error("error while reading from %v: %v", client.RemoteAddr(), err)
+		if read, err := ctx.client.Read(buf); err != nil {
+			ctx.mod.Error("error while reading from %v: %v", ctx.client.RemoteAddr(), err)
 			break
 		} else if read == 0 {
-			mod.Error("error while reading from %v: no data", client.RemoteAddr())
+			ctx.mod.Error("error while reading from %v: no data", ctx.client.RemoteAddr())
 			break
 		} else {
-			mod.Info("read %d bytes from %v:\n%s\n", read, client.RemoteAddr(), Dump(buf[0:read]))
+			ctx.mod.Info("read %d bytes from %v:\n%s\n", read, ctx.client.RemoteAddr(), Dump(buf[0:read]))
 		}
 	}
 }
