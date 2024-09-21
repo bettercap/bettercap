@@ -55,7 +55,7 @@ func viewString(b []byte) string {
 func handleGenericTCP(ctx *HandlerContext) {
 	defer ctx.client.Close()
 
-	ctx.mod.Debug("accepted generic tcp connection for service %s (port %d): %v", tui.Green(ctx.service), ctx.srvPort, ctx.client.RemoteAddr())
+	ctx.mod.Info("accepted generic tcp connection for service %s (port %d): %v", tui.Green(ctx.service), ctx.srvPort, ctx.client.RemoteAddr())
 
 	buf := make([]byte, 1024)
 	for {

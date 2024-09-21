@@ -10,21 +10,14 @@ import (
 	"time"
 
 	tls_utils "github.com/bettercap/bettercap/v2/tls"
-	"github.com/bettercap/bettercap/v2/zeroconf"
 	"github.com/evilsocket/islazy/fs"
 	yaml "gopkg.in/yaml.v3"
 )
 
 type Advertiser struct {
-	Filename string
-
+	Filename  string
 	Services  []*ServiceData
 	Acceptors []*Acceptor
-}
-
-type setupResult struct {
-	err    error
-	server *zeroconf.Server
 }
 
 func (mod *ZeroGod) loadTLSConfig() (*tls.Config, error) {

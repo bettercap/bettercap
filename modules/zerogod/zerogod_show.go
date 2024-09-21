@@ -1,44 +1,33 @@
 package zerogod
 
 import (
+	"errors"
 	"fmt"
-	"sort"
+	"strings"
 
-	"github.com/bettercap/bettercap/v2/zeroconf"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 )
 
-type entry struct {
-	ip       string
-	services map[string]*zeroconf.ServiceEntry
-}
-
 func (mod *ZeroGod) show(filter string, withData bool) error {
-	fmt.Fprintf(mod.Session.Events.Stdout, "\n")
-
-	// convert to list for sorting
-	entries := make([]entry, 0)
-	for ip, services := range mod.mapping {
-		if filter == "" || ip == filter {
-			entries = append(entries, entry{ip, services})
-		}
+	if mod.browser == nil {
+		return errors.New("use 'zerogod.discovery on' to start the discovery first")
 	}
 
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].ip < entries[j].ip
-	})
+	fmt.Fprintf(mod.Session.Events.Stdout, "\n")
+
+	entries := mod.browser.ServicesByAddress(filter)
 
 	for _, entry := range entries {
-		if endpoint := mod.Session.Lan.GetByIp(entry.ip); endpoint != nil {
+		if endpoint := mod.Session.Lan.GetByIp(entry.Address); endpoint != nil {
 			fmt.Fprintf(mod.Session.Events.Stdout, "* %s (%s)\n", tui.Bold(endpoint.IpAddress), tui.Dim(endpoint.Vendor))
 		} else {
-			fmt.Fprintf(mod.Session.Events.Stdout, "* %s\n", tui.Bold(entry.ip))
+			fmt.Fprintf(mod.Session.Events.Stdout, "* %s\n", tui.Bold(entry.Address))
 		}
 
-		for name, svc := range entry.services {
+		for _, svc := range entry.Services {
 			fmt.Fprintf(mod.Session.Events.Stdout, "  %s (%s) [%v / %v]:%s\n",
-				tui.Green(name),
+				tui.Green(svc.ServiceInstanceName()),
 				tui.Dim(svc.HostName),
 				svc.AddrIPv4,
 				svc.AddrIPv6,
@@ -48,11 +37,22 @@ func (mod *ZeroGod) show(filter string, withData bool) error {
 			numFields := len(svc.Text)
 			if withData {
 				if numFields > 0 {
+					columns := []string{"key", "value"}
+					rows := make([][]string, 0)
+
 					for _, field := range svc.Text {
 						if field = str.Trim(field); len(field) > 0 {
-							fmt.Fprintf(mod.Session.Events.Stdout, "    %s\n", field)
+							keyval := strings.SplitN(field, "=", 2)
+							rows = append(rows, []string{
+								keyval[0],
+								keyval[1],
+							})
 						}
 					}
+
+					tui.Table(mod.Session.Events.Stdout, columns, rows)
+					fmt.Fprintf(mod.Session.Events.Stdout, "\n")
+
 				} else {
 					fmt.Fprintf(mod.Session.Events.Stdout, "    %s\n", tui.Dim("no data"))
 				}

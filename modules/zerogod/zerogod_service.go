@@ -54,7 +54,7 @@ func (svc *ServiceData) Register(mod *ZeroGod, localHostName string) (err error)
 		if addr, err := net.LookupAddr(svc.Responder); err == nil && len(addr) > 0 {
 			responderHostName = addr[0]
 		} else {
-			mod.Debug("could not get responder %s reverse dns entry: %v", svc.Responder, err)
+			mod.Debug("could not get responder %s hostname (%v)", svc.Responder, err)
 		}
 
 		// if we don't have a host, create a .nip.io representation

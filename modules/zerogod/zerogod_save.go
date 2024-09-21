@@ -1,6 +1,7 @@
 package zerogod
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -32,6 +33,10 @@ func svcEntriesToData(services map[string]*zeroconf.ServiceEntry) []ServiceData 
 }
 
 func (mod *ZeroGod) save(address, filename string) error {
+	if mod.browser == nil {
+		return errors.New("use 'zerogod.discovery on' to start the discovery first")
+	}
+
 	if address == "" {
 		return fmt.Errorf("address cannot be empty")
 	}
@@ -39,7 +44,7 @@ func (mod *ZeroGod) save(address, filename string) error {
 		return fmt.Errorf("filename cannot be empty")
 	}
 
-	if ipServices, found := mod.mapping[address]; found {
+	if ipServices := mod.browser.GetServicesFor(address); ipServices != nil {
 		services := svcEntriesToData(ipServices)
 		data, err := yaml.Marshal(services)
 		if err != nil {
