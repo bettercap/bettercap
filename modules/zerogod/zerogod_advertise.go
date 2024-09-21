@@ -131,7 +131,9 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 	for _, svc := range advertiser.Services {
 		// if no external responder has been specified, check if port is available
 		if svc.Responder == "" {
+			// if the port was not set or is not available or is requesdted by another service
 			for svc.Port == 0 || !isPortAvailable(svc.Port) || isPortRequested(svc, services) {
+				// set a new one and try again
 				newPort := (rand.Intn(65535-1024) + 1024)
 				mod.Warning("port %d for service %s is not avaialble, trying %d ...",
 					svc.Port,

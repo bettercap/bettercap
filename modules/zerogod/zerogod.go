@@ -1,6 +1,11 @@
 package zerogod
 
 import (
+	"fmt"
+	"math/rand"
+	"os"
+	"path/filepath"
+
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/bettercap/bettercap/v2/tls"
 	"github.com/google/gopacket"
@@ -74,8 +79,32 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 			return mod.startAdvertiser(args[0])
 		}))
 
+	// TODO: add autocomplete
+	mod.AddHandler(session.NewModuleHandler("zerogod.impersonate ADDRESS", "zerogod.impersonate (.+)",
+		"Impersonate ADDRESS by advertising the same discovery information.",
+		func(args []string) error {
+			if address := args[0]; address == "off" {
+				return mod.stopAdvertiser()
+			} else {
+				tmpDir := os.TempDir()
+				tmpFileName := filepath.Join(tmpDir, fmt.Sprintf("impersonate_%d.yml", rand.Int()))
+
+				if err := mod.save(address, tmpFileName); err != nil {
+					return err
+				}
+
+				return mod.startAdvertiser(tmpFileName)
+			}
+		}))
+
 	mod.AddHandler(session.NewModuleHandler("zerogod.advertise off", "",
-		"Start a previously started advertiser.",
+		"Stop a previously started advertiser.",
+		func(args []string) error {
+			return mod.stopAdvertiser()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("zerogod.impersonate off", "",
+		"Stop a previously started impersonation.",
 		func(args []string) error {
 			return mod.stopAdvertiser()
 		}))
