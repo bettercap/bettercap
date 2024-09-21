@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/bettercap/bettercap/v2/zeroconf"
+	"github.com/bettercap/bettercap/v2/modules/zerogod/zeroconf"
 	"github.com/evilsocket/islazy/str"
 	yaml "gopkg.in/yaml.v3"
 )

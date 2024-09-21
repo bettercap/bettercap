@@ -50,6 +50,7 @@ func ippClientHandler(ctx *HandlerContext) {
 	read, err := ctx.client.Read(buf)
 	if err != nil {
 		if err == io.EOF {
+			ctx.mod.Debug("EOF, client %s disconnected", clientIP)
 			return
 		}
 		ctx.mod.Warning("error while reading from %v: %v", clientIP, err)
@@ -67,12 +68,12 @@ func ippClientHandler(ctx *HandlerContext) {
 	reader := bufio.NewReader(bytes.NewReader(raw_req))
 	http_req, err := http.ReadRequest(reader)
 	if err != nil {
-		ctx.mod.Error("error while parsing http request from %v: %v", clientIP, err)
+		ctx.mod.Error("error while parsing http request from %v: %v\n%s", clientIP, err, Dump(raw_req))
 		return
 	}
 
 	clientUA := http_req.UserAgent()
-	ctx.mod.Debug("%v -> %s", clientIP, tui.Green(clientUA))
+	ctx.mod.Info("%v -> %s", clientIP, tui.Green(clientUA))
 
 	ipp_body, err := ippReadRequestBody(ctx, http_req)
 	if err != nil {
@@ -92,8 +93,14 @@ func ippClientHandler(ctx *HandlerContext) {
 		ipp_op_name = name
 	}
 
-	ctx.mod.Info("%s <- %s (%s) %s",
+	reqUsername := tui.Dim("<unknown>")
+	if value, found := ipp_req.OperationAttributes["requesting-user-name"]; found {
+		reqUsername = tui.Blue(value.(string))
+	}
+
+	ctx.mod.Info("%s <- %s@%s (%s) %s",
 		tui.Yellow(ctx.service),
+		reqUsername,
 		clientIP,
 		tui.Green(clientUA),
 		tui.Bold(ipp_op_name))

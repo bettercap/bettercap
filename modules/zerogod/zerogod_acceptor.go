@@ -7,6 +7,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/evilsocket/islazy/ops"
 	"github.com/evilsocket/islazy/tui"
 )
 
@@ -30,10 +31,12 @@ var TCP_HANDLERS = map[string]Handler{
 type Acceptor struct {
 	mod           *ZeroGod
 	srvHost       string
+	proto         string
 	port          uint16
 	service       string
 	tlsConfig     *tls.Config
-	listener      net.Listener
+	tcpListener   net.Listener
+	udpListener   *net.UDPConn
 	running       bool
 	context       context.Context
 	ctxCancel     context.CancelFunc
@@ -53,9 +56,12 @@ type HandlerContext struct {
 
 func NewAcceptor(mod *ZeroGod, service string, srvHost string, port uint16, tlsConfig *tls.Config, ippAttributes map[string]string) *Acceptor {
 	context, ctcCancel := context.WithCancel(context.Background())
+	proto := ops.Ternary(strings.Contains(service, "_tcp"), "tcp", "udp").(string)
+
 	acceptor := Acceptor{
 		mod:           mod,
 		port:          port,
+		proto:         proto,
 		service:       service,
 		context:       context,
 		ctxCancel:     ctcCancel,
@@ -72,36 +78,34 @@ func NewAcceptor(mod *ZeroGod, service string, srvHost string, port uint16, tlsC
 	}
 
 	if acceptor.handler.Handle == nil {
-		mod.Warning("no protocol handler found for service %s, using generic dump handler", tui.Yellow(service))
+		mod.Warning("no protocol handler found for service %s, using generic %s dump handler", tui.Yellow(service), proto)
 		acceptor.handler.Handle = handleGenericTCP
 	} else {
-		mod.Info("found %s protocol handler", tui.Green(service))
+		mod.Info("found %s %s protocol handler", proto, tui.Green(service))
 	}
 
 	return &acceptor
 }
 
-func (a *Acceptor) Start() (err error) {
+func (a *Acceptor) startTCP() (err error) {
 	var lc net.ListenConfig
-
-	if a.listener, err = lc.Listen(a.context, "tcp", fmt.Sprintf("0.0.0.0:%d", a.port)); err != nil {
+	if a.tcpListener, err = lc.Listen(a.context, "tcp", fmt.Sprintf("0.0.0.0:%d", a.port)); err != nil {
 		return err
 	}
-
 	if a.tlsConfig != nil {
-		a.listener = tls.NewListener(a.listener, a.tlsConfig)
+		a.tcpListener = tls.NewListener(a.tcpListener, a.tlsConfig)
 	}
 
 	a.running = true
 	go func() {
-		a.mod.Debug("tcp listener for port %d (%s) started", a.port, tui.Green(a.service))
+		a.mod.Debug("%s listener for port %d (%s) started", a.proto, a.port, tui.Green(a.service))
 		for a.running {
-			if conn, err := a.listener.Accept(); err != nil {
+			if conn, err := a.tcpListener.Accept(); err != nil {
 				if a.running {
 					a.mod.Error("%v", err)
 				}
 			} else {
-				a.mod.Debug("accepted connection for service %s (port %d): %v", tui.Green(a.service), a.port, conn.RemoteAddr())
+				a.mod.Debug("accepted %s connection for service %s (port %d): %v", a.proto, tui.Green(a.service), a.port, conn.RemoteAddr())
 				go a.handler.Handle(&HandlerContext{
 					service:       a.service,
 					mod:           a.mod,
@@ -113,17 +117,60 @@ func (a *Acceptor) Start() (err error) {
 				})
 			}
 		}
-		a.mod.Debug("tcp listener for port %d (%s) stopped", a.port, tui.Green(a.service))
+		a.mod.Debug("%s listener for port %d (%s) stopped", a.proto, a.port, tui.Green(a.service))
 	}()
 
 	return nil
 }
 
+func (a *Acceptor) startUDP() (err error) {
+	if udpAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", a.port)); err != nil {
+		return err
+	} else if a.udpListener, err = net.ListenUDP("udp", udpAddr); err != nil {
+		return err
+	} else {
+		a.running = true
+		go func() {
+			var buffer [4096]byte
+
+			a.mod.Info("%s listener for port %d (%s) started", a.proto, a.port, tui.Green(a.service))
+
+			for a.running {
+				if n, addr, err := a.udpListener.ReadFromUDP(buffer[0:]); err != nil {
+					a.mod.Warning("error reading udp packet: %v", err)
+				} else if n <= 0 {
+					a.mod.Info("empty read")
+				} else {
+					a.mod.Info("%v:\n%s", addr, Dump(buffer[0:n]))
+				}
+			}
+
+			a.mod.Info("%s listener for port %d (%s) stopped", a.proto, a.port, tui.Green(a.service))
+		}()
+	}
+
+	return nil
+}
+
+func (a *Acceptor) Start() (err error) {
+	if a.proto == "tcp" {
+		return a.startTCP()
+	} else {
+		return a.startUDP()
+	}
+}
+
 func (a *Acceptor) Stop() {
-	a.mod.Debug("stopping tcp listener for port %d", a.port)
+	a.mod.Debug("stopping %s listener for port %d", a.proto, a.port)
 	a.running = false
-	a.ctxCancel()
-	<-a.context.Done()
-	a.listener.Close()
-	a.mod.Debug("tcp listener for port %d stopped", a.port)
+
+	if a.proto == "tcp" {
+		a.ctxCancel()
+		<-a.context.Done()
+		a.tcpListener.Close()
+	} else {
+		a.udpListener.Close()
+	}
+
+	a.mod.Debug("%s listener for port %d stopped", a.proto, a.port)
 }

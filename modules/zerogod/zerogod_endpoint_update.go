@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/bettercap/bettercap/v2/modules/syn_scan"
+	"github.com/bettercap/bettercap/v2/modules/zerogod/zeroconf"
 	"github.com/bettercap/bettercap/v2/network"
-	"github.com/bettercap/bettercap/v2/zeroconf"
 	"github.com/evilsocket/islazy/str"
 )
 

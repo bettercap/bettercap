@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -18,6 +20,27 @@ type Advertiser struct {
 	Filename  string
 	Services  []*ServiceData
 	Acceptors []*Acceptor
+}
+
+func isPortAvailable(port int) bool {
+	address := fmt.Sprintf("127.0.0.1:%d", port)
+	if conn, err := net.DialTimeout("tcp", address, 10*time.Millisecond); err != nil {
+		return true
+	} else if conn == nil {
+		return true
+	} else {
+		conn.Close()
+		return false
+	}
+}
+
+func isPortRequested(svc *ServiceData, services []*ServiceData) bool {
+	for _, other := range services {
+		if svc != other && svc.Port == other.Port {
+			return true
+		}
+	}
+	return false
 }
 
 func (mod *ZeroGod) loadTLSConfig() (*tls.Config, error) {
@@ -102,6 +125,21 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 		Filename:  fileName,
 		Services:  services,
 		Acceptors: make([]*Acceptor, 0),
+	}
+
+	// fix ports
+	for _, svc := range advertiser.Services {
+		// if no external responder has been specified, check if port is available
+		if svc.Responder == "" {
+			for svc.Port == 0 || !isPortAvailable(svc.Port) || isPortRequested(svc, services) {
+				newPort := (rand.Intn(65535-1024) + 1024)
+				mod.Warning("port %d for service %s is not avaialble, trying %d ...",
+					svc.Port,
+					svc.FullName(),
+					newPort)
+				svc.Port = newPort
+			}
+		}
 	}
 
 	// paralleize initialization

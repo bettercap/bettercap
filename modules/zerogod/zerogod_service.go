@@ -5,7 +5,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/bettercap/bettercap/v2/zeroconf"
+	"github.com/bettercap/bettercap/v2/modules/zerogod/zeroconf"
 	"github.com/evilsocket/islazy/tui"
 )
 

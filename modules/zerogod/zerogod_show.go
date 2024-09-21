@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/evilsocket/islazy/ops"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/islazy/tui"
 )
@@ -20,7 +21,10 @@ func (mod *ZeroGod) show(filter string, withData bool) error {
 
 	for _, entry := range entries {
 		if endpoint := mod.Session.Lan.GetByIp(entry.Address); endpoint != nil {
-			fmt.Fprintf(mod.Session.Events.Stdout, "* %s (%s)\n", tui.Bold(endpoint.IpAddress), tui.Dim(endpoint.Vendor))
+			fmt.Fprintf(mod.Session.Events.Stdout, "* %s (%s)%s\n",
+				tui.Bold(endpoint.IpAddress),
+				tui.Dim(endpoint.Vendor),
+				ops.Ternary(endpoint.Hostname == "", "", " "+tui.Bold(endpoint.Hostname)))
 		} else {
 			fmt.Fprintf(mod.Session.Events.Stdout, "* %s\n", tui.Bold(entry.Address))
 		}

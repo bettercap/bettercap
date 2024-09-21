@@ -3,10 +3,14 @@ package zerogod
 import (
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/bettercap/bettercap/v2/tls"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/pcap"
 )
 
 type ZeroGod struct {
 	session.SessionModule
+	sniffer    *pcap.Handle
+	snifferCh  chan gopacket.Packet
 	browser    *Browser
 	advertiser *Advertiser
 }
@@ -14,8 +18,6 @@ type ZeroGod struct {
 func NewZeroGod(s *session.Session) *ZeroGod {
 	mod := &ZeroGod{
 		SessionModule: session.NewSessionModule("zerogod", s),
-		browser:       nil,
-		advertiser:    nil,
 	}
 
 	mod.SessionModule.Requires("net.recon")
@@ -115,12 +117,6 @@ func (mod *ZeroGod) Configure() (err error) {
 		return session.ErrAlreadyStarted(mod.Name())
 	}
 
-	if mod.browser != nil {
-		mod.browser.Stop(false)
-	}
-
-	mod.browser = NewBrowser()
-
 	return
 }
 
@@ -130,7 +126,7 @@ func (mod *ZeroGod) Start() (err error) {
 	}
 
 	// start the root discovery
-	if err = mod.startResolver(DNSSD_DISCOVERY_SERVICE); err != nil {
+	if err = mod.startDiscovery(DNSSD_DISCOVERY_SERVICE); err != nil {
 		return err
 	}
 
@@ -144,14 +140,6 @@ func (mod *ZeroGod) Start() (err error) {
 func (mod *ZeroGod) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.stopAdvertiser()
-		if mod.browser != nil {
-			mod.Debug("stopping discovery")
-
-			mod.browser.Stop(true)
-
-			mod.Debug("stopped")
-
-			mod.browser = nil
-		}
+		mod.stopDiscovery()
 	})
 }

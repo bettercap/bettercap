@@ -161,6 +161,27 @@ func (t *Endpoint) String() string {
 	return fmt.Sprintf("%s%s (%s) - %s", ipPart, t.HwAddress, t.Vendor, tui.Bold(name))
 }
 
+func (t *Endpoint) ShortString() string {
+	parts := []string{
+		t.IpAddress,
+	}
+
+	if t.Vendor != "" {
+		parts = append(parts, tui.Dim(fmt.Sprintf("(%s)", t.Vendor)))
+	}
+
+	name := t.Hostname
+	if t.Alias != "" {
+		name = t.Alias
+	}
+
+	if name != "" {
+		parts = append(parts, tui.Bold(name))
+	}
+
+	return strings.Join(parts, " ")
+}
+
 func (t *Endpoint) OnMeta(meta map[string]string) {
 	host := ""
 	for k, v := range meta {
