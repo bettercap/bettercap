@@ -23,9 +23,11 @@ type ServiceDiscoveryEvent struct {
 
 // an endpoint is browsing for specific services
 type BrowsingEvent struct {
-	Source   string            `json:"source"`
-	Query    layers.DNS        `json:"service"`
-	Endpoint *network.Endpoint `json:"endpoint"`
+	Source    string            `json:"source"`
+	Endpoint  *network.Endpoint `json:"endpoint"`
+	Services  []string          `json:"services"`
+	Instances []string          `json:"instances"`
+	Query     layers.DNS        `json:"query"`
 }
 
 func (mod *ZeroGod) onServiceDiscovered(svc *zeroconf.ServiceEntry) {
@@ -250,10 +252,26 @@ func (mod *ZeroGod) onPacket(pkt gopacket.Packet) {
 		return
 	}
 
+	services := make([]string, 0)
+	for _, q := range dns.Questions {
+		services = append(services, tui.Yellow(string(q.Name)))
+	}
+
+	instances := make([]string, 0)
+	for _, answer := range append(append(dns.Answers, dns.Additionals...), dns.Authorities...) {
+		if answer.Class == layers.DNSClassIN && answer.Type == layers.DNSTypePTR {
+			instances = append(instances, string(answer.PTR))
+		} else {
+			instances = append(instances, answer.String())
+		}
+	}
+
 	event := BrowsingEvent{
-		Source:   srcIP.String(),
-		Query:    dns,
-		Endpoint: mod.Session.Lan.GetByIp(srcIP.String()),
+		Source:    srcIP.String(),
+		Query:     dns,
+		Services:  services,
+		Instances: instances,
+		Endpoint:  mod.Session.Lan.GetByIp(srcIP.String()),
 	}
 
 	if event.Endpoint == nil {

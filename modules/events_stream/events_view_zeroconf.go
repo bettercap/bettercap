@@ -31,32 +31,26 @@ func (mod *EventsStream) viewZeroConfEvent(output io.Writer, e session.Event) {
 		}
 
 		services := make([]string, 0)
-		for _, q := range event.Query.Questions {
-			services = append(services, tui.Yellow(string(q.Name)))
+		for _, q := range event.Services {
+			services = append(services, tui.Yellow(q))
 		}
-		/*
+
+		instPart := ""
+		if len(event.Instances) > 0 {
 			instances := make([]string, 0)
-			answers := append(event.Query.Answers, event.Query.Additionals...)
-			for _, answer := range answers {
-				if answer.Class == layers.DNSClassIN && answer.Type == layers.DNSTypePTR {
-					instances = append(instances, tui.Green(string(answer.PTR)))
-				} else {
-					instances = append(instances, tui.Green(answer.String()))
-				}
+			for _, q := range event.Instances {
+				instances = append(instances, tui.Green(q))
 			}
+			instPart = fmt.Sprintf(" and instances %s", strings.Join(instances, ", "))
+		}
 
-			advPart := ""
-			if len(instances) > 0 {
-				advPart = fmt.Sprintf(" and advertising %s", strings.Join(instances, ", "))
-			}
-		*/
-
-		fmt.Fprintf(output, "[%s] [%s] %s is browsing (%s) for services %s\n",
+		fmt.Fprintf(output, "[%s] [%s] %s is browsing (%s) for services %s%s\n",
 			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			source,
 			ops.Ternary(event.Query.QR, "RESPONSE", "QUERY"),
 			strings.Join(services, ", "),
+			instPart,
 		)
 	} else {
 		fmt.Fprintf(output, "[%s] [%s] %v\n", e.Time.Format(mod.timeFormat), tui.Green(e.Tag), e)
