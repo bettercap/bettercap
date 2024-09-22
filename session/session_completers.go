@@ -16,12 +16,20 @@ func addIfMatches(to *[]string, prefix string, what string) {
 	}
 }
 
-func (s *Session) LANCompleter(prefix string) []string {
+func (s *Session) LANCompleterForMacs(prefix string) []string {
 	macs := []string{""}
 	s.Lan.EachHost(func(mac string, e *network.Endpoint) {
 		addIfMatches(&macs, prefix, mac)
 	})
 	return macs
+}
+
+func (s *Session) LANCompleterForIPs(prefix string) []string {
+	ips := []string{""}
+	s.Lan.EachHost(func(mac string, e *network.Endpoint) {
+		addIfMatches(&ips, prefix, e.IpAddress)
+	})
+	return ips
 }
 
 func (s *Session) WiFiCompleter(prefix string) []string {

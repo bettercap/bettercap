@@ -8,6 +8,7 @@ import (
 
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/bettercap/bettercap/v2/tls"
+	"github.com/evilsocket/islazy/str"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 )
@@ -39,30 +40,29 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 			return mod.Stop()
 		}))
 
-	mod.AddHandler(session.NewModuleHandler("zerogod.show", "",
-		"Show discovered services.",
-		func(args []string) error {
-			return mod.show("", false)
-		}))
-
-	mod.AddHandler(session.NewModuleHandler("zerogod.show-full", "",
-		"Show discovered services and their DNS records.",
-		func(args []string) error {
-			return mod.show("", true)
-		}))
-
-	// TODO: add autocomplete
-	mod.AddHandler(session.NewModuleHandler("zerogod.show ADDRESS", "zerogod.show (.+)",
-		"Show discovered services given an ip address.",
-		func(args []string) error {
-			return mod.show(args[0], false)
-		}))
-
-	mod.AddHandler(session.NewModuleHandler("zerogod.show-full ADDRESS", "zerogod.show-full (.+)",
+	showFull := session.NewModuleHandler("zerogod.show-full ADDRESS", `zerogod\.show-full(.*)`,
 		"Show discovered services and DNS records given an ip address.",
 		func(args []string) error {
-			return mod.show(args[0], true)
-		}))
+			what := ""
+			if len(args) > 0 {
+				what = str.Trim(args[0])
+			}
+			return mod.show(what, true)
+		})
+	showFull.Complete("zerogod.show-full", s.LANCompleterForIPs)
+	mod.AddHandler(showFull)
+
+	show := session.NewModuleHandler("zerogod.show ADDRESS", `zerogod\.show(.*)`,
+		"Show discovered services given an ip ADDRESS.",
+		func(args []string) error {
+			what := ""
+			if len(args) > 0 {
+				what = str.Trim(args[0])
+			}
+			return mod.show(what, false)
+		})
+	show.Complete("zerogod.show", s.LANCompleterForIPs)
+	mod.AddHandler(show)
 
 	mod.AddHandler(session.NewModuleHandler("zerogod.save ADDRESS FILENAME", "zerogod.save (.+) (.+)",
 		"Save the mDNS information of a given ADDRESS in the FILENAME yaml file.",
@@ -71,7 +71,7 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("zerogod.advertise FILENAME", "zerogod.advertise (.+)",
-		"Start advertising the mDNS services from the FILENAME yaml file.",
+		"Start advertising the mDNS services from the FILENAME yaml file. Use 'off' to stop advertising.",
 		func(args []string) error {
 			if args[0] == "off" {
 				return mod.stopAdvertiser()
@@ -79,9 +79,8 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 			return mod.startAdvertiser(args[0])
 		}))
 
-	// TODO: add autocomplete
-	mod.AddHandler(session.NewModuleHandler("zerogod.impersonate ADDRESS", "zerogod.impersonate (.+)",
-		"Impersonate ADDRESS by advertising the same discovery information.",
+	impersonate := session.NewModuleHandler("zerogod.impersonate ADDRESS", "zerogod.impersonate (.+)",
+		"Impersonate ADDRESS by advertising the same discovery information. Use 'off' to stop impersonation.",
 		func(args []string) error {
 			if address := args[0]; address == "off" {
 				return mod.stopAdvertiser()
@@ -95,19 +94,9 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 
 				return mod.startAdvertiser(tmpFileName)
 			}
-		}))
-
-	mod.AddHandler(session.NewModuleHandler("zerogod.advertise off", "",
-		"Stop a previously started advertiser.",
-		func(args []string) error {
-			return mod.stopAdvertiser()
-		}))
-
-	mod.AddHandler(session.NewModuleHandler("zerogod.impersonate off", "",
-		"Stop a previously started impersonation.",
-		func(args []string) error {
-			return mod.stopAdvertiser()
-		}))
+		})
+	impersonate.Complete("zerogod.impersonate", s.LANCompleterForIPs)
+	mod.AddHandler(impersonate)
 
 	mod.AddParam(session.NewStringParameter("zerogod.advertise.certificate",
 		"~/.bettercap-zerogod.cert.pem",
