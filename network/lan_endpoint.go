@@ -17,11 +17,14 @@ type Endpoint struct {
 	Index            int                    `json:"-"`
 	IP               net.IP                 `json:"-"`
 	Net              *net.IPNet             `json:"-"`
+	Net6             *net.IPNet             `json:"-"`
 	IPv6             net.IP                 `json:"-"`
+	CIDR6            string                 `json:"-"`
 	HW               net.HardwareAddr       `json:"-"`
 	IpAddress        string                 `json:"ipv4"`
 	Ip6Address       string                 `json:"ipv6"`
 	SubnetBits       uint32                 `json:"-"`
+	SubnetBits6      uint32                 `json:"-"`
 	IpAddressUint32  uint32                 `json:"-"`
 	HwAddress        string                 `json:"mac"`
 	Hostname         string                 `json:"hostname"`
@@ -100,7 +103,13 @@ func (t *Endpoint) SetNetwork(netw string) {
 func (t *Endpoint) SetIPv6(netw string) {
 	parts := strings.SplitN(netw, "/", 2)
 	address := parts[0]
-	// bits, _ := strconv.Atoi(parts[1])
+	if len(parts) > 1 {
+		bits6, _ := strconv.Atoi(parts[1])
+		t.SubnetBits6 = uint32(bits6)
+		t.CIDR6 = netw
+		_, netw, _ := net.ParseCIDR(netw)
+		t.Net6 = netw
+	}
 
 	t.IPv6 = net.ParseIP(address)
 	if t.IPv6 != nil {

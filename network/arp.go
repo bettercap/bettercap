@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/bettercap/bettercap/v2/core"
+	"github.com/bettercap/bettercap/v2/log"
 )
 
 type ArpTable map[string]string
@@ -33,6 +34,7 @@ func ArpUpdate(iface string) (ArpTable, error) {
 	for _, line := range strings.Split(output, "\n") {
 		m := ArpTableParser.FindStringSubmatch(line)
 		if len(m) == ArpTableTokens {
+			log.Debug("ARP TABLE MATCH: %v", m)
 			ipIndex := ArpTableTokenIndex[0]
 			hwIndex := ArpTableTokenIndex[1]
 			ifIndex := ArpTableTokenIndex[2]
@@ -46,6 +48,7 @@ func ArpUpdate(iface string) (ArpTable, error) {
 			}
 
 			if ifname == iface {
+				log.Debug("  %s = %s", address, mac)
 				newTable[address] = mac
 			}
 		}

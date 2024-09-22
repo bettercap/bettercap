@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bettercap/bettercap/v2/log"
 	"github.com/evilsocket/islazy/data"
 )
 
@@ -136,11 +137,11 @@ func (lan *LAN) Remove(ip, mac string) {
 
 func (lan *LAN) shouldIgnore(ip, mac string) bool {
 	// skip our own address
-	if ip == lan.iface.IpAddress || mac == lan.iface.HwAddress {
+	if ip == lan.iface.IpAddress || ip == lan.iface.Ip6Address || mac == lan.iface.HwAddress {
 		return true
 	}
 	// skip the gateway
-	if ip == lan.gateway.IpAddress || mac == lan.gateway.HwAddress {
+	if ip == lan.gateway.IpAddress || ip == lan.gateway.Ip6Address || mac == lan.gateway.HwAddress {
 		return true
 	}
 	// skip broadcast addresses
@@ -190,6 +191,15 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 		if lan.ttl[mac] < LANDefaultttl {
 			lan.ttl[mac]++
 		}
+
+		if strings.ContainsRune(ip, ':') && t.Ip6Address == "" {
+			log.Info("ipv6 %s detected for %s (%s)", ip, t.IpAddress, mac)
+			t.SetIPv6(ip)
+		} else if strings.ContainsRune(ip, '.') && t.IpAddress == "" {
+			log.Info("ipv4 %s detected for %s (%s)", ip, t.Ip6Address, mac)
+			t.SetIP(ip)
+		}
+
 		return t
 	}
 

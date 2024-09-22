@@ -196,16 +196,12 @@ func buildEndpointFromInterface(iface net.Interface) (*Endpoint, error) {
 
 	for _, a := range addrs {
 		address := a.String()
-		switch true {
-		case IPv4Validator.MatchString(address):
+		if IPv4Validator.MatchString(address) {
 			e.SetIP(address)
-			break
-		case IPv4BlockValidator.MatchString(address):
+		} else if IPv4BlockValidator.MatchString(address) {
 			e.SetNetwork(address)
-			break
-		default:
+		} else {
 			e.SetIPv6(address)
-			break
 		}
 	}
 

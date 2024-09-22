@@ -211,7 +211,7 @@ func (q *Queue) worker() {
 
 			// something coming from someone on the LAN
 			isFromMe := q.iface.IP.Equal(srcIP) || q.iface.IPv6.Equal(srcIP)
-			isFromLAN := q.iface.Net.Contains(srcIP)
+			isFromLAN := q.iface.Net.Contains(srcIP) || q.iface.Net6.Contains(srcIP)
 			if !isFromMe && isFromLAN {
 				meta := q.getPacketMeta(pkt)
 				q.trackActivity(eth, srcIP, meta, pktSize, true)
@@ -219,7 +219,7 @@ func (q *Queue) worker() {
 
 			// something going to someone on the LAN
 			isToMe := q.iface.IP.Equal(dstIP) || q.iface.IPv6.Equal(dstIP)
-			isToLAN := q.iface.Net.Contains(dstIP)
+			isToLAN := q.iface.Net.Contains(dstIP) || q.iface.Net6.Contains(dstIP)
 			if !isToMe && isToLAN {
 				q.trackActivity(eth, dstIP, nil, pktSize, false)
 			}
