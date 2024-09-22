@@ -260,7 +260,8 @@ func (mod *ZeroGod) onPacket(pkt gopacket.Packet) {
 	if event.Endpoint == nil {
 		// TODO: if nil, this is probably an IPv6 only record, try to somehow check which known IPv4 it is
 		// TODO: make configurable?
-		mod.Debug("got mdns packet from unknown ip %s: %++v", srcIP, dns)
+		mod.Info("got mdns packet from unknown ip %s", srcIP)
+		mod.logDNS(srcIP, dns, isLocal)
 		return
 	}
 
