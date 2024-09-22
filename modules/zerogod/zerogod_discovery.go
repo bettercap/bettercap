@@ -75,7 +75,6 @@ func (mod *ZeroGod) onServiceDiscovered(svc *zeroconf.ServiceEntry) {
 	}
 
 	if event.Endpoint == nil {
-		// TODO: this is probably an IPv6 only record, try to somehow check which known IPv4 it is
 		mod.Debug("got mdns entry for unknown ip: %++v", *svc)
 	}
 
@@ -258,8 +257,6 @@ func (mod *ZeroGod) onPacket(pkt gopacket.Packet) {
 	}
 
 	if event.Endpoint == nil {
-		// TODO: if nil, this is probably an IPv6 only record, try to somehow check which known IPv4 it is
-		// TODO: make configurable?
 		mod.Info("got mdns packet from unknown ip %s", srcIP)
 		mod.logDNS(srcIP, dns, isLocal)
 		return
