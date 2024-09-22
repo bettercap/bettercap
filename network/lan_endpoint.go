@@ -203,7 +203,8 @@ func (t *Endpoint) OnMeta(meta map[string]string) {
 		t.Meta.Set(k, v)
 	}
 
-	if t.Hostname == "" {
+	// prioritize longer and more explicit host names
+	if len(host) > len(t.Hostname) {
 		t.Hostname = host
 	}
 }
