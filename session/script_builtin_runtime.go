@@ -95,6 +95,27 @@ func jsOnEventFunc(call otto.FunctionCall) otto.Value {
 	return js.NullValue
 }
 
+func jsSaveToFileFunc(call otto.FunctionCall) otto.Value {
+	argv := call.ArgumentList
+	argc := len(argv)
+	if argc != 2 {
+		return js.ReportError("saveToFile accepts two string arguments")
+	} else if argv[0].IsString() == false {
+		return js.ReportError("saveToFile accepts two string arguments")
+	} else if argv[1].IsString() == false {
+		return js.ReportError("saveToFile accepts two string arguments")
+	}
+
+	fileName := argv[0].String()
+	data := argv[1].String()
+
+	if err := ioutil.WriteFile(fileName, []byte(data), os.ModePerm); err != nil {
+		return js.ReportError("error writing to '%s': %v", fileName, err)
+	}
+
+	return js.NullValue
+}
+
 func jsSaveJSONFunc(call otto.FunctionCall) otto.Value {
 	argv := call.ArgumentList
 	argc := len(argv)

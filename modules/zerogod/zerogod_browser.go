@@ -3,6 +3,7 @@ package zerogod
 import (
 	"context"
 	"sort"
+	"sync"
 
 	"github.com/bettercap/bettercap/v2/modules/zerogod/zeroconf"
 	"github.com/evilsocket/islazy/tui"
@@ -16,6 +17,8 @@ type AddressServices struct {
 }
 
 type Browser struct {
+	sync.RWMutex
+
 	resolvers    map[string]*zeroconf.Resolver
 	servicesByIP map[string]map[string]*zeroconf.ServiceEntry
 	context      context.Context
@@ -46,11 +49,16 @@ func (b *Browser) Stop(wait bool) {
 }
 
 func (b *Browser) HasResolverFor(service string) bool {
+	b.RLock()
+	defer b.RUnlock()
 	_, found := b.resolvers[service]
 	return found
 }
 
 func (b *Browser) AddServiceFor(ip string, svc *zeroconf.ServiceEntry) {
+	b.Lock()
+	defer b.Unlock()
+
 	if ipServices, found := b.servicesByIP[ip]; found {
 		ipServices[svc.ServiceInstanceName()] = svc
 	} else {
@@ -61,6 +69,9 @@ func (b *Browser) AddServiceFor(ip string, svc *zeroconf.ServiceEntry) {
 }
 
 func (b *Browser) GetServicesFor(ip string) map[string]*zeroconf.ServiceEntry {
+	b.RLock()
+	defer b.RUnlock()
+
 	if ipServices, found := b.servicesByIP[ip]; found {
 		return ipServices
 	}
@@ -68,10 +79,14 @@ func (b *Browser) GetServicesFor(ip string) map[string]*zeroconf.ServiceEntry {
 }
 
 func (b *Browser) StartBrowsing(service string, domain string, mod *ZeroGod) (chan *zeroconf.ServiceEntry, error) {
+
 	resolver, err := zeroconf.NewResolver(nil)
 	if err != nil {
 		return nil, err
 	}
+
+	b.Lock()
+	defer b.Unlock()
 
 	b.resolvers[service] = resolver
 	ch := make(chan *zeroconf.ServiceEntry)
@@ -88,6 +103,9 @@ func (b *Browser) StartBrowsing(service string, domain string, mod *ZeroGod) (ch
 }
 
 func (b *Browser) ServicesByAddress(filter string) []AddressServices {
+	b.RLock()
+	defer b.RUnlock()
+
 	// convert to list for sorting
 	entries := make([]AddressServices, 0)
 

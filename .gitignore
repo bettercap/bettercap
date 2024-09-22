@@ -17,3 +17,4 @@ stage/
 /cover.out
 /can-data
 /test*.yml
+/zerochaos.js

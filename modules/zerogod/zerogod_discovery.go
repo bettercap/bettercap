@@ -254,7 +254,7 @@ func (mod *ZeroGod) onPacket(pkt gopacket.Packet) {
 
 	services := make([]string, 0)
 	for _, q := range dns.Questions {
-		services = append(services, tui.Yellow(string(q.Name)))
+		services = append(services, string(q.Name))
 	}
 
 	instances := make([]string, 0)
