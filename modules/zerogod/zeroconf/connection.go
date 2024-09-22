@@ -105,9 +105,46 @@ func listMulticastInterfaces() []net.Interface {
 		return nil
 	}
 	for _, ifi := range ifaces {
+		// not up
 		if (ifi.Flags & net.FlagUp) == 0 {
 			continue
 		}
+		// localhost
+		if (ifi.Flags & net.FlagLoopback) != 0 {
+			continue
+		}
+		// not running
+		if (ifi.Flags & net.FlagRunning) == 0 {
+			continue
+		}
+		// vpn and similar
+		if (ifi.Flags & net.FlagPointToPoint) != 0 {
+			continue
+		}
+
+		// at least one ipv4 address assigned
+		hasIPv4 := false
+		if addresses, _ := ifi.Addrs(); addresses != nil {
+			for _, addr := range addresses {
+				// ipv4 or ipv4 CIDR
+				if ip, ipnet, err := net.ParseCIDR(addr.String()); err == nil {
+					if ip.To4() != nil || ipnet.IP.To4() != nil {
+						hasIPv4 = true
+						break
+					}
+				} else if ipAddr, ok := addr.(*net.IPAddr); ok {
+					if ipAddr.IP.To4() != nil {
+						hasIPv4 = true
+						break
+					}
+				}
+			}
+		}
+
+		if !hasIPv4 {
+			continue
+		}
+
 		if (ifi.Flags & net.FlagMulticast) > 0 {
 			interfaces = append(interfaces, ifi)
 		}

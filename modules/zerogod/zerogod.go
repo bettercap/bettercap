@@ -126,6 +126,10 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 		"",
 		"If an IPP acceptor is started, this setting defines where to save documents received for printing."))
 
+	mod.AddParam(session.NewBoolParameter("zerogod.verbose",
+		"false",
+		"Log every mDNS query."))
+
 	return mod
 }
 

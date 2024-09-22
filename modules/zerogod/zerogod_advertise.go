@@ -103,9 +103,7 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 	if err != nil {
 		return fmt.Errorf("could not get hostname: %v", err)
 	}
-	if !strings.HasSuffix(hostName, ".") {
-		hostName += "."
-	}
+	hostName = strings.ReplaceAll(hostName, ".local", "")
 
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {

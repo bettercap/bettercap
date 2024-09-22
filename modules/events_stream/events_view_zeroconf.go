@@ -7,6 +7,7 @@ import (
 
 	"github.com/bettercap/bettercap/v2/modules/zerogod"
 	"github.com/bettercap/bettercap/v2/session"
+	"github.com/evilsocket/islazy/ops"
 	"github.com/evilsocket/islazy/tui"
 )
 
@@ -50,10 +51,11 @@ func (mod *EventsStream) viewZeroConfEvent(output io.Writer, e session.Event) {
 			}
 		*/
 
-		fmt.Fprintf(output, "[%s] [%s] %s is browsing for services %s\n",
+		fmt.Fprintf(output, "[%s] [%s] %s is browsing (%s) for services %s\n",
 			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			source,
+			ops.Ternary(event.Query.QR, "RESPONSE", "QUERY"),
 			strings.Join(services, ", "),
 		)
 	} else {

@@ -48,9 +48,10 @@ func Register(instance, service, domain string, port int, text []string, ifaces 
 		if err != nil {
 			return nil, fmt.Errorf("could not determine host")
 		}
+		entry.HostName = strings.ReplaceAll(entry.HostName, ".local", "")
 	}
 
-	if !strings.HasSuffix(trimDot(entry.HostName), entry.Domain) {
+	if !strings.HasSuffix(trimDot(entry.HostName), trimDot(entry.Domain)) {
 		entry.HostName = fmt.Sprintf("%s.%s.", trimDot(entry.HostName), trimDot(entry.Domain))
 	}
 
@@ -431,7 +432,7 @@ func (s *Server) composeBrowsingAnswers(resp *dns.Msg, ifIndex int) {
 			Ttl:    s.ttl,
 		},
 		Priority: 0,
-		Weight:   0,
+		Weight:   0xffff,
 		Port:     uint16(s.service.Port),
 		Target:   s.service.HostName,
 	}
@@ -463,7 +464,7 @@ func (s *Server) composeLookupAnswers(resp *dns.Msg, ttl uint32, ifIndex int, fl
 			Ttl:    ttl,
 		},
 		Priority: 0,
-		Weight:   0,
+		Weight:   0xffff,
 		Port:     uint16(s.service.Port),
 		Target:   s.service.HostName,
 	}
@@ -539,7 +540,7 @@ func (s *Server) probe() {
 			Ttl:    s.ttl,
 		},
 		Priority: 0,
-		Weight:   0,
+		Weight:   0xffff,
 		Port:     uint16(s.service.Port),
 		Target:   s.service.HostName,
 	}
