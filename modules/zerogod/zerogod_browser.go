@@ -79,7 +79,6 @@ func (b *Browser) GetServicesFor(ip string) map[string]*zeroconf.ServiceEntry {
 }
 
 func (b *Browser) StartBrowsing(service string, domain string, mod *ZeroGod) (chan *zeroconf.ServiceEntry, error) {
-
 	resolver, err := zeroconf.NewResolver(nil)
 	if err != nil {
 		return nil, err
