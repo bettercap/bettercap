@@ -1,3 +1,0 @@
-[submodule "ui"]
-	path = modules/ui/ui
-	url = https://github.com/bettercap/ui.git
