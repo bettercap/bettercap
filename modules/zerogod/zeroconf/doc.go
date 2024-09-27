@@ -11,4 +11,6 @@
 // By now, it should be compatible to [Avahi](http://avahi.org/) (tested) and
 // Apple's Bonjour (untested). Should work in the most office, home and private
 // environments.
+//
+// Based on https://github.com/grandcat/zeroconf
 package zeroconf

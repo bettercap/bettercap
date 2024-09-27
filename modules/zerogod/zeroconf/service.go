@@ -1,3 +1,4 @@
+// Based on https://github.com/grandcat/zeroconf
 package zeroconf
 
 import (
