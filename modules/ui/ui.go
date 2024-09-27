@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	//go:embed ui/dist/ui
+	//go:embed ui
 	web embed.FS
 )
 
@@ -80,7 +80,7 @@ func (mod *UIModule) Configure() (err error) {
 
 	mod.server.Addr = fmt.Sprintf("%s:%d", ip, port)
 
-	dist, _ := fs.Sub(web, "ui/dist/ui")
+	dist, _ := fs.Sub(web, "ui")
 	mod.server.Handler = http.FileServer(http.FS(dist))
 
 	return nil

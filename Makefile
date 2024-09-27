@@ -5,18 +5,13 @@ GO       ?= go
 
 all: build
 
-build: resources ui
+build: resources
 	$(GOFLAGS) $(GO) build -o $(TARGET) .
 
 build_with_race_detector: resources
 	$(GOFLAGS) $(GO) build -race -o $(TARGET) .
 
 resources: network/manuf.go
-
-ui: ./modules/ui/ui/dist/ui/index.html
-
-./modules/ui/ui/dist/ui/index.html:
-	@cd modules/ui/ui && make build
 
 network/manuf.go:
 	@python3 ./network/make_manuf.py
