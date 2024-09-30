@@ -1,12 +1,7 @@
 package zerogod
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
-	"io"
-	"net/http"
-	"strings"
 	"time"
 
 	"github.com/evilsocket/islazy/tui"
@@ -42,40 +37,17 @@ type PrintData struct {
 func ippClientHandler(ctx *HandlerContext) {
 	defer ctx.client.Close()
 
-	clientIP := strings.SplitN(ctx.client.RemoteAddr().String(), ":", 2)[0]
-
-	buf := make([]byte, 4096)
-
-	// read raw request
-	read, err := ctx.client.Read(buf)
-	if err != nil {
-		if err == io.EOF {
-			ctx.mod.Debug("EOF, client %s disconnected", clientIP)
-			return
-		}
-		ctx.mod.Warning("error while reading from %v: %v", clientIP, err)
+	shouldQuit, clientIP, httpRequest, err := httpGenericHandler(ctx)
+	if shouldQuit {
 		return
-	} else if read == 0 {
-		ctx.mod.Warning("error while reading from %v: no data", clientIP)
-		return
+	} else if err != nil {
+		ctx.mod.Error("%v", err)
 	}
 
-	raw_req := buf[0:read]
-
-	ctx.mod.Debug("read %d bytes from %v:\n%s\n", read, clientIP, Dump(raw_req))
-
-	// parse as http
-	reader := bufio.NewReader(bytes.NewReader(raw_req))
-	http_req, err := http.ReadRequest(reader)
-	if err != nil {
-		ctx.mod.Error("error while parsing http request from %v: %v\n%s", clientIP, err, Dump(raw_req))
-		return
-	}
-
-	clientUA := http_req.UserAgent()
+	clientUA := httpRequest.UserAgent()
 	ctx.mod.Info("%v -> %s", clientIP, tui.Green(clientUA))
 
-	ipp_body, err := ippReadRequestBody(ctx, http_req)
+	ipp_body, err := ippReadRequestBody(ctx, httpRequest)
 	if err != nil {
 		ctx.mod.Error("%v", err)
 		return
@@ -84,7 +56,7 @@ func ippClientHandler(ctx *HandlerContext) {
 	// parse as IPP
 	ipp_req, err := ipp.NewRequestDecoder(ipp_body).Decode(nil)
 	if err != nil {
-		ctx.mod.Error("error while parsing ipp request from %v: %v -> %++v", clientIP, err, *http_req)
+		ctx.mod.Error("error while parsing ipp request from %v: %v -> %++v", clientIP, err, *httpRequest)
 		return
 	}
 
@@ -118,7 +90,7 @@ func ippClientHandler(ctx *HandlerContext) {
 		ippOnGetJobs(ctx, ipp_req)
 	// Print-Job
 	case 0x0002:
-		ippOnPrintJob(ctx, http_req, ipp_req)
+		ippOnPrintJob(ctx, httpRequest, ipp_req)
 	// Get-Job-Attributes
 	case 0x0009:
 		ippOnGetJobAttributes(ctx, ipp_req)

@@ -172,7 +172,7 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 	for _, svc := range advertiser.Services {
 		// if no external responder has been specified
 		if svc.Responder == "" {
-			acceptor := NewAcceptor(mod, svc.FullName(), hostName, uint16(svc.Port), tlsConfig, svc.IPP)
+			acceptor := NewAcceptor(mod, svc.FullName(), hostName, uint16(svc.Port), tlsConfig, svc.IPP, svc.HTTP)
 			if err := acceptor.Start(); err != nil {
 				return err
 			}

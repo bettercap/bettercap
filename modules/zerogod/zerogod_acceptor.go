@@ -25,7 +25,13 @@ var TCP_HANDLERS = map[string]Handler{
 		TLS:    true,
 		Handle: ippClientHandler,
 	},
-	// TODO: _http at least
+	"_http": {
+		Handle: httpClientHandler,
+	},
+	"_https": {
+		TLS:    true,
+		Handle: httpClientHandler,
+	},
 }
 
 type Acceptor struct {
@@ -42,6 +48,7 @@ type Acceptor struct {
 	ctxCancel     context.CancelFunc
 	handler       Handler
 	ippAttributes map[string]string
+	httpPaths     map[string]string
 }
 
 type HandlerContext struct {
@@ -52,9 +59,10 @@ type HandlerContext struct {
 	srvPort       int
 	srvTLS        bool
 	ippAttributes map[string]string
+	httpPaths     map[string]string
 }
 
-func NewAcceptor(mod *ZeroGod, service string, srvHost string, port uint16, tlsConfig *tls.Config, ippAttributes map[string]string) *Acceptor {
+func NewAcceptor(mod *ZeroGod, service string, srvHost string, port uint16, tlsConfig *tls.Config, ippAttributes map[string]string, httpPaths map[string]string) *Acceptor {
 	context, ctcCancel := context.WithCancel(context.Background())
 	proto := ops.Ternary(strings.Contains(service, "_tcp"), "tcp", "udp").(string)
 
@@ -67,11 +75,14 @@ func NewAcceptor(mod *ZeroGod, service string, srvHost string, port uint16, tlsC
 		ctxCancel:     ctcCancel,
 		srvHost:       srvHost,
 		ippAttributes: ippAttributes,
+		httpPaths:     httpPaths,
 	}
 
 	for svcName, svcHandler := range TCP_HANDLERS {
 		if strings.Contains(service, svcName) {
-			acceptor.tlsConfig = tlsConfig
+			if svcHandler.TLS {
+				acceptor.tlsConfig = tlsConfig
+			}
 			acceptor.handler = svcHandler
 			break
 		}
@@ -81,7 +92,7 @@ func NewAcceptor(mod *ZeroGod, service string, srvHost string, port uint16, tlsC
 		mod.Warning("no protocol handler found for service %s, using generic %s dump handler", tui.Yellow(service), proto)
 		acceptor.handler.Handle = handleGenericTCP
 	} else {
-		mod.Info("found %s %s protocol handler", proto, tui.Green(service))
+		mod.Info("found %s %s protocol handler (tls=%v)", proto, tui.Green(service), acceptor.tlsConfig != nil)
 	}
 
 	return &acceptor
@@ -114,6 +125,7 @@ func (a *Acceptor) startTCP() (err error) {
 					srvPort:       int(a.port),
 					srvTLS:        a.tlsConfig != nil,
 					ippAttributes: a.ippAttributes,
+					httpPaths:     a.httpPaths,
 				})
 			}
 		}
