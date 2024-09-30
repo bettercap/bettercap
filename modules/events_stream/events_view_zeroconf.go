@@ -44,14 +44,21 @@ func (mod *EventsStream) viewZeroConfEvent(output io.Writer, e session.Event) {
 			instPart = fmt.Sprintf(" and instances %s", strings.Join(instances, ", "))
 		}
 
-		fmt.Fprintf(output, "[%s] [%s] %s is browsing (%s) for services %s%s\n",
+		textPart := ""
+		if len(event.Text) > 0 {
+			textPart = fmt.Sprintf("\n  text records: %s\n", strings.Join(event.Text, ", "))
+		}
+
+		fmt.Fprintf(output, "[%s] [%s] %s is browsing (%s) for services %s%s\n%s",
 			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),
 			source,
 			ops.Ternary(event.Query.QR, "RESPONSE", "QUERY"),
 			strings.Join(services, ", "),
 			instPart,
+			textPart,
 		)
+
 	} else {
 		fmt.Fprintf(output, "[%s] [%s] %v\n", e.Time.Format(mod.timeFormat), tui.Green(e.Tag), e)
 	}
