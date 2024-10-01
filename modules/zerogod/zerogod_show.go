@@ -30,11 +30,18 @@ func (mod *ZeroGod) show(filter string, withData bool) error {
 		}
 
 		for _, svc := range entry.Services {
-			fmt.Fprintf(mod.Session.Events.Stdout, "  %s (%s) [%v / %v]:%s\n",
+			ip := ""
+			if len(svc.AddrIPv4) > 0 {
+				ip = svc.AddrIPv4[0].String()
+			} else if len(svc.AddrIPv6) > 0 {
+				ip = svc.AddrIPv6[0].String()
+			} else {
+				ip = svc.HostName
+			}
+
+			fmt.Fprintf(mod.Session.Events.Stdout, "  %s %s:%s\n",
 				tui.Green(svc.ServiceInstanceName()),
-				tui.Dim(svc.HostName),
-				svc.AddrIPv4,
-				svc.AddrIPv6,
+				ip,
 				tui.Red(fmt.Sprintf("%d", svc.Port)),
 			)
 
