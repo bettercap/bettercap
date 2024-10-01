@@ -39,8 +39,15 @@ func (mod *ZeroGod) show(filter string, withData bool) error {
 				ip = svc.HostName
 			}
 
-			fmt.Fprintf(mod.Session.Events.Stdout, "  %s %s:%s\n",
+			svcDesc := ""
+			svcName := strings.SplitN(svc.Service, ".", 2)[0]
+			if desc, found := KNOWN_SERVICES[svcName]; found {
+				svcDesc = tui.Dim(fmt.Sprintf(" %s", desc))
+			}
+
+			fmt.Fprintf(mod.Session.Events.Stdout, "  %s%s %s:%s\n",
 				tui.Green(svc.ServiceInstanceName()),
+				svcDesc,
 				ip,
 				tui.Red(fmt.Sprintf("%d", svc.Port)),
 			)
