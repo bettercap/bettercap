@@ -9,6 +9,7 @@ import (
 	"github.com/bettercap/bettercap/v2/modules/can"
 	"github.com/bettercap/bettercap/v2/modules/caplets"
 	"github.com/bettercap/bettercap/v2/modules/dhcp6_spoof"
+	"github.com/bettercap/bettercap/v2/modules/dns_proxy"
 	"github.com/bettercap/bettercap/v2/modules/dns_spoof"
 	"github.com/bettercap/bettercap/v2/modules/events_stream"
 	"github.com/bettercap/bettercap/v2/modules/gps"
@@ -45,6 +46,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(can.NewCanModule(sess))
 	sess.Register(dhcp6_spoof.NewDHCP6Spoofer(sess))
 	sess.Register(net_recon.NewDiscovery(sess))
+	sess.Register(dns_proxy.NewDnsProxy(sess))
 	sess.Register(dns_spoof.NewDNSSpoofer(sess))
 	sess.Register(events_stream.NewEventsStream(sess))
 	sess.Register(gps.NewGPS(sess))
