@@ -17,7 +17,9 @@ func questionsToStrings(qs []dns.Question) []string {
 func recordsToStrings(rrs []dns.RR) []string {
 	records := []string{}
 	for _, rr := range rrs {
-		records = append(records, tabsToSpaces(rr.String()))
+		if rr != nil {
+			records = append(records, tabsToSpaces(rr.String()))
+		}
 	}
 	return records
 }
@@ -57,7 +59,7 @@ func (p *DNSProxy) logResponseAction(m *dns.Msg, clientIP string) {
 }
 
 func (p *DNSProxy) onRequestFilter(query *dns.Msg, clientIP string) (req, res *dns.Msg) {
-	p.Debug("< %s %s",
+	p.Debug("< %s q[%s]",
 		clientIP,
 		strings.Join(questionsToStrings(query.Question), ","))
 
@@ -89,7 +91,7 @@ func (p *DNSProxy) onResponseFilter(req, res *dns.Msg, clientIP string) *dns.Msg
 		return nil
 	}
 
-	p.Debug("> %s %s [%s] [%s] [%s]",
+	p.Debug("> %s q[%s] a[%s] e[%s] n[%s]",
 		clientIP,
 		strings.Join(questionsToStrings(res.Question), ","),
 		strings.Join(recordsToStrings(res.Answer), ","),
