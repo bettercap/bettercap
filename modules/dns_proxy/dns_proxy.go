@@ -2,6 +2,10 @@ package dns_proxy
 
 import (
 	"github.com/bettercap/bettercap/v2/session"
+	"github.com/bettercap/bettercap/v2/tls"
+
+	"github.com/evilsocket/islazy/fs"
+	"github.com/evilsocket/islazy/str"
 )
 
 type DnsProxy struct {
@@ -22,6 +26,10 @@ func (mod *DnsProxy) Configure() error {
 	var netProtocol string
 	var proxyPort int
 	var scriptPath string
+	var certFile string
+	var keyFile string
+	var whitelist string
+	var blacklist string
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
@@ -29,21 +37,56 @@ func (mod *DnsProxy) Configure() error {
 		return err
 	} else if err, address = mod.StringParam("dns.proxy.address"); err != nil {
 		return err
+	} else if err, certFile = mod.StringParam("dns.proxy.certificate"); err != nil {
+		return err
+	} else if certFile, err = fs.Expand(certFile); err != nil {
+		return err
+	} else if err, keyFile = mod.StringParam("dns.proxy.key"); err != nil {
+		return err
+	} else if keyFile, err = fs.Expand(keyFile); err != nil {
+		return err
 	} else if err, nameserver = mod.StringParam("dns.proxy.nameserver"); err != nil {
 		return err
-	} else if err, netProtocol = mod.StringParam("dns.proxy.networkprotocol"); err != nil {
-		return err
 	} else if err, proxyPort = mod.IntParam("dns.proxy.port"); err != nil {
+		return err
+	} else if err, netProtocol = mod.StringParam("dns.proxy.protocol"); err != nil {
 		return err
 	} else if err, doRedirect = mod.BoolParam("dns.proxy.redirect"); err != nil {
 		return err
 	} else if err, scriptPath = mod.StringParam("dns.proxy.script"); err != nil {
 		return err
+	} else if err, blacklist = mod.StringParam("dns.proxy.blacklist"); err != nil {
+		return err
+	} else if err, whitelist = mod.StringParam("dns.proxy.whitelist"); err != nil {
+		return err
 	}
 
-	error := mod.proxy.Configure(address, dnsPort, doRedirect, nameserver, netProtocol, proxyPort, scriptPath)
+	mod.proxy.Blacklist = str.Comma(blacklist)
+	mod.proxy.Whitelist = str.Comma(whitelist)
 
-	return error
+	if netProtocol == "tcp-tls" {
+		if !fs.Exists(certFile) || !fs.Exists(keyFile) {
+			cfg, err := tls.CertConfigFromModule("dns.proxy", mod.SessionModule)
+			if err != nil {
+				return err
+			}
+
+			mod.Debug("%+v", cfg)
+			mod.Info("generating proxy certification authority TLS key to %s", keyFile)
+			mod.Info("generating proxy certification authority TLS certificate to %s", certFile)
+			if err := tls.Generate(cfg, certFile, keyFile, true); err != nil {
+				return err
+			}
+		} else {
+			mod.Info("loading proxy certification authority TLS key from %s", keyFile)
+			mod.Info("loading proxy certification authority TLS certificate from %s", certFile)
+		}
+	}
+
+	err = mod.proxy.Configure(address, dnsPort, doRedirect, nameserver, netProtocol,
+		proxyPort, scriptPath, certFile, keyFile)
+
+	return err
 }
 
 func (mod *DnsProxy) Description() string {
@@ -69,23 +112,41 @@ func NewDnsProxy(s *session.Session) *DnsProxy {
 		session.IPv4Validator,
 		"Address to bind the DNS proxy to."))
 
+	mod.AddParam(session.NewStringParameter("dns.proxy.blacklist", "", "",
+		"Comma separated list of hostnames to skip while proxying (wildcard expressions can be used)."))
+
+	mod.AddParam(session.NewStringParameter("dns.proxy.whitelist", "", "",
+		"Comma separated list of hostnames to proxy if the blacklist is used (wildcard expressions can be used)."))
+
 	mod.AddParam(session.NewStringParameter("dns.proxy.nameserver",
 		"1.1.1.1",
 		session.IPv4Validator,
 		"DNS resolver address."))
 
-	mod.AddParam(session.NewStringParameter("dns.proxy.networkprotocol",
-		"udp",
-		"^(udp|tcp|tcp-tls)$",
-		"Network protocol for the DNS proxy server to use. Accepted values: udp, tcp, tcp-tls"))
-
 	mod.AddParam(session.NewIntParameter("dns.proxy.port",
 		"8053",
 		"Port to bind the DNS proxy to."))
 
+	mod.AddParam(session.NewStringParameter("dns.proxy.protocol",
+		"udp",
+		"^(udp|tcp|tcp-tls)$",
+		"Network protocol for the DNS proxy server to use. Accepted values: udp, tcp, tcp-tls"))
+
 	mod.AddParam(session.NewBoolParameter("dns.proxy.redirect",
 		"true",
 		"Enable or disable port redirection with iptables."))
+
+	mod.AddParam(session.NewStringParameter("dns.proxy.certificate",
+		"~/.bettercap-ca.cert.pem",
+		"",
+		"DNS proxy certification authority TLS certificate file."))
+
+	mod.AddParam(session.NewStringParameter("dns.proxy.key",
+		"~/.bettercap-ca.key.pem",
+		"",
+		"DNS proxy certification authority TLS key file."))
+
+	tls.CertConfigToModule("dns.proxy", &mod.SessionModule, tls.DefaultCloudflareDNSConfig)
 
 	mod.AddParam(session.NewStringParameter("dns.proxy.script",
 		"",

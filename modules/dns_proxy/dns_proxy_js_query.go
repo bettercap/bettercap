@@ -1,9 +1,8 @@
 package dns_proxy
 
 import (
+	"encoding/json"
 	"fmt"
-	"regexp"
-	"strings"
 
 	"github.com/bettercap/bettercap/v2/log"
 	"github.com/bettercap/bettercap/v2/session"
@@ -11,17 +10,14 @@ import (
 	"github.com/miekg/dns"
 )
 
-var whiteSpaceRegexp = regexp.MustCompile(`\s+`)
-var stripWhiteSpaceRegexp = regexp.MustCompile(`^\s*(.*?)\s*$`)
-
 type JSQuery struct {
-	Answers     []string
+	Answers     []map[string]interface{}
 	Client      map[string]string
-	Compress    bool `json:"-"`
-	Extras      []string
-	Header      *JSQueryHeader
-	Nameservers []string
-	Questions   []string
+	Compress    bool
+	Extras      []map[string]interface{}
+	Header      JSQueryHeader
+	Nameservers []map[string]interface{}
+	Questions   []map[string]interface{}
 
 	refHash string
 }
@@ -41,6 +37,11 @@ type JSQueryHeader struct {
 }
 
 func (j *JSQuery) NewHash() string {
+	answers, _ := json.Marshal(j.Answers)
+	extras, _ := json.Marshal(j.Extras)
+	nameservers, _ := json.Marshal(j.Nameservers)
+	questions, _ := json.Marshal(j.Questions)
+
 	headerHash := fmt.Sprintf("%t.%t.%t.%d.%d.%d.%t.%t.%t.%t.%t",
 		j.Header.AuthenticatedData,
 		j.Header.Authoritative,
@@ -53,50 +54,58 @@ func (j *JSQuery) NewHash() string {
 		j.Header.Response,
 		j.Header.Truncated,
 		j.Header.Zero)
+
 	hash := fmt.Sprintf("%s.%s.%t.%s.%s.%s.%s",
-		strings.Join(j.Answers, ""),
+		answers,
 		j.Client["IP"],
 		j.Compress,
-		strings.Join(j.Extras, ""),
+		extras,
 		headerHash,
-		strings.Join(j.Nameservers, ""),
-		strings.Join(j.Questions, ""))
+		nameservers,
+		questions)
+
 	return hash
 }
 
-func NewJSQuery(query *dns.Msg, clientIP string) *JSQuery {
-	answers := []string{}
-	extras := []string{}
-	nameservers := []string{}
-	questions := []string{}
+func NewJSQuery(query *dns.Msg, clientIP string) (jsQuery *JSQuery) {
+	answers := make([]map[string]interface{}, len(query.Answer))
+	extras := make([]map[string]interface{}, len(query.Extra))
+	nameservers := make([]map[string]interface{}, len(query.Ns))
+	questions := make([]map[string]interface{}, len(query.Question))
 
-	header := &JSQueryHeader{
-		AuthenticatedData:  query.MsgHdr.AuthenticatedData,
-		Authoritative:      query.MsgHdr.Authoritative,
-		CheckingDisabled:   query.MsgHdr.CheckingDisabled,
-		Id:                 query.MsgHdr.Id,
-		Opcode:             query.MsgHdr.Opcode,
-		Rcode:              query.MsgHdr.Rcode,
-		RecursionAvailable: query.MsgHdr.RecursionAvailable,
-		RecursionDesired:   query.MsgHdr.RecursionDesired,
-		Response:           query.MsgHdr.Response,
-		Truncated:          query.MsgHdr.Truncated,
-		Zero:               query.MsgHdr.Zero,
+	for i, rr := range query.Answer {
+		jsRecord, err := NewJSResourceRecord(rr)
+		if err != nil {
+			log.Error(err.Error())
+			continue
+		}
+		answers[i] = jsRecord
 	}
 
-	for _, rr := range query.Answer {
-		answers = append(answers, rr.String())
+	for i, rr := range query.Extra {
+		jsRecord, err := NewJSResourceRecord(rr)
+		if err != nil {
+			log.Error(err.Error())
+			continue
+		}
+		extras[i] = jsRecord
 	}
-	for _, rr := range query.Extra {
-		extras = append(extras, rr.String())
+
+	for i, rr := range query.Ns {
+		jsRecord, err := NewJSResourceRecord(rr)
+		if err != nil {
+			log.Error(err.Error())
+			continue
+		}
+		nameservers[i] = jsRecord
 	}
-	for _, rr := range query.Ns {
-		nameservers = append(nameservers, rr.String())
-	}
-	for _, q := range query.Question {
-		qType := dns.Type(q.Qtype).String()
-		qClass := dns.Class(q.Qclass).String()
-		questions = append(questions, fmt.Sprintf("%s\t%s\t%s", q.Name, qClass, qType))
+
+	for i, question := range query.Question {
+		questions[i] = map[string]interface{}{
+			"Name":   question.Name,
+			"Qtype":  question.Qtype,
+			"Qclass": question.Qclass,
+		}
 	}
 
 	clientMAC := ""
@@ -108,11 +117,23 @@ func NewJSQuery(query *dns.Msg, clientIP string) *JSQuery {
 	client := map[string]string{"IP": clientIP, "MAC": clientMAC, "Alias": clientAlias}
 
 	jsquery := &JSQuery{
-		Answers:     answers,
-		Client:      client,
-		Compress:    query.Compress,
-		Extras:      extras,
-		Header:      header,
+		Answers:  answers,
+		Client:   client,
+		Compress: query.Compress,
+		Extras:   extras,
+		Header: JSQueryHeader{
+			AuthenticatedData:  query.MsgHdr.AuthenticatedData,
+			Authoritative:      query.MsgHdr.Authoritative,
+			CheckingDisabled:   query.MsgHdr.CheckingDisabled,
+			Id:                 query.MsgHdr.Id,
+			Opcode:             query.MsgHdr.Opcode,
+			Rcode:              query.MsgHdr.Rcode,
+			RecursionAvailable: query.MsgHdr.RecursionAvailable,
+			RecursionDesired:   query.MsgHdr.RecursionDesired,
+			Response:           query.MsgHdr.Response,
+			Truncated:          query.MsgHdr.Truncated,
+			Zero:               query.MsgHdr.Zero,
+		},
 		Nameservers: nameservers,
 		Questions:   questions,
 	}
@@ -121,80 +142,43 @@ func NewJSQuery(query *dns.Msg, clientIP string) *JSQuery {
 	return jsquery
 }
 
-func stringToClass(s string) (uint16, error) {
-	for i, dnsClass := range dns.ClassToString {
-		if s == dnsClass {
-			return i, nil
-		}
-	}
-	return 0, fmt.Errorf("unkown DNS class (got %s)", s)
-}
-
-func stringToType(s string) (uint16, error) {
-	for i, dnsType := range dns.TypeToString {
-		if s == dnsType {
-			return i, nil
-		}
-	}
-	return 0, fmt.Errorf("unkown DNS type (got %s)", s)
-}
-
 func (j *JSQuery) ToQuery() *dns.Msg {
 	var answers []dns.RR
 	var extras []dns.RR
 	var nameservers []dns.RR
 	var questions []dns.Question
 
-	for _, s := range j.Answers {
-		rr, err := dns.NewRR(s)
+	for _, jsRR := range j.Answers {
+		rr, err := ToRR(jsRR)
 		if err != nil {
-			log.Error("error parsing DNS answer resource record: %s", err.Error())
-			return nil
-		} else {
-			answers = append(answers, rr)
+			log.Error(err.Error())
+			continue
 		}
+		answers = append(answers, rr)
 	}
-	for _, s := range j.Extras {
-		rr, err := dns.NewRR(s)
+	for _, jsRR := range j.Extras {
+		rr, err := ToRR(jsRR)
 		if err != nil {
-			log.Error("error parsing DNS extra resource record: %s", err.Error())
-			return nil
-		} else {
-			extras = append(extras, rr)
+			log.Error(err.Error())
+			continue
 		}
+		extras = append(extras, rr)
 	}
-	for _, s := range j.Nameservers {
-		rr, err := dns.NewRR(s)
+	for _, jsRR := range j.Nameservers {
+		rr, err := ToRR(jsRR)
 		if err != nil {
-			log.Error("error parsing DNS nameserver resource record: %s", err.Error())
-			return nil
-		} else {
-			nameservers = append(nameservers, rr)
+			log.Error(err.Error())
+			continue
 		}
+		nameservers = append(nameservers, rr)
 	}
 
-	for _, s := range j.Questions {
-		qStripped := stripWhiteSpaceRegexp.FindStringSubmatch(s)
-		qParts := whiteSpaceRegexp.Split(qStripped[1], -1)
-
-		if len(qParts) != 3 {
-			log.Error("invalid DNS question format: (got %s)", s)
-			return nil
-		}
-
-		qName := dns.Fqdn(qParts[0])
-		qClass, err := stringToClass(qParts[1])
-		if err != nil {
-			log.Error("error parsing DNS question class: %s", err.Error())
-			return nil
-		}
-		qType, err := stringToType(qParts[2])
-		if err != nil {
-			log.Error("error parsing DNS question type: %s", err.Error())
-			return nil
-		}
-
-		questions = append(questions, dns.Question{qName, qType, qClass})
+	for _, jsQ := range j.Questions {
+		questions = append(questions, dns.Question{
+			Name:   jsPropToString(jsQ, "Name"),
+			Qtype:  jsPropToUint16(jsQ, "Qtype"),
+			Qclass: jsPropToUint16(jsQ, "Qclass"),
+		})
 	}
 
 	query := &dns.Msg{

@@ -2,7 +2,10 @@ package dns_proxy
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -20,13 +23,17 @@ const (
 )
 
 type DNSProxy struct {
-	Address     string
 	Name        string
+	Address     string
+	Server      *dns.Server
+	Redirection *firewall.Redirection
 	Nameserver  string
 	NetProtocol string
-	Redirection *firewall.Redirection
 	Script      *DnsProxyScript
-	Server      *dns.Server
+	CertFile    string
+	KeyFile     string
+	Blacklist   []string
+	Whitelist   []string
 	Sess        *session.Session
 
 	doRedirect bool
@@ -34,11 +41,13 @@ type DNSProxy struct {
 	tag        string
 }
 
-func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, nameserver string, netProtocol string, proxyPort int, scriptPath string) error {
+func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, nameserver string, netProtocol string, proxyPort int, scriptPath string, certFile string, keyFile string) error {
 	var err error
 
 	p.Address = address
 	p.doRedirect = doRedirect
+	p.CertFile = certFile
+	p.KeyFile = keyFile
 
 	if scriptPath != "" {
 		if err, p.Script = LoadDnsProxyScript(scriptPath, p.Sess); err != nil {
@@ -77,9 +86,10 @@ func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, names
 			}
 			res = p.onResponseFilter(req, res, clientIP)
 			if res == nil {
-				p.Error("response filter returned nil")
+				p.Debug("response is nil")
 				m.SetRcode(req, dns.RcodeServerFailure)
 				w.WriteMsg(m)
+				return
 			} else {
 				if err := w.WriteMsg(res); err != nil {
 					p.Error("Error writing response: %s", err)
@@ -98,14 +108,35 @@ func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, names
 		Handler: handler,
 	}
 
+	if netProtocol == "tcp-tls" && p.CertFile != "" && p.KeyFile != "" {
+		rawCert, _ := ioutil.ReadFile(p.CertFile)
+		rawKey, _ := ioutil.ReadFile(p.KeyFile)
+		ourCa, err := tls.X509KeyPair(rawCert, rawKey)
+		if err != nil {
+			return err
+		}
+
+		if ourCa.Leaf, err = x509.ParseCertificate(ourCa.Certificate[0]); err != nil {
+			return err
+		}
+
+		p.Server.TLSConfig = &tls.Config{
+			Certificates: []tls.Certificate{ourCa},
+		}
+	}
+
 	if p.doRedirect {
 		if !p.Sess.Firewall.IsForwardingEnabled() {
 			p.Info("enabling forwarding.")
 			p.Sess.Firewall.EnableForwarding(true)
 		}
 
+		redirectProtocol := netProtocol
+		if redirectProtocol == "tcp-tls" {
+			redirectProtocol = "tcp"
+		}
 		p.Redirection = firewall.NewRedirection(p.Sess.Interface.Name(),
-			netProtocol,
+			redirectProtocol,
 			dnsPort,
 			p.Address,
 			proxyPort)

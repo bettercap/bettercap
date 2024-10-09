@@ -6,43 +6,60 @@ import (
 	"github.com/miekg/dns"
 )
 
-func shortenResourceRecords(records []string) []string {
-	shorterRecords := []string{}
-	for _, record := range records {
-		shorterRecord := strings.ReplaceAll(record, "\t", " ")
-		shorterRecords = append(shorterRecords, shorterRecord)
+func questionsToStrings(qs []dns.Question) []string {
+	questions := []string{}
+	for _, q := range qs {
+		questions = append(questions, tabsToSpaces(q.String()))
 	}
-	return shorterRecords
+	return questions
 }
 
-func (p *DNSProxy) logRequestAction(j *JSQuery) {
+func recordsToStrings(rrs []dns.RR) []string {
+	records := []string{}
+	for _, rr := range rrs {
+		records = append(records, tabsToSpaces(rr.String()))
+	}
+	return records
+}
+
+func tabsToSpaces(s string) string {
+	return strings.ReplaceAll(s, "\t", " ")
+}
+
+func (p *DNSProxy) logRequestAction(m *dns.Msg, clientIP string) {
+	var questions []string
+	for _, q := range m.Question {
+		questions = append(questions, tabsToSpaces(q.String()))
+	}
 	p.Sess.Events.Add(p.Name+".spoofed-request", struct {
 		Client    string
 		Questions []string
 	}{
-		j.Client["IP"],
-		shortenResourceRecords(j.Questions),
+		clientIP,
+		questions,
 	})
 }
 
-func (p *DNSProxy) logResponseAction(j *JSQuery) {
+func (p *DNSProxy) logResponseAction(m *dns.Msg, clientIP string) {
 	p.Sess.Events.Add(p.Name+".spoofed-response", struct {
 		client      string
-		Extras      []string
 		Answers     []string
+		Extras      []string
 		Nameservers []string
 		Questions   []string
 	}{
-		j.Client["IP"],
-		shortenResourceRecords(j.Extras),
-		shortenResourceRecords(j.Answers),
-		shortenResourceRecords(j.Nameservers),
-		shortenResourceRecords(j.Questions),
+		clientIP,
+		recordsToStrings(m.Answer),
+		recordsToStrings(m.Extra),
+		recordsToStrings(m.Ns),
+		questionsToStrings(m.Question),
 	})
 }
 
 func (p *DNSProxy) onRequestFilter(query *dns.Msg, clientIP string) (req, res *dns.Msg) {
-	p.Debug("< %s %s", clientIP, query.Question)
+	p.Debug("< %s %s",
+		clientIP,
+		strings.Join(questionsToStrings(query.Question), ","))
 
 	// do we have a proxy script?
 	if p.Script == nil {
@@ -53,12 +70,14 @@ func (p *DNSProxy) onRequestFilter(query *dns.Msg, clientIP string) (req, res *d
 	jsreq, jsres := p.Script.OnRequest(query, clientIP)
 	if jsreq != nil {
 		// the request has been changed by the script
-		p.logRequestAction(jsreq)
-		return jsreq.ToQuery(), nil
+		req := jsreq.ToQuery()
+		p.logRequestAction(req, clientIP)
+		return req, nil
 	} else if jsres != nil {
 		// a fake response has been returned by the script
-		p.logResponseAction(jsres)
-		return query, jsres.ToQuery()
+		res := jsres.ToQuery()
+		p.logResponseAction(res, clientIP)
+		return query, res
 	}
 
 	return query, nil
@@ -70,15 +89,21 @@ func (p *DNSProxy) onResponseFilter(req, res *dns.Msg, clientIP string) *dns.Msg
 		return nil
 	}
 
-	p.Debug("> %s %s", clientIP, res.Answer)
+	p.Debug("> %s %s [%s] [%s] [%s]",
+		clientIP,
+		strings.Join(questionsToStrings(res.Question), ","),
+		strings.Join(recordsToStrings(res.Answer), ","),
+		strings.Join(recordsToStrings(res.Extra), ","),
+		strings.Join(recordsToStrings(res.Ns), ","))
 
 	// do we have a proxy script?
 	if p.Script != nil {
 		_, jsres := p.Script.OnResponse(req, res, clientIP)
 		if jsres != nil {
 			// the response has been changed by the script
-			p.logResponseAction(jsres)
-			return jsres.ToQuery()
+			res := jsres.ToQuery()
+			p.logResponseAction(res, clientIP)
+			return res
 		}
 	}
 
