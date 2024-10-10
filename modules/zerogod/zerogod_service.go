@@ -17,6 +17,7 @@ type ServiceData struct {
 	Records   []string          `yaml:"records,omitempty"`   // Service DNS text records
 	Responder string            `yaml:"responder,omitempty"` // Optional IP to use instead of our tcp acceptor
 	IPP       map[string]string `yaml:"ipp,omitempty"`       // Optional IPP attributes map
+	HTTP      map[string]string `yaml:"http,omitempty"`      // Optional HTTP URIs map
 
 	server *zeroconf.Server
 }

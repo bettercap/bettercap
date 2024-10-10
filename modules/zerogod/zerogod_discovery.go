@@ -27,6 +27,7 @@ type BrowsingEvent struct {
 	Endpoint  *network.Endpoint `json:"endpoint"`
 	Services  []string          `json:"services"`
 	Instances []string          `json:"instances"`
+	Text      []string          `json:"text"`
 	Query     layers.DNS        `json:"query"`
 }
 
@@ -258,11 +259,12 @@ func (mod *ZeroGod) onPacket(pkt gopacket.Packet) {
 	}
 
 	instances := make([]string, 0)
+	text := make([]string, 0)
 	for _, answer := range append(append(dns.Answers, dns.Additionals...), dns.Authorities...) {
 		if answer.Class == layers.DNSClassIN && answer.Type == layers.DNSTypePTR {
 			instances = append(instances, string(answer.PTR))
-		} else {
-			instances = append(instances, answer.String())
+		} else if answer.Type == layers.DNSTypeTXT {
+			text = append(text, string(answer.TXT))
 		}
 	}
 
@@ -271,6 +273,7 @@ func (mod *ZeroGod) onPacket(pkt gopacket.Packet) {
 		Query:     dns,
 		Services:  services,
 		Instances: instances,
+		Text:      text,
 		Endpoint:  mod.Session.Lan.GetByIp(srcIP.String()),
 	}
 

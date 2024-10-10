@@ -67,7 +67,7 @@ func ippOnGetJobAttributes(ctx *HandlerContext, ipp_req *ipp.Request) {
 	}
 	ipp_resp.OperationAttributes["job-originating-user-name"] = []ipp.Attribute{
 		{
-			Value: "bettercap", // TODO: check if this must match the actual job user from a print operation
+			Value: "bettercap",
 			Tag:   ipp.TagName,
 		},
 	}
