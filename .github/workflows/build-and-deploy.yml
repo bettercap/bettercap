@@ -8,35 +8,37 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os.pretty }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os.runs-on }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        go-version: ['1.22.x']
-        include:
-          - os: ubuntu-latest
-            arch: amd64
-            target_os: linux
-            target_arch: amd64
-          - os: ubuntu-latest
-            arch: arm64
-            target_os: linux
-            target_arch: aarch64
-          - os: macos-latest
-            arch: arm64
-            target_os: darwin
-            target_arch: arm64
-          - os: windows-latest
-            arch: amd64
-            target_os: windows
-            target_arch: amd64
+        os:
+          - name: darwin
+            runs-on: [macos-latest]
+            pretty: 🍎 macOS
+          - name: linux
+            runs-on: [ubuntu-latest]
+            pretty: 🐧 Linux
+          - name: windows
+            runs-on: [windows-latest]
+            pretty: 🪟 Windows
             output: bettercap.exe
+        arch: [amd64, arm64]
+        go: [1.22.x]
+        exclude:
+          - os:
+              name: darwin
+            arch: amd64
+          # Linux ARM64 images are not yet publicly available (https://github.com/actions/runner-images)
+          - os:
+              name: linux
+            arch: arm64
+          - os:
+              name: windows
+            arch: arm64
 
     env:
-      TARGET_OS: ${{ matrix.target_os }}
-      TARGET_ARCH: ${{ matrix.target_arch }}
-      GO_VERSION: ${{ matrix.go-version }}
-      OUTPUT: ${{ matrix.output || 'bettercap' }}
+      OUTPUT: ${{ matrix.os.output || 'bettercap' }}
 
     steps:
     - name: Checkout Code
@@ -45,19 +47,18 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: ${{ matrix.go }}
 
     - name: Install Dependencies
-      if: ${{ matrix.os == 'ubuntu-latest' }}
+      if: ${{ matrix.os.name == 'linux' }}
       run: sudo apt-get update && sudo apt-get install -y p7zip-full libpcap-dev libnetfilter-queue-dev libusb-1.0-0-dev
 
     - name: Install Dependencies (macOS)
-      if: ${{ matrix.os == 'macos-latest' }}
+      if: ${{ matrix.os.name == 'macos' }}
       run: brew install libpcap libusb p7zip
 
-
     - name: Install libusb via mingw (Windows)
-      if: ${{ matrix.os == 'windows-latest' }}
+      if: ${{ matrix.os.name == 'windows' }}
       uses: msys2/setup-msys2@v2
       with:
         install: |-
@@ -65,7 +66,7 @@ jobs:
           mingw64/mingw-w64-x86_64-pkg-config
 
     - name: Install other Dependencies (Windows)
-      if: ${{ matrix.os == 'windows-latest' }}
+      if: ${{ matrix.os.name == 'windows' }}
       run: |
         choco install openssl.light -y
         choco install make -y
@@ -81,25 +82,36 @@ jobs:
     - name: Verify Build
       run: |
         file "${{ env.OUTPUT }}"
-        openssl dgst -sha256 "${{ env.OUTPUT }}" | tee bettercap_${{ matrix.target_os }}_${{ matrix.target_arch }}_${{ env.VERSION }}.sha256
-        7z a "bettercap_${{ matrix.target_os }}_${{ matrix.target_arch }}_${{ env.VERSION }}.zip" "${{ env.OUTPUT }}" "bettercap_${{ matrix.target_os }}_${{ matrix.target_arch }}_${{ env.VERSION }}.sha256"
+        openssl dgst -sha256 "${{ env.OUTPUT }}" | tee bettercap_${{ matrix.os.name }}_${{ matrix.arch }}.sha256
+        7z a "bettercap_${{ matrix.os.name }}_${{ matrix.arch }}.zip" "${{ env.OUTPUT }}" "bettercap_${{ matrix.os.name }}_${{ matrix.arch }}.sha256"
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts-${{ matrix.os.name }}-${{ matrix.arch }}
+        path: |
+          bettercap_*.zip
+          bettercap_*.sha256
 
   deploy:
     needs: [build]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     name: Release
     runs-on: ubuntu-latest
     steps:
-        - name: Checkout Code
-          uses: actions/checkout@v2
+        - name: Download Artifacts
+          uses: actions/download-artifact@v4
           with:
-            submodules: true
+            pattern: release-artifacts-*
+            merge-multiple: true
+            path: dist/
+
+        - name: Release Assets
+          run: ls -l dist
 
         - name: Upload Release Assets
-          uses: softprops/action-gh-release@v1
+          uses: softprops/action-gh-release@v2
+          if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
           with:
-            files: |
-                bettercap_*.zip
-                bettercap_*.sha256
+            files: dist/bettercap_*
     env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
