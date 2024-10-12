@@ -40,6 +40,7 @@ func jsPropToMap(obj map[string]interface{}, key string) map[string]interface{} 
 	if v, ok := obj[key].(map[string]interface{}); ok {
 		return v
 	}
+	log.Debug("error converting JS property to map[string]interface{} where key is: %s", key)
 	return map[string]interface{}{}
 }
 
@@ -47,6 +48,7 @@ func jsPropToMapArray(obj map[string]interface{}, key string) []map[string]inter
 	if v, ok := obj[key].([]map[string]interface{}); ok {
 		return v
 	}
+	log.Debug("error converting JS property to []map[string]interface{} where key is: %s", key)
 	return []map[string]interface{}{}
 }
 
@@ -54,6 +56,7 @@ func jsPropToString(obj map[string]interface{}, key string) string {
 	if v, ok := obj[key].(string); ok {
 		return v
 	}
+	log.Debug("error converting JS property to string where key is: %s", key)
 	return ""
 }
 
@@ -61,6 +64,7 @@ func jsPropToStringArray(obj map[string]interface{}, key string) []string {
 	if v, ok := obj[key].([]string); ok {
 		return v
 	}
+	log.Debug("error converting JS property to []string where key is: %s", key)
 	return []string{}
 }
 
@@ -68,6 +72,7 @@ func jsPropToUint8(obj map[string]interface{}, key string) uint8 {
 	if v, ok := obj[key].(uint8); ok {
 		return v
 	}
+	log.Debug("error converting JS property to uint8 where key is: %s", key)
 	return 0
 }
 
@@ -75,6 +80,7 @@ func jsPropToUint8Array(obj map[string]interface{}, key string) []uint8 {
 	if v, ok := obj[key].([]uint8); ok {
 		return v
 	}
+	log.Debug("error converting JS property to []uint8 where key is: %s", key)
 	return []uint8{}
 }
 
@@ -82,6 +88,7 @@ func jsPropToUint16(obj map[string]interface{}, key string) uint16 {
 	if v, ok := obj[key].(uint16); ok {
 		return v
 	}
+	log.Debug("error converting JS property to uint16 where key is: %s", key)
 	return 0
 }
 
@@ -89,6 +96,7 @@ func jsPropToUint16Array(obj map[string]interface{}, key string) []uint16 {
 	if v, ok := obj[key].([]uint16); ok {
 		return v
 	}
+	log.Debug("error converting JS property to []uint16 where key is: %s", key)
 	return []uint16{}
 }
 
@@ -96,6 +104,7 @@ func jsPropToUint32(obj map[string]interface{}, key string) uint32 {
 	if v, ok := obj[key].(uint32); ok {
 		return v
 	}
+	log.Debug("error converting JS property to uint32 where key is: %s", key)
 	return 0
 }
 
@@ -103,6 +112,7 @@ func jsPropToUint64(obj map[string]interface{}, key string) uint64 {
 	if v, ok := obj[key].(uint64); ok {
 		return v
 	}
+	log.Debug("error converting JS property to uint64 where key is: %s", key)
 	return 0
 }
 
