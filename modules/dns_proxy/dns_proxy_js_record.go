@@ -8,76 +8,6 @@ import (
 	"github.com/miekg/dns"
 )
 
-func jsPropToMap(obj map[string]interface{}, key string) map[string]interface{} {
-	if v, ok := obj[key].(map[string]interface{}); ok {
-		return v
-	}
-	return map[string]interface{}{}
-}
-
-func jsPropToMapArray(obj map[string]interface{}, key string) []map[string]interface{} {
-	if v, ok := obj[key].([]map[string]interface{}); ok {
-		return v
-	}
-	return []map[string]interface{}{}
-}
-
-func jsPropToString(obj map[string]interface{}, key string) string {
-	if v, ok := obj[key].(string); ok {
-		return v
-	}
-	return ""
-}
-
-func jsPropToStringArray(obj map[string]interface{}, key string) []string {
-	if v, ok := obj[key].([]string); ok {
-		return v
-	}
-	return []string{}
-}
-
-func jsPropToUint8(obj map[string]interface{}, key string) uint8 {
-	if v, ok := obj[key].(uint8); ok {
-		return v
-	}
-	return 0
-}
-
-func jsPropToUint8Array(obj map[string]interface{}, key string) []uint8 {
-	if v, ok := obj[key].([]uint8); ok {
-		return v
-	}
-	return []uint8{}
-}
-
-func jsPropToUint16(obj map[string]interface{}, key string) uint16 {
-	if v, ok := obj[key].(uint16); ok {
-		return v
-	}
-	return 0
-}
-
-func jsPropToUint16Array(obj map[string]interface{}, key string) []uint16 {
-	if v, ok := obj[key].([]uint16); ok {
-		return v
-	}
-	return []uint16{}
-}
-
-func jsPropToUint32(obj map[string]interface{}, key string) uint32 {
-	if v, ok := obj[key].(uint32); ok {
-		return v
-	}
-	return 0
-}
-
-func jsPropToUint64(obj map[string]interface{}, key string) uint64 {
-	if v, ok := obj[key].(uint64); ok {
-		return v
-	}
-	return 0
-}
-
 func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error) {
 	header := rr.Header()
 
@@ -1007,7 +937,14 @@ func ToRR(jsRecord map[string]interface{}) (rr dns.RR, err error) {
 	// case dns.TypeDOA:
 	// case dns.TypeSINK:
 	default:
-		return nil, fmt.Errorf("error converting to dns.RR: unknown type: %d", header.Rrtype)
+		if rdata, ok := jsRecord["Rdata"].(string); ok {
+			rr = &dns.RFC3597{
+				Hdr:   header,
+				Rdata: rdata,
+			}
+		} else {
+			return nil, fmt.Errorf("error converting to dns.RR: unknown type: %d", header.Rrtype)
+		}
 	}
 
 	return rr, nil
