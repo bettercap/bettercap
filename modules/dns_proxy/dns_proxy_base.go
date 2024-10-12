@@ -55,8 +55,6 @@ func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, names
 		} else {
 			p.Debug("proxy script %s loaded.", scriptPath)
 		}
-	} else {
-		p.Script = nil
 	}
 
 	dnsClient := dns.Client{
