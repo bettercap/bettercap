@@ -51,7 +51,7 @@ func (p *DNSProxy) shouldProxy(clientIP string) bool {
 
 	// check if this client is in the blacklist
 	for _, ip := range p.Blacklist {
-		if clientIP == ip {
+		if ip == "*" || clientIP == ip {
 			return false
 		}
 	}

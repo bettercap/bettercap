@@ -113,7 +113,7 @@ func NewDnsProxy(s *session.Session) *DnsProxy {
 		"Address to bind the DNS proxy to."))
 
 	mod.AddParam(session.NewStringParameter("dns.proxy.blacklist", "", "",
-		"Comma separated list of client IPs to skip while proxying."))
+		"Comma separated list of client IPs to skip while proxying (wildcard allowed)."))
 
 	mod.AddParam(session.NewStringParameter("dns.proxy.whitelist", "", "",
 		"Comma separated list of client IPs to proxy if the blacklist is used."))
