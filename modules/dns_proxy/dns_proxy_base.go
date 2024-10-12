@@ -41,6 +41,24 @@ type DNSProxy struct {
 	tag        string
 }
 
+func (p *DNSProxy) shouldProxy(clientIP string) bool {
+	// check if this client is in the whitelist
+	for _, ip := range p.Whitelist {
+		if clientIP == ip {
+			return true
+		}
+	}
+
+	// check if this client is in the blacklist
+	for _, ip := range p.Blacklist {
+		if clientIP == ip {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, nameserver string, netProtocol string, proxyPort int, scriptPath string, certFile string, keyFile string) error {
 	var err error
 
