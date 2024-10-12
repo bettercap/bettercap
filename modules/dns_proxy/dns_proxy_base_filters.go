@@ -29,16 +29,12 @@ func tabsToSpaces(s string) string {
 }
 
 func (p *DNSProxy) logRequestAction(m *dns.Msg, clientIP string) {
-	var questions []string
-	for _, q := range m.Question {
-		questions = append(questions, tabsToSpaces(q.String()))
-	}
 	p.Sess.Events.Add(p.Name+".spoofed-request", struct {
 		Client    string
 		Questions []string
 	}{
 		clientIP,
-		questions,
+		questionsToStrings(m.Question),
 	})
 }
 
