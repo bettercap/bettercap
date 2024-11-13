@@ -2,6 +2,7 @@ package http_proxy
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/bettercap/bettercap/v2/log"
 	"github.com/bettercap/bettercap/v2/session"
@@ -30,6 +31,31 @@ func LoadHttpProxyScript(path string, sess *session.Session) (err error, s *Http
 	// define session pointer
 	if err = plug.Set("env", sess.Env.Data); err != nil {
 		log.Error("Error while defining environment: %+v", err)
+		return
+	}
+
+	// define addSessionEvent function
+	err = plug.Set("addSessionEvent", func(call otto.FunctionCall) otto.Value {
+		if len(call.ArgumentList) < 2 {
+			log.Error("Failed to execute 'addSessionEvent' in HTTP proxy: 2 arguments required, but only %d given.", len(call.ArgumentList))
+			return otto.FalseValue()
+		}
+		ottoTag := call.Argument(0)
+		if !ottoTag.IsString() {
+			log.Error("Failed to execute 'addSessionEvent' in HTTP proxy: first argument must be a string.")
+			return otto.FalseValue()
+		}
+		tag := strings.TrimSpace(ottoTag.String())
+		if tag == "" {
+			log.Error("Failed to execute 'addSessionEvent' in HTTP proxy: tag cannot be empty.")
+			return otto.FalseValue()
+		}
+		data := call.Argument(1)
+		sess.Events.Add(tag, data)
+		return otto.TrueValue()
+	})
+	if err != nil {
+		log.Error("Error while defining addSessionEvent function: %+v", err)
 		return
 	}
 
