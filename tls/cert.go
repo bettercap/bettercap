@@ -40,6 +40,14 @@ var (
 		OrganizationalUnit: "https://certs.godaddy.com/repository/",
 		CommonName:         "Go Daddy Secure Certificate Authority - G2",
 	}
+	DefaultCloudflareDNSConfig = CertConfig{
+		Bits:               4096,
+		Country:            "US",
+		Locality:           "San Francisco",
+		Organization:       "Cloudflare, Inc.",
+		OrganizationalUnit: "",
+		CommonName:         "cloudflare-dns.com",
+	}
 )
 
 func CertConfigToModule(prefix string, m *session.SessionModule, defaults CertConfig) {
