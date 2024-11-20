@@ -330,6 +330,7 @@ func (s *Session) Start() error {
 	plugin.Defines["saveJSON"] = jsSaveJSONFunc
 	plugin.Defines["saveToFile"] = jsSaveToFileFunc
 	plugin.Defines["onEvent"] = jsOnEventFunc
+	plugin.Defines["removeEventListener"] = jsRemoveEventListenerFunc
 	plugin.Defines["session"] = s
 
 	// load the script here so the session and its internal objects are ready
