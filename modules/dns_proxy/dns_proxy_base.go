@@ -14,6 +14,8 @@ import (
 	"github.com/evilsocket/islazy/log"
 
 	"github.com/miekg/dns"
+
+	"github.com/robertkrimen/otto"
 )
 
 const (
@@ -225,6 +227,14 @@ func (p *DNSProxy) Start() {
 }
 
 func (p *DNSProxy) Stop() error {
+	if p.Script != nil {
+		if p.Script.Plugin.HasFunc("onExit") {
+			if _, err := p.Script.Call("onExit"); err != nil {
+				log.Error("Error while executing onExit callback: %s", "\nTraceback:\n  "+err.(*otto.Error).String())
+			}
+		}
+	}
+
 	if p.doRedirect && p.Redirection != nil {
 		p.Debug("disabling redirection %s", p.Redirection.String())
 		if err := p.Sess.Firewall.EnableRedirection(p.Redirection, false); err != nil {
