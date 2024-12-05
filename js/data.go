@@ -41,7 +41,7 @@ func textDecode(call otto.FunctionCall) otto.Value {
 	if err != nil {
 		return ReportError("textDecode: could not export argument value:", err.Error())
 	}
-	byteArr, ok := arg.([]byte)
+	byteArr, ok := arg.([]uint8)
 	if !ok {
 		return ReportError("textDecode: single argument must be of type []uint8.", argc)
 	}
