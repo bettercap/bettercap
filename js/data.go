@@ -9,24 +9,46 @@ import (
 )
 
 func btoa(call otto.FunctionCall) otto.Value {
-	varValue := base64.StdEncoding.EncodeToString([]byte(call.Argument(0).String()))
-	v, err := otto.ToValue(varValue)
+	argv := call.ArgumentList
+	argc := len(argv)
+	if argc != 1 {
+		return ReportError("btoa: expected 1 argument, %d given instead.", argc)
+	}
+
+	arg := argv[0]
+	if (!arg.IsString()) {
+		return ReportError("btoa: single argument must be a string.")
+	}
+
+	encoded := base64.StdEncoding.EncodeToString([]byte(arg.String()))
+	v, err := otto.ToValue(encoded)
 	if err != nil {
-		return ReportError("Could not convert to string: %s", varValue)
+		return ReportError("btoa: could not convert to string: %s", err.Error())
 	}
 
 	return v
 }
 
 func atob(call otto.FunctionCall) otto.Value {
-	varValue, err := base64.StdEncoding.DecodeString(call.Argument(0).String())
-	if err != nil {
-		return ReportError("Could not decode string: %s", call.Argument(0).String())
+	argv := call.ArgumentList
+	argc := len(argv)
+	if argc != 1 {
+		return ReportError("atob: expected 1 argument, %d given instead.", argc)
 	}
 
-	v, err := otto.ToValue(string(varValue))
+	arg := argv[0]
+	if (!arg.IsString()) {
+		return ReportError("btoa: single argument must be a string.")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(arg.String())
 	if err != nil {
-		return ReportError("Could not convert to string: %s", varValue)
+		return ReportError("atob: could not decode string: %s", err.Error())
+	}
+
+	v, err := otto.ToValue(string(decoded))
+	if err != nil {
+		return ReportError("atob: could not convert to string: %s", decoded)
 	}
 
 	return v
@@ -39,7 +61,12 @@ func gzipCompress(call otto.FunctionCall) otto.Value {
 		return ReportError("gzipCompress: expected 1 argument, %d given instead.", argc)
 	}
 
-	uncompressedBytes := []byte(argv[0].String())
+	arg := argv[0]
+	if (!arg.IsString()) {
+		return ReportError("btoa: single argument must be a string.")
+	}
+
+	uncompressedBytes := []byte(arg.String())
 
 	var writerBuffer bytes.Buffer
 	gzipWriter := gzip.NewWriter(&writerBuffer)
@@ -53,7 +80,7 @@ func gzipCompress(call otto.FunctionCall) otto.Value {
 
 	v, err := otto.ToValue(string(compressedBytes))
 	if err != nil {
-		return ReportError("Could not convert to string: %s", err.Error())
+		return ReportError("gzipCompress: could not convert to string: %s", err.Error())
 	}
 
 	return v
@@ -83,7 +110,7 @@ func gzipDecompress(call otto.FunctionCall) otto.Value {
 	decompressedBytes := decompressedBuffer.Bytes()
 	v, err := otto.ToValue(string(decompressedBytes))
 	if err != nil {
-		return ReportError("Could not convert to string: %s", err.Error())
+		return ReportError("gzipDecompress: could not convert to string: %s", err.Error())
 	}
 
 	return v
