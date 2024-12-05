@@ -39,11 +39,11 @@ func textDecode(call otto.FunctionCall) otto.Value {
 
 	arg, err := argv[0].Export()
 	if err != nil {
-		return ReportError("textDecode: could not export argument value:", err.Error())
+		return ReportError("textDecode: could not export argument value: %s", err.Error())
 	}
 	byteArr, ok := arg.([]uint8)
 	if !ok {
-		return ReportError("textDecode: single argument must be of type []uint8.", argc)
+		return ReportError("textDecode: single argument must be of type []uint8.")
 	}
 
 	decoded := string(byteArr)
@@ -95,7 +95,7 @@ func atob(call otto.FunctionCall) otto.Value {
 
 	v, err := otto.ToValue(string(decoded))
 	if err != nil {
-		return ReportError("atob: could not convert to string: %s", decoded)
+		return ReportError("atob: could not convert to string: %s", err.Error())
 	}
 
 	return v
