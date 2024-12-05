@@ -8,6 +8,53 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
+func textEncode(call otto.FunctionCall) otto.Value {
+	argv := call.ArgumentList
+	argc := len(argv)
+	if argc != 1 {
+		return ReportError("textEncode: expected 1 argument, %d given instead.", argc)
+	}
+
+	arg := argv[0]
+	if (!arg.IsString()) {
+		return ReportError("textEncode: single argument must be a string.")
+	}
+
+	encoded := []byte(arg.String())
+	vm := otto.New()
+	v, err := vm.ToValue(encoded)
+	if err != nil {
+		return ReportError("textEncode: could not convert to []uint8: %s", err.Error())
+	}
+
+	return v
+}
+
+func textDecode(call otto.FunctionCall) otto.Value {
+	argv := call.ArgumentList
+	argc := len(argv)
+	if argc != 1 {
+		return ReportError("textDecode: expected 1 argument, %d given instead.", argc)
+	}
+
+	arg, err := argv[0].Export()
+	if err != nil {
+		return ReportError("textDecode: could not export argument value:", err.Error())
+	}
+	byteArr, ok := arg.([]byte)
+	if !ok {
+		return ReportError("textDecode: single argument must be of type []uint8.", argc)
+	}
+
+	decoded := string(byteArr)
+	v, err := otto.ToValue(decoded)
+	if err != nil {
+		return ReportError("textDecode: could not convert to string: %s", err.Error())
+	}
+
+	return v
+}
+
 func btoa(call otto.FunctionCall) otto.Value {
 	argv := call.ArgumentList
 	argc := len(argv)
