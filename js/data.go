@@ -85,7 +85,7 @@ func atob(call otto.FunctionCall) otto.Value {
 
 	arg := argv[0]
 	if (!arg.IsString()) {
-		return ReportError("btoa: single argument must be a string.")
+		return ReportError("atob: single argument must be a string.")
 	}
 
 	decoded, err := base64.StdEncoding.DecodeString(arg.String())
