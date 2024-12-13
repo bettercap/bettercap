@@ -6,13 +6,14 @@ import (
 	"time"
 )
 
+// CANDevice represents a CAN (Controller Area Network) device with activity tracking.
 type CANDevice struct {
 	sync.Mutex
-	LastSeen    time.Time
-	Name        string
-	Description string
-	Frames      uint64
-	Read        uint64
+	LastSeen    time.Time // Timestamp of the last activity.
+	Name        string    // Name of the device.
+	Description string    // Description of the device.
+	Frames      uint64    // Number of frames sent/received.
+	Read        uint64    // Total bytes read.
 }
 
 type canDeviceJSON struct {
@@ -23,18 +24,18 @@ type canDeviceJSON struct {
 	Read        uint64    `json:"read"`
 }
 
-func NewCANDevice(name string, description string, payload []byte) *CANDevice {
-	dev := &CANDevice{
+// NewCANDevice initializes a new CANDevice with the provided name, description, and payload.
+func NewCANDevice(name, description string, payload []byte) *CANDevice {
+	return &CANDevice{
 		LastSeen:    time.Now(),
 		Name:        name,
 		Description: description,
-		Read:        uint64(len(payload)),
 		Frames:      1,
+		Read:        uint64(len(payload)),
 	}
-
-	return dev
 }
 
+// MarshalJSON customizes the JSON serialization of CANDevice.
 func (dev *CANDevice) MarshalJSON() ([]byte, error) {
 	dev.Lock()
 	defer dev.Unlock()
@@ -43,21 +44,20 @@ func (dev *CANDevice) MarshalJSON() ([]byte, error) {
 		LastSeen:    dev.LastSeen,
 		Name:        dev.Name,
 		Description: dev.Description,
-		Read:        dev.Read,
 		Frames:      dev.Frames,
+		Read:        dev.Read,
 	}
 
 	return json.Marshal(doc)
 }
 
+// AddPayload updates the CANDevice's statistics with the new payload data.
 func (dev *CANDevice) AddPayload(payload []byte) {
 	dev.Lock()
 	defer dev.Unlock()
 
-	sz := len(payload)
-	if payload != nil && sz > 0 {
-		dev.Read += uint64(sz)
+	if len(payload) > 0 {
+		dev.Read += uint64(len(payload))
 	}
-
-	dev.Frames += 1
+	dev.Frames++
 }
