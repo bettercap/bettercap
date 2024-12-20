@@ -1,7 +1,7 @@
 package packets
 
 import (
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket/layers"
 	"net"
 )
 
@@ -37,11 +37,11 @@ func NewTCPSyn(from net.IP, from_hw net.HardwareAddr, to net.IP, to_hw net.Hardw
 			EthernetType: layers.EthernetTypeIPv6,
 		}
 		ip6 := layers.IPv6{
-			Version: 6,
+			Version:    6,
 			NextHeader: layers.IPProtocolTCP,
 			HopLimit:   64,
-			SrcIP:   from,
-			DstIP:   to,
+			SrcIP:      from,
+			DstIP:      to,
 		}
 		tcp := layers.TCP{
 			SrcPort: layers.TCPPort(srcPort),

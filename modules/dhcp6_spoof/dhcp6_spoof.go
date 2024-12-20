@@ -13,12 +13,12 @@ import (
 	"github.com/bettercap/bettercap/v2/packets"
 	"github.com/bettercap/bettercap/v2/session"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
+	"github.com/gopacket/gopacket/pcap"
 
 	// TODO: refactor to use gopacket when gopacket folks
-	// will fix this > https://github.com/google/gopacket/issues/334
+	// will fix this > https://github.com/gopacket/gopacket/issues/334
 	"github.com/mdlayher/dhcp6"
 	"github.com/mdlayher/dhcp6/dhcp6opts"
 

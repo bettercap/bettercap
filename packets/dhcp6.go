@@ -3,7 +3,7 @@ package packets
 import (
 	"errors"
 	// TODO: refactor to use gopacket when gopacket folks
-	// will fix this > https://github.com/google/gopacket/issues/334
+	// will fix this > https://github.com/gopacket/gopacket/issues/334
 	"github.com/mdlayher/dhcp6"
 )
 

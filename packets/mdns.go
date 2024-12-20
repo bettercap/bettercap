@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/evilsocket/islazy/str"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
 )
 
 const MDNSPort = 5353
