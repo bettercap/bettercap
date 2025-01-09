@@ -221,6 +221,10 @@ func (mod *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", 400)
 	}
 
+	rescueStdout := os.Stdout
+	stdoutReader, stdoutWriter, _ := os.Pipe()
+	os.Stdout = stdoutWriter
+
 	for _, aCommand := range session.ParseCommands(cmd.Command) {
 		if err = mod.Session.Run(aCommand); err != nil {
 			http.Error(w, err.Error(), 400)
@@ -228,7 +232,11 @@ func (mod *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	mod.toJSON(w, APIResponse{Success: true})
+	stdoutWriter.Close()
+	out, _ := io.ReadAll(stdoutReader)
+	os.Stdout = rescueStdout
+
+	mod.toJSON(w, APIResponse{Success: true, Message: string(out)})
 }
 
 func (mod *RestAPI) getEvents(limit int) []session.Event {
