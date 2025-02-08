@@ -6,10 +6,10 @@ GO       ?= go
 all: build
 
 build: resources
-	$(GOFLAGS) $(GO) build -o $(TARGET) .
+	$(GO) build $(GOFLAGS) -o $(TARGET) .
 
 build_with_race_detector: resources
-	$(GOFLAGS) $(GO) build -race -o $(TARGET) .
+	$(GO) build $(GOFLAGS) -race -o $(TARGET) .
 
 resources: network/manuf.go
 
@@ -24,13 +24,13 @@ docker:
 	@docker build -t bettercap:latest .
 
 test:
-	$(GOFLAGS) $(GO) test -covermode=atomic -coverprofile=cover.out ./...
+	$(GO) test -covermode=atomic -coverprofile=cover.out ./...
 
 html_coverage: test
-	$(GOFLAGS) $(GO) tool cover -html=cover.out -o cover.out.html
+	$(GO) tool cover -html=cover.out -o cover.out.html
 
 benchmark: server_deps
-	$(GOFLAGS) $(GO) test -v -run=doNotRunTests -bench=. -benchmem ./...
+	$(GO) test -v -run=doNotRunTests -bench=. -benchmem ./...
 
 fmt:
 	$(GO) fmt -s -w $(PACKAGES)
