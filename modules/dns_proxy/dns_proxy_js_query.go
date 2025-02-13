@@ -3,6 +3,7 @@ package dns_proxy
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 
 	"github.com/bettercap/bettercap/v2/log"
 	"github.com/bettercap/bettercap/v2/session"
@@ -40,7 +41,7 @@ func jsPropToMap(obj map[string]interface{}, key string) map[string]interface{} 
 	if v, ok := obj[key].(map[string]interface{}); ok {
 		return v
 	}
-	log.Debug("error converting JS property to map[string]interface{} where key is: %s", key)
+	log.Error("error converting JS property to map[string]interface{} where key is: %s", key)
 	return map[string]interface{}{}
 }
 
@@ -48,7 +49,7 @@ func jsPropToMapArray(obj map[string]interface{}, key string) []map[string]inter
 	if v, ok := obj[key].([]map[string]interface{}); ok {
 		return v
 	}
-	log.Debug("error converting JS property to []map[string]interface{} where key is: %s", key)
+	log.Error("error converting JS property to []map[string]interface{} where key is: %s", key)
 	return []map[string]interface{}{}
 }
 
@@ -56,7 +57,7 @@ func jsPropToString(obj map[string]interface{}, key string) string {
 	if v, ok := obj[key].(string); ok {
 		return v
 	}
-	log.Debug("error converting JS property to string where key is: %s", key)
+	log.Error("error converting JS property to string where key is: %s", key)
 	return ""
 }
 
@@ -64,56 +65,86 @@ func jsPropToStringArray(obj map[string]interface{}, key string) []string {
 	if v, ok := obj[key].([]string); ok {
 		return v
 	}
-	log.Debug("error converting JS property to []string where key is: %s", key)
+	log.Error("error converting JS property to []string where key is: %s", key)
 	return []string{}
 }
 
 func jsPropToUint8(obj map[string]interface{}, key string) uint8 {
-	if v, ok := obj[key].(uint8); ok {
-		return v
+	if v, ok := obj[key].(int64); ok {
+		if v >= 0 && v <= math.MaxUint8 {
+			return uint8(v)
+		}
 	}
-	log.Debug("error converting JS property to uint8 where key is: %s", key)
-	return 0
+	log.Error("error converting JS property to uint8 where key is: %s", key)
+	return uint8(0)
 }
 
 func jsPropToUint8Array(obj map[string]interface{}, key string) []uint8 {
-	if v, ok := obj[key].([]uint8); ok {
-		return v
+	if arr, ok := obj[key].([]interface{}); ok {
+		vArr := make([]uint8, 0, len(arr))
+		for _, item := range arr {
+			if v, ok := item.(int64); ok {
+				if v >= 0 && v <= math.MaxUint8 {
+					vArr = append(vArr, uint8(v))
+				} else {
+					log.Error("error converting JS property to []uint8 where key is: %s", key)
+					return []uint8{}
+				}
+			}
+		}
+		return vArr
 	}
-	log.Debug("error converting JS property to []uint8 where key is: %s", key)
+	log.Error("error converting JS property to []uint8 where key is: %s", key)
 	return []uint8{}
 }
 
 func jsPropToUint16(obj map[string]interface{}, key string) uint16 {
-	if v, ok := obj[key].(uint16); ok {
-		return v
+	if v, ok := obj[key].(int64); ok {
+		if v >= 0 && v <= math.MaxUint16 {
+			return uint16(v)
+		}
 	}
-	log.Debug("error converting JS property to uint16 where key is: %s", key)
-	return 0
+	log.Error("error converting JS property to uint16 where key is: %s", key)
+	return uint16(0)
 }
 
 func jsPropToUint16Array(obj map[string]interface{}, key string) []uint16 {
-	if v, ok := obj[key].([]uint16); ok {
-		return v
+	if arr, ok := obj[key].([]interface{}); ok {
+		vArr := make([]uint16, 0, len(arr))
+		for _, item := range arr {
+			if v, ok := item.(int64); ok {
+				if v >= 0 && v <= math.MaxUint16 {
+					vArr = append(vArr, uint16(v))
+				} else {
+					log.Error("error converting JS property to []uint16 where key is: %s", key)
+					return []uint16{}
+				}
+			}
+		}
+		return vArr
 	}
-	log.Debug("error converting JS property to []uint16 where key is: %s", key)
+	log.Error("error converting JS property to []uint16 where key is: %s", key)
 	return []uint16{}
 }
 
 func jsPropToUint32(obj map[string]interface{}, key string) uint32 {
-	if v, ok := obj[key].(uint32); ok {
-		return v
+	if v, ok := obj[key].(int64); ok {
+		if v >= 0 && v <= math.MaxUint32 {
+			return uint32(v)
+		}
 	}
-	log.Debug("error converting JS property to uint32 where key is: %s", key)
-	return 0
+	log.Error("error converting JS property to uint32 where key is: %s", key)
+	return uint32(0)
 }
 
 func jsPropToUint64(obj map[string]interface{}, key string) uint64 {
-	if v, ok := obj[key].(uint64); ok {
-		return v
+	if v, ok := obj[key].(int64); ok {
+		if v >= 0 {
+			return uint64(v)
+		}
 	}
-	log.Debug("error converting JS property to uint64 where key is: %s", key)
-	return 0
+	log.Error("error converting JS property to uint64 where key is: %s", key)
+	return uint64(0)
 }
 
 func (j *JSQuery) NewHash() string {
@@ -183,8 +214,8 @@ func NewJSQuery(query *dns.Msg, clientIP string) (jsQuery *JSQuery) {
 	for i, question := range query.Question {
 		questions[i] = map[string]interface{}{
 			"Name":   question.Name,
-			"Qtype":  question.Qtype,
-			"Qclass": question.Qclass,
+			"Qtype":  int64(question.Qtype),
+			"Qclass": int64(question.Qclass),
 		}
 	}
 
