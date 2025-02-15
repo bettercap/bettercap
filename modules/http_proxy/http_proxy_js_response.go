@@ -78,7 +78,6 @@ func (j *JSResponse) WasModified() bool {
 
 func (j *JSResponse) CheckIfModifiedAndUpdateHash() bool {
 	newHash := j.NewHash()
-	// body was read
 	if j.bodyRead {
 		// body was read
 		j.refHash = newHash
