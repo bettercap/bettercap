@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 
 	"github.com/bettercap/bettercap/v2/log"
 	"github.com/bettercap/bettercap/v2/session"
@@ -138,9 +139,11 @@ func jsPropToUint32(obj map[string]interface{}, key string) uint32 {
 }
 
 func jsPropToUint64(obj map[string]interface{}, key string) uint64 {
-	if v, ok := obj[key].(int64); ok {
+	if f, ok := obj[key].(float64); ok {
+		bigInt := new(big.Float).SetFloat64(f)
+		v, _ := bigInt.Uint64()
 		if v >= 0 {
-			return uint64(v)
+			return v
 		}
 	}
 	log.Error("error converting JS property to uint64 where key is: %s", key)
