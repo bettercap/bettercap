@@ -159,10 +159,23 @@ func jsPropToUint64(obj map[string]interface{}, key string) uint64 {
 				}
 			}
 			break
+		case "uint64":
+			if v, ok := prop.(uint64); ok {
+				return v
+			}
+			break
 		}
 	}
 	log.Error("error converting JS property to uint64 where key is: %s", key)
 	return uint64(0)
+}
+
+func uint16ArrayToInt64Array(arr []uint16, key string) []int64 {
+	vArr := make([]int64, 0, len(arr))
+	for _, item := range arr {
+		vArr = append(vArr, int64(item))
+	}
+	return vArr
 }
 
 func (j *JSQuery) NewHash() string {
