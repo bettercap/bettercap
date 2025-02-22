@@ -84,11 +84,9 @@ func (s *HttpProxyScript) OnRequest(original *http.Request) (jsreq *JSRequest, j
 		if _, err := s.Call("onRequest", jsreq, jsres); err != nil {
 			log.Error("%s", err)
 			return nil, nil
-		} else if jsreq.WasModified() {
-			jsreq.UpdateHash()
+		} else if jsreq.CheckIfModifiedAndUpdateHash() {
 			return jsreq, nil
-		} else if jsres.WasModified() {
-			jsres.UpdateHash()
+		} else if jsres.CheckIfModifiedAndUpdateHash() {
 			return nil, jsres
 		}
 	}
@@ -104,8 +102,7 @@ func (s *HttpProxyScript) OnResponse(res *http.Response) (jsreq *JSRequest, jsre
 		if _, err := s.Call("onResponse", jsreq, jsres); err != nil {
 			log.Error("%s", err)
 			return nil, nil
-		} else if jsres.WasModified() {
-			jsres.UpdateHash()
+		} else if jsres.CheckIfModifiedAndUpdateHash() {
 			return nil, jsres
 		}
 	}

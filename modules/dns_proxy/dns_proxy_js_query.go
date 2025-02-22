@@ -355,3 +355,11 @@ func (j *JSQuery) WasModified() bool {
 	// check if any of the fields has been changed
 	return j.NewHash() != j.refHash
 }
+
+func (j *JSQuery) CheckIfModifiedAndUpdateHash() bool {
+	// check if query was changed and update its hash
+	newHash := j.NewHash()
+	wasModified := j.refHash != newHash
+	j.refHash = newHash
+	return wasModified
+}

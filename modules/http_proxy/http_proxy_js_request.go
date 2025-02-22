@@ -103,6 +103,19 @@ func (j *JSRequest) WasModified() bool {
 	return j.NewHash() != j.refHash
 }
 
+func (j *JSRequest) CheckIfModifiedAndUpdateHash() bool {
+	newHash := j.NewHash()
+	// body was read
+	if j.bodyRead {
+		j.refHash = newHash
+		return true
+	}
+	// check if req was changed and update its hash
+	wasModified := j.refHash != newHash
+	j.refHash = newHash
+	return wasModified
+}
+
 func (j *JSRequest) GetHeader(name, deflt string) string {
 	headers := strings.Split(j.Headers, "\r\n")
 	for i := 0; i < len(headers); i++ {
