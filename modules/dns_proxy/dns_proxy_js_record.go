@@ -137,7 +137,7 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["TypeCovered"] = int64(rr.TypeCovered)
 	case *dns.NSEC:
 		jsRecord["NextDomain"] = rr.NextDomain
-		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap, "TypeBitMap")
+		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap)
 	case *dns.NSEC3:
 		jsRecord["Flags"] = int64(rr.Flags)
 		jsRecord["Hash"] = int64(rr.Hash)
@@ -146,7 +146,7 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["NextDomain"] = rr.NextDomain
 		jsRecord["Salt"] = rr.Salt
 		jsRecord["SaltLength"] = int64(rr.SaltLength)
-		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap, "TypeBitMap")
+		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap)
 	case *dns.NSEC3PARAM:
 		jsRecord["Flags"] = int64(rr.Flags)
 		jsRecord["Hash"] = int64(rr.Hash)
@@ -283,7 +283,7 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 	case *dns.CSYNC:
 		jsRecord["Flags"] = int64(rr.Flags)
 		jsRecord["Serial"] = int64(rr.Serial)
-		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap, "TypeBitMap")
+		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap)
 	case *dns.OPENPGPKEY:
 		jsRecord["PublicKey"] = rr.PublicKey
 	case *dns.TALINK:
@@ -323,7 +323,7 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["Endpoint"] = rr.Endpoint
 	case *dns.NXT:
 		jsRecord["NextDomain"] = rr.NextDomain
-		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap, "TypeBitMap")
+		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap)
 	case *dns.PX:
 		jsRecord["Mapx400"] = rr.Mapx400
 		jsRecord["Map822"] = rr.Map822
