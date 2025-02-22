@@ -13,10 +13,10 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 
 	jsRecord = map[string]interface{}{
 		"Header": map[string]interface{}{
-			"Class":  header.Class,
+			"Class":  int64(header.Class),
 			"Name":   header.Name,
-			"Rrtype": header.Rrtype,
-			"Ttl":    header.Ttl,
+			"Rrtype": int64(header.Rrtype),
+			"Ttl":    int64(header.Ttl),
 		},
 	}
 
@@ -48,24 +48,24 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["Mr"] = rr.Mr
 	case *dns.MX:
 		jsRecord["Mx"] = rr.Mx
-		jsRecord["Preference"] = rr.Preference
+		jsRecord["Preference"] = int64(rr.Preference)
 	case *dns.NULL:
 		jsRecord["Data"] = rr.Data
 	case *dns.SOA:
-		jsRecord["Expire"] = rr.Expire
-		jsRecord["Minttl"] = rr.Minttl
+		jsRecord["Expire"] = int64(rr.Expire)
+		jsRecord["Minttl"] = int64(rr.Minttl)
 		jsRecord["Ns"] = rr.Ns
-		jsRecord["Refresh"] = rr.Refresh
-		jsRecord["Retry"] = rr.Retry
+		jsRecord["Refresh"] = int64(rr.Refresh)
+		jsRecord["Retry"] = int64(rr.Retry)
 		jsRecord["Mbox"] = rr.Mbox
-		jsRecord["Serial"] = rr.Serial
+		jsRecord["Serial"] = int64(rr.Serial)
 	case *dns.TXT:
 		jsRecord["Txt"] = rr.Txt
 	case *dns.SRV:
-		jsRecord["Port"] = rr.Port
-		jsRecord["Priority"] = rr.Priority
+		jsRecord["Port"] = int64(rr.Port)
+		jsRecord["Priority"] = int64(rr.Priority)
 		jsRecord["Target"] = rr.Target
-		jsRecord["Weight"] = rr.Weight
+		jsRecord["Weight"] = int64(rr.Weight)
 	case *dns.PTR:
 		jsRecord["Ptr"] = rr.Ptr
 	case *dns.NS:
@@ -73,10 +73,10 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 	case *dns.DNAME:
 		jsRecord["Target"] = rr.Target
 	case *dns.AFSDB:
-		jsRecord["Subtype"] = rr.Subtype
+		jsRecord["Subtype"] = int64(rr.Subtype)
 		jsRecord["Hostname"] = rr.Hostname
 	case *dns.CAA:
-		jsRecord["Flag"] = rr.Flag
+		jsRecord["Flag"] = int64(rr.Flag)
 		jsRecord["Tag"] = rr.Tag
 		jsRecord["Value"] = rr.Value
 	case *dns.HINFO:
@@ -90,123 +90,123 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["SubAddress"] = rr.SubAddress
 	case *dns.KX:
 		jsRecord["Exchanger"] = rr.Exchanger
-		jsRecord["Preference"] = rr.Preference
+		jsRecord["Preference"] = int64(rr.Preference)
 	case *dns.LOC:
-		jsRecord["Altitude"] = rr.Altitude
-		jsRecord["HorizPre"] = rr.HorizPre
-		jsRecord["Latitude"] = rr.Latitude
-		jsRecord["Longitude"] = rr.Longitude
-		jsRecord["Size"] = rr.Size
-		jsRecord["Version"] = rr.Version
-		jsRecord["VertPre"] = rr.VertPre
+		jsRecord["Altitude"] = int64(rr.Altitude)
+		jsRecord["HorizPre"] = int64(rr.HorizPre)
+		jsRecord["Latitude"] = int64(rr.Latitude)
+		jsRecord["Longitude"] = int64(rr.Longitude)
+		jsRecord["Size"] = int64(rr.Size)
+		jsRecord["Version"] = int64(rr.Version)
+		jsRecord["VertPre"] = int64(rr.VertPre)
 	case *dns.SSHFP:
-		jsRecord["Algorithm"] = rr.Algorithm
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
 		jsRecord["FingerPrint"] = rr.FingerPrint
-		jsRecord["Type"] = rr.Type
+		jsRecord["Type"] = int64(rr.Type)
 	case *dns.TLSA:
 		jsRecord["Certificate"] = rr.Certificate
-		jsRecord["MatchingType"] = rr.MatchingType
-		jsRecord["Selector"] = rr.Selector
-		jsRecord["Usage"] = rr.Usage
+		jsRecord["MatchingType"] = int64(rr.MatchingType)
+		jsRecord["Selector"] = int64(rr.Selector)
+		jsRecord["Usage"] = int64(rr.Usage)
 	case *dns.CERT:
-		jsRecord["Algorithm"] = rr.Algorithm
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
 		jsRecord["Certificate"] = rr.Certificate
-		jsRecord["KeyTag"] = rr.KeyTag
-		jsRecord["Type"] = rr.Type
+		jsRecord["KeyTag"] = int64(rr.KeyTag)
+		jsRecord["Type"] = int64(rr.Type)
 	case *dns.DS:
-		jsRecord["Algorithm"] = rr.Algorithm
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
 		jsRecord["Digest"] = rr.Digest
-		jsRecord["DigestType"] = rr.DigestType
-		jsRecord["KeyTag"] = rr.KeyTag
+		jsRecord["DigestType"] = int64(rr.DigestType)
+		jsRecord["KeyTag"] = int64(rr.KeyTag)
 	case *dns.NAPTR:
-		jsRecord["Order"] = rr.Order
-		jsRecord["Preference"] = rr.Preference
+		jsRecord["Order"] = int64(rr.Order)
+		jsRecord["Preference"] = int64(rr.Preference)
 		jsRecord["Flags"] = rr.Flags
 		jsRecord["Service"] = rr.Service
 		jsRecord["Regexp"] = rr.Regexp
 		jsRecord["Replacement"] = rr.Replacement
 	case *dns.RRSIG:
-		jsRecord["Algorithm"] = rr.Algorithm
-		jsRecord["Expiration"] = rr.Expiration
-		jsRecord["Inception"] = rr.Inception
-		jsRecord["KeyTag"] = rr.KeyTag
-		jsRecord["Labels"] = rr.Labels
-		jsRecord["OrigTtl"] = rr.OrigTtl
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
+		jsRecord["Expiration"] = int64(rr.Expiration)
+		jsRecord["Inception"] = int64(rr.Inception)
+		jsRecord["KeyTag"] = int64(rr.KeyTag)
+		jsRecord["Labels"] = int64(rr.Labels)
+		jsRecord["OrigTtl"] = int64(rr.OrigTtl)
 		jsRecord["Signature"] = rr.Signature
 		jsRecord["SignerName"] = rr.SignerName
-		jsRecord["TypeCovered"] = rr.TypeCovered
+		jsRecord["TypeCovered"] = int64(rr.TypeCovered)
 	case *dns.NSEC:
 		jsRecord["NextDomain"] = rr.NextDomain
-		jsRecord["TypeBitMap"] = rr.TypeBitMap
+		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap, "TypeBitMap")
 	case *dns.NSEC3:
-		jsRecord["Flags"] = rr.Flags
-		jsRecord["Hash"] = rr.Hash
-		jsRecord["HashLength"] = rr.HashLength
-		jsRecord["Iterations"] = rr.Iterations
+		jsRecord["Flags"] = int64(rr.Flags)
+		jsRecord["Hash"] = int64(rr.Hash)
+		jsRecord["HashLength"] = int64(rr.HashLength)
+		jsRecord["Iterations"] = int64(rr.Iterations)
 		jsRecord["NextDomain"] = rr.NextDomain
 		jsRecord["Salt"] = rr.Salt
-		jsRecord["SaltLength"] = rr.SaltLength
-		jsRecord["TypeBitMap"] = rr.TypeBitMap
+		jsRecord["SaltLength"] = int64(rr.SaltLength)
+		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap, "TypeBitMap")
 	case *dns.NSEC3PARAM:
-		jsRecord["Flags"] = rr.Flags
-		jsRecord["Hash"] = rr.Hash
-		jsRecord["Iterations"] = rr.Iterations
+		jsRecord["Flags"] = int64(rr.Flags)
+		jsRecord["Hash"] = int64(rr.Hash)
+		jsRecord["Iterations"] = int64(rr.Iterations)
 		jsRecord["Salt"] = rr.Salt
-		jsRecord["SaltLength"] = rr.SaltLength
+		jsRecord["SaltLength"] = int64(rr.SaltLength)
 	case *dns.TKEY:
 		jsRecord["Algorithm"] = rr.Algorithm
-		jsRecord["Error"] = rr.Error
-		jsRecord["Expiration"] = rr.Expiration
-		jsRecord["Inception"] = rr.Inception
+		jsRecord["Error"] = int64(rr.Error)
+		jsRecord["Expiration"] = int64(rr.Expiration)
+		jsRecord["Inception"] = int64(rr.Inception)
 		jsRecord["Key"] = rr.Key
-		jsRecord["KeySize"] = rr.KeySize
-		jsRecord["Mode"] = rr.Mode
+		jsRecord["KeySize"] = int64(rr.KeySize)
+		jsRecord["Mode"] = int64(rr.Mode)
 		jsRecord["OtherData"] = rr.OtherData
-		jsRecord["OtherLen"] = rr.OtherLen
+		jsRecord["OtherLen"] = int64(rr.OtherLen)
 	case *dns.TSIG:
 		jsRecord["Algorithm"] = rr.Algorithm
-		jsRecord["Error"] = rr.Error
-		jsRecord["Fudge"] = rr.Fudge
-		jsRecord["MACSize"] = rr.MACSize
+		jsRecord["Error"] = int64(rr.Error)
+		jsRecord["Fudge"] = int64(rr.Fudge)
+		jsRecord["MACSize"] = int64(rr.MACSize)
 		jsRecord["MAC"] = rr.MAC
-		jsRecord["OrigId"] = rr.OrigId
+		jsRecord["OrigId"] = int64(rr.OrigId)
 		jsRecord["OtherData"] = rr.OtherData
-		jsRecord["OtherLen"] = rr.OtherLen
-		jsRecord["TimeSigned"] = rr.TimeSigned
+		jsRecord["OtherLen"] = int64(rr.OtherLen)
+		jsRecord["TimeSigned"] = int64(rr.TimeSigned)
 	case *dns.IPSECKEY:
-		jsRecord["Algorithm"] = rr.Algorithm
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
 		jsRecord["GatewayAddr"] = rr.GatewayAddr.String()
 		jsRecord["GatewayHost"] = rr.GatewayHost
-		jsRecord["GatewayType"] = rr.GatewayType
-		jsRecord["Precedence"] = rr.Precedence
+		jsRecord["GatewayType"] = int64(rr.GatewayType)
+		jsRecord["Precedence"] = int64(rr.Precedence)
 		jsRecord["PublicKey"] = rr.PublicKey
 	case *dns.KEY:
-		jsRecord["Flags"] = rr.Flags
-		jsRecord["Protocol"] = rr.Protocol
-		jsRecord["Algorithm"] = rr.Algorithm
+		jsRecord["Flags"] = int64(rr.Flags)
+		jsRecord["Protocol"] = int64(rr.Protocol)
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
 		jsRecord["PublicKey"] = rr.PublicKey
 	case *dns.CDS:
-		jsRecord["KeyTag"] = rr.KeyTag
-		jsRecord["Algorithm"] = rr.Algorithm
-		jsRecord["DigestType"] = rr.DigestType
+		jsRecord["KeyTag"] = int64(rr.KeyTag)
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
+		jsRecord["DigestType"] = int64(rr.DigestType)
 		jsRecord["Digest"] = rr.Digest
 	case *dns.CDNSKEY:
-		jsRecord["Algorithm"] = rr.Algorithm
-		jsRecord["Flags"] = rr.Flags
-		jsRecord["Protocol"] = rr.Protocol
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
+		jsRecord["Flags"] = int64(rr.Flags)
+		jsRecord["Protocol"] = int64(rr.Protocol)
 		jsRecord["PublicKey"] = rr.PublicKey
 	case *dns.NID:
 		jsRecord["NodeID"] = rr.NodeID
-		jsRecord["Preference"] = rr.Preference
+		jsRecord["Preference"] = int64(rr.Preference)
 	case *dns.L32:
 		jsRecord["Locator32"] = rr.Locator32.String()
-		jsRecord["Preference"] = rr.Preference
+		jsRecord["Preference"] = int64(rr.Preference)
 	case *dns.L64:
 		jsRecord["Locator64"] = rr.Locator64
-		jsRecord["Preference"] = rr.Preference
+		jsRecord["Preference"] = int64(rr.Preference)
 	case *dns.LP:
 		jsRecord["Fqdn"] = rr.Fqdn
-		jsRecord["Preference"] = rr.Preference
+		jsRecord["Preference"] = int16(rr.Preference)
 	case *dns.GPOS:
 		jsRecord["Altitude"] = rr.Altitude
 		jsRecord["Latitude"] = rr.Latitude
@@ -215,40 +215,40 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["Mbox"] = rr.Mbox
 		jsRecord["Txt"] = rr.Txt
 	case *dns.RKEY:
-		jsRecord["Algorithm"] = rr.Algorithm
-		jsRecord["Flags"] = rr.Flags
-		jsRecord["Protocol"] = rr.Protocol
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
+		jsRecord["Flags"] = int64(rr.Flags)
+		jsRecord["Protocol"] = int64(rr.Protocol)
 		jsRecord["PublicKey"] = rr.PublicKey
 	case *dns.SMIMEA:
 		jsRecord["Certificate"] = rr.Certificate
-		jsRecord["MatchingType"] = rr.MatchingType
-		jsRecord["Selector"] = rr.Selector
-		jsRecord["Usage"] = rr.Usage
+		jsRecord["MatchingType"] = int64(rr.MatchingType)
+		jsRecord["Selector"] = int64(rr.Selector)
+		jsRecord["Usage"] = int64(rr.Usage)
 	case *dns.AMTRELAY:
 		jsRecord["GatewayAddr"] = rr.GatewayAddr.String()
 		jsRecord["GatewayHost"] = rr.GatewayHost
-		jsRecord["GatewayType"] = rr.GatewayType
-		jsRecord["Precedence"] = rr.Precedence
+		jsRecord["GatewayType"] = int64(rr.GatewayType)
+		jsRecord["Precedence"] = int64(rr.Precedence)
 	case *dns.AVC:
 		jsRecord["Txt"] = rr.Txt
 	case *dns.URI:
-		jsRecord["Priority"] = rr.Priority
-		jsRecord["Weight"] = rr.Weight
+		jsRecord["Priority"] = int64(rr.Priority)
+		jsRecord["Weight"] = int64(rr.Weight)
 		jsRecord["Target"] = rr.Target
 	case *dns.EUI48:
 		jsRecord["Address"] = rr.Address
 	case *dns.EUI64:
 		jsRecord["Address"] = rr.Address
 	case *dns.GID:
-		jsRecord["Gid"] = rr.Gid
+		jsRecord["Gid"] = int64(rr.Gid)
 	case *dns.UID:
-		jsRecord["Uid"] = rr.Uid
+		jsRecord["Uid"] = int64(rr.Uid)
 	case *dns.UINFO:
 		jsRecord["Uinfo"] = rr.Uinfo
 	case *dns.SPF:
 		jsRecord["Txt"] = rr.Txt
 	case *dns.HTTPS:
-		jsRecord["Priority"] = rr.Priority
+		jsRecord["Priority"] = int64(rr.Priority)
 		jsRecord["Target"] = rr.Target
 		kvs := rr.Value
 		var jsKvs []map[string]interface{}
@@ -262,7 +262,7 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		}
 		jsRecord["Value"] = jsKvs
 	case *dns.SVCB:
-		jsRecord["Priority"] = rr.Priority
+		jsRecord["Priority"] = int64(rr.Priority)
 		jsRecord["Target"] = rr.Target
 		kvs := rr.Value
 		jsKvs := make([]map[string]interface{}, len(kvs))
@@ -277,13 +277,13 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["Value"] = jsKvs
 	case *dns.ZONEMD:
 		jsRecord["Digest"] = rr.Digest
-		jsRecord["Hash"] = rr.Hash
-		jsRecord["Scheme"] = rr.Scheme
-		jsRecord["Serial"] = rr.Serial
+		jsRecord["Hash"] = int64(rr.Hash)
+		jsRecord["Scheme"] = int64(rr.Scheme)
+		jsRecord["Serial"] = int64(rr.Serial)
 	case *dns.CSYNC:
-		jsRecord["Flags"] = rr.Flags
-		jsRecord["Serial"] = rr.Serial
-		jsRecord["TypeBitMap"] = rr.TypeBitMap
+		jsRecord["Flags"] = int64(rr.Flags)
+		jsRecord["Serial"] = int64(rr.Serial)
+		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap, "TypeBitMap")
 	case *dns.OPENPGPKEY:
 		jsRecord["PublicKey"] = rr.PublicKey
 	case *dns.TALINK:
@@ -294,43 +294,53 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 	case *dns.DHCID:
 		jsRecord["Digest"] = rr.Digest
 	case *dns.DNSKEY:
-		jsRecord["Flags"] = rr.Flags
-		jsRecord["Protocol"] = rr.Protocol
-		jsRecord["Algorithm"] = rr.Algorithm
+		jsRecord["Flags"] = int64(rr.Flags)
+		jsRecord["Protocol"] = int64(rr.Protocol)
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
 		jsRecord["PublicKey"] = rr.PublicKey
 	case *dns.HIP:
 		jsRecord["Hit"] = rr.Hit
-		jsRecord["HitLength"] = rr.HitLength
+		jsRecord["HitLength"] = int64(rr.HitLength)
 		jsRecord["PublicKey"] = rr.PublicKey
-		jsRecord["PublicKeyAlgorithm"] = rr.PublicKeyAlgorithm
-		jsRecord["PublicKeyLength"] = rr.PublicKeyLength
+		jsRecord["PublicKeyAlgorithm"] = int64(rr.PublicKeyAlgorithm)
+		jsRecord["PublicKeyLength"] = int64(rr.PublicKeyLength)
 		jsRecord["RendezvousServers"] = rr.RendezvousServers
 	case *dns.OPT:
-		jsRecord["Option"] = rr.Option
+		options := rr.Option
+		jsOptions := make([]map[string]interface{}, len(options))
+		for i, option := range options {
+			jsOption, err := NewJSEDNS0(option)
+			if err != nil {
+				log.Error(err.Error())
+				continue
+			}
+			jsOptions[i] = jsOption
+		}
+		jsRecord["Option"] = jsOptions
 	case *dns.NIMLOC:
 		jsRecord["Locator"] = rr.Locator
 	case *dns.EID:
 		jsRecord["Endpoint"] = rr.Endpoint
 	case *dns.NXT:
 		jsRecord["NextDomain"] = rr.NextDomain
-		jsRecord["TypeBitMap"] = rr.TypeBitMap
+		jsRecord["TypeBitMap"] = uint16ArrayToInt64Array(rr.TypeBitMap, "TypeBitMap")
 	case *dns.PX:
 		jsRecord["Mapx400"] = rr.Mapx400
 		jsRecord["Map822"] = rr.Map822
-		jsRecord["Preference"] = rr.Preference
+		jsRecord["Preference"] = int64(rr.Preference)
 	case *dns.SIG:
-		jsRecord["Algorithm"] = rr.Algorithm
-		jsRecord["Expiration"] = rr.Expiration
-		jsRecord["Inception"] = rr.Inception
-		jsRecord["KeyTag"] = rr.KeyTag
-		jsRecord["Labels"] = rr.Labels
-		jsRecord["OrigTtl"] = rr.OrigTtl
+		jsRecord["Algorithm"] = int64(rr.Algorithm)
+		jsRecord["Expiration"] = int64(rr.Expiration)
+		jsRecord["Inception"] = int64(rr.Inception)
+		jsRecord["KeyTag"] = int64(rr.KeyTag)
+		jsRecord["Labels"] = int64(rr.Labels)
+		jsRecord["OrigTtl"] = int64(rr.OrigTtl)
 		jsRecord["Signature"] = rr.Signature
 		jsRecord["SignerName"] = rr.SignerName
-		jsRecord["TypeCovered"] = rr.TypeCovered
+		jsRecord["TypeCovered"] = int64(rr.TypeCovered)
 	case *dns.RT:
 		jsRecord["Host"] = rr.Host
-		jsRecord["Preference"] = rr.Preference
+		jsRecord["Preference"] = int64(rr.Preference)
 	case *dns.NSAPPTR:
 		jsRecord["Ptr"] = rr.Ptr
 	case *dns.X25:
