@@ -1,8 +1,7 @@
 module github.com/bettercap/bettercap/v2
 
 go 1.21
-
-toolchain go1.22.6
+toolchain go1.23.7
 
 require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
@@ -23,7 +22,6 @@ require (
 	github.com/google/gousb v1.1.3
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/grandcat/zeroconf v1.0.0
 	github.com/hashicorp/go-bexpr v0.1.14
 	github.com/inconshreveable/go-vhost v1.0.0
 	github.com/jpillora/go-tld v1.2.1
@@ -37,7 +35,7 @@ require (
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64
 	go.einride.tech/can v0.12.0
-	golang.org/x/net v0.28.0
+	golang.org/x/net v0.36.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -61,9 +59,9 @@ require (
 	github.com/mitchellh/pointerstructure v1.2.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/mod v0.20.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
