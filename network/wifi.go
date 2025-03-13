@@ -37,7 +37,7 @@ func Dot11Chan2Freq(channel int) int {
                 return 2484
         } else if channel == 36 || channel == 40 || channel == 44 || channel == 48 || 
                   channel == 52 || channel == 56 || channel == 60 || channel == 64 || 
-                  channel == 68 || channel == 72 || channel == 60 || channel == 64 || 
+                  channel == 68 || channel == 72 || channel == 76 || channel == 80 || 
                   channel == 100 || channel == 104 || channel == 108 || channel == 112 || 
                   channel == 116 || channel == 120 || channel == 124 || channel == 128 || 
                   channel == 132 || channel == 136 || channel == 140 || channel == 144 || 
