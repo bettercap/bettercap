@@ -76,6 +76,27 @@ func (j *JSResponse) WasModified() bool {
 	return j.NewHash() != j.refHash
 }
 
+func (j *JSResponse) CheckIfModifiedAndUpdateHash() bool {
+	newHash := j.NewHash()
+	if j.bodyRead {
+		// body was read
+		j.refHash = newHash
+		return true
+	} else if j.bodyClear {
+		// body was cleared manually
+		j.refHash = newHash
+		return true
+	} else if j.Body != "" {
+		// body was not read but just set
+		j.refHash = newHash
+		return true
+	}
+	// check if res was changed and update its hash
+	wasModified := j.refHash != newHash
+	j.refHash = newHash
+	return wasModified
+}
+
 func (j *JSResponse) GetHeader(name, deflt string) string {
 	headers := strings.Split(j.Headers, "\r\n")
 	for i := 0; i < len(headers); i++ {
