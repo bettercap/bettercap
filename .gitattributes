@@ -1,0 +1,4 @@
+*.js linguist-vendored
+/Dockerfile linguist-vendored
+/release.py linguist-vendored
+/**/*.js linguist-vendored
