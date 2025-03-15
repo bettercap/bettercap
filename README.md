@@ -35,5 +35,11 @@
    [Ver el repositorio en GitHub](https://github.com/bettercap/bettercap).
 
 ---
+## Conclusión
+
+Mediante esta práctica se ha aprendido el uso correcto de Git y GitHub, comprendiendo conceptos esenciales como ramas, forks, stash y merge. Esta experiencia ha permitido consolidar habilidades en el manejo de control de versiones y colaboración en proyectos, lo que resulta fundamental para el desarrollo y mantenimiento de software en entornos modernos.
+
+---
+
 
 
