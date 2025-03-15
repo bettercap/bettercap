@@ -1,7 +1,7 @@
 # Tarea 1 de Tratamiento de Datos
 
 **Integrantes:**  
-- Alexis Israel Veloz Jaya  
+- Alexis Israel Veloz Jaya (Propietario de Repositorio)  
 - Javier Zurita
 
 ---
@@ -36,6 +36,4 @@
 
 ---
 
-Este proyecto aprovecha las capacidades de Bettercap y su fork para abordar retos de tratamiento de datos en el ámbito de la seguridad, integrando funcionalidades avanzadas y personalizadas que responden a los requerimientos actuales de análisis en redes.
 
-¡Gracias por revisar nuestro trabajo!
