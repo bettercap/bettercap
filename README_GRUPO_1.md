@@ -3,6 +3,7 @@
 **Integrantes:**  
 - Alexis Israel Veloz Jaya (Propietario de Repositorio)  
 - Jonathan Xavier Zurita Flores
+- Marcos Alexander Criollo Llumiquinga 
 
 ---
 
