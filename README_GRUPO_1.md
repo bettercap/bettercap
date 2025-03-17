@@ -8,6 +8,7 @@
 ---
 
 ## Fork de Bettercap
+![image](https://github.com/user-attachments/assets/f1dc21e6-08d9-48f7-9670-7e4750983da6)
 
 **Bettercap** es una herramienta avanzada para la manipulación y monitorización de redes, diseñada para realizar análisis de tráfico, ataques de tipo Man-In-The-Middle (MITM) y pruebas de penetración. Nuestro fork se basa en Bettercap, extendiendo sus funcionalidades para adaptarse a escenarios específicos de tratamiento de datos en entornos de seguridad informática.
 
