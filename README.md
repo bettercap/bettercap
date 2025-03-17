@@ -2,13 +2,27 @@
 
 **Integrantes:**  
 - Alexis Israel Veloz Jaya (Propietario de Repositorio)  
-- Javier Zurita
-
+- Jonathan Xavier Zurita Flores
+- Marcos Criollo 
+- Santiago Sanchez
 ---
 
 ## Fork de Bettercap
 
 **Bettercap** es una herramienta avanzada para la manipulación y monitorización de redes, diseñada para realizar análisis de tráfico, ataques de tipo Man-In-The-Middle (MITM) y pruebas de penetración. Nuestro fork se basa en Bettercap, extendiendo sus funcionalidades para adaptarse a escenarios específicos de tratamiento de datos en entornos de seguridad informática.
+
+**Nota:** Para las personas que no estamos familiarizadas con estos terminos, agregare una breve descripcion de que es un Fork y Bettercap.
+
+**Fork** es un término que se utiliza en el desarrollo de software para describir cuando un proyecto toma el código fuente original de otro y lo modifica o amplía para adaptarlo a nuevas necesidades o características.
+
+Entonces, Un fork de Bettercap se refiere a una versión modificada o personalizada del proyecto original de Bettercap. 
+
+**Bettercap** es una herramienta de seguridad que se usa principalmente para la manipulación de redes, realizar ataques Man-In-The-Middle (MITM), análisis de tráfico y pruebas de penetración.
+
+Un **fork de Bettercap** es una nueva versión del código de Bettercap creada por un usuario o desarrollador que desea agregar nuevas funcionalidades, corregir errores, mejorar el rendimiento, o realizar ajustes que no forman parte de la versión original de Bettercap.
+
+En resumen, un fork de Bettercap es una "copia modificada" del proyecto de Bettercap que puede tener características y funciones diferentes de la versión original para adaptarse mejor a ciertos usos o contextos.
+
 
 ---
 
