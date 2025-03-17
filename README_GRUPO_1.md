@@ -4,7 +4,7 @@
 - Alexis Israel Veloz Jaya (Propietario de Repositorio)  
 - Jonathan Xavier Zurita Flores
 - Marcos Alexander Criollo Llumiquinga 
-
+- Santiago Fernando Sánchez Viteri
 ---
 
 ## Fork de Bettercap
