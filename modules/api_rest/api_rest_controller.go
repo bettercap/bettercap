@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -15,6 +16,10 @@ import (
 	"github.com/evilsocket/islazy/fs"
 
 	"github.com/gorilla/mux"
+)
+
+var (
+	ansiEscapeRegex = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
 )
 
 type CommandRequest struct {
@@ -236,7 +241,8 @@ func (mod *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	out, _ := io.ReadAll(stdoutReader)
 	os.Stdout = rescueStdout
 
-	mod.toJSON(w, APIResponse{Success: true, Message: string(out)})
+	// remove ANSI escape sequences (bash color codes) from output
+	mod.toJSON(w, APIResponse{Success: true, Message: ansiEscapeRegex.ReplaceAllString(string(out), "")})
 }
 
 func (mod *RestAPI) getEvents(limit int) []session.Event {
