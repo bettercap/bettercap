@@ -651,13 +651,15 @@ func (mod *WiFiModule) Configure() error {
 	mod.hopPeriod = time.Duration(hopPeriod) * time.Millisecond
 
 	if mod.source == "" {
-		if freqs, err := network.GetSupportedFrequencies(ifName); err != nil {
-			return fmt.Errorf("error while getting supported frequencies of %s: %s", ifName, err)
-		} else {
-			mod.setFrequencies(freqs)
-		}
+		if len(mod.frequencies) == 0 {
+			if freqs, err := network.GetSupportedFrequencies(ifName); err != nil {
+				return fmt.Errorf("error while getting supported frequencies of %s: %s", ifName, err)
+			} else {
+				mod.setFrequencies(freqs)
+			}
 
-		mod.Debug("wifi supported frequencies: %v", mod.frequencies)
+			mod.Debug("wifi supported frequencies: %v", mod.frequencies)
+		}
 
 		// we need to start somewhere, this is just to check if
 		// this OS supports switching channel programmatically.
