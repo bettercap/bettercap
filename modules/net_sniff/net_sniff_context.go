@@ -17,6 +17,7 @@ import (
 
 type SnifferContext struct {
 	Handle       *pcap.Handle
+	Interface    string
 	Source       string
 	DumpLocal    bool
 	Verbose      bool
@@ -37,13 +38,22 @@ func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 		return err, ctx
 	}
 
+	if err, ctx.Interface = mod.StringParam("net.sniff.interface"); err != nil {
+		return err, ctx
+	}
+
+	if ctx.Interface == "" {
+		ctx.Interface = mod.Session.Interface.Name()
+	}
+
 	if ctx.Source == "" {
 		/*
 		 * We don't want to pcap.BlockForever otherwise pcap_close(handle)
 		 * could hang waiting for a timeout to expire ...
 		 */
+
 		readTimeout := 500 * time.Millisecond
-		if ctx.Handle, err = network.CaptureWithTimeout(mod.Session.Interface.Name(), readTimeout); err != nil {
+		if ctx.Handle, err = network.CaptureWithTimeout(ctx.Interface, readTimeout); err != nil {
 			return err, ctx
 		}
 	} else {
@@ -94,6 +104,8 @@ func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 func NewSnifferContext() *SnifferContext {
 	return &SnifferContext{
 		Handle:       nil,
+		Interface:    "",
+		Source:       "",
 		DumpLocal:    false,
 		Verbose:      false,
 		Filter:       "",
