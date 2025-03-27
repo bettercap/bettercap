@@ -127,7 +127,8 @@ var (
 )
 
 func (c *SnifferContext) Log(sess *session.Session) {
-	log.Info("Skip local packets : %s", yn[c.DumpLocal])
+	log.Info("Interface          : %s", tui.Bold(c.Interface))
+	log.Info("Skip local packets : %s", yn[!c.DumpLocal])
 	log.Info("Verbose            : %s", yn[c.Verbose])
 	log.Info("BPF Filter         : '%s'", tui.Yellow(c.Filter))
 	log.Info("Regular expression : '%s'", tui.Yellow(c.Expression))
