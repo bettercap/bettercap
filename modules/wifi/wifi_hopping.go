@@ -36,6 +36,8 @@ func (mod *WiFiModule) hopUnlocked(channel int) (mustStop bool) {
 		}
 	}
 
+	mod.State.Store("channel", channel)
+
 	return
 }
 

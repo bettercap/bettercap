@@ -104,7 +104,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 	}
 
 	mod.InitState("channels")
+	mod.InitState("channel")
+
 	mod.State.Store("channels", []int{})
+	mod.State.Store("channel", 0)
 
 	mod.AddParam(session.NewStringParameter("wifi.interface",
 		"",
@@ -661,6 +664,7 @@ func (mod *WiFiModule) Configure() error {
 		if err = network.SetInterfaceChannel(ifName, 1); err != nil {
 			return fmt.Errorf("error while initializing %s to channel 1: %s", ifName, err)
 		}
+		mod.State.Store("channel", 1)
 
 		mod.Info("started (min rssi: %d dBm)", mod.minRSSI)
 	}
