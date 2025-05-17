@@ -59,7 +59,7 @@ func (mod *CANModule) Configure() error {
 func (mod *CANModule) isFilteredOut(frame can.Frame, msg Message) bool {
 	// if we have an active filter
 	if mod.filter != "" {
-		if res, err := mod.filterExpr.Evaluate(map[string]interface{}{
+		if res, err := mod.filterExpr.Evaluate(map[string]any{
 			"message": msg,
 			"frame":   frame,
 		}); err != nil {

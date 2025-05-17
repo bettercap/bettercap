@@ -10,8 +10,8 @@ import (
 
 func TestKrb5Contants(t *testing.T) {
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{Krb5AsRequestType, 10},
 		{Krb5Krb5PrincipalNameType, 1},
@@ -28,8 +28,8 @@ func TestKrb5Contants(t *testing.T) {
 
 func TestKrb5Vars(t *testing.T) {
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{ErrNoCrypt, errors.New("No crypt alg found")},
 		{ErrReqData, errors.New("Failed to extract pnData from as-req")},
@@ -47,8 +47,8 @@ func TestKrb5PrincipalName(t *testing.T) {
 	str := []string{"example"}
 	name := Krb5PrincipalName{NameString: str}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{name.NameType, 0},
 		{name.NameString, str},
@@ -64,8 +64,8 @@ func TestKrb5EncryptedData(t *testing.T) {
 	cipher := []byte{}
 	data := Krb5EncryptedData{Cipher: cipher}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{data.Cipher, cipher},
 		{data.Etype, 0},
@@ -91,8 +91,8 @@ func TestKrb5Ticket(t *testing.T) {
 		EncPart: e,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{ticket.TktVno, v},
 		{ticket.Realm, r},
@@ -114,8 +114,8 @@ func TestKrb5Address(t *testing.T) {
 		Krb5Address: y,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{addr.AddrType, x},
 		{addr.Krb5Address, y},
@@ -135,8 +135,8 @@ func TestKrb5PnData(t *testing.T) {
 		Krb5PnDataValue: y,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{addr.Krb5PnDataType, x},
 		{addr.Krb5PnDataValue, y},
@@ -158,8 +158,8 @@ func TestKrb5ReqBody(t *testing.T) {
 		AdditionalKrb5Tickets: k,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{req.KDCOptions, asn1.BitString{}},
 		{req.Cname, Krb5PrincipalName{}},
@@ -188,8 +188,8 @@ func TestKrb5Request(t *testing.T) {
 		Krb5PnData: p,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{req.Pvno, 0},
 		{req.MsgType, 0},
