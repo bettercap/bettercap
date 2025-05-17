@@ -8,7 +8,7 @@ import (
 
 var NullValue = otto.Value{}
 
-func ReportError(format string, args ...interface{}) otto.Value {
+func ReportError(format string, args ...any) otto.Value {
 	log.Error(format, args...)
 	return NullValue
 }

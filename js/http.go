@@ -20,7 +20,7 @@ type httpResponse struct {
 	Response *http.Response
 	Raw      []byte
 	Body     string
-	JSON     interface{}
+	JSON     any
 }
 
 func (c httpPackage) Encode(s string) string {

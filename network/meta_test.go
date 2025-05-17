@@ -74,7 +74,7 @@ func TestMetaEach(t *testing.T) {
 	example.m["evilsocket"] = true
 
 	count := 0
-	exampleCB := func(name string, value interface{}) {
+	exampleCB := func(name string, value any) {
 		count++
 	}
 	example.Each(exampleCB)
