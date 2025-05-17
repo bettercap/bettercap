@@ -8,11 +8,11 @@ import (
 	"github.com/miekg/dns"
 )
 
-func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error) {
+func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]any, err error) {
 	header := rr.Header()
 
-	jsRecord = map[string]interface{}{
-		"Header": map[string]interface{}{
+	jsRecord = map[string]any{
+		"Header": map[string]any{
 			"Class":  int64(header.Class),
 			"Name":   header.Name,
 			"Rrtype": int64(header.Rrtype),
@@ -26,9 +26,9 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 	case *dns.AAAA:
 		jsRecord["AAAA"] = rr.AAAA.String()
 	case *dns.APL:
-		jsPrefixes := make([]map[string]interface{}, len(rr.Prefixes))
+		jsPrefixes := make([]map[string]any, len(rr.Prefixes))
 		for i, v := range rr.Prefixes {
-			jsPrefixes[i] = map[string]interface{}{
+			jsPrefixes[i] = map[string]any{
 				"Negation": v.Negation,
 				"Network":  v.Network.String(),
 			}
@@ -251,7 +251,7 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["Priority"] = int64(rr.Priority)
 		jsRecord["Target"] = rr.Target
 		kvs := rr.Value
-		var jsKvs []map[string]interface{}
+		var jsKvs []map[string]any
 		for _, kv := range kvs {
 			jsKv, err := NewJSSVCBKeyValue(kv)
 			if err != nil {
@@ -265,7 +265,7 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["Priority"] = int64(rr.Priority)
 		jsRecord["Target"] = rr.Target
 		kvs := rr.Value
-		jsKvs := make([]map[string]interface{}, len(kvs))
+		jsKvs := make([]map[string]any, len(kvs))
 		for i, kv := range kvs {
 			jsKv, err := NewJSSVCBKeyValue(kv)
 			if err != nil {
@@ -307,7 +307,7 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 		jsRecord["RendezvousServers"] = rr.RendezvousServers
 	case *dns.OPT:
 		options := rr.Option
-		jsOptions := make([]map[string]interface{}, len(options))
+		jsOptions := make([]map[string]any, len(options))
 		for i, option := range options {
 			jsOption, err := NewJSEDNS0(option)
 			if err != nil {
@@ -361,7 +361,7 @@ func NewJSResourceRecord(rr dns.RR) (jsRecord map[string]interface{}, err error)
 	return jsRecord, nil
 }
 
-func ToRR(jsRecord map[string]interface{}) (rr dns.RR, err error) {
+func ToRR(jsRecord map[string]any) (rr dns.RR, err error) {
 	jsHeader := jsPropToMap(jsRecord, "Header")
 
 	header := dns.RR_Header{
@@ -385,7 +385,7 @@ func ToRR(jsRecord map[string]interface{}) (rr dns.RR, err error) {
 			AAAA: net.ParseIP(jsPropToString(jsRecord, "AAAA")),
 		}
 	case dns.TypeAPL:
-		jsPrefixes := jsRecord["Prefixes"].([]map[string]interface{})
+		jsPrefixes := jsRecord["Prefixes"].([]map[string]any)
 		prefixes := make([]dns.APLPrefix, len(jsPrefixes))
 		for i, jsPrefix := range jsPrefixes {
 			jsNetwork := jsPrefix["Network"].(string)

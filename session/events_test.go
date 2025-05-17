@@ -10,7 +10,7 @@ func TestNewEvent(t *testing.T) {
 
 	type args struct {
 		tag  string
-		data interface{}
+		data any
 	}
 	tests := []struct {
 		name string
@@ -259,7 +259,7 @@ func TestEventPool_Add(t *testing.T) {
 	}
 	type args struct {
 		tag  string
-		data interface{}
+		data any
 	}
 	tests := []struct {
 		name   string

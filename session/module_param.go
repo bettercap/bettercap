@@ -62,7 +62,7 @@ func NewDecimalParameter(name string, def_value string, desc string) *ModulePara
 	return NewModuleParameter(name, def_value, FLOAT, `^[\-\+]?[\d]+(\.\d+)?$`, desc)
 }
 
-func (p ModuleParam) validate(value string) (error, interface{}) {
+func (p ModuleParam) validate(value string) (error, any) {
 	if p.Validator != nil {
 		if !p.Validator.MatchString(value) {
 			return fmt.Errorf("Parameter %s not valid: '%s' does not match rule '%s'.", tui.Bold(p.Name), value, p.Validator.String()), nil
@@ -119,8 +119,8 @@ func (p ModuleParam) parse(s *Session, v string) string {
 		v = net.HardwareAddr(hw).String()
 	default:
 		// check the <iface> case
-	 	if m := ParamIfaceNameParser.FindStringSubmatch(v); len(m) == 2 {
-	 		// does it match any interface?
+		if m := ParamIfaceNameParser.FindStringSubmatch(v); len(m) == 2 {
+			// does it match any interface?
 			name := m[1]
 			if iface, err := net.InterfaceByName(name); err == nil {
 				if addrs, err := iface.Addrs(); err == nil {
@@ -159,7 +159,7 @@ func (p ModuleParam) getUnlocked(s *Session) string {
 	return p.parse(s, v)
 }
 
-func (p ModuleParam) Get(s *Session) (error, interface{}) {
+func (p ModuleParam) Get(s *Session) (error, any) {
 	_, v := s.Env.Get(p.Name)
 	v = p.parse(s, v)
 	return p.validate(v)

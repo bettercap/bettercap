@@ -90,12 +90,12 @@ func (q *Queue) MarshalJSON() ([]byte, error) {
 		Traffic: make(map[string]*Traffic),
 	}
 
-	q.Protos.Range(func(k, v interface{}) bool {
+	q.Protos.Range(func(k, v any) bool {
 		doc.Protos[k.(string)] = v.(int)
 		return true
 	})
 
-	q.Traffic.Range(func(k, v interface{}) bool {
+	q.Traffic.Range(func(k, v any) bool {
 		doc.Traffic[k.(string)] = v.(*Traffic)
 		return true
 	})

@@ -70,7 +70,7 @@ type dummyLogger struct {
 	p *HTTPProxy
 }
 
-func (l dummyLogger) Printf(format string, v ...interface{}) {
+func (l dummyLogger) Printf(format string, v ...any) {
 	l.p.Debug("[goproxy.log] %s", str.Trim(fmt.Sprintf(format, v...)))
 }
 
@@ -108,23 +108,23 @@ func NewHTTPProxy(s *session.Session, tag string) *HTTPProxy {
 	return p
 }
 
-func (p *HTTPProxy) Debug(format string, args ...interface{}) {
+func (p *HTTPProxy) Debug(format string, args ...any) {
 	p.Sess.Events.Log(log.DEBUG, p.tag+format, args...)
 }
 
-func (p *HTTPProxy) Info(format string, args ...interface{}) {
+func (p *HTTPProxy) Info(format string, args ...any) {
 	p.Sess.Events.Log(log.INFO, p.tag+format, args...)
 }
 
-func (p *HTTPProxy) Warning(format string, args ...interface{}) {
+func (p *HTTPProxy) Warning(format string, args ...any) {
 	p.Sess.Events.Log(log.WARNING, p.tag+format, args...)
 }
 
-func (p *HTTPProxy) Error(format string, args ...interface{}) {
+func (p *HTTPProxy) Error(format string, args ...any) {
 	p.Sess.Events.Log(log.ERROR, p.tag+format, args...)
 }
 
-func (p *HTTPProxy) Fatal(format string, args ...interface{}) {
+func (p *HTTPProxy) Fatal(format string, args ...any) {
 	p.Sess.Events.Log(log.FATAL, p.tag+format, args...)
 }
 
@@ -180,10 +180,10 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRed
 		for _, mname := range []string{"http.proxy", "https.proxy"} {
 			err, m := p.Sess.Module(mname)
 			if err == nil && m.Running() {
-				var mextra interface{}
+				var mextra any
 				var mstripper *SSLStripper
 				mextra = m.Extra()
-				mextramap := mextra.(map[string]interface{})
+				mextramap := mextra.(map[string]any)
 				mstripper = mextramap["stripper"].(*SSLStripper)
 				if mstripper != nil && mstripper.Enabled() {
 					p.Info("found another proxy using sslstrip -> merging strippers...")

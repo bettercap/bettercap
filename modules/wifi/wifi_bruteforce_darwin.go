@@ -27,7 +27,7 @@ func wifiBruteforce(mod *WiFiModule, job bruteforceJob) (bool, error) {
 		err  error
 	}
 
-	if res, err := async.WithTimeout(job.timeout, func() interface{} {
+	if res, err := async.WithTimeout(job.timeout, func() any {
 		start := time.Now()
 		if output, err := core.Exec(networksetup, args); err != nil {
 			return result{auth: false, err: err}
