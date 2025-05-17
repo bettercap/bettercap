@@ -178,7 +178,7 @@ func (mod *GPS) readFromSerial() {
 }
 
 func (mod *GPS) runFromGPSD() {
-	mod.gpsd.AddFilter("TPV", func(r interface{}) {
+	mod.gpsd.AddFilter("TPV", func(r any) {
 		report := r.(*gpsd.TPVReport)
 		mod.Session.GPS.Updated = report.Time
 		mod.Session.GPS.Latitude = report.Lat
@@ -189,7 +189,7 @@ func (mod *GPS) runFromGPSD() {
 		mod.Session.Events.Add("gps.new", mod.Session.GPS)
 	})
 
-	mod.gpsd.AddFilter("SKY", func(r interface{}) {
+	mod.gpsd.AddFilter("SKY", func(r any) {
 		report := r.(*gpsd.SKYReport)
 		mod.Session.GPS.NumSatellites = int64(len(report.Satellites))
 		mod.Session.GPS.HDOP = report.Hdop

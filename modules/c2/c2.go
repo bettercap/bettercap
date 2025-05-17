@@ -311,7 +311,7 @@ func (mod *C2) Configure() (err error) {
 	return mod.client.Connect(mod.settings.server)
 }
 
-func (mod *C2) onPrint(format string, args ...interface{}) {
+func (mod *C2) onPrint(format string, args ...any) {
 	if !mod.Running() {
 		return
 	}

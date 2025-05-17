@@ -23,7 +23,6 @@ require (
 	github.com/google/gousb v1.1.3
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/grandcat/zeroconf v1.0.0
 	github.com/hashicorp/go-bexpr v0.1.14
 	github.com/inconshreveable/go-vhost v1.0.0
 	github.com/jpillora/go-tld v1.2.1

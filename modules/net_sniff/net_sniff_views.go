@@ -28,7 +28,7 @@ func vIP(ip net.IP) string {
 	return address
 }
 
-func vPort(p interface{}) string {
+func vPort(p any) string {
 	sp := fmt.Sprintf("%d", p)
 	if tcp, ok := p.(layers.TCPPort); ok {
 		if name, found := layers.TCPPortNames[tcp]; found {

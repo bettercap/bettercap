@@ -3,7 +3,7 @@ package graph
 import "sync"
 
 type entry struct {
-	data interface{}
+	data any
 	next *entry
 }
 
@@ -13,7 +13,7 @@ type Stack struct {
 	Size int
 }
 
-func (stk *Stack) Push(data interface{}) {
+func (stk *Stack) Push(data any) {
 	stk.lock.Lock()
 
 	element := new(entry)
@@ -26,7 +26,7 @@ func (stk *Stack) Push(data interface{}) {
 	stk.lock.Unlock()
 }
 
-func (stk *Stack) Pop() interface{} {
+func (stk *Stack) Pop() any {
 	if stk.head == nil {
 		return nil
 	}

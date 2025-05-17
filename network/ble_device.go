@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package network
@@ -10,11 +11,11 @@ import (
 )
 
 type BLECharacteristic struct {
-	UUID       string      `json:"uuid"`
-	Name       string      `json:"name"`
-	Handle     uint16      `json:"handle"`
-	Properties []string    `json:"properties"`
-	Data       interface{} `json:"data"`
+	UUID       string   `json:"uuid"`
+	Name       string   `json:"name"`
+	Handle     uint16   `json:"handle"`
+	Properties []string `json:"properties"`
+	Data       any      `json:"data"`
 }
 
 type BLEService struct {

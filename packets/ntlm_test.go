@@ -7,8 +7,8 @@ import (
 
 func TestNTLMConstants(t *testing.T) {
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{NTLM_SIG_OFFSET, 0},
 		{NTLM_TYPE_OFFSET, 8},
@@ -50,8 +50,8 @@ func TestNTLMConstants(t *testing.T) {
 func TestNTLMChallengeResponse(t *testing.T) {
 	r := NTLMChallengeResponse{}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{r.Challenge, ""},
 		{r.Response, ""},
@@ -66,8 +66,8 @@ func TestNTLMChallengeResponse(t *testing.T) {
 func TestNTLMChallengeResponseParsed(t *testing.T) {
 	r := NTLMChallengeResponseParsed{}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{r.Type, 0},
 		{r.ServerChallenge, ""},
@@ -87,8 +87,8 @@ func TestNTLMChallengeResponseParsed(t *testing.T) {
 func TestNTLMResponseHeader(t *testing.T) {
 	r := NTLMResponseHeader{}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{r.Sig, ""},
 		{r.Type, uint32(0)},
@@ -123,8 +123,8 @@ func TestNTLMState(t *testing.T) {
 		Pairs:     p,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{s.Responses, r},
 		{s.Pairs, p},
@@ -149,8 +149,8 @@ func TestNTLMStateAddServerResponse(t *testing.T) {
 	s.AddServerResponse(uint32(0), "picat")
 
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{s.Responses[uint32(0)], "picat"},
 	}

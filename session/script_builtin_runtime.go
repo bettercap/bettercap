@@ -83,7 +83,7 @@ func jsOnEventFunc(call otto.FunctionCall) otto.Value {
 				if expr == "" || event.Tag == expr {
 					// some objects don't do well with js, so convert them to a generic map
 					// before passing them to the callback
-					var opaque interface{}
+					var opaque any
 					if raw, err := json.Marshal(event); err != nil {
 						I.Events.Log(log.ERROR, "error serializing event %s: %v", event.Tag, err)
 					} else if err = json.Unmarshal(raw, &opaque); err != nil {
@@ -208,7 +208,7 @@ func jsLoadJSONFunc(call otto.FunctionCall) otto.Value {
 		return js.ReportError("loadJSON accepts one string argument")
 	}
 
-	var obj interface{}
+	var obj any
 
 	if fileName, err := fs.Expand(argv[0].String()); err != nil {
 		return js.ReportError("can't expand '%s': %v", fileName, err)

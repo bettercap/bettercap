@@ -8,18 +8,18 @@ import (
 	"github.com/miekg/dns"
 )
 
-func NewJSEDNS0(e dns.EDNS0) (jsEDNS0 map[string]interface{}, err error) {
+func NewJSEDNS0(e dns.EDNS0) (jsEDNS0 map[string]any, err error) {
 	option := e.Option()
 
-	jsEDNS0 = map[string]interface{}{
+	jsEDNS0 = map[string]any{
 		"Option": option,
 	}
 
-	var jsVal map[string]interface{}
+	var jsVal map[string]any
 
 	switch opt := e.(type) {
 	case *dns.EDNS0_LLQ:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Code":      opt.Code,
 			"Error":     opt.Error,
 			"Id":        opt.Id,
@@ -28,38 +28,38 @@ func NewJSEDNS0(e dns.EDNS0) (jsEDNS0 map[string]interface{}, err error) {
 			"Version":   opt.Version,
 		}
 	case *dns.EDNS0_UL:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Code":     opt.Code,
 			"Lease":    opt.Lease,
 			"KeyLease": opt.KeyLease,
 		}
 	case *dns.EDNS0_NSID:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Code": opt.Code,
 			"Nsid": opt.Nsid,
 		}
 	case *dns.EDNS0_ESU:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Code": opt.Code,
 			"Uri":  opt.Uri,
 		}
 	case *dns.EDNS0_DAU:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"AlgCode": opt.AlgCode,
 			"Code":    opt.Code,
 		}
 	case *dns.EDNS0_DHU:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"AlgCode": opt.AlgCode,
 			"Code":    opt.Code,
 		}
 	case *dns.EDNS0_N3U:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"AlgCode": opt.AlgCode,
 			"Code":    opt.Code,
 		}
 	case *dns.EDNS0_SUBNET:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Address":       opt.Address.String(),
 			"Code":          opt.Code,
 			"Family":        opt.Family,
@@ -67,33 +67,33 @@ func NewJSEDNS0(e dns.EDNS0) (jsEDNS0 map[string]interface{}, err error) {
 			"SourceScope":   opt.SourceScope,
 		}
 	case *dns.EDNS0_EXPIRE:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Code":   opt.Code,
 			"Empty":  opt.Empty,
 			"Expire": opt.Expire,
 		}
 	case *dns.EDNS0_COOKIE:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Code":   opt.Code,
 			"Cookie": opt.Cookie,
 		}
 	case *dns.EDNS0_TCP_KEEPALIVE:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Code":    opt.Code,
 			"Length":  opt.Length,
 			"Timeout": opt.Timeout,
 		}
 	case *dns.EDNS0_PADDING:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Padding": string(opt.Padding),
 		}
 	case *dns.EDNS0_EDE:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"ExtraText": opt.ExtraText,
 			"InfoCode":  opt.InfoCode,
 		}
 	case *dns.EDNS0_LOCAL:
-		jsVal = map[string]interface{}{
+		jsVal = map[string]any{
 			"Code": opt.Code,
 			"Data": string(opt.Data),
 		}
@@ -106,7 +106,7 @@ func NewJSEDNS0(e dns.EDNS0) (jsEDNS0 map[string]interface{}, err error) {
 	return jsEDNS0, nil
 }
 
-func ToEDNS0(jsEDNS0 map[string]interface{}) (e dns.EDNS0, err error) {
+func ToEDNS0(jsEDNS0 map[string]any) (e dns.EDNS0, err error) {
 	option := jsPropToUint16(jsEDNS0, "Option")
 
 	jsVal := jsPropToMap(jsEDNS0, "Value")

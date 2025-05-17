@@ -13,8 +13,8 @@ func TestDot11CipherSuite(t *testing.T) {
 		OUI: bytes,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{cs.OUI, bytes},
 	}
@@ -33,8 +33,8 @@ func TestDot11AuthSuite(t *testing.T) {
 		OUI: bytes,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{cs.OUI, bytes},
 	}
@@ -51,8 +51,8 @@ func TestDot11CipherSuiteSelector(t *testing.T) {
 		Count: count,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{cs.Count, count},
 	}
@@ -69,8 +69,8 @@ func TestDot11AuthSuiteSelector(t *testing.T) {
 		Count: count,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{cs.Count, count},
 	}
@@ -87,8 +87,8 @@ func TestDot11RSNInfo(t *testing.T) {
 		Version: version,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{rsn.Version, version},
 		{rsn.Group, CipherSuite{}},
@@ -108,8 +108,8 @@ func TestDot11VendorInfo(t *testing.T) {
 		WPAVersion: version,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{vendor.WPAVersion, version},
 		{vendor.Multicast, CipherSuite{}},
@@ -134,8 +134,8 @@ func TestDot11parsePairwiseSuite(t *testing.T) {
 	buf := []byte{0, 0, 1, 1}
 	suite, err := parsePairwiseSuite(buf)
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{suite.OUI, buf[0:3]},
 		{suite.Type, Dot11CipherType(buf[3])},
@@ -152,8 +152,8 @@ func TestDot11parseAuthkeySuite(t *testing.T) {
 	buf := []byte{0, 0, 1, 1}
 	suite, err := parseAuthkeySuite(buf)
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{suite.OUI, buf[0:3]},
 		{suite.Type, Dot11AuthType(buf[3])},

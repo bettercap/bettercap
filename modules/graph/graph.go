@@ -249,18 +249,18 @@ func (g *Graph) JSON(filter string, disconnected bool) (string, int, int, error)
 	discarded := 0
 
 	type link struct {
-		Source string      `json:"source"`
-		Target string      `json:"target"`
-		Edge   interface{} `json:"edge"`
+		Source string `json:"source"`
+		Target string `json:"target"`
+		Edge   any    `json:"edge"`
 	}
 
 	type data struct {
-		Nodes []map[string]interface{} `json:"nodes"`
-		Links []link                   `json:"links"`
+		Nodes []map[string]any `json:"nodes"`
+		Links []link           `json:"links"`
 	}
 
 	jsData := data{
-		Nodes: make([]map[string]interface{}, 0),
+		Nodes: make([]map[string]any, 0),
 		Links: make([]link, 0),
 	}
 
@@ -337,7 +337,7 @@ func (g *Graph) FindOtherTypes(t NodeType, id string) ([]*Node, error) {
 	return otherNodes, nil
 }
 
-func (g *Graph) CreateNode(t NodeType, id string, entity interface{}, annotations string) (*Node, error) {
+func (g *Graph) CreateNode(t NodeType, id string, entity any, annotations string) (*Node, error) {
 	g.Lock()
 	defer g.Unlock()
 

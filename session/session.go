@@ -231,7 +231,7 @@ func (s *Session) Register(mod Module) error {
 func (s *Session) Start() error {
 	var err error
 
-	network.Debug = func(format string, args ...interface{}) {
+	network.Debug = func(format string, args ...any) {
 		s.Events.Log(log.DEBUG, format, args...)
 	}
 

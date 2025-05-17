@@ -7,18 +7,18 @@ import (
 	"github.com/bettercap/bettercap/v2/session"
 )
 
-type SniffData map[string]interface{}
+type SniffData map[string]any
 
 type SnifferEvent struct {
-	PacketTime  time.Time   `json:"time"`
-	Protocol    string      `json:"protocol"`
-	Source      string      `json:"from"`
-	Destination string      `json:"to"`
-	Message     string      `json:"message"`
-	Data        interface{} `json:"data"`
+	PacketTime  time.Time `json:"time"`
+	Protocol    string    `json:"protocol"`
+	Source      string    `json:"from"`
+	Destination string    `json:"to"`
+	Message     string    `json:"message"`
+	Data        any       `json:"data"`
 }
 
-func NewSnifferEvent(t time.Time, proto string, src string, dst string, data interface{}, format string, args ...interface{}) SnifferEvent {
+func NewSnifferEvent(t time.Time, proto string, src string, dst string, data any, format string, args ...any) SnifferEvent {
 	return SnifferEvent{
 		PacketTime:  t,
 		Protocol:    proto,

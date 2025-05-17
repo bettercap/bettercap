@@ -39,7 +39,7 @@ func (mod *RestAPI) setAuthFailed(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Unauthorized"))
 }
 
-func (mod *RestAPI) toJSON(w http.ResponseWriter, o interface{}) {
+func (mod *RestAPI) toJSON(w http.ResponseWriter, o any) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(o); err != nil {
 		mod.Debug("error while encoding object to JSON: %v", err)
@@ -70,24 +70,24 @@ func (mod *RestAPI) checkAuth(r *http.Request) bool {
 	return true
 }
 
-func (mod *RestAPI) patchFrame(buf []byte) (frame map[string]interface{}, err error) {
+func (mod *RestAPI) patchFrame(buf []byte) (frame map[string]any, err error) {
 	// this is ugly but necessary: since we're replaying, the
 	// api.rest state object is filled with *old* values (the
 	// recorded ones), but the UI needs updated values at least
 	// of that in order to understand that a replay is going on
 	// and where we are at it. So we need to parse the record
 	// back into a session object and update only the api.rest.state
-	frame = make(map[string]interface{})
+	frame = make(map[string]any)
 
 	if err = json.Unmarshal(buf, &frame); err != nil {
 		return
 	}
 
-	for _, i := range frame["modules"].([]interface{}) {
-		m := i.(map[string]interface{})
+	for _, i := range frame["modules"].([]any) {
+		m := i.(map[string]any)
 		if m["name"] == "api.rest" {
-			state := m["state"].(map[string]interface{})
-			mod.State.Range(func(key interface{}, value interface{}) bool {
+			state := m["state"].(map[string]any)
+			mod.State.Range(func(key any, value any) bool {
 				state[key.(string)] = value
 				return true
 			})

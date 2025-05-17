@@ -12,9 +12,9 @@ import (
 )
 
 type Event struct {
-	Tag  string      `json:"tag"`
-	Time time.Time   `json:"time"`
-	Data interface{} `json:"data"`
+	Tag  string    `json:"tag"`
+	Time time.Time `json:"time"`
+	Data any       `json:"data"`
 }
 
 type LogMessage struct {
@@ -22,7 +22,7 @@ type LogMessage struct {
 	Message string
 }
 
-func NewEvent(tag string, data interface{}) Event {
+func NewEvent(tag string, data any) Event {
 	return Event{
 		Tag:  tag,
 		Time: time.Now(),
@@ -39,7 +39,7 @@ func (e Event) Label() string {
 
 type EventBus <-chan Event
 
-type PrintCallback func(format string, args ...interface{})
+type PrintCallback func(format string, args ...any)
 
 type PrintWriter struct {
 	pool *EventPool
@@ -130,7 +130,7 @@ func (p *EventPool) SetDebug(d bool) {
 	p.debug = d
 }
 
-func (p *EventPool) Add(tag string, data interface{}) {
+func (p *EventPool) Add(tag string, data any) {
 	p.Lock()
 	defer p.Unlock()
 
@@ -152,7 +152,7 @@ func (p *EventPool) Add(tag string, data interface{}) {
 	}
 }
 
-func (p *EventPool) Printf(format string, a ...interface{}) {
+func (p *EventPool) Printf(format string, a ...any) {
 	p.printLock.Lock()
 	defer p.printLock.Unlock()
 
@@ -162,7 +162,7 @@ func (p *EventPool) Printf(format string, a ...interface{}) {
 	fmt.Printf(format, a...)
 }
 
-func (p *EventPool) Log(level log.Verbosity, format string, args ...interface{}) {
+func (p *EventPool) Log(level log.Verbosity, format string, args ...any) {
 	if level == log.DEBUG && !p.debug {
 		return
 	} else if level < log.ERROR && p.silent {
