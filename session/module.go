@@ -21,7 +21,7 @@ type Module interface {
 	Handlers() []ModuleHandler
 	Parameters() map[string]*ModuleParam
 
-	Extra() map[string]interface{}
+	Extra() map[string]any
 	Required() []string
 	Running() bool
 	Start() error
@@ -65,9 +65,9 @@ func NewSessionModule(name string, s *Session) SessionModule {
 	return m
 }
 
-func (m *SessionModule) Extra() map[string]interface{} {
-	extra := make(map[string]interface{})
-	m.State.Range(func(k, v interface{}) bool {
+func (m *SessionModule) Extra() map[string]any {
+	extra := make(map[string]any)
+	m.State.Range(func(k, v any) bool {
 		extra[k.(string)] = v
 		return true
 	})
@@ -81,33 +81,33 @@ func (m *SessionModule) InitState(keys ...string) {
 }
 
 func (m *SessionModule) ResetState() {
-	m.State.Range(func(k, v interface{}) bool {
+	m.State.Range(func(k, v any) bool {
 		m.State.Store(k, nil)
 		return true
 	})
 }
 
-func (m *SessionModule) Debug(format string, args ...interface{}) {
+func (m *SessionModule) Debug(format string, args ...any) {
 	m.Session.Events.Log(log.DEBUG, m.tag+format, args...)
 }
 
-func (m *SessionModule) Info(format string, args ...interface{}) {
+func (m *SessionModule) Info(format string, args ...any) {
 	m.Session.Events.Log(log.INFO, m.tag+format, args...)
 }
 
-func (m *SessionModule) Warning(format string, args ...interface{}) {
+func (m *SessionModule) Warning(format string, args ...any) {
 	m.Session.Events.Log(log.WARNING, m.tag+format, args...)
 }
 
-func (m *SessionModule) Error(format string, args ...interface{}) {
+func (m *SessionModule) Error(format string, args ...any) {
 	m.Session.Events.Log(log.ERROR, m.tag+format, args...)
 }
 
-func (m *SessionModule) Fatal(format string, args ...interface{}) {
+func (m *SessionModule) Fatal(format string, args ...any) {
 	m.Session.Events.Log(log.FATAL, m.tag+format, args...)
 }
 
-func (m *SessionModule) Printf(format string, a ...interface{}) {
+func (m *SessionModule) Printf(format string, a ...any) {
 	m.Session.Events.Printf(format, a...)
 }
 
@@ -293,7 +293,7 @@ type moduleJSON struct {
 	Parameters  map[string]*ModuleParam `json:"parameters"`
 	Handlers    []ModuleHandler         `json:"handlers"`
 	Running     bool                    `json:"running"`
-	State       map[string]interface{}  `json:"state"`
+	State       map[string]any          `json:"state"`
 }
 
 func (mm ModuleList) MarshalJSON() ([]byte, error) {

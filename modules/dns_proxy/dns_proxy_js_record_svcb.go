@@ -8,10 +8,10 @@ import (
 	"github.com/miekg/dns"
 )
 
-func NewJSSVCBKeyValue(kv dns.SVCBKeyValue) (map[string]interface{}, error) {
+func NewJSSVCBKeyValue(kv dns.SVCBKeyValue) (map[string]any, error) {
 	key := kv.Key()
 
-	jsKv := map[string]interface{}{
+	jsKv := map[string]any{
 		"Key": uint16(key),
 	}
 
@@ -56,7 +56,7 @@ func NewJSSVCBKeyValue(kv dns.SVCBKeyValue) (map[string]interface{}, error) {
 	return jsKv, nil
 }
 
-func ToSVCBKeyValue(jsKv map[string]interface{}) (dns.SVCBKeyValue, error) {
+func ToSVCBKeyValue(jsKv map[string]any) (dns.SVCBKeyValue, error) {
 	var kv dns.SVCBKeyValue
 
 	key := dns.SVCBKey(jsPropToUint16(jsKv, "Key"))

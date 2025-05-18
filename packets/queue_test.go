@@ -14,8 +14,8 @@ func TestQueueActivity(t *testing.T) {
 		MAC: h,
 	}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{a.IP, i},
 		{a.MAC, h},
@@ -31,8 +31,8 @@ func TestQueueActivity(t *testing.T) {
 func TestQueueTraffic(t *testing.T) {
 	tr := Traffic{}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{tr.Sent, uint64(0)},
 		{tr.Received, uint64(0)},
@@ -47,8 +47,8 @@ func TestQueueTraffic(t *testing.T) {
 func TestQueueStats(t *testing.T) {
 	s := Stats{}
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{s.Sent, uint64(0)},
 		{s.Received, uint64(0)},

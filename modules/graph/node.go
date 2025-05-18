@@ -49,13 +49,13 @@ var nodeDotStyles = map[NodeType]string{
 }
 
 type Node struct {
-	Type        NodeType    `json:"type"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
-	ID          string      `json:"id"`
-	Annotations string      `json:"annotations"`
-	Entity      interface{} `json:"entity"`
-	Dummy       bool        `json:"-"`
+	Type        NodeType  `json:"type"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	ID          string    `json:"id"`
+	Annotations string    `json:"annotations"`
+	Entity      any       `json:"entity"`
+	Dummy       bool      `json:"-"`
 }
 
 func ReadNode(fileName string) (*Node, error) {
@@ -121,27 +121,27 @@ func (n Node) Label() string {
 		return s
 	case BLEServer:
 		return fmt.Sprintf("%s\\n(%s)",
-			n.Entity.(map[string]interface{})["mac"].(string),
-			n.Entity.(map[string]interface{})["vendor"].(string))
+			n.Entity.(map[string]any)["mac"].(string),
+			n.Entity.(map[string]any)["vendor"].(string))
 	case Station:
 		return fmt.Sprintf("%s\\n(%s)",
-			n.Entity.(map[string]interface{})["mac"].(string),
-			n.Entity.(map[string]interface{})["vendor"].(string))
+			n.Entity.(map[string]any)["mac"].(string),
+			n.Entity.(map[string]any)["vendor"].(string))
 	case AccessPoint:
 		return fmt.Sprintf("%s\\n%s\\n(%s)",
-			n.Entity.(map[string]interface{})["hostname"].(string),
-			n.Entity.(map[string]interface{})["mac"].(string),
-			n.Entity.(map[string]interface{})["vendor"].(string))
+			n.Entity.(map[string]any)["hostname"].(string),
+			n.Entity.(map[string]any)["mac"].(string),
+			n.Entity.(map[string]any)["vendor"].(string))
 	case Endpoint:
 		return fmt.Sprintf("%s\\n(%s %s)",
-			n.Entity.(map[string]interface{})["ipv4"].(string),
-			n.Entity.(map[string]interface{})["mac"].(string),
-			n.Entity.(map[string]interface{})["vendor"].(string))
+			n.Entity.(map[string]any)["ipv4"].(string),
+			n.Entity.(map[string]any)["mac"].(string),
+			n.Entity.(map[string]any)["vendor"].(string))
 	case Gateway:
 		return fmt.Sprintf("%s\\n(%s %s)",
-			n.Entity.(map[string]interface{})["ipv4"].(string),
-			n.Entity.(map[string]interface{})["mac"].(string),
-			n.Entity.(map[string]interface{})["vendor"].(string))
+			n.Entity.(map[string]any)["ipv4"].(string),
+			n.Entity.(map[string]any)["mac"].(string),
+			n.Entity.(map[string]any)["vendor"].(string))
 	}
 	return "?"
 }
@@ -157,8 +157,8 @@ func (n Node) Dot(isTarget bool) string {
 		strings.ReplaceAll(n.Label(), "\"", "\\\""))
 }
 
-func (n Node) ToMap() (map[string]interface{}, error) {
-	var m map[string]interface{}
+func (n Node) ToMap() (map[string]any, error) {
+	var m map[string]any
 
 	if raw, err := json.Marshal(n); err != nil {
 		return nil, err
