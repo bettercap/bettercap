@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,25 +11,22 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-type httpPackage struct {
-}
+type httpPackage struct{}
 
 type httpResponse struct {
 	Error    error
 	Response *http.Response
 	Raw      []byte
 	Body     string
-	JSON     interface{}
 }
 
+// Encode encodes a string for use in a URL query.
 func (c httpPackage) Encode(s string) string {
 	return url.QueryEscape(s)
 }
 
-func (c httpPackage) Request(method string, uri string,
-	headers map[string]string,
-	form map[string]string,
-	json string) httpResponse {
+// Request sends an HTTP request with the specified method, URL, headers, form data, or JSON payload.
+func (c httpPackage) Request(method, uri string, headers map[string]string, form map[string]string, json string) httpResponse {
 	var reader io.Reader
 
 	if form != nil {
@@ -38,14 +34,14 @@ func (c httpPackage) Request(method string, uri string,
 		for k, v := range form {
 			data.Set(k, v)
 		}
-		reader = bytes.NewBufferString(data.Encode())
+		reader = strings.NewReader(data.Encode())
 	} else if json != "" {
 		reader = strings.NewReader(json)
 	}
 
 	req, err := http.NewRequest(method, uri, reader)
 	if err != nil {
-		return httpResponse{Error: err}
+		return httpResponse{Error: fmt.Errorf("failed to create request: %w", err)}
 	}
 
 	if form != nil {
@@ -55,18 +51,18 @@ func (c httpPackage) Request(method string, uri string,
 	}
 
 	for name, value := range headers {
-		req.Header.Add(name, value)
+		req.Header.Set(name, value)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return httpResponse{Error: err}
+		return httpResponse{Error: fmt.Errorf("request failed: %w", err)}
 	}
 	defer resp.Body.Close()
 
-	raw, err := ioutil.ReadAll(resp.Body)
+	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return httpResponse{Error: err}
+		return httpResponse{Error: fmt.Errorf("failed to read response body: %w", err)}
 	}
 
 	res := httpResponse{
@@ -75,82 +71,85 @@ func (c httpPackage) Request(method string, uri string,
 		Body:     string(raw),
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		res.Error = fmt.Errorf("%s", resp.Status)
+	if resp.StatusCode >= 400 {
+		res.Error = fmt.Errorf("HTTP error: %s", resp.Status)
 	}
 
 	return res
 }
 
+// Get sends a GET request.
 func (c httpPackage) Get(url string, headers map[string]string) httpResponse {
-	return c.Request("GET", url, headers, nil, "")
+	return c.Request(http.MethodGet, url, headers, nil, "")
 }
 
+// PostForm sends a POST request with form data.
 func (c httpPackage) PostForm(url string, headers map[string]string, form map[string]string) httpResponse {
-	return c.Request("POST", url, headers, form, "")
+	return c.Request(http.MethodPost, url, headers, form, "")
 }
 
+// PostJSON sends a POST request with a JSON payload.
 func (c httpPackage) PostJSON(url string, headers map[string]string, json string) httpResponse {
-	return c.Request("POST", url, headers, nil, json)
+	return c.Request(http.MethodPost, url, headers, nil, json)
 }
 
+// httpRequest processes JavaScript calls for HTTP requests.
 func httpRequest(call otto.FunctionCall) otto.Value {
-	argv := call.ArgumentList
-	argc := len(argv)
-	if argc < 2 {
-		return ReportError("httpRequest: expected 2 or more, %d given instead.", argc)
+	if len(call.ArgumentList) < 2 {
+		return ReportError("httpRequest: expected at least 2 arguments, got %d", len(call.ArgumentList))
 	}
 
-	method := argv[0].String()
-	url := argv[1].String()
+	method := call.Argument(0).String()
+	url := call.Argument(1).String()
 
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, nil)
-	if argc >= 3 {
-		data := argv[2].String()
-		req, err = http.NewRequest(method, url, bytes.NewBuffer([]byte(data)))
-		if err != nil {
-			return ReportError("Could create request to url %s: %s", url, err)
-		}
+	var reader io.Reader
+	if len(call.ArgumentList) >= 3 {
+		data := call.Argument(2).String()
+		reader = bytes.NewBufferString(data)
+	}
 
-		if argc > 3 {
-			headers := argv[3].Object()
-			for _, key := range headers.Keys() {
-				v, err := headers.Get(key)
-				if err != nil {
-					return ReportError("Could add header %s to request: %s", key, err)
+	req, err := http.NewRequest(method, url, reader)
+	if err != nil {
+		return ReportError("failed to create request for URL %s: %s", url, err)
+	}
+
+	if len(call.ArgumentList) > 3 {
+		headers, _ := call.Argument(3).Export()
+		if headerMap, ok := headers.(map[string]interface{}); ok {
+			for key, value := range headerMap {
+				if strValue, ok := value.(string); ok {
+					req.Header.Set(key, strValue)
 				}
-				req.Header.Add(key, v.String())
 			}
 		}
-	} else if err != nil {
-		return ReportError("Could create request to url %s: %s", url, err)
 	}
 
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return ReportError("Could not request url %s: %s", url, err)
+		return ReportError("failed to execute request to URL %s: %s", url, err)
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ReportError("Could not read response: %s", err)
+		return ReportError("failed to read response body: %s", err)
 	}
 
-	object, err := otto.New().Object("({})")
-	if err != nil {
-		return ReportError("Could not create response object: %s", err)
-	}
+	responseObj, _ := otto.New().Object(`({})`)
+	responseObj.Set("body", string(body))
 
-	err = object.Set("body", string(body))
+	v, err := otto.ToValue(responseObj)
 	if err != nil {
-		return ReportError("Could not populate response object: %s", err)
-	}
-
-	v, err := otto.ToValue(object)
-	if err != nil {
-		return ReportError("Could not convert to object: %s", err)
+		return ReportError("failed to convert response to Otto value: %s", err)
 	}
 	return v
+}
+
+// ReportError formats and returns a JavaScript-compatible error.
+func ReportError(format string, args ...interface{}) otto.Value {
+	errMessage := fmt.Sprintf(format, args...)
+	fmt.Println("Error:", errMessage) // Log the error
+	val, _ := otto.ToValue(fmt.Errorf(errMessage))
+	return val
 }
