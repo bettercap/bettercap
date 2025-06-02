@@ -281,7 +281,7 @@ func (mod *Discovery) showMeta(arg string) (err error) {
 	}
 
 	colNames := []string{"Name", "Value"}
-	any := false
+	isAny := false
 
 	for _, t := range targets {
 		keys := []string{}
@@ -326,12 +326,12 @@ func (mod *Discovery) showMeta(arg string) (err error) {
 				})
 			}
 
-			any = true
+			isAny = true
 			tui.Table(mod.Session.Events.Stdout, colNames, rows)
 		}
 	}
 
-	if any {
+	if isAny {
 		mod.Session.Refresh()
 	}
 
