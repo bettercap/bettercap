@@ -317,7 +317,7 @@ func (c *client) shutdown() {
 
 // Data receiving routine reads from connection, unpacks packets into dns.Msg
 // structures and sends them to a given msgCh channel
-func (c *client) recv(ctx context.Context, l interface{}, msgCh chan *dns.Msg) {
+func (c *client) recv(ctx context.Context, l any, msgCh chan *dns.Msg) {
 	var readFrom func([]byte) (n int, src net.Addr, err error)
 
 	switch pConn := l.(type) {

@@ -10,8 +10,8 @@ import (
 
 func TestDot11Vars(t *testing.T) {
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{openFlags, 1057},
 		{wpaFlags, 1041},
@@ -65,8 +65,8 @@ func TestDot11ApConfig(t *testing.T) {
 	}
 
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{config.SSID, ssid},
 		{config.BSSID, bssid},
@@ -88,8 +88,8 @@ func TestDot11Info(t *testing.T) {
 	dot11InfoElement := Dot11Info(id, info)
 
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{dot11InfoElement.ID, id},
 		{dot11InfoElement.Length, uint8(len(info))},
@@ -159,8 +159,8 @@ func TestDot11Parse(t *testing.T) {
 	ok, radiotap, dot11 := Dot11Parse(packet)
 
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		// testing for the known bad cases
 		{ok, false},
@@ -190,8 +190,8 @@ func TestDot11ParseIDSSID(t *testing.T) {
 	ok, id := Dot11ParseIDSSID(packet)
 
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{ok, true},
 		{id, "I still love Ruby, don't worry!"},
@@ -231,8 +231,8 @@ func TestDot11ParseEncryption(t *testing.T) {
 	found, enc, cipher, auth := Dot11ParseEncryption(packet, dot11)
 
 	var units = []struct {
-		got interface{}
-		exp interface{}
+		got any
+		exp any
 	}{
 		{found, true},
 		{enc, "WPA2"},

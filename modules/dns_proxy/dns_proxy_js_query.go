@@ -14,13 +14,13 @@ import (
 )
 
 type JSQuery struct {
-	Answers     []map[string]interface{}
+	Answers     []map[string]any
 	Client      map[string]string
 	Compress    bool
-	Extras      []map[string]interface{}
+	Extras      []map[string]any
 	Header      JSQueryHeader
-	Nameservers []map[string]interface{}
-	Questions   []map[string]interface{}
+	Nameservers []map[string]any
+	Questions   []map[string]any
 
 	refHash string
 }
@@ -39,23 +39,23 @@ type JSQueryHeader struct {
 	Zero               bool
 }
 
-func jsPropToMap(obj map[string]interface{}, key string) map[string]interface{} {
-	if v, ok := obj[key].(map[string]interface{}); ok {
+func jsPropToMap(obj map[string]any, key string) map[string]any {
+	if v, ok := obj[key].(map[string]any); ok {
 		return v
 	}
-	log.Error("error converting JS property to map[string]interface{} where key is: %s", key)
-	return map[string]interface{}{}
+	log.Error("error converting JS property to map[string]any where key is: %s", key)
+	return map[string]any{}
 }
 
-func jsPropToMapArray(obj map[string]interface{}, key string) []map[string]interface{} {
-	if v, ok := obj[key].([]map[string]interface{}); ok {
+func jsPropToMapArray(obj map[string]any, key string) []map[string]any {
+	if v, ok := obj[key].([]map[string]any); ok {
 		return v
 	}
-	log.Error("error converting JS property to []map[string]interface{} where key is: %s", key)
-	return []map[string]interface{}{}
+	log.Error("error converting JS property to []map[string]any where key is: %s", key)
+	return []map[string]any{}
 }
 
-func jsPropToString(obj map[string]interface{}, key string) string {
+func jsPropToString(obj map[string]any, key string) string {
 	if v, ok := obj[key].(string); ok {
 		return v
 	}
@@ -63,7 +63,7 @@ func jsPropToString(obj map[string]interface{}, key string) string {
 	return ""
 }
 
-func jsPropToStringArray(obj map[string]interface{}, key string) []string {
+func jsPropToStringArray(obj map[string]any, key string) []string {
 	if v, ok := obj[key].([]string); ok {
 		return v
 	}
@@ -71,7 +71,7 @@ func jsPropToStringArray(obj map[string]interface{}, key string) []string {
 	return []string{}
 }
 
-func jsPropToUint8(obj map[string]interface{}, key string) uint8 {
+func jsPropToUint8(obj map[string]any, key string) uint8 {
 	if v, ok := obj[key].(int64); ok {
 		if v >= 0 && v <= math.MaxUint8 {
 			return uint8(v)
@@ -81,8 +81,8 @@ func jsPropToUint8(obj map[string]interface{}, key string) uint8 {
 	return uint8(0)
 }
 
-func jsPropToUint8Array(obj map[string]interface{}, key string) []uint8 {
-	if arr, ok := obj[key].([]interface{}); ok {
+func jsPropToUint8Array(obj map[string]any, key string) []uint8 {
+	if arr, ok := obj[key].([]any); ok {
 		vArr := make([]uint8, 0, len(arr))
 		for _, item := range arr {
 			if v, ok := item.(int64); ok {
@@ -100,7 +100,7 @@ func jsPropToUint8Array(obj map[string]interface{}, key string) []uint8 {
 	return []uint8{}
 }
 
-func jsPropToUint16(obj map[string]interface{}, key string) uint16 {
+func jsPropToUint16(obj map[string]any, key string) uint16 {
 	if v, ok := obj[key].(int64); ok {
 		if v >= 0 && v <= math.MaxUint16 {
 			return uint16(v)
@@ -110,8 +110,8 @@ func jsPropToUint16(obj map[string]interface{}, key string) uint16 {
 	return uint16(0)
 }
 
-func jsPropToUint16Array(obj map[string]interface{}, key string) []uint16 {
-	if arr, ok := obj[key].([]interface{}); ok {
+func jsPropToUint16Array(obj map[string]any, key string) []uint16 {
+	if arr, ok := obj[key].([]any); ok {
 		vArr := make([]uint16, 0, len(arr))
 		for _, item := range arr {
 			if v, ok := item.(int64); ok {
@@ -129,7 +129,7 @@ func jsPropToUint16Array(obj map[string]interface{}, key string) []uint16 {
 	return []uint16{}
 }
 
-func jsPropToUint32(obj map[string]interface{}, key string) uint32 {
+func jsPropToUint32(obj map[string]any, key string) uint32 {
 	if v, ok := obj[key].(int64); ok {
 		if v >= 0 && v <= math.MaxUint32 {
 			return uint32(v)
@@ -139,7 +139,7 @@ func jsPropToUint32(obj map[string]interface{}, key string) uint32 {
 	return uint32(0)
 }
 
-func jsPropToUint64(obj map[string]interface{}, key string) uint64 {
+func jsPropToUint64(obj map[string]any, key string) uint64 {
 	prop, found := obj[key]
 	if found {
 		switch reflect.TypeOf(prop).String() {
@@ -210,10 +210,10 @@ func (j *JSQuery) NewHash() string {
 }
 
 func NewJSQuery(query *dns.Msg, clientIP string) (jsQuery *JSQuery) {
-	answers := make([]map[string]interface{}, len(query.Answer))
-	extras := make([]map[string]interface{}, len(query.Extra))
-	nameservers := make([]map[string]interface{}, len(query.Ns))
-	questions := make([]map[string]interface{}, len(query.Question))
+	answers := make([]map[string]any, len(query.Answer))
+	extras := make([]map[string]any, len(query.Extra))
+	nameservers := make([]map[string]any, len(query.Ns))
+	questions := make([]map[string]any, len(query.Question))
 
 	for i, rr := range query.Answer {
 		jsRecord, err := NewJSResourceRecord(rr)
@@ -243,7 +243,7 @@ func NewJSQuery(query *dns.Msg, clientIP string) (jsQuery *JSQuery) {
 	}
 
 	for i, question := range query.Question {
-		questions[i] = map[string]interface{}{
+		questions[i] = map[string]any{
 			"Name":   question.Name,
 			"Qtype":  int64(question.Qtype),
 			"Qclass": int64(question.Qclass),

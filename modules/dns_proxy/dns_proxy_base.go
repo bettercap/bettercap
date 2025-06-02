@@ -182,23 +182,23 @@ func (p *DNSProxy) dnsWorker() error {
 	return p.Server.ListenAndServe()
 }
 
-func (p *DNSProxy) Debug(format string, args ...interface{}) {
+func (p *DNSProxy) Debug(format string, args ...any) {
 	p.Sess.Events.Log(log.DEBUG, p.tag+format, args...)
 }
 
-func (p *DNSProxy) Info(format string, args ...interface{}) {
+func (p *DNSProxy) Info(format string, args ...any) {
 	p.Sess.Events.Log(log.INFO, p.tag+format, args...)
 }
 
-func (p *DNSProxy) Warning(format string, args ...interface{}) {
+func (p *DNSProxy) Warning(format string, args ...any) {
 	p.Sess.Events.Log(log.WARNING, p.tag+format, args...)
 }
 
-func (p *DNSProxy) Error(format string, args ...interface{}) {
+func (p *DNSProxy) Error(format string, args ...any) {
 	p.Sess.Events.Log(log.ERROR, p.tag+format, args...)
 }
 
-func (p *DNSProxy) Fatal(format string, args ...interface{}) {
+func (p *DNSProxy) Fatal(format string, args ...any) {
 	p.Sess.Events.Log(log.FATAL, p.tag+format, args...)
 }
 

@@ -12,19 +12,19 @@ import (
 
 type Meta struct {
 	sync.Mutex
-	m map[string]interface{}
+	m map[string]any
 }
 
 // we want to protect concurrent access to the Meta
 // object so the m field needs to be unexported, this
 // is to have it in JSON regardless.
 type metaJSON struct {
-	Values map[string]interface{} `json:"values"`
+	Values map[string]any `json:"values"`
 }
 
 func NewMeta() *Meta {
 	return &Meta{
-		m: make(map[string]interface{}),
+		m: make(map[string]any),
 	}
 }
 
@@ -34,13 +34,13 @@ func (m *Meta) MarshalJSON() ([]byte, error) {
 	return json.Marshal(metaJSON{Values: m.m})
 }
 
-func (m *Meta) Set(name string, value interface{}) {
+func (m *Meta) Set(name string, value any) {
 	m.Lock()
 	defer m.Unlock()
 	m.m[name] = value
 }
 
-func (m *Meta) Get(name string) interface{} {
+func (m *Meta) Get(name string) any {
 	m.Lock()
 	defer m.Unlock()
 
@@ -73,7 +73,7 @@ func (m *Meta) SetInts(name string, ints []int) {
 	m.Set(name, strings.Join(list, ","))
 }
 
-func (m *Meta) GetOr(name string, dflt interface{}) interface{} {
+func (m *Meta) GetOr(name string, dflt any) any {
 	m.Lock()
 	defer m.Unlock()
 
@@ -83,7 +83,7 @@ func (m *Meta) GetOr(name string, dflt interface{}) interface{} {
 	return dflt
 }
 
-func (m *Meta) Each(cb func(name string, value interface{})) {
+func (m *Meta) Each(cb func(name string, value any)) {
 	m.Lock()
 	defer m.Unlock()
 

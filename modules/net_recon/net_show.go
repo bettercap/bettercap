@@ -63,7 +63,7 @@ func (mod *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 
 	var traffic *packets.Traffic
 	var found bool
-	var v interface{}
+	var v any
 	if v, found = mod.Session.Queue.Traffic.Load(e.IpAddress); !found {
 		traffic = &packets.Traffic{}
 	} else {
@@ -99,7 +99,7 @@ func (mod *Discovery) getRow(e *network.Endpoint, withMeta bool) [][]string {
 	}
 
 	metas := []string{}
-	e.Meta.Each(func(name string, value interface{}) {
+	e.Meta.Each(func(name string, value any) {
 		s := ""
 		if sv, ok := value.(string); ok {
 			s = sv
@@ -281,12 +281,12 @@ func (mod *Discovery) showMeta(arg string) (err error) {
 	}
 
 	colNames := []string{"Name", "Value"}
-	any := false
+	isAny := false
 
 	for _, t := range targets {
 		keys := []string{}
 
-		t.Meta.Each(func(name string, value interface{}) {
+		t.Meta.Each(func(name string, value any) {
 			keys = append(keys, name)
 		})
 
@@ -326,12 +326,12 @@ func (mod *Discovery) showMeta(arg string) (err error) {
 				})
 			}
 
-			any = true
+			isAny = true
 			tui.Table(mod.Session.Events.Stdout, colNames, rows)
 		}
 	}
 
-	if any {
+	if isAny {
 		mod.Session.Refresh()
 	}
 
