@@ -27,20 +27,7 @@ func (mod *BLERecon) startEnumeration(address string) error {
 	knownDev, found := mod.Session.BLE.Get(address)
 	if !found || knownDev == nil {
 		return fmt.Errorf("device with address %s not found", address)
-	} else if err := mod.adapter.StopScan(); err != nil {
-		mod.Warning("error stopping previous scan: %v", err)
 	}
-
-	mod.current.ResetWrite()
-
-	defer func() {
-		// make sure to restart scan when we're done
-		mod.Info("restoring ble scan")
-		if err := mod.adapter.Scan(mod.onDevice); err != nil {
-			mod.Error("error restoring ble scan: %v", err)
-		}
-		mod.Info("ble scan restored")
-	}()
 
 	mod.Info("connecting to %s ...", address)
 
@@ -54,11 +41,19 @@ func (mod *BLERecon) startEnumeration(address string) error {
 		return err
 	}
 
+	defer func() {
+		if err := device.Disconnect(); err != nil {
+			mod.Warning("error disconnecting from %s: %v", address, err)
+		} else {
+			mod.Info("disconnected from %s", address)
+		}
+	}()
+
 	mod.Session.Events.Add("ble.device.connected", knownDev)
 
 	mod.Info("connected to %s", address)
 
-	srvcs, err := device.DiscoverServices(nil)
+	discoveredServices, err := device.DiscoverServices(nil)
 	if err != nil {
 		return fmt.Errorf("could not discover services for %s: %v", address, err)
 	}
@@ -68,7 +63,7 @@ func (mod *BLERecon) startEnumeration(address string) error {
 
 	knownDev.ResetServices()
 
-	for _, svc := range srvcs {
+	for _, svc := range discoveredServices {
 		service := network.NewBLEService(strings.ToLower(svc.UUID().String()))
 
 		mod.Session.Events.Add("ble.device.service.discovered", svc)
@@ -88,11 +83,11 @@ func (mod *BLERecon) startEnumeration(address string) error {
 
 		rows = append(rows, row)
 
-		chars, err := svc.DiscoverCharacteristics(nil)
+		svcCharacteristics, err := svc.DiscoverCharacteristics(nil)
 		if err != nil {
 			mod.Error("error while enumerating chars for service %s: %s", svc.UUID(), err)
 		} else {
-			for _, ch := range chars {
+			for _, ch := range svcCharacteristics {
 				char := network.NewBLECharacteristic(strings.ToLower(ch.UUID().String()))
 				if mtu, err := ch.GetMTU(); err != nil {
 					mod.Warning("can't read %v mtu: %v", ch.UUID(), err)
@@ -110,7 +105,6 @@ func (mod *BLERecon) startEnumeration(address string) error {
 				}
 
 				data := ""
-				multi := ([]string)(nil)
 				raw := make([]byte, 255)
 				if n, err := ch.Read(raw); err == nil {
 					raw = raw[0:n]
@@ -118,27 +112,12 @@ func (mod *BLERecon) startEnumeration(address string) error {
 					data = parseRawData(raw)
 				}
 
-				if multi == nil {
-					char.Data = data
-					rows = append(rows, []string{
-						name,
-						strings.Join(char.Properties, ", "),
-						data,
-					})
-				} else {
-					char.Data = multi
-					for i, m := range multi {
-						if i == 0 {
-							rows = append(rows, []string{
-								name,
-								strings.Join(char.Properties, ", "),
-								m,
-							})
-						} else {
-							rows = append(rows, []string{"", "", "", m})
-						}
-					}
-				}
+				char.Data = data
+				rows = append(rows, []string{
+					name,
+					strings.Join(char.Properties, ", "),
+					data,
+				})
 
 				service.Characteristics = append(service.Characteristics, char)
 			}
@@ -150,12 +129,6 @@ func (mod *BLERecon) startEnumeration(address string) error {
 	}
 
 	tui.Table(mod.Session.Events.Stdout, columns, rows)
-
-	if err := device.Disconnect(); err != nil {
-		mod.Warning("error disconnecting from %s: %v", address, err)
-	} else {
-		mod.Info("disconnected from %s", address)
-	}
 
 	return nil
 }

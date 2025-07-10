@@ -37,5 +37,5 @@ require (
 	go.einride.tech/can v0.12.0
 	golang.org/x/net v0.28.0
 	golang.org/x/tools v0.24.0 // indirect
-	tinygo.org/x/bluetooth v0.10.0
+	tinygo.org/x/bluetooth v0.12.0
 )

@@ -62,7 +62,7 @@ func NewBLERecon(s *session.Session) *BLERecon {
 		// deviceId:      -1,
 		quit:        make(chan bool),
 		done:        make(chan bool),
-		connTimeout: 5,
+		connTimeout: 15,
 		devTTL:      30,
 		current:     &CurrentDevice{},
 	}
