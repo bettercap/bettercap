@@ -61,15 +61,24 @@ func (mod *ZeroGod) show(filter string, withData bool) error {
 					for _, field := range svc.Text {
 						if field = str.Trim(field); len(field) > 0 {
 							keyval := strings.SplitN(field, "=", 2)
-							rows = append(rows, []string{
-								keyval[0],
-								keyval[1],
-							})
+							key := str.Trim(keyval[0])
+							val := str.Trim(keyval[1])
+
+							if key != "" || val != "" {
+								rows = append(rows, []string{
+									key,
+									val,
+								})
+							}
 						}
 					}
 
-					tui.Table(mod.Session.Events.Stdout, columns, rows)
-					fmt.Fprintf(mod.Session.Events.Stdout, "\n")
+					if len(rows) == 0 {
+						fmt.Fprintf(mod.Session.Events.Stdout, "    %s\n", tui.Dim("no data"))
+					} else {
+						tui.Table(mod.Session.Events.Stdout, columns, rows)
+						fmt.Fprintf(mod.Session.Events.Stdout, "\n")
+					}
 
 				} else {
 					fmt.Fprintf(mod.Session.Events.Stdout, "    %s\n", tui.Dim("no data"))
