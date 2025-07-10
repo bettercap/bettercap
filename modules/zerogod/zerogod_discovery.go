@@ -201,6 +201,14 @@ func (mod *ZeroGod) logDNS(src net.IP, dns layers.DNS, isLocal bool) {
 func (mod *ZeroGod) onPacket(pkt gopacket.Packet) {
 	mod.Debug("%++v", pkt)
 
+	// sadly the latest available version of gopacket has an unpatched bug :/
+	// https://github.com/bettercap/bettercap/issues/1184
+	defer func() {
+		if err := recover(); err != nil {
+			mod.Error("unexpected error while parsing network packet: %v\n\n%++v", err, pkt)
+		}
+	}()
+
 	netLayer := pkt.NetworkLayer()
 	if netLayer == nil {
 		mod.Warning("not network layer in packet %+v", pkt)
