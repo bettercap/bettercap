@@ -24,7 +24,7 @@ jobs:
             pretty: 🪟 Windows
             output: bettercap.exe
         arch: [amd64, arm64]
-        go: [1.22.x]
+        go: [1.24.x]
         exclude:
           - os:
               name: darwin

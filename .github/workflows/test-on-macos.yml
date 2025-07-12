@@ -13,7 +13,7 @@ jobs:
     strategy:
         matrix:
           os: [macos-latest]
-          go-version: ['1.22.x']
+          go-version: ['1.24.x']
 
     steps:
         - name: Checkout Code
