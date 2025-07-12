@@ -1,5 +1,5 @@
 # build stage
-FROM golang:1.22-alpine3.20 AS build-env
+FROM golang:1.24-alpine AS build-env
 
 RUN apk add --no-cache ca-certificates
 RUN apk add --no-cache bash gcc g++ binutils-gold iptables wireless-tools build-base libpcap-dev libusb-dev linux-headers libnetfilter_queue-dev git
@@ -13,7 +13,7 @@ RUN mkdir -p /usr/local/share/bettercap
 RUN git clone https://github.com/bettercap/caplets /usr/local/share/bettercap/caplets
 
 # final stage
-FROM alpine:3.20
+FROM alpine
 RUN apk add --no-cache ca-certificates
 RUN apk add --no-cache bash iproute2 libpcap libusb-dev libnetfilter_queue wireless-tools iw
 COPY --from=build-env /go/src/github.com/bettercap/bettercap/bettercap /app/
