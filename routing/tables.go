@@ -21,7 +21,12 @@ func Update() ([]Route, error) {
 
 func Gateway(ip RouteType, device string) (string, error) {
 	Update()
+	return gatewayFromTable(ip, device)
+}
 
+// gatewayFromTable finds the gateway from the current table without updating it
+// This allows testing with controlled table data
+func gatewayFromTable(ip RouteType, device string) (string, error) {
 	lock.RLock()
 	defer lock.RUnlock()
 

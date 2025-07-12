@@ -159,7 +159,7 @@ func TestGatewayEmptyTable(t *testing.T) {
 	// Test with empty table
 	resetTable()
 
-	gateway, err := Gateway(IPv4, "eth0")
+	gateway, err := gatewayFromTable(IPv4, "eth0")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -185,7 +185,7 @@ func TestGatewayNoDefaultRoute(t *testing.T) {
 	}
 	lock.Unlock()
 
-	gateway, err := Gateway(IPv4, "eth0")
+	gateway, err := gatewayFromTable(IPv4, "eth0")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -202,6 +202,29 @@ func TestGatewayWindowsCase(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	t.Logf("Gateway result for eth0: %s", gateway)
+}
+
+func TestGatewayFromTableWithDefaults(t *testing.T) {
+	// Test gatewayFromTable with controlled data containing defaults
+	resetTable()
+	addTestRoutes()
+
+	gateway, err := gatewayFromTable(IPv4, "eth0")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if gateway != "192.168.1.1" {
+		t.Errorf("Expected gateway 192.168.1.1, got %s", gateway)
+	}
+
+	// Test with device-specific lookup
+	gateway, err = gatewayFromTable(IPv4, "wlan0")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if gateway != "10.0.0.1" {
+		t.Errorf("Expected gateway 10.0.0.1, got %s", gateway)
+	}
 }
 
 func TestTableConcurrency(t *testing.T) {
