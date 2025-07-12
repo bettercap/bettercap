@@ -38,9 +38,15 @@ bettercap is a powerful, easily extensible and portable framework written in Go 
 * **A very convenient [web UI](https://www.bettercap.org/usage/#web-ui).**
 * [More!](https://www.bettercap.org/modules/)
 
+## Contributors
+
+<a href="https://github.com/bettercap/bettercap/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=bettercap/bettercap" alt="bettercap project contributors" />
+</a>
+
 ## License
 
-`bettercap` is made with ♥  by [the dev team](https://github.com/orgs/bettercap/people) and it's released under the GPL 3 license.
+`bettercap` is made with ♥ and released under the GPL 3 license.
 
 ## Stargazers over time
 
