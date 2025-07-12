@@ -1,10 +1,10 @@
 package http_proxy
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/elazarl/goproxy"
 
@@ -74,10 +74,10 @@ func (p *HTTPProxy) isScriptInjectable(res *http.Response) (bool, string) {
 	return false, ""
 }
 
-func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) (error) {
+func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) error {
 	defer res.Body.Close()
 
-	raw, err := ioutil.ReadAll(res.Body)
+	raw, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	} else if html := string(raw); strings.Contains(html, "</head>") {
@@ -91,7 +91,7 @@ func (p *HTTPProxy) doScriptInjection(res *http.Response, cType string) (error) 
 		res.Header.Set("Content-Length", strconv.Itoa(len(html)))
 
 		// reset the response body to the original unread state
-		res.Body = ioutil.NopCloser(strings.NewReader(html))
+		res.Body = io.NopCloser(strings.NewReader(html))
 
 		return nil
 	}

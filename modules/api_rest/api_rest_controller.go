@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
@@ -394,7 +393,7 @@ func (mod *RestAPI) readFile(fileName string, w http.ResponseWriter, r *http.Req
 }
 
 func (mod *RestAPI) writeFile(fileName string, w http.ResponseWriter, r *http.Request) {
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		msg := fmt.Sprintf("invalid file upload: %s", err)
 		mod.Warning(msg)
@@ -402,7 +401,7 @@ func (mod *RestAPI) writeFile(fileName string, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = ioutil.WriteFile(fileName, data, 0666)
+	err = os.WriteFile(fileName, data, 0666)
 	if err != nil {
 		msg := fmt.Sprintf("can't write to %s: %s", fileName, err)
 		mod.Warning(msg)

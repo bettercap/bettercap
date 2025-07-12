@@ -3,7 +3,7 @@ package http_proxy
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -208,7 +208,7 @@ func (j *JSResponse) ToResponse(req *http.Request) (resp *http.Response) {
 func (j *JSResponse) ReadBody() string {
 	defer j.resp.Body.Close()
 
-	raw, err := ioutil.ReadAll(j.resp.Body)
+	raw, err := io.ReadAll(j.resp.Body)
 	if err != nil {
 		return ""
 	}
@@ -217,7 +217,7 @@ func (j *JSResponse) ReadBody() string {
 	j.bodyRead = true
 	j.bodyClear = false
 	// reset the response body to the original unread state
-	j.resp.Body = ioutil.NopCloser(bytes.NewBuffer(raw))
+	j.resp.Body = io.NopCloser(bytes.NewBuffer(raw))
 
 	return j.Body
 }

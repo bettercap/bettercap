@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -50,7 +50,7 @@ func toSerializableRequest(req *http.Request) HTTPRequest {
 	body := []byte(nil)
 	ctype := "?"
 	if req.Body != nil {
-		body, _ = ioutil.ReadAll(req.Body)
+		body, _ = io.ReadAll(req.Body)
 	}
 
 	for name, values := range req.Header {
@@ -90,7 +90,7 @@ func toSerializableResponse(res *http.Response) HTTPResponse {
 	}
 
 	if res.Body != nil {
-		body, _ = ioutil.ReadAll(res.Body)
+		body, _ = io.ReadAll(res.Body)
 	}
 
 	// attempt decompression, but since this has been parsed by just

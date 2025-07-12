@@ -1,7 +1,7 @@
 package http_proxy
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -253,7 +253,7 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 	// if we have a text or html content type, fetch the body
 	// and perform sslstripping
 	if s.isContentStrippable(res) {
-		raw, err := ioutil.ReadAll(res.Body)
+		raw, err := io.ReadAll(res.Body)
 		if err != nil {
 			log.Error("Could not read response body: %s", err)
 			return
@@ -297,9 +297,9 @@ func (s *SSLStripper) Process(res *http.Response, ctx *goproxy.ProxyCtx) {
 
 		// reset the response body to the original unread state
 		// but with just a string reader, this way further calls
-		// to ioutil.ReadAll(res.Body) will just return the content
+		// to ui.ReadAll(res.Body) will just return the content
 		// we stripped without downloading anything again.
-		res.Body = ioutil.NopCloser(strings.NewReader(body))
+		res.Body = io.NopCloser(strings.NewReader(body))
 	}
 
 	// fix cookies domain + strip "secure" + "httponly" flags

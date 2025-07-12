@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -64,7 +63,7 @@ func (c httpPackage) Request(method string, uri string,
 	}
 	defer resp.Body.Close()
 
-	raw, err := ioutil.ReadAll(resp.Body)
+	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return httpResponse{Error: err}
 	}
@@ -133,7 +132,7 @@ func httpRequest(call otto.FunctionCall) otto.Value {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return ReportError("Could not read response: %s", err)
 	}

@@ -3,7 +3,7 @@ package http_proxy
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -201,7 +201,7 @@ func (j *JSRequest) RemoveHeader(name string) {
 }
 
 func (j *JSRequest) ReadBody() string {
-	raw, err := ioutil.ReadAll(j.req.Body)
+	raw, err := io.ReadAll(j.req.Body)
 	if err != nil {
 		return ""
 	}
@@ -209,7 +209,7 @@ func (j *JSRequest) ReadBody() string {
 	j.Body = string(raw)
 	j.bodyRead = true
 	// reset the request body to the original unread state
-	j.req.Body = ioutil.NopCloser(bytes.NewBuffer(raw))
+	j.req.Body = io.NopCloser(bytes.NewBuffer(raw))
 
 	return j.Body
 }
