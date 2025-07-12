@@ -41,7 +41,7 @@ var (
 		`(?:25[0-5]|2[0-4][0-9]|[1][0-9]{2}|[1-9]?[0-9])` + `$`)
 	MACValidator = regexp.MustCompile(`(?i)^(?:[a-f0-9]{2}:){5}[a-f0-9]{2}$`)
 	// lulz this sounds like a hamburger
-	macParser   = regexp.MustCompile(`(?i)((?:[a-f0-9]{2}:){5}[a-f0-9]{2})`)
+	macParser   = regexp.MustCompile(`(?i)((?:[a-f0-9]{2}[:-]){5}[a-f0-9]{2})`)
 	aliasParser = regexp.MustCompile(`(?i)([a-z_][a-z_0-9]+)`)
 )
 

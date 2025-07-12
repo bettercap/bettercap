@@ -1,6 +1,7 @@
 package network
 
 import (
+	"net"
 	"testing"
 
 	"github.com/evilsocket/islazy/data"
@@ -17,6 +18,14 @@ var dot11TestVector = []dot11pair{
 	{2484, 14},
 	{5825, 165},
 	{5885, 177},
+}
+
+func buildExampleEndpoint() *Endpoint {
+	e := NewEndpointNoResolve("192.168.1.100", "aa:bb:cc:dd:ee:ff", "wlan0", 0)
+	e.SetNetwork("192.168.1.0/24")
+	_, ipNet, _ := net.ParseCIDR("192.168.1.0/24")
+	e.Net = ipNet
+	return e
 }
 
 func buildExampleWiFi() *WiFi {

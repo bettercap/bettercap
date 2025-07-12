@@ -97,3 +97,144 @@ func TestCoreExists(t *testing.T) {
 		}
 	}
 }
+
+func TestHasBinary(t *testing.T) {
+	tests := []struct {
+		name       string
+		executable string
+		expected   bool
+	}{
+		{
+			name:       "common shell",
+			executable: "sh",
+			expected:   true,
+		},
+		{
+			name:       "echo command",
+			executable: "echo",
+			expected:   true,
+		},
+		{
+			name:       "non-existent binary",
+			executable: "this-binary-definitely-does-not-exist-12345",
+			expected:   false,
+		},
+		{
+			name:       "empty string",
+			executable: "",
+			expected:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := HasBinary(tt.executable)
+			if got != tt.expected {
+				t.Errorf("HasBinary(%q) = %v, want %v", tt.executable, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestExec(t *testing.T) {
+	tests := []struct {
+		name       string
+		executable string
+		args       []string
+		wantError  bool
+		contains   string
+	}{
+		{
+			name:       "echo with args",
+			executable: "echo",
+			args:       []string{"hello", "world"},
+			wantError:  false,
+			contains:   "hello world",
+		},
+		{
+			name:       "echo empty",
+			executable: "echo",
+			args:       []string{},
+			wantError:  false,
+			contains:   "",
+		},
+		{
+			name:       "non-existent command",
+			executable: "this-command-does-not-exist-12345",
+			args:       []string{},
+			wantError:  true,
+			contains:   "",
+		},
+		{
+			name:       "true command",
+			executable: "true",
+			args:       []string{},
+			wantError:  false,
+			contains:   "",
+		},
+		{
+			name:       "false command",
+			executable: "false",
+			args:       []string{},
+			wantError:  true,
+			contains:   "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Skip platform-specific commands if not available
+			if !HasBinary(tt.executable) && !tt.wantError {
+				t.Skipf("%s not found in PATH", tt.executable)
+			}
+
+			output, err := Exec(tt.executable, tt.args)
+
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("Exec(%q, %v) expected error but got none", tt.executable, tt.args)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Exec(%q, %v) unexpected error: %v", tt.executable, tt.args, err)
+				}
+				if tt.contains != "" && output != tt.contains {
+					t.Errorf("Exec(%q, %v) = %q, want %q", tt.executable, tt.args, output, tt.contains)
+				}
+			}
+		})
+	}
+}
+
+func TestExecWithOutput(t *testing.T) {
+	// Test that Exec properly captures and trims output
+	if HasBinary("printf") {
+		output, err := Exec("printf", []string{"  hello world  \n"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if output != "hello world" {
+			t.Errorf("expected trimmed output 'hello world', got %q", output)
+		}
+	}
+}
+
+func BenchmarkUniqueInts(b *testing.B) {
+	// Create a slice with duplicates
+	input := make([]int, 1000)
+	for i := 0; i < 1000; i++ {
+		input[i] = i % 100 // This creates 10 duplicates of each number 0-99
+	}
+
+	b.Run("unsorted", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = UniqueInts(input, false)
+		}
+	})
+
+	b.Run("sorted", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = UniqueInts(input, true)
+		}
+	})
+}
