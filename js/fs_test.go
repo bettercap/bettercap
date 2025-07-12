@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -383,8 +384,16 @@ func TestWriteFile(t *testing.T) {
 
 		// Check file permissions
 		info, _ := os.Stat(testFile)
-		if info.Mode().Perm() != 0644 {
-			t.Errorf("expected permissions 0644, got %v", info.Mode().Perm())
+		if runtime.GOOS == "windows" {
+			// On Windows, permissions are different - just check that file exists and is readable
+			if info.Mode()&0400 == 0 {
+				t.Error("expected file to be readable on Windows")
+			}
+		} else {
+			// On Unix-like systems, check exact permissions
+			if info.Mode().Perm() != 0644 {
+				t.Errorf("expected permissions 0644, got %v", info.Mode().Perm())
+			}
 		}
 	})
 

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -597,6 +598,11 @@ func TestHTTPProxyJavaScriptInjection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Skip test with invalid filename characters on Windows
+			if runtime.GOOS == "windows" && strings.ContainsAny(tt.jsToInject, "<>:\"|?*") {
+				t.Skip("Skipping test with invalid filename characters on Windows")
+			}
+
 			err := proxy.Configure("127.0.0.1", 8080, 80, false, "", tt.jsToInject, false)
 			if err != nil {
 				t.Fatalf("Configure failed: %v", err)

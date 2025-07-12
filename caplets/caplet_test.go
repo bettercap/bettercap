@@ -104,11 +104,18 @@ func TestCapletEval(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cap := NewCaplet("test", "/tmp/test.cap", 100)
+			tempFile, err := ioutil.TempFile("", "test-*.cap")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(tempFile.Name())
+			tempFile.Close()
+
+			cap := NewCaplet("test", tempFile.Name(), 100)
 			cap.Code = tt.code
 
 			var gotLines []string
-			err := cap.Eval(tt.argv, func(line string) error {
+			err = cap.Eval(tt.argv, func(line string) error {
 				gotLines = append(gotLines, line)
 				return nil
 			})
@@ -133,7 +140,14 @@ func TestCapletEval(t *testing.T) {
 }
 
 func TestCapletEvalError(t *testing.T) {
-	cap := NewCaplet("test", "/tmp/test.cap", 100)
+	tempFile, err := ioutil.TempFile("", "test-*.cap")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tempFile.Name())
+	tempFile.Close()
+
+	cap := NewCaplet("test", tempFile.Name(), 100)
 	cap.Code = []string{
 		"first line",
 		"error line",
@@ -143,7 +157,7 @@ func TestCapletEvalError(t *testing.T) {
 	expectedErr := errors.New("test error")
 	var executedLines []string
 
-	err := cap.Eval(nil, func(line string) error {
+	err = cap.Eval(nil, func(line string) error {
 		executedLines = append(executedLines, line)
 		if line == "error line" {
 			return expectedErr
@@ -208,7 +222,14 @@ func TestNewScript(t *testing.T) {
 }
 
 func TestCapletEvalCommentAtStartOfLine(t *testing.T) {
-	cap := NewCaplet("test", "/tmp/test.cap", 100)
+	tempFile, err := ioutil.TempFile("", "test-*.cap")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tempFile.Name())
+	tempFile.Close()
+
+	cap := NewCaplet("test", tempFile.Name(), 100)
 	cap.Code = []string{
 		"# comment",
 		" # not a comment (has space before #)",
@@ -217,7 +238,7 @@ func TestCapletEvalCommentAtStartOfLine(t *testing.T) {
 	}
 
 	var gotLines []string
-	err := cap.Eval(nil, func(line string) error {
+	err = cap.Eval(nil, func(line string) error {
 		gotLines = append(gotLines, line)
 		return nil
 	})
@@ -273,11 +294,18 @@ func TestCapletEvalArgvSubstitutionEdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cap := NewCaplet("test", "/tmp/test.cap", 100)
+			tempFile, err := ioutil.TempFile("", "test-*.cap")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(tempFile.Name())
+			tempFile.Close()
+
+			cap := NewCaplet("test", tempFile.Name(), 100)
 			cap.Code = []string{tt.code}
 
 			var gotLine string
-			err := cap.Eval(tt.argv, func(line string) error {
+			err = cap.Eval(tt.argv, func(line string) error {
 				gotLine = line
 				return nil
 			})
@@ -295,7 +323,14 @@ func TestCapletEvalArgvSubstitutionEdgeCases(t *testing.T) {
 
 func TestCapletStructFields(t *testing.T) {
 	// Test that Caplet properly embeds Script
-	cap := NewCaplet("test", "/tmp/test.cap", 100)
+	tempFile, err := ioutil.TempFile("", "test-*.cap")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tempFile.Name())
+	tempFile.Close()
+
+	cap := NewCaplet("test", tempFile.Name(), 100)
 
 	// These fields should be accessible due to embedding
 	_ = cap.Path

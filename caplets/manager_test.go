@@ -64,7 +64,7 @@ func TestList(t *testing.T) {
 	}
 
 	// Check names (should be sorted)
-	expectedNames := []string{"subdir/nested", "test1", "test2", "test3"}
+	expectedNames := []string{filepath.Join("subdir", "nested"), "test1", "test2", "test3"}
 	sort.Strings(expectedNames)
 
 	gotNames := make([]string, len(caplets))
