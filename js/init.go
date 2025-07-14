@@ -27,10 +27,16 @@ func init() {
 	plugin.Defines["log_error"] = log_error
 	plugin.Defines["log_fatal"] = log_fatal
 
+	plugin.Defines["Crypto"] = map[string]interface{}{
+		"sha1": cryptoSha1,
+	}
+
 	plugin.Defines["btoa"] = btoa
 	plugin.Defines["atob"] = atob
 	plugin.Defines["gzipCompress"] = gzipCompress
 	plugin.Defines["gzipDecompress"] = gzipDecompress
+	plugin.Defines["textEncode"] = textEncode
+	plugin.Defines["textDecode"] = textDecode
 
 	plugin.Defines["httpRequest"] = httpRequest
 	plugin.Defines["http"] = httpPackage{}
