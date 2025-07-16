@@ -265,8 +265,8 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 	mod.AddHandler(probe)
 
-	channelSwitchAnnounce := session.NewModuleHandler("wifi.channel_switch_announce bssid channel ", `wifi\.channel_switch_announce ((?:[a-fA-F0-9:]{11,}))\s+((?:[0-9]+))`,
-		"Start a 802.11 channel hop attack, all client will be force to change the channel lead to connection down.",
+	channelSwitchAnnounce := session.NewModuleHandler("wifi.channel_switch_announce BSSID CHANNEL ", `wifi\.channel_switch_announce ((?:[a-fA-F0-9:]{11,}))\s+((?:[0-9]+))`,
+		"Start a 802.11 channel hop attack, all client will be forced to change the channel lead to connection down.",
 		func(args []string) error {
 			bssid, err := net.ParseMAC(args[0])
 			if err != nil {

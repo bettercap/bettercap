@@ -43,7 +43,7 @@ func NewTicker(s *session.Session) *Ticker {
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("ticker off", "",
-		"Stop the maint icker.",
+		"Stop the main ticker.",
 		func(args []string) error {
 			return mod.Stop()
 		}))
