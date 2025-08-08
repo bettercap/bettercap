@@ -90,12 +90,12 @@ func NewRestAPI(s *session.Session) *RestAPI {
 		"Value of the Access-Control-Allow-Origin header of the API server."))
 
 	mod.AddParam(session.NewStringParameter("api.rest.username",
-		"",
+		"user",
 		"",
 		"API authentication username."))
 
 	mod.AddParam(session.NewStringParameter("api.rest.password",
-		"",
+		"pass",
 		"",
 		"API authentication password."))
 
