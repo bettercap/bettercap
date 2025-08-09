@@ -31,20 +31,20 @@ func NewHttpServer(s *session.Session) *HttpServer {
 	mod.AddParam(session.NewStringParameter("http.server.address",
 		session.ParamIfaceAddress,
 		session.IPv4Validator,
-		"Address to bind the http server to."))
+		"Address to bind the HTTP server to."))
 
 	mod.AddParam(session.NewIntParameter("http.server.port",
 		"80",
-		"Port to bind the http server to."))
+		"Port to bind the HTTP server to."))
 
 	mod.AddHandler(session.NewModuleHandler("http.server on", "",
-		"Start httpd server.",
+		"Start HTTP server.",
 		func(args []string) error {
 			return mod.Start()
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("http.server off", "",
-		"Stop httpd server.",
+		"Stop HTTP server.",
 		func(args []string) error {
 			return mod.Stop()
 		}))
