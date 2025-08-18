@@ -116,3 +116,54 @@ func TestOnData_ReturnsDynamicArray(t *testing.T) {
 		}
 	}
 }
+
+func TestOnData_ReturnsMixedArray(t *testing.T) {
+	jsCode := `
+		function charToInt(value) { 
+			return value.charCodeAt()
+		}
+
+		function onData(from, to, data) {
+			st_data = String.fromCharCode.apply(null, data)  
+			if( st_data.indexOf("mysearch") != -1 ) {
+				payload = "mypayload";
+				st_data = st_data.replace("mysearch", payload);
+				res_int_arr = st_data.split("").map(charToInt) // []uint16
+				res_int_arr[0] = payload.length + 1; // first index is float64 and rest []uint16
+				return res_int_arr;
+			}
+			return data;
+		}
+	`
+
+	plug, err := plugin.Parse(jsCode)
+	if err != nil {
+		t.Fatalf("Failed to parse plugin: %v", err)
+	}
+
+	script := &TcpProxyScript{
+		Plugin:   plug,
+		doOnData: plug.HasFunc("onData"),
+	}
+
+	from := &net.TCPAddr{IP: net.ParseIP("192.168.1.1"), Port: 1234}
+	to := &net.TCPAddr{IP: net.ParseIP("192.168.1.6"), Port: 5678}
+	data := []byte("Hello mysearch world")
+
+	result := script.OnData(from, to, data, nil)
+	expected := []byte("\x0aello mypayload world")
+
+	if result == nil {
+		t.Fatal("Expected non-nil result when callback returns array of integers")
+	}
+
+	if len(result) != len(expected) {
+		t.Fatalf("Expected result length %d, got %d", len(expected), len(result))
+	}
+
+	for i, b := range result {
+		if b != expected[i] {
+			t.Errorf("Expected byte at index %d to be %d, got %d", i, expected[i], b)
+		}
+	}
+}

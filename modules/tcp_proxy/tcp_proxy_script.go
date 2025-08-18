@@ -1,6 +1,7 @@
 package tcp_proxy
 
 import (
+	"encoding/json"
 	"net"
 	"strings"
 
@@ -62,60 +63,29 @@ func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte, callback func(ca
 }
 
 func toByteArray(ret interface{}) []byte {
-	// Handle different array types that otto.Export() might return
-	switch v := ret.(type) {
-	case []interface{}:
-		// Mixed type array
-		result := make([]byte, len(v))
-		for i, elem := range v {
-			if num, ok := toNumber(elem); ok && num >= 0 && num <= 255 {
-				result[i] = byte(num)
-			} else {
-				log.Error("array element at index %d is not a valid byte value %+v", i, elem)
-				return nil
-			}
-		}
-		return result
-	case []int64:
-		// Array of integers
-		result := make([]byte, len(v))
-		for i, num := range v {
-			if num >= 0 && num <= 255 {
-				result[i] = byte(num)
-			} else {
-				log.Error("array element at index %d is not a valid byte value %d", i, num)
-				return nil
-			}
-		}
-		return result
-	case []float64:
-		// Array of floats
-		result := make([]byte, len(v))
-		for i, num := range v {
-			if num >= 0 && num <= 255 {
-				result[i] = byte(num)
-			} else {
-				log.Error("array element at index %d is not a valid byte value %f", i, num)
-				return nil
-			}
-		}
-		return result
-	default:
-		log.Error("unexpected array type returned from onData: %T, value = %+v", ret, ret)
-		return nil
-	}
-}
+	// this approach is a bit hacky but it handles all cases
 
-// toNumber tries to convert an interface{} to a float64
-func toNumber(v interface{}) (float64, bool) {
-	switch n := v.(type) {
-	case float64:
-		return n, true
-	case int64:
-		return float64(n), true
-	case int:
-		return float64(n), true
-	default:
-		return 0, false
+	// serialize ret to JSON
+	if jsonData, err := json.Marshal(ret); err == nil {
+		// attempt to deserialize as []float64
+		var back2Array []float64
+		if err := json.Unmarshal(jsonData, &back2Array); err == nil {
+			result := make([]byte, len(back2Array))
+			for i, num := range back2Array {
+				if num >= 0 && num <= 255 {
+					result[i] = byte(num)
+				} else {
+					log.Error("array element at index %d is not a valid byte value %d", i, num)
+					return nil
+				}
+			}
+			return result
+		} else {
+			log.Error("failed to deserialize %+v to []float64: %v", ret, err)
+		}
+	} else {
+		log.Error("failed to serialize %+v to JSON: %v", ret, err)
 	}
+
+	return nil
 }
