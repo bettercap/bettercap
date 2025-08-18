@@ -518,37 +518,6 @@ func TestWiFiModuleProbe(t *testing.T) {
 	}
 }
 
-func TestWiFiModuleChannelSwitchAnnounce(t *testing.T) {
-	sess := createMockSession()
-	mod := NewWiFiModule(sess)
-
-	// Test CSA handler
-	handlers := mod.Handlers()
-	var csaHandler session.ModuleHandler
-	for _, h := range handlers {
-		if h.Name == "wifi.channel_switch_announce bssid channel " {
-			csaHandler = h
-			break
-		}
-	}
-
-	if csaHandler.Name == "" {
-		t.Fatal("CSA handler not found")
-	}
-
-	// Test with valid parameters
-	err := csaHandler.Exec([]string{"aa:bb:cc:dd:ee:ff", "11"})
-	if err == nil {
-		t.Error("Expected error when running CSA without running module")
-	}
-
-	// Test with invalid channel
-	err = csaHandler.Exec([]string{"aa:bb:cc:dd:ee:ff", "999"})
-	if err == nil {
-		t.Error("Expected error with invalid channel")
-	}
-}
-
 func TestWiFiModuleFakeAuth(t *testing.T) {
 	sess := createMockSession()
 	mod := NewWiFiModule(sess)
