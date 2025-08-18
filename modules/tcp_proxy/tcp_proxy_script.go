@@ -55,11 +55,22 @@ func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte, callback func(ca
 			log.Error("error while executing onData callback: %s", err)
 			return nil
 		} else if ret != nil {
-			array, ok := ret.([]byte)
-			if !ok {
-				log.Error("error while casting exported value to array of byte: value = %+v", ret)
+			// thanks to @LucasParsy for his code and patience :)
+			if array, ok := ret.([]interface{}); ok {
+				result := make([]byte, len(array))
+				for i, v := range array {
+					if num, ok := v.(float64); ok && num >= 0 && num <= 255 {
+						result[i] = byte(num)
+					} else {
+						log.Error("array element at index %d is not a valid byte value %+v", i, v)
+						return nil
+					}
+				}
+
+				return result
+			} else {
+				log.Error("error while casting exported value to array of interface: value = %+v error = %+v", ret, err)
 			}
-			return array
 		}
 	}
 	return nil
