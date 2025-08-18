@@ -55,23 +55,67 @@ func (s *TcpProxyScript) OnData(from, to net.Addr, data []byte, callback func(ca
 			log.Error("error while executing onData callback: %s", err)
 			return nil
 		} else if ret != nil {
-			// thanks to @LucasParsy for his code and patience :)
-			if array, ok := ret.([]interface{}); ok {
-				result := make([]byte, len(array))
-				for i, v := range array {
-					if num, ok := v.(float64); ok && num >= 0 && num <= 255 {
-						result[i] = byte(num)
-					} else {
-						log.Error("array element at index %d is not a valid byte value %+v", i, v)
-						return nil
-					}
-				}
-
-				return result
-			} else {
-				log.Error("error while casting exported value to array of interface: value = %+v error = %+v", ret, err)
-			}
+			return toByteArray(ret)
 		}
 	}
 	return nil
+}
+
+func toByteArray(ret interface{}) []byte {
+	// Handle different array types that otto.Export() might return
+	switch v := ret.(type) {
+	case []interface{}:
+		// Mixed type array
+		result := make([]byte, len(v))
+		for i, elem := range v {
+			if num, ok := toNumber(elem); ok && num >= 0 && num <= 255 {
+				result[i] = byte(num)
+			} else {
+				log.Error("array element at index %d is not a valid byte value %+v", i, elem)
+				return nil
+			}
+		}
+		return result
+	case []int64:
+		// Array of integers
+		result := make([]byte, len(v))
+		for i, num := range v {
+			if num >= 0 && num <= 255 {
+				result[i] = byte(num)
+			} else {
+				log.Error("array element at index %d is not a valid byte value %d", i, num)
+				return nil
+			}
+		}
+		return result
+	case []float64:
+		// Array of floats
+		result := make([]byte, len(v))
+		for i, num := range v {
+			if num >= 0 && num <= 255 {
+				result[i] = byte(num)
+			} else {
+				log.Error("array element at index %d is not a valid byte value %f", i, num)
+				return nil
+			}
+		}
+		return result
+	default:
+		log.Error("unexpected array type returned from onData: %T, value = %+v", ret, ret)
+		return nil
+	}
+}
+
+// toNumber tries to convert an interface{} to a float64
+func toNumber(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case int64:
+		return float64(n), true
+	case int:
+		return float64(n), true
+	default:
+		return 0, false
+	}
 }
