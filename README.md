@@ -16,6 +16,10 @@
     <a href="https://github.com/bettercap/bettercap/actions/workflows/test-on-macos.yml"><img alt="Tests on macOS" src="https://github.com/bettercap/bettercap/actions/workflows/test-on-macos.yml/badge.svg"></a>
     <a href="https://github.com/bettercap/bettercap/actions/workflows/test-on-windows.yml"><img alt="Tests on Windows" src="https://github.com/bettercap/bettercap/actions/workflows/test-on-windows.yml/badge.svg"></a>
     <a href="https://hub.docker.com/r/bettercap/bettercap"><img alt="Docker Hub" src="https://img.shields.io/docker/v/bettercap/bettercap?logo=docker"></a>
+    <br/>
+    <br/>
+    <img src="https://www.evilsocket.net/images/human-coded.png" height="30px" alt="This project is 100% made by humans."/>
+
   </p>
 </p>
 
