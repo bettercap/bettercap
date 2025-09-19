@@ -3,7 +3,6 @@ package graph
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -60,7 +59,7 @@ type Node struct {
 
 func ReadNode(fileName string) (*Node, error) {
 	var node Node
-	if raw, err := ioutil.ReadFile(fileName); err != nil {
+	if raw, err := os.ReadFile(fileName); err != nil {
 		return nil, fmt.Errorf("error while reading %s: %v", fileName, err)
 	} else if err = json.Unmarshal(raw, &node); err != nil {
 		return nil, fmt.Errorf("error while decoding %s: %v", fileName, err)
@@ -77,7 +76,7 @@ func WriteNode(fileName string, node *Node, update bool) error {
 
 	if raw, err := json.Marshal(node); err != nil {
 		return fmt.Errorf("error creating data for %s: %v", fileName, err)
-	} else if err = ioutil.WriteFile(fileName, raw, os.ModePerm); err != nil {
+	} else if err = os.WriteFile(fileName, raw, os.ModePerm); err != nil {
 		return fmt.Errorf("error creating %s: %v", fileName, err)
 	}
 	return nil

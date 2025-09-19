@@ -2,13 +2,13 @@ package graph
 
 import (
 	"encoding/json"
-	"github.com/evilsocket/islazy/fs"
-	"io/ioutil"
 	"os"
 	"path"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/evilsocket/islazy/fs"
 )
 
 const edgesIndexName = "edges.json"
@@ -40,7 +40,7 @@ func LoadEdges(basePath string) (*Edges, error) {
 	if fs.Exists(edges.fileName) {
 		var js edgesJSON
 
-		if raw, err := ioutil.ReadFile(edges.fileName); err != nil {
+		if raw, err := os.ReadFile(edges.fileName); err != nil {
 			return nil, err
 		} else if err = json.Unmarshal(raw, &js); err != nil {
 			return nil, err
@@ -64,7 +64,7 @@ func (e *Edges) flush() error {
 
 	if raw, err := json.Marshal(js); err != nil {
 		return err
-	} else if err = ioutil.WriteFile(e.fileName, raw, os.ModePerm); err != nil {
+	} else if err = os.WriteFile(e.fileName, raw, os.ModePerm); err != nil {
 		return err
 	}
 

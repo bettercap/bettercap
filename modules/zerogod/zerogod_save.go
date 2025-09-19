@@ -3,7 +3,7 @@ package zerogod
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/bettercap/bettercap/v2/modules/zerogod/zeroconf"
 	"github.com/evilsocket/islazy/str"
@@ -51,7 +51,7 @@ func (mod *ZeroGod) save(address, filename string) error {
 			return err
 		}
 
-		err = ioutil.WriteFile(filename, data, 0644)
+		err = os.WriteFile(filename, data, 0644)
 		if err != nil {
 			return err
 		}

@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/bettercap/bettercap/v2/packets"
@@ -163,7 +163,7 @@ func (mod *MySQLServer) Start() error {
 						mod.Info("\n%s", string(fileData))
 					} else {
 						mod.Info("saving to %s ...", mod.outfile)
-						if err := ioutil.WriteFile(mod.outfile, fileData, 0755); err != nil {
+						if err := os.WriteFile(mod.outfile, fileData, 0755); err != nil {
 							mod.Warning("error while saving the file: %s", err)
 						}
 					}

@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
@@ -105,7 +104,7 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 	}
 	hostName = strings.ReplaceAll(hostName, ".local", "")
 
-	data, err := ioutil.ReadFile(fileName)
+	data, err := os.ReadFile(fileName)
 	if err != nil {
 		return fmt.Errorf("could not read %s: %v", fileName, err)
 	}

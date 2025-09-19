@@ -3,7 +3,6 @@ package session
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -167,7 +166,7 @@ func jsSaveToFileFunc(call otto.FunctionCall) otto.Value {
 	fileName := argv[0].String()
 	data := argv[1].String()
 
-	if err := ioutil.WriteFile(fileName, []byte(data), os.ModePerm); err != nil {
+	if err := os.WriteFile(fileName, []byte(data), os.ModePerm); err != nil {
 		return js.ReportError("error writing to '%s': %v", fileName, err)
 	}
 
@@ -192,7 +191,7 @@ func jsSaveJSONFunc(call otto.FunctionCall) otto.Value {
 		return js.ReportError("error exporting object: %v", err)
 	} else if raw, err := json.Marshal(exp); err != nil {
 		return js.ReportError("error serializing object: %v", err)
-	} else if err = ioutil.WriteFile(fileName, raw, os.ModePerm); err != nil {
+	} else if err = os.WriteFile(fileName, raw, os.ModePerm); err != nil {
 		return js.ReportError("error writing to '%s': %v", fileName, err)
 	}
 
@@ -212,7 +211,7 @@ func jsLoadJSONFunc(call otto.FunctionCall) otto.Value {
 
 	if fileName, err := fs.Expand(argv[0].String()); err != nil {
 		return js.ReportError("can't expand '%s': %v", fileName, err)
-	} else if rawData, err := ioutil.ReadFile(fileName); err != nil {
+	} else if rawData, err := os.ReadFile(fileName); err != nil {
 		return js.ReportError("can't read '%s': %v", fileName, err)
 	} else if err = json.Unmarshal(rawData, &obj); err != nil {
 		return js.ReportError("can't parse '%s': %v", fileName, err)

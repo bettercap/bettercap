@@ -2,7 +2,6 @@ package caplets
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -104,7 +103,7 @@ func TestCapletEval(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tempFile, err := ioutil.TempFile("", "test-*.cap")
+			tempFile, err := os.CreateTemp("", "test-*.cap")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -140,7 +139,7 @@ func TestCapletEval(t *testing.T) {
 }
 
 func TestCapletEvalError(t *testing.T) {
-	tempFile, err := ioutil.TempFile("", "test-*.cap")
+	tempFile, err := os.CreateTemp("", "test-*.cap")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +176,7 @@ func TestCapletEvalError(t *testing.T) {
 
 func TestCapletEvalWithChdirPath(t *testing.T) {
 	// Create a temporary caplet file to test with
-	tempFile, err := ioutil.TempFile("", "test-*.cap")
+	tempFile, err := os.CreateTemp("", "test-*.cap")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +221,7 @@ func TestNewScript(t *testing.T) {
 }
 
 func TestCapletEvalCommentAtStartOfLine(t *testing.T) {
-	tempFile, err := ioutil.TempFile("", "test-*.cap")
+	tempFile, err := os.CreateTemp("", "test-*.cap")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +293,7 @@ func TestCapletEvalArgvSubstitutionEdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tempFile, err := ioutil.TempFile("", "test-*.cap")
+			tempFile, err := os.CreateTemp("", "test-*.cap")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -323,7 +322,7 @@ func TestCapletEvalArgvSubstitutionEdgeCases(t *testing.T) {
 
 func TestCapletStructFields(t *testing.T) {
 	// Test that Caplet properly embeds Script
-	tempFile, err := ioutil.TempFile("", "test-*.cap")
+	tempFile, err := os.CreateTemp("", "test-*.cap")
 	if err != nil {
 		t.Fatal(err)
 	}

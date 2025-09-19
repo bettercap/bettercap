@@ -2,7 +2,6 @@ package firewall
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -58,7 +57,7 @@ func (f LinuxFirewall) enableFeature(filename string, enable bool) error {
 
 func (f LinuxFirewall) IsForwardingEnabled() bool {
 
-	if out, err := ioutil.ReadFile(IPV4ForwardingFile); err != nil {
+	if out, err := os.ReadFile(IPV4ForwardingFile); err != nil {
 		return false
 	} else {
 		return str.Trim(string(out)) == "1"

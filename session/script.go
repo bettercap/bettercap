@@ -2,7 +2,7 @@ package session
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -59,7 +59,7 @@ func preprocess(basePath string, code string, level int) (string, error) {
 			}
 		}
 
-		raw, err := ioutil.ReadFile(fileName)
+		raw, err := os.ReadFile(fileName)
 		if err != nil {
 			return "", fmt.Errorf("%s: %v", fileName, err)
 		}
@@ -75,7 +75,7 @@ func preprocess(basePath string, code string, level int) (string, error) {
 }
 
 func LoadScript(fileName string) (*Script, error) {
-	raw, err := ioutil.ReadFile(fileName)
+	raw, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}

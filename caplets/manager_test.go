@@ -2,7 +2,6 @@ package caplets
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,7 +13,7 @@ import (
 func createTestCaplet(t testing.TB, dir string, name string, content []string) string {
 	filename := filepath.Join(dir, name)
 	data := strings.Join(content, "\n")
-	err := ioutil.WriteFile(filename, []byte(data), 0644)
+	err := os.WriteFile(filename, []byte(data), 0644)
 	if err != nil {
 		t.Fatalf("failed to create test caplet: %v", err)
 	}
@@ -28,7 +27,7 @@ func TestList(t *testing.T) {
 	cache = make(map[string]*Caplet)
 
 	// Create temp directories
-	tempDir, err := ioutil.TempDir("", "caplets-test")
+	tempDir, err := os.MkdirTemp("", "caplets-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +49,7 @@ func TestList(t *testing.T) {
 	createTestCaplet(t, subdir, "nested.cap", []string{"# Nested caplet", "set nested test"})
 
 	// Also create a non-caplet file
-	ioutil.WriteFile(filepath.Join(dir1, "notacaplet.txt"), []byte("not a caplet"), 0644)
+	os.WriteFile(filepath.Join(dir1, "notacaplet.txt"), []byte("not a caplet"), 0644)
 
 	// Set LoadPaths
 	LoadPaths = []string{dir1, dir2}
@@ -90,7 +89,7 @@ func TestListEmptyDirectories(t *testing.T) {
 	cache = make(map[string]*Caplet)
 
 	// Create temp directory
-	tempDir, err := ioutil.TempDir("", "caplets-empty-test")
+	tempDir, err := os.MkdirTemp("", "caplets-empty-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +118,7 @@ func TestLoad(t *testing.T) {
 	cache = make(map[string]*Caplet)
 
 	// Create temp directory
-	tempDir, err := ioutil.TempDir("", "caplets-load-test")
+	tempDir, err := os.MkdirTemp("", "caplets-load-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +184,7 @@ func TestLoadAbsolutePath(t *testing.T) {
 	cache = make(map[string]*Caplet)
 
 	// Create temp file
-	tempFile, err := ioutil.TempFile("", "test-absolute-*.cap")
+	tempFile, err := os.CreateTemp("", "test-absolute-*.cap")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +245,7 @@ func TestLoadWithFolder(t *testing.T) {
 	cache = make(map[string]*Caplet)
 
 	// Create temp directory structure
-	tempDir, err := ioutil.TempDir("", "caplets-folder-test")
+	tempDir, err := os.MkdirTemp("", "caplets-folder-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +267,7 @@ func TestLoadWithFolder(t *testing.T) {
 	createTestCaplet(t, capletDir, "sub.cap", capContent)
 
 	// Create a file that should be ignored
-	ioutil.WriteFile(filepath.Join(capletDir, "readme.txt"), []byte("readme"), 0644)
+	os.WriteFile(filepath.Join(capletDir, "readme.txt"), []byte("readme"), 0644)
 
 	// Set LoadPaths
 	LoadPaths = []string{tempDir}
@@ -332,7 +331,7 @@ func TestCacheConcurrency(t *testing.T) {
 	cache = make(map[string]*Caplet)
 
 	// Create temp directory
-	tempDir, err := ioutil.TempDir("", "caplets-concurrent-test")
+	tempDir, err := os.MkdirTemp("", "caplets-concurrent-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -391,8 +390,8 @@ func TestLoadPathPriority(t *testing.T) {
 	cache = make(map[string]*Caplet)
 
 	// Create temp directories
-	tempDir1, _ := ioutil.TempDir("", "caplets-priority1-")
-	tempDir2, _ := ioutil.TempDir("", "caplets-priority2-")
+	tempDir1, _ := os.MkdirTemp("", "caplets-priority1-")
+	tempDir2, _ := os.MkdirTemp("", "caplets-priority2-")
 	defer os.RemoveAll(tempDir1)
 	defer os.RemoveAll(tempDir2)
 
@@ -427,7 +426,7 @@ func BenchmarkLoad(b *testing.B) {
 	origCache := cache
 
 	// Create temp directory
-	tempDir, _ := ioutil.TempDir("", "caplets-bench-")
+	tempDir, _ := os.MkdirTemp("", "caplets-bench-")
 	defer os.RemoveAll(tempDir)
 
 	// Create test caplet
@@ -459,7 +458,7 @@ func BenchmarkLoadFromCache(b *testing.B) {
 	cache = make(map[string]*Caplet)
 
 	// Create temp directory
-	tempDir, _ := ioutil.TempDir("", "caplets-bench-cache-")
+	tempDir, _ := os.MkdirTemp("", "caplets-bench-cache-")
 	defer os.RemoveAll(tempDir)
 
 	// Create test caplet
@@ -487,7 +486,7 @@ func BenchmarkList(b *testing.B) {
 	origCache := cache
 
 	// Create temp directory
-	tempDir, _ := ioutil.TempDir("", "caplets-bench-list-")
+	tempDir, _ := os.MkdirTemp("", "caplets-bench-list-")
 	defer os.RemoveAll(tempDir)
 
 	// Create multiple caplets

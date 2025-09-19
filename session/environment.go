@@ -3,7 +3,7 @@ package session
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sort"
 	"strconv"
 	"sync"
@@ -41,7 +41,7 @@ func (env *Environment) Load(fileName string) error {
 	env.Lock()
 	defer env.Unlock()
 
-	raw, err := ioutil.ReadFile(fileName)
+	raw, err := os.ReadFile(fileName)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (env *Environment) Save(fileName string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(fileName, raw, 0644)
+	return os.WriteFile(fileName, raw, 0644)
 }
 
 func (env *Environment) Has(name string) bool {

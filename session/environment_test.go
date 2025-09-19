@@ -2,7 +2,6 @@ package session
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -32,7 +31,7 @@ func setup(t testing.TB, envFile bool, envFileData bool) {
 	if envFileData {
 		if raw, err := json.Marshal(testEnvData); err != nil {
 			panic(err)
-		} else if err = ioutil.WriteFile(testEnvFile, raw, 0755); err != nil {
+		} else if err = os.WriteFile(testEnvFile, raw, 0755); err != nil {
 			panic(err)
 		}
 	}

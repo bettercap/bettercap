@@ -2,7 +2,6 @@ package http_proxy
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -655,7 +654,7 @@ function onRequest(req, res) {
     console.log("Request intercepted");
 }
 `
-	tmpFile, err := ioutil.TempFile("", "proxy_script_*.js")
+	tmpFile, err := os.CreateTemp("", "proxy_script_*.js")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
