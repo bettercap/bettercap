@@ -71,7 +71,7 @@ func (s *Session) setupReadline() (err error) {
 	}
 
 	history := ""
-	if !*s.Options.NoHistory {
+	if !s.Options.NoHistory {
 		histPath := DefaultHistoryFile
 		if fromEnv := os.Getenv(HistoryEnvVar); fromEnv != "" {
 			histPath = fromEnv
@@ -147,7 +147,7 @@ func (s *Session) setupEnv() {
 	}
 
 	dbg := "false"
-	if *s.Options.Debug {
+	if s.Options.Debug {
 		dbg = "true"
 	}
 	s.Env.WithCallback("log.debug", dbg, func(newValue string) {
@@ -159,7 +159,7 @@ func (s *Session) setupEnv() {
 	})
 
 	silent := "false"
-	if *s.Options.Silent {
+	if s.Options.Silent {
 		silent = "true"
 	}
 	s.Env.WithCallback("log.silent", silent, func(newValue string) {

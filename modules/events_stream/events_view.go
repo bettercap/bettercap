@@ -65,7 +65,7 @@ func (mod *EventsStream) viewEndpointEvent(output io.Writer, e session.Event) {
 }
 
 func (mod *EventsStream) viewModuleEvent(output io.Writer, e session.Event) {
-	if *mod.Session.Options.Debug {
+	if mod.Session.Options.Debug {
 		fmt.Fprintf(output, "[%s] [%s] %s\n",
 			e.Time.Format(mod.timeFormat),
 			tui.Green(e.Tag),

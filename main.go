@@ -26,14 +26,14 @@ func main() {
 	defer sess.Close()
 
 	if !tui.Effects() {
-		if *sess.Options.NoColors {
+		if sess.Options.NoColors {
 			fmt.Printf("\n\nWARNING: Terminal colors have been disabled, view will be very limited.\n\n")
 		} else {
 			fmt.Printf("\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")
 		}
 	}
 
-	if *sess.Options.PrintVersion {
+	if sess.Options.PrintVersion {
 		fmt.Printf("%s v%s (built for %s %s with %s)\n", core.Name, core.Version, runtime.GOOS, runtime.GOARCH, runtime.Version())
 		return
 	}
@@ -52,7 +52,7 @@ func main() {
 
 	// Some modules are enabled by default in order
 	// to make the interactive session useful.
-	for _, modName := range str.Comma(*sess.Options.AutoStart) {
+	for _, modName := range str.Comma(sess.Options.AutoStart) {
 		if err = sess.Run(modName + " on"); err != nil {
 			log.Fatal("error while starting module %s: %s", modName, err)
 		}
@@ -62,16 +62,16 @@ func main() {
 	// caplet parameters (i.e. arp.spoof.targets) via command
 	// line, therefore they need to be executed first otherwise
 	// modules might already be started.
-	for _, cmd := range session.ParseCommands(*sess.Options.Commands) {
+	for _, cmd := range session.ParseCommands(sess.Options.Commands) {
 		if err = sess.Run(cmd); err != nil {
 			log.Error("error while running '%s': %s", tui.Bold(cmd), tui.Red(err.Error()))
 		}
 	}
 
 	// Then run the caplet if specified.
-	if *sess.Options.Caplet != "" {
-		if err = sess.RunCaplet(*sess.Options.Caplet); err != nil {
-			log.Error("error while running caplet %s: %s", tui.Bold(*sess.Options.Caplet), tui.Red(err.Error()))
+	if sess.Options.Caplet != "" {
+		if err = sess.RunCaplet(sess.Options.Caplet); err != nil {
+			log.Error("error while running caplet %s: %s", tui.Bold(sess.Options.Caplet), tui.Red(err.Error()))
 		}
 	}
 

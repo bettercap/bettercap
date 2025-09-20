@@ -97,18 +97,13 @@ type Session struct {
 	script *Script
 }
 
-func New() (*Session, error) {
-	opts, err := core.ParseOptions()
-	if err != nil {
-		return nil, err
-	}
-
-	if *opts.NoColors || !tui.Effects() {
+func WithOptions(opts core.Options) (s *Session, err error) {
+	if opts.NoColors || !tui.Effects() {
 		tui.Disable()
 		log.NoEffects = true
 	}
 
-	s := &Session{
+	s = &Session{
 		Prompt:  NewPrompt(),
 		Options: opts,
 		Env:     nil,
@@ -122,8 +117,8 @@ func New() (*Session, error) {
 		UnkCmdCallback:   nil,
 	}
 
-	if *s.Options.CpuProfile != "" {
-		f, err := os.Create(*s.Options.CpuProfile)
+	if s.Options.CpuProfile != "" {
+		f, err := os.Create(s.Options.CpuProfile)
 		if err != nil {
 			return nil, err
 		}
@@ -133,11 +128,11 @@ func New() (*Session, error) {
 		}
 	}
 
-	if bufSize := *s.Options.PcapBufSize; bufSize != -1 {
+	if bufSize := s.Options.PcapBufSize; bufSize != -1 {
 		network.CAPTURE_DEFAULTS.Bufsize = bufSize
 	}
 
-	if s.Env, err = NewEnvironment(*s.Options.EnvFile); err != nil {
+	if s.Env, err = NewEnvironment(s.Options.EnvFile); err != nil {
 		return nil, err
 	}
 
@@ -145,7 +140,7 @@ func New() (*Session, error) {
 		return nil, err
 	}
 
-	s.Events = NewEventPool(*s.Options.Debug, *s.Options.Silent)
+	s.Events = NewEventPool(s.Options.Debug, s.Options.Silent)
 
 	s.registerCoreHandlers()
 
@@ -155,6 +150,15 @@ func New() (*Session, error) {
 	}
 
 	return s, nil
+}
+
+func New() (*Session, error) {
+	opts, err := core.ParseOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	return WithOptions(opts)
 }
 
 func (s *Session) Lock() {
@@ -179,11 +183,11 @@ func (s *Session) Module(name string) (err error, mod Module) {
 }
 
 func (s *Session) Close() {
-	if *s.Options.PrintVersion {
+	if s.Options.PrintVersion {
 		return
 	}
 
-	if *s.Options.Debug {
+	if s.Options.Debug {
 		fmt.Printf("\nStopping modules and cleaning session state ...\n")
 		s.Events.Add("session.closing", nil)
 	}
@@ -198,19 +202,19 @@ func (s *Session) Close() {
 		s.Firewall.Restore()
 	}
 
-	if *s.Options.EnvFile != "" {
-		envFile, _ := fs.Expand(*s.Options.EnvFile)
+	if s.Options.EnvFile != "" {
+		envFile, _ := fs.Expand(s.Options.EnvFile)
 		if err := s.Env.Save(envFile); err != nil {
 			fmt.Printf("error while storing the environment to %s: %s", envFile, err)
 		}
 	}
 
-	if *s.Options.CpuProfile != "" {
+	if s.Options.CpuProfile != "" {
 		pprof.StopCPUProfile()
 	}
 
-	if *s.Options.MemProfile != "" {
-		f, err := os.Create(*s.Options.MemProfile)
+	if s.Options.MemProfile != "" {
+		f, err := os.Create(s.Options.MemProfile)
 		if err != nil {
 			fmt.Printf("could not create memory profile: %s\n", err)
 			return
@@ -240,13 +244,13 @@ func (s *Session) Start() error {
 		return s.Modules[i].Name() < s.Modules[j].Name()
 	})
 
-	if *s.Options.CapletsPath != "" {
-		if err = caplets.Setup(*s.Options.CapletsPath); err != nil {
+	if s.Options.CapletsPath != "" {
+		if err = caplets.Setup(s.Options.CapletsPath); err != nil {
 			return err
 		}
 	}
 
-	if s.Interface, err = network.FindInterface(*s.Options.InterfaceName); err != nil {
+	if s.Interface, err = network.FindInterface(s.Options.InterfaceName); err != nil {
 		return err
 	}
 
@@ -254,8 +258,8 @@ func (s *Session) Start() error {
 		return err
 	}
 
-	if *s.Options.Gateway != "" {
-		if s.Gateway, err = network.GatewayProvidedByUser(s.Interface, *s.Options.Gateway); err != nil {
+	if s.Options.Gateway != "" {
+		if s.Gateway, err = network.GatewayProvidedByUser(s.Interface, s.Options.Gateway); err != nil {
 			s.Events.Log(log.WARNING, "%s", err.Error())
 			s.Gateway, err = network.FindGateway(s.Interface)
 		}
@@ -336,11 +340,11 @@ func (s *Session) Start() error {
 	plugin.Defines["session"] = s
 
 	// load the script here so the session and its internal objects are ready
-	if *s.Options.Script != "" {
-		if s.script, err = LoadScript(*s.Options.Script); err != nil {
-			return fmt.Errorf("error loading %s: %v", *s.Options.Script, err)
+	if s.Options.Script != "" {
+		if s.script, err = LoadScript(s.Options.Script); err != nil {
+			return fmt.Errorf("error loading %s: %v", s.Options.Script, err)
 		}
-		log.Debug("session script %s loaded", *s.Options.Script)
+		log.Debug("session script %s loaded", s.Options.Script)
 	}
 
 	return nil
