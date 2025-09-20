@@ -13,7 +13,6 @@ import (
 	"github.com/google/gopacket/pcapgo"
 
 	"github.com/evilsocket/islazy/data"
-	"github.com/evilsocket/islazy/fs"
 )
 
 func Dot11Freq2Chan(freq int) int {
@@ -25,30 +24,30 @@ func Dot11Freq2Chan(freq int) int {
 		return ((freq - 5035) / 5) + 7
 	} else if freq >= 5875 && freq <= 5895 {
 		return 177
-	} else if freq >= 5955 && freq <= 7115 { // 6GHz 
-                return ((freq - 5955) / 5) + 1
+	} else if freq >= 5955 && freq <= 7115 { // 6GHz
+		return ((freq - 5955) / 5) + 1
 	}
 	return 0
 }
 func Dot11Chan2Freq(channel int) int {
-        if channel <= 13 {
-                return ((channel - 1) * 5) + 2412
-        } else if channel == 14 {
-                return 2484
-        } else if channel == 36 || channel == 40 || channel == 44 || channel == 48 || 
-                  channel == 52 || channel == 56 || channel == 60 || channel == 64 || 
-                  channel == 68 || channel == 72 || channel == 76 || channel == 80 || 
-                  channel == 100 || channel == 104 || channel == 108 || channel == 112 || 
-                  channel == 116 || channel == 120 || channel == 124 || channel == 128 || 
-                  channel == 132 || channel == 136 || channel == 140 || channel == 144 || 
-                  channel == 149 || channel == 153 || channel == 157 || channel == 161 || 
-                  channel == 165 || channel == 169 || channel == 173 || channel == 177 { 
-                return ((channel - 7) * 5) + 5035
-// 6GHz - Skipped 1-13 to avoid 2Ghz channels conflict  
-        } else if channel >= 17 && channel <= 253 { 
-                return ((channel - 1) * 5) + 5955
-        }
-        return 0
+	if channel <= 13 {
+		return ((channel - 1) * 5) + 2412
+	} else if channel == 14 {
+		return 2484
+	} else if channel == 36 || channel == 40 || channel == 44 || channel == 48 ||
+		channel == 52 || channel == 56 || channel == 60 || channel == 64 ||
+		channel == 68 || channel == 72 || channel == 76 || channel == 80 ||
+		channel == 100 || channel == 104 || channel == 108 || channel == 112 ||
+		channel == 116 || channel == 120 || channel == 124 || channel == 128 ||
+		channel == 132 || channel == 136 || channel == 140 || channel == 144 ||
+		channel == 149 || channel == 153 || channel == 157 || channel == 161 ||
+		channel == 165 || channel == 169 || channel == 173 || channel == 177 {
+		return ((channel - 7) * 5) + 5035
+		// 6GHz - Skipped 1-13 to avoid 2Ghz channels conflict
+	} else if channel >= 17 && channel <= 253 {
+		return ((channel - 1) * 5) + 5955
+	}
+	return 0
 }
 
 type APNewCallback func(ap *AccessPoint)
@@ -236,20 +235,18 @@ func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error
 		}
 	}
 
-	doHead := !fs.Exists(fileName)
 	fp, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return err
 	}
 	defer fp.Close()
 
-	writer := pcapgo.NewWriter(fp)
-
-	if doHead {
-		if err = writer.WriteFileHeader(65536, linkType); err != nil {
-			return err
-		}
+	writer, err := pcapgo.NewNgWriter(fp, linkType)
+	if err != nil {
+		return err
 	}
+
+	defer writer.Flush()
 
 	w.RLock()
 	defer w.RUnlock()

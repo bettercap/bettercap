@@ -183,6 +183,11 @@ func (mod *Sniffer) Start() error {
 
 		src := gopacket.NewPacketSource(mod.Ctx.Handle, mod.Ctx.Handle.LinkType())
 		mod.pktSourceChan = src.Packets()
+
+		if mod.Ctx.OutputWriter != nil {
+			defer mod.Ctx.OutputWriter.Flush()
+		}
+
 		for packet := range mod.pktSourceChan {
 			if !mod.Running() {
 				mod.Debug("end pkt loop (pkt=%v filter='%s')", packet, mod.Ctx.Filter)

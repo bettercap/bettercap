@@ -26,7 +26,7 @@ type SnifferContext struct {
 	Compiled     *regexp.Regexp
 	Output       string
 	OutputFile   *os.File
-	OutputWriter *pcapgo.Writer
+	OutputWriter *pcapgo.NgWriter
 }
 
 func (mod *Sniffer) GetContext() (error, *SnifferContext) {
@@ -94,8 +94,10 @@ func (mod *Sniffer) GetContext() (error, *SnifferContext) {
 			return err, ctx
 		}
 
-		ctx.OutputWriter = pcapgo.NewWriter(ctx.OutputFile)
-		ctx.OutputWriter.WriteFileHeader(65536, ctx.Handle.LinkType())
+		ctx.OutputWriter, err = pcapgo.NewNgWriter(ctx.OutputFile, ctx.Handle.LinkType())
+		if err != nil {
+			return err, ctx
+		}
 	}
 
 	return nil, ctx
