@@ -1,8 +1,9 @@
 package js
 
 import (
+	"os"
+
 	"github.com/robertkrimen/otto"
-	"io/ioutil"
 )
 
 func readDir(call otto.FunctionCall) otto.Value {
@@ -13,7 +14,7 @@ func readDir(call otto.FunctionCall) otto.Value {
 	}
 
 	path := argv[0].String()
-	dir, err := ioutil.ReadDir(path)
+	dir, err := os.ReadDir(path)
 	if err != nil {
 		return ReportError("Could not read directory %s: %s", path, err)
 	}
@@ -39,7 +40,7 @@ func readFile(call otto.FunctionCall) otto.Value {
 	}
 
 	filename := argv[0].String()
-	raw, err := ioutil.ReadFile(filename)
+	raw, err := os.ReadFile(filename)
 	if err != nil {
 		return ReportError("Could not read file %s: %s", filename, err)
 	}
@@ -61,7 +62,7 @@ func writeFile(call otto.FunctionCall) otto.Value {
 	filename := argv[0].String()
 	data := argv[1].String()
 
-	err := ioutil.WriteFile(filename, []byte(data), 0644)
+	err := os.WriteFile(filename, []byte(data), 0644)
 	if err != nil {
 		return ReportError("Could not write %d bytes to %s: %s", len(data), filename, err)
 	}

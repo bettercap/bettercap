@@ -3,7 +3,6 @@ package firewall
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -160,7 +159,7 @@ func (f PfFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 				os.Remove(f.filename)
 				f.enable(false)
 			} else {
-				ioutil.WriteFile(f.filename, []byte(lines), 0600)
+				os.WriteFile(f.filename, []byte(lines), 0600)
 			}
 		}
 	}

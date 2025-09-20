@@ -3,7 +3,6 @@ package zerogod
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -70,7 +69,7 @@ func ippOnPrintJob(ctx *HandlerContext, http_req *http.Request, ipp_req *ipp.Req
 		jsonData, err := json.Marshal(data)
 		if err != nil {
 			ctx.mod.Error("could not marshal data to json: %v", err)
-		} else if err := ioutil.WriteFile(docName, jsonData, 0644); err != nil {
+		} else if err := os.WriteFile(docName, jsonData, 0644); err != nil {
 			ctx.mod.Error("could not write data to %s: %v", docName, err)
 		} else {
 			ctx.mod.Info("  document saved to %s", tui.Yellow(docName))
