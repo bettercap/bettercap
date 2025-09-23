@@ -5,8 +5,8 @@ import (
 
 	"github.com/bettercap/bettercap/v2/network"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
 
 	"github.com/evilsocket/islazy/async"
 )
