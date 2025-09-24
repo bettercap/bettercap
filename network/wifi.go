@@ -258,7 +258,9 @@ func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error
 				err = nil
 				station.Handshake.EachUnsavedPacket(func(pkt gopacket.Packet) {
 					if err == nil {
-						err = writer.WritePacket(pkt.Metadata().CaptureInfo, pkt.Data())
+						ci := pkt.Metadata().CaptureInfo
+						ci.InterfaceIndex = 0
+						err = writer.WritePacket(ci, pkt.Data())
 					}
 				})
 				if err != nil {
