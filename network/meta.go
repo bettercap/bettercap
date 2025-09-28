@@ -97,3 +97,21 @@ func (m *Meta) Empty() bool {
 	defer m.Unlock()
 	return len(m.m) == 0
 }
+
+func (m *Meta) MergeDifferentFields(other *Meta) []string {
+	m.Lock()
+	defer m.Unlock()
+
+	updated := []string{}
+
+	if m.m != nil && other.m != nil {
+		for k, v := range other.m {
+			if m.m[k] != v {
+				m.m[k] = v
+				updated = append(updated, k)
+			}
+		}
+	}
+
+	return updated
+}
