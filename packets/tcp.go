@@ -1,7 +1,7 @@
 package packets
 
 import (
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket/layers"
 	"net"
 )
 

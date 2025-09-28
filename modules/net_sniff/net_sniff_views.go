@@ -7,7 +7,7 @@ import (
 	"github.com/bettercap/bettercap/v2/session"
 
 	"github.com/evilsocket/islazy/tui"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket/layers"
 )
 
 func vIP(ip net.IP) string {
@@ -31,11 +31,11 @@ func vIP(ip net.IP) string {
 func vPort(p interface{}) string {
 	sp := fmt.Sprintf("%d", p)
 	if tcp, ok := p.(layers.TCPPort); ok {
-		if name, found := layers.TCPPortNames[tcp]; found {
+		if name, found := layers.TCPPortNames(tcp); found {
 			sp = tui.Yellow(name)
 		}
 	} else if udp, ok := p.(layers.UDPPort); ok {
-		if name, found := layers.UDPPortNames[udp]; found {
+		if name, found := layers.UDPPortNames(udp); found {
 			sp = tui.Yellow(name)
 		}
 	}

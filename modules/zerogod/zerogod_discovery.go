@@ -11,8 +11,8 @@ import (
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/evilsocket/islazy/ops"
 	"github.com/evilsocket/islazy/tui"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
 )
 
 // a service has been discovered

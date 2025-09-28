@@ -7,7 +7,7 @@ import (
 
 	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/packets"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket/layers"
 )
 
 func (mod *WiFiModule) isCSASilent() bool {

@@ -9,8 +9,8 @@ import (
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/bettercap/bettercap/v2/tls"
 	"github.com/evilsocket/islazy/str"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/pcap"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/pcap"
 )
 
 type ZeroGod struct {

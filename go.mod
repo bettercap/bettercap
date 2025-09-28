@@ -19,8 +19,8 @@ require (
 	github.com/florianl/go-nfqueue/v2 v2.0.0
 	github.com/gobwas/glob v0.0.0-20181002190808-e7a84e9525fe
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/google/gopacket v1.1.19
 	github.com/google/gousb v1.1.3
+	github.com/gopacket/gopacket v1.3.1
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/go-bexpr v0.1.14

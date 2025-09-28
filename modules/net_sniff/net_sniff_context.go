@@ -9,8 +9,8 @@ import (
 	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/session"
 
-	"github.com/google/gopacket/pcap"
-	"github.com/google/gopacket/pcapgo"
+	"github.com/gopacket/gopacket/pcap"
+	"github.com/gopacket/gopacket/pcapgo"
 
 	"github.com/evilsocket/islazy/tui"
 )
