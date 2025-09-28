@@ -210,6 +210,13 @@ func (w *WiFi) Clear() {
 	w.aps = make(map[string]*AccessPoint)
 }
 
+func (w *WiFi) NumAPs() int {
+	w.RLock()
+	defer w.RUnlock()
+
+	return len(w.aps)
+}
+
 func (w *WiFi) NumHandshakes() int {
 	w.RLock()
 	defer w.RUnlock()
