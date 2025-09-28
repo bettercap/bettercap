@@ -102,6 +102,12 @@ func (lan *LAN) List() (list []*Endpoint) {
 	return
 }
 
+func (lan *LAN) NumHosts() int {
+	lan.Lock()
+	defer lan.Unlock()
+	return len(lan.hosts)
+}
+
 func (lan *LAN) Aliases() *data.UnsortedKV {
 	return lan.aliases
 }
