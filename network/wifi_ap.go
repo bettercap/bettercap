@@ -48,6 +48,27 @@ func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
 	return json.Marshal(doc)
 }
 
+func (ap *AccessPoint) UnmarshalJSON(raw []byte) (err error) {
+	ap.RLock()
+	defer ap.RUnlock()
+
+	var apData apJSON
+	if err = json.Unmarshal(raw, &apData); err != nil {
+		return
+	}
+
+	clients := make(map[string]*Station)
+	for _, c := range apData.Clients {
+		clients[c.HwAddress] = c
+	}
+
+	ap.Station = apData.Station
+	ap.clients = clients
+	ap.aliases, err = data.NewMemUnsortedKV()
+
+	return
+}
+
 func (ap *AccessPoint) Get(bssid string) (*Station, bool) {
 	ap.RLock()
 	defer ap.RUnlock()
