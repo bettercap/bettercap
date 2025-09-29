@@ -2,6 +2,7 @@ TARGET   ?= bettercap
 PACKAGES ?= core firewall log modules network packets session tls
 PREFIX   ?= /usr/local
 GO       ?= go
+GOFMT    ?= gofmt
 
 all: build
 
@@ -33,7 +34,7 @@ benchmark: server_deps
 	$(GO) test -v -run=doNotRunTests -bench=. -benchmem ./...
 
 fmt:
-	$(GO) fmt -s -w $(PACKAGES)
+	$(GOFMT) -s -w $(PACKAGES)
 
 clean:
 	$(RM) $(TARGET)
