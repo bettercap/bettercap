@@ -529,14 +529,27 @@ const (
 func (mod *WiFiModule) setFrequencies(freqs []int) {
 	mod.Debug("new frequencies: %v", freqs)
 
-	mod.frequencies = freqs
+	valid_freqs := []int{}
 	channels := []int{}
 	for _, freq := range freqs {
+		// Some devices support frequencies that don't correspond to valid WiFi channels.
+		// While interesting, they are unlikely to be useful to us.
 		channel := network.Dot11Freq2Chan(freq)
+		if channel == 0 || freq != network.Dot11Chan2Freq(channel) {
+			continue
+		}
+
 		if !slices.Contains(channels, channel) {
+			valid_freqs = append(valid_freqs, freq)
 			channels = append(channels, channel)
 		}
 	}
+
+	if len(valid_freqs) < len(freqs) {
+		mod.Debug("valid frequencies: %v", valid_freqs)
+	}
+	mod.frequencies = valid_freqs
+
 	sort.Ints(channels)
 
 	mod.State.Store("channels", channels)
