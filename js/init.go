@@ -16,6 +16,7 @@ func ReportError(format string, args ...interface{}) otto.Value {
 func init() {
 	// TODO: refactor this in packages
 
+	plugin.Defines["mkdirAll"] = mkdirAll
 	plugin.Defines["readDir"] = readDir
 	plugin.Defines["readFile"] = readFile
 	plugin.Defines["writeFile"] = writeFile

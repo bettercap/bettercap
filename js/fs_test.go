@@ -780,6 +780,210 @@ func TestAppendFile(t *testing.T) {
 	})
 }
 
+func TestMkdirAll(t *testing.T) {
+	vm := otto.New()
+
+	// Create a temporary directory for testing
+	tmpDir, err := os.MkdirTemp("", "js_test_mkdirall_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	t.Run("create single directory", func(t *testing.T) {
+		testDir := filepath.Join(tmpDir, "single")
+
+		arg, _ := vm.ToValue(testDir)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{arg},
+		}
+
+		result := mkdirAll(call)
+
+		// mkdirAll returns null on success
+		if !result.IsNull() {
+			t.Error("expected null return value for successful directory creation")
+		}
+
+		// Verify directory was created
+		info, err := os.Stat(testDir)
+		if err != nil {
+			t.Fatalf("directory was not created: %v", err)
+		}
+
+		if !info.IsDir() {
+			t.Error("expected directory, got file")
+		}
+
+		// Check permissions
+		if runtime.GOOS != "windows" {
+			if info.Mode().Perm() != 0755 {
+				t.Errorf("expected permissions 0755, got %v", info.Mode().Perm())
+			}
+		}
+	})
+
+	t.Run("create nested directories", func(t *testing.T) {
+		testDir := filepath.Join(tmpDir, "nested", "sub", "directories")
+
+		arg, _ := vm.ToValue(testDir)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{arg},
+		}
+
+		result := mkdirAll(call)
+
+		if !result.IsNull() {
+			t.Error("expected null return value for successful nested directory creation")
+		}
+
+		// Verify all directories in the path were created
+		currentPath := tmpDir
+		for _, part := range []string{"nested", "sub", "directories"} {
+			currentPath = filepath.Join(currentPath, part)
+			info, err := os.Stat(currentPath)
+			if err != nil {
+				t.Fatalf("directory %s was not created: %v", currentPath, err)
+			}
+			if !info.IsDir() {
+				t.Errorf("expected %s to be a directory", currentPath)
+			}
+		}
+	})
+
+	t.Run("create existing directory", func(t *testing.T) {
+		testDir := filepath.Join(tmpDir, "existing")
+
+		// Create directory first
+		os.Mkdir(testDir, 0755)
+
+		arg, _ := vm.ToValue(testDir)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{arg},
+		}
+
+		result := mkdirAll(call)
+
+		// Should succeed (mkdirAll is idempotent)
+		if !result.IsNull() {
+			t.Error("expected null return value when creating existing directory")
+		}
+
+		// Verify directory still exists
+		info, err := os.Stat(testDir)
+		if err != nil {
+			t.Fatalf("existing directory check failed: %v", err)
+		}
+		if !info.IsDir() {
+			t.Error("expected directory to still exist")
+		}
+	})
+
+	t.Run("create with file in path", func(t *testing.T) {
+		// Create a file that will block directory creation
+		blockingFile := filepath.Join(tmpDir, "blocking_file.txt")
+		os.WriteFile(blockingFile, []byte("blocking"), 0644)
+
+		testDir := filepath.Join(blockingFile, "subdir")
+
+		arg, _ := vm.ToValue(testDir)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{arg},
+		}
+
+		result := mkdirAll(call)
+
+		// Should return undefined (error)
+		if !result.IsUndefined() {
+			t.Error("expected undefined when file blocks directory creation")
+		}
+	})
+
+	t.Run("create in read-only directory", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Skipping read-only test on Windows")
+		}
+
+		readOnlyDir := filepath.Join(tmpDir, "readonly")
+		os.Mkdir(readOnlyDir, 0755)
+		os.Chmod(readOnlyDir, 0555)       // read-only
+		defer os.Chmod(readOnlyDir, 0755) // restore for cleanup
+
+		testDir := filepath.Join(readOnlyDir, "should_fail")
+
+		arg, _ := vm.ToValue(testDir)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{arg},
+		}
+
+		result := mkdirAll(call)
+
+		// Should return undefined (error)
+		if !result.IsUndefined() {
+			t.Error("expected undefined when creating directory in read-only parent")
+		}
+	})
+
+	t.Run("create with special characters", func(t *testing.T) {
+		testDir := filepath.Join(tmpDir, "special-chars_123", "with.dots", "and spaces")
+
+		arg, _ := vm.ToValue(testDir)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{arg},
+		}
+
+		result := mkdirAll(call)
+
+		if !result.IsNull() {
+			t.Error("expected null return value for directory with special characters")
+		}
+
+		// Verify directory was created
+		info, err := os.Stat(testDir)
+		if err != nil {
+			t.Fatalf("directory with special characters was not created: %v", err)
+		}
+		if !info.IsDir() {
+			t.Error("expected directory")
+		}
+	})
+
+	t.Run("invalid arguments", func(t *testing.T) {
+		tests := []struct {
+			name string
+			args []otto.Value
+		}{
+			{
+				name: "no arguments",
+				args: []otto.Value{},
+			},
+			{
+				name: "too many arguments",
+				args: func() []otto.Value {
+					arg1, _ := vm.ToValue("/some/path")
+					arg2, _ := vm.ToValue("extra")
+					return []otto.Value{arg1, arg2}
+				}(),
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				call := otto.FunctionCall{
+					ArgumentList: tt.args,
+				}
+
+				result := mkdirAll(call)
+
+				// Should return undefined (error)
+				if !result.IsUndefined() {
+					t.Error("expected undefined for invalid arguments")
+				}
+			})
+		}
+	})
+}
+
 func TestFileSystemIntegration(t *testing.T) {
 	vm := otto.New()
 
@@ -791,10 +995,22 @@ func TestFileSystemIntegration(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	t.Run("write, append, then read file", func(t *testing.T) {
-		testFile := filepath.Join(tmpDir, "roundtrip.txt")
+		testDir := filepath.Join(tmpDir, "nested", "sub", "directories")
+		testFile := filepath.Join(testDir, "roundtrip.txt")
 		initialContent := "Round-trip test content\nLine 2\nLine 3\n"
 		appendedContent := "Appended content\n"
 		expectedContent := initialContent + appendedContent
+
+		// Create subdirectories
+		argDir, _ := vm.ToValue(testDir)
+		mkdirCall := otto.FunctionCall{
+			ArgumentList: []otto.Value{argDir},
+		}
+		mkdirResult := mkdirAll(mkdirCall)
+
+		if !mkdirResult.IsNull() {
+			t.Error("mkdirAll failed")
+		}
 
 		// Write file
 		argFile, _ := vm.ToValue(testFile)
@@ -942,6 +1158,23 @@ func BenchmarkAppendFile(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = appendFile(call)
+	}
+}
+
+func BenchmarkMkdirAll(b *testing.B) {
+	vm := otto.New()
+
+	tmpDir, _ := os.MkdirTemp("", "bench_mkdirall_*")
+	defer os.RemoveAll(tmpDir)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		testDir := filepath.Join(tmpDir, fmt.Sprintf("bench_%d", i), "nested", "sub", "directories")
+		arg, _ := vm.ToValue(testDir)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{arg},
+		}
+		_ = mkdirAll(call)
 	}
 }
 

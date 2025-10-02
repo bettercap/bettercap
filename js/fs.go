@@ -6,6 +6,23 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
+func mkdirAll(call otto.FunctionCall) otto.Value {
+	argv := call.ArgumentList
+	argc := len(argv)
+	if argc != 1 {
+		return ReportError("mkdirAll: expected 1 argument, %d given instead.", argc)
+	}
+
+	path := argv[0].String()
+
+	err := os.MkdirAll(path, 0755)
+	if err != nil {
+		return ReportError("Could not create directory %s: %s", path, err)
+	}
+
+	return otto.NullValue()
+}
+
 func readDir(call otto.FunctionCall) otto.Value {
 	argv := call.ArgumentList
 	argc := len(argv)
