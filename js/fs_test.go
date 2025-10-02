@@ -2,7 +2,6 @@ package js
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -16,7 +15,7 @@ func TestReadDir(t *testing.T) {
 	vm := otto.New()
 
 	// Create a temporary directory for testing
-	tmpDir, err := ioutil.TempDir("", "js_test_readdir_*")
+	tmpDir, err := os.MkdirTemp("", "js_test_readdir_*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -27,7 +26,7 @@ func TestReadDir(t *testing.T) {
 	testDirs := []string{"subdir1", "subdir2"}
 
 	for _, name := range testFiles {
-		if err := ioutil.WriteFile(filepath.Join(tmpDir, name), []byte("test"), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(tmpDir, name), []byte("test"), 0644); err != nil {
 			t.Fatalf("failed to create test file %s: %v", name, err)
 		}
 	}
@@ -102,7 +101,7 @@ func TestReadDir(t *testing.T) {
 	t.Run("file instead of directory", func(t *testing.T) {
 		// Create a file
 		testFile := filepath.Join(tmpDir, "notadir.txt")
-		ioutil.WriteFile(testFile, []byte("test"), 0644)
+		os.WriteFile(testFile, []byte("test"), 0644)
 
 		arg, _ := vm.ToValue(testFile)
 		call := otto.FunctionCall{
@@ -183,7 +182,7 @@ func TestReadFile(t *testing.T) {
 	vm := otto.New()
 
 	// Create a temporary directory for testing
-	tmpDir, err := ioutil.TempDir("", "js_test_readfile_*")
+	tmpDir, err := os.MkdirTemp("", "js_test_readfile_*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -192,7 +191,7 @@ func TestReadFile(t *testing.T) {
 	t.Run("valid file", func(t *testing.T) {
 		testContent := "Hello, World!\nThis is a test file.\n特殊字符测试 🌍"
 		testFile := filepath.Join(tmpDir, "test.txt")
-		ioutil.WriteFile(testFile, []byte(testContent), 0644)
+		os.WriteFile(testFile, []byte(testContent), 0644)
 
 		arg, _ := vm.ToValue(testFile)
 		call := otto.FunctionCall{
@@ -245,7 +244,7 @@ func TestReadFile(t *testing.T) {
 
 	t.Run("empty file", func(t *testing.T) {
 		emptyFile := filepath.Join(tmpDir, "empty.txt")
-		ioutil.WriteFile(emptyFile, []byte(""), 0644)
+		os.WriteFile(emptyFile, []byte(""), 0644)
 
 		arg, _ := vm.ToValue(emptyFile)
 		call := otto.FunctionCall{
@@ -267,7 +266,7 @@ func TestReadFile(t *testing.T) {
 	t.Run("binary file", func(t *testing.T) {
 		binaryContent := []byte{0, 1, 2, 3, 255, 254, 253, 252}
 		binaryFile := filepath.Join(tmpDir, "binary.bin")
-		ioutil.WriteFile(binaryFile, binaryContent, 0644)
+		os.WriteFile(binaryFile, binaryContent, 0644)
 
 		arg, _ := vm.ToValue(binaryFile)
 		call := otto.FunctionCall{
@@ -325,7 +324,7 @@ func TestReadFile(t *testing.T) {
 		// Create a 1MB file
 		largeContent := strings.Repeat("A", 1024*1024)
 		largeFile := filepath.Join(tmpDir, "large.txt")
-		ioutil.WriteFile(largeFile, []byte(largeContent), 0644)
+		os.WriteFile(largeFile, []byte(largeContent), 0644)
 
 		arg, _ := vm.ToValue(largeFile)
 		call := otto.FunctionCall{
@@ -349,7 +348,7 @@ func TestWriteFile(t *testing.T) {
 	vm := otto.New()
 
 	// Create a temporary directory for testing
-	tmpDir, err := ioutil.TempDir("", "js_test_writefile_*")
+	tmpDir, err := os.MkdirTemp("", "js_test_writefile_*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -373,7 +372,7 @@ func TestWriteFile(t *testing.T) {
 		}
 
 		// Verify file was created with correct content
-		content, err := ioutil.ReadFile(testFile)
+		content, err := os.ReadFile(testFile)
 		if err != nil {
 			t.Fatalf("failed to read written file: %v", err)
 		}
@@ -403,7 +402,7 @@ func TestWriteFile(t *testing.T) {
 		newContent := "New content that is longer than the old content"
 
 		// Create initial file
-		ioutil.WriteFile(testFile, []byte(oldContent), 0644)
+		os.WriteFile(testFile, []byte(oldContent), 0644)
 
 		argFile, _ := vm.ToValue(testFile)
 		argContent, _ := vm.ToValue(newContent)
@@ -418,7 +417,7 @@ func TestWriteFile(t *testing.T) {
 		}
 
 		// Verify file was overwritten
-		content, _ := ioutil.ReadFile(testFile)
+		content, _ := os.ReadFile(testFile)
 		if string(content) != newContent {
 			t.Errorf("expected content %q, got %q", newContent, string(content))
 		}
@@ -458,7 +457,7 @@ func TestWriteFile(t *testing.T) {
 		}
 
 		// Verify empty file was created
-		content, _ := ioutil.ReadFile(testFile)
+		content, _ := os.ReadFile(testFile)
 		if len(content) != 0 {
 			t.Errorf("expected empty file, got %d bytes", len(content))
 		}
@@ -524,7 +523,7 @@ func TestWriteFile(t *testing.T) {
 		}
 
 		// Verify binary content
-		content, _ := ioutil.ReadFile(testFile)
+		content, _ := os.ReadFile(testFile)
 		if string(content) != binaryContent {
 			t.Error("binary content mismatch")
 		}
@@ -535,7 +534,7 @@ func TestFileSystemIntegration(t *testing.T) {
 	vm := otto.New()
 
 	// Create a temporary directory for testing
-	tmpDir, err := ioutil.TempDir("", "js_test_integration_*")
+	tmpDir, err := os.MkdirTemp("", "js_test_integration_*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -621,11 +620,11 @@ func BenchmarkReadFile(b *testing.B) {
 	vm := otto.New()
 
 	// Create test file
-	tmpFile, _ := ioutil.TempFile("", "bench_readfile_*")
+	tmpFile, _ := os.CreateTemp("", "bench_readfile_*")
 	defer os.Remove(tmpFile.Name())
 
 	content := strings.Repeat("Benchmark test content line\n", 100)
-	ioutil.WriteFile(tmpFile.Name(), []byte(content), 0644)
+	os.WriteFile(tmpFile.Name(), []byte(content), 0644)
 
 	arg, _ := vm.ToValue(tmpFile.Name())
 	call := otto.FunctionCall{
@@ -641,7 +640,7 @@ func BenchmarkReadFile(b *testing.B) {
 func BenchmarkWriteFile(b *testing.B) {
 	vm := otto.New()
 
-	tmpDir, _ := ioutil.TempDir("", "bench_writefile_*")
+	tmpDir, _ := os.MkdirTemp("", "bench_writefile_*")
 	defer os.RemoveAll(tmpDir)
 
 	content := strings.Repeat("Benchmark test content line\n", 100)
@@ -662,13 +661,13 @@ func BenchmarkReadDir(b *testing.B) {
 	vm := otto.New()
 
 	// Create test directory with files
-	tmpDir, _ := ioutil.TempDir("", "bench_readdir_*")
+	tmpDir, _ := os.MkdirTemp("", "bench_readdir_*")
 	defer os.RemoveAll(tmpDir)
 
 	// Create 100 files
 	for i := 0; i < 100; i++ {
 		name := filepath.Join(tmpDir, fmt.Sprintf("file_%d.txt", i))
-		ioutil.WriteFile(name, []byte("test"), 0644)
+		os.WriteFile(name, []byte("test"), 0644)
 	}
 
 	arg, _ := vm.ToValue(tmpDir)
