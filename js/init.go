@@ -19,6 +19,7 @@ func init() {
 	plugin.Defines["readDir"] = readDir
 	plugin.Defines["readFile"] = readFile
 	plugin.Defines["writeFile"] = writeFile
+	plugin.Defines["appendFile"] = appendFile
 
 	plugin.Defines["log"] = flog
 	plugin.Defines["log_debug"] = log_debug

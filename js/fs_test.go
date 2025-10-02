@@ -530,6 +530,256 @@ func TestWriteFile(t *testing.T) {
 	})
 }
 
+func TestAppendFile(t *testing.T) {
+	vm := otto.New()
+
+	// Create a temporary directory for testing
+	tmpDir, err := os.MkdirTemp("", "js_test_appendfile_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	t.Run("append to new file", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "new_append.txt")
+		testContent := "Hello, World!\nThis is appended content.\n特殊字符测试 🌍"
+
+		argFile, _ := vm.ToValue(testFile)
+		argContent, _ := vm.ToValue(testContent)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{argFile, argContent},
+		}
+
+		result := appendFile(call)
+
+		// appendFile returns null on success
+		if !result.IsNull() {
+			t.Error("expected null return value for successful append")
+		}
+
+		// Verify file was created with correct content
+		content, err := os.ReadFile(testFile)
+		if err != nil {
+			t.Fatalf("failed to read appended file: %v", err)
+		}
+
+		if string(content) != testContent {
+			t.Errorf("expected content %q, got %q", testContent, string(content))
+		}
+
+		// Check file permissions
+		info, _ := os.Stat(testFile)
+		if runtime.GOOS == "windows" {
+			// On Windows, permissions are different - just check that file exists and is readable
+			if info.Mode()&0400 == 0 {
+				t.Error("expected file to be readable on Windows")
+			}
+		} else {
+			// On Unix-like systems, check exact permissions
+			if info.Mode().Perm() != 0644 {
+				t.Errorf("expected permissions 0644, got %v", info.Mode().Perm())
+			}
+		}
+	})
+
+	t.Run("append to existing file", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "existing_append.txt")
+		initialContent := "Initial content\n"
+		appendContent := "Appended content\n"
+		expectedContent := initialContent + appendContent
+
+		// Create initial file
+		os.WriteFile(testFile, []byte(initialContent), 0644)
+
+		argFile, _ := vm.ToValue(testFile)
+		argContent, _ := vm.ToValue(appendContent)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{argFile, argContent},
+		}
+
+		result := appendFile(call)
+
+		if !result.IsNull() {
+			t.Error("expected null return value for successful append")
+		}
+
+		// Verify content was appended
+		content, _ := os.ReadFile(testFile)
+		if string(content) != expectedContent {
+			t.Errorf("expected content %q, got %q", expectedContent, string(content))
+		}
+	})
+
+	t.Run("multiple appends", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "multi_append.txt")
+		contents := []string{"Line 1\n", "Line 2\n", "Line 3\n"}
+		expectedContent := strings.Join(contents, "")
+
+		argFile, _ := vm.ToValue(testFile)
+
+		// Append multiple times
+		for _, content := range contents {
+			argContent, _ := vm.ToValue(content)
+			call := otto.FunctionCall{
+				ArgumentList: []otto.Value{argFile, argContent},
+			}
+
+			result := appendFile(call)
+			if !result.IsNull() {
+				t.Errorf("expected null return value for append of %q", content)
+			}
+		}
+
+		// Verify all content was appended
+		finalContent, _ := os.ReadFile(testFile)
+		if string(finalContent) != expectedContent {
+			t.Errorf("expected content %q, got %q", expectedContent, string(finalContent))
+		}
+	})
+
+	t.Run("append to non-existent directory", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "nonexistent", "subdir", "file.txt")
+		testContent := "test"
+
+		argFile, _ := vm.ToValue(testFile)
+		argContent, _ := vm.ToValue(testContent)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{argFile, argContent},
+		}
+
+		result := appendFile(call)
+
+		// Should return undefined (error)
+		if !result.IsUndefined() {
+			t.Error("expected undefined when appending to non-existent directory")
+		}
+	})
+
+	t.Run("append empty content", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "empty_append.txt")
+		initialContent := "Initial content"
+
+		// Create initial file
+		os.WriteFile(testFile, []byte(initialContent), 0644)
+
+		argFile, _ := vm.ToValue(testFile)
+		argContent, _ := vm.ToValue("")
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{argFile, argContent},
+		}
+
+		result := appendFile(call)
+
+		if !result.IsNull() {
+			t.Error("expected null return value for successful append")
+		}
+
+		// Verify content unchanged (empty append)
+		content, _ := os.ReadFile(testFile)
+		if string(content) != initialContent {
+			t.Errorf("expected content %q, got %q", initialContent, string(content))
+		}
+	})
+
+	t.Run("invalid arguments", func(t *testing.T) {
+		tests := []struct {
+			name string
+			args []otto.Value
+		}{
+			{
+				name: "no arguments",
+				args: []otto.Value{},
+			},
+			{
+				name: "one argument",
+				args: func() []otto.Value {
+					arg, _ := vm.ToValue("file.txt")
+					return []otto.Value{arg}
+				}(),
+			},
+			{
+				name: "too many arguments",
+				args: func() []otto.Value {
+					arg1, _ := vm.ToValue("file.txt")
+					arg2, _ := vm.ToValue("content")
+					arg3, _ := vm.ToValue("extra")
+					return []otto.Value{arg1, arg2, arg3}
+				}(),
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				call := otto.FunctionCall{
+					ArgumentList: tt.args,
+				}
+
+				result := appendFile(call)
+
+				// Should return undefined (error)
+				if !result.IsUndefined() {
+					t.Error("expected undefined for invalid arguments")
+				}
+			})
+		}
+	})
+
+	t.Run("append binary content", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "binary_append.bin")
+		initialContent := []byte{0, 1, 2, 3}
+		appendContent := string([]byte{255, 254, 253, 252})
+		expectedContent := string(initialContent) + appendContent
+
+		// Create initial file with binary content
+		os.WriteFile(testFile, initialContent, 0644)
+
+		argFile, _ := vm.ToValue(testFile)
+		argContent, _ := vm.ToValue(appendContent)
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{argFile, argContent},
+		}
+
+		result := appendFile(call)
+
+		if !result.IsNull() {
+			t.Error("expected null return value for successful append")
+		}
+
+		// Verify binary content was appended correctly
+		content, _ := os.ReadFile(testFile)
+		if string(content) != expectedContent {
+			t.Error("binary content append mismatch")
+		}
+	})
+
+	t.Run("append to read-only file", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Skipping read-only test on Windows")
+		}
+
+		testFile := filepath.Join(tmpDir, "readonly.txt")
+		initialContent := "Initial content\n"
+
+		// Create file and make it read-only
+		os.WriteFile(testFile, []byte(initialContent), 0644)
+		os.Chmod(testFile, 0444)       // read-only
+		defer os.Chmod(testFile, 0644) // restore for cleanup
+
+		argFile, _ := vm.ToValue(testFile)
+		argContent, _ := vm.ToValue("This should fail")
+		call := otto.FunctionCall{
+			ArgumentList: []otto.Value{argFile, argContent},
+		}
+
+		result := appendFile(call)
+
+		// Should return undefined (error)
+		if !result.IsUndefined() {
+			t.Error("expected undefined when appending to read-only file")
+		}
+	})
+}
+
 func TestFileSystemIntegration(t *testing.T) {
 	vm := otto.New()
 
@@ -540,20 +790,33 @@ func TestFileSystemIntegration(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	t.Run("write then read file", func(t *testing.T) {
+	t.Run("write, append, then read file", func(t *testing.T) {
 		testFile := filepath.Join(tmpDir, "roundtrip.txt")
-		testContent := "Round-trip test content\nLine 2\nLine 3"
+		initialContent := "Round-trip test content\nLine 2\nLine 3\n"
+		appendedContent := "Appended content\n"
+		expectedContent := initialContent + appendedContent
 
 		// Write file
 		argFile, _ := vm.ToValue(testFile)
-		argContent, _ := vm.ToValue(testContent)
+		argInitial, _ := vm.ToValue(initialContent)
 		writeCall := otto.FunctionCall{
-			ArgumentList: []otto.Value{argFile, argContent},
+			ArgumentList: []otto.Value{argFile, argInitial},
 		}
 
 		writeResult := writeFile(writeCall)
 		if !writeResult.IsNull() {
 			t.Fatal("write failed")
+		}
+
+		// Append content
+		argAppend, _ := vm.ToValue(appendedContent)
+		appendCall := otto.FunctionCall{
+			ArgumentList: []otto.Value{argFile, argAppend},
+		}
+
+		appendResult := appendFile(appendCall)
+		if !appendResult.IsNull() {
+			t.Fatal("append failed")
 		}
 
 		// Read file back
@@ -567,8 +830,8 @@ func TestFileSystemIntegration(t *testing.T) {
 		}
 
 		readContent, _ := readResult.ToString()
-		if readContent != testContent {
-			t.Errorf("round-trip failed: expected %q, got %q", testContent, readContent)
+		if readContent != expectedContent {
+			t.Errorf("round-trip failed: expected %q, got %q", expectedContent, readContent)
 		}
 	})
 
@@ -654,6 +917,31 @@ func BenchmarkWriteFile(b *testing.B) {
 			ArgumentList: []otto.Value{argFile, argContent},
 		}
 		_ = writeFile(call)
+	}
+}
+
+func BenchmarkAppendFile(b *testing.B) {
+	vm := otto.New()
+
+	tmpDir, _ := os.MkdirTemp("", "bench_appendfile_*")
+	defer os.RemoveAll(tmpDir)
+
+	// Create initial file with some content
+	testFile := filepath.Join(tmpDir, "bench_append.txt")
+	initialContent := "Initial content for benchmark\n"
+	os.WriteFile(testFile, []byte(initialContent), 0644)
+
+	content := strings.Repeat("Benchmark append line\n", 10)
+
+	argFile, _ := vm.ToValue(testFile)
+	argContent, _ := vm.ToValue(content)
+	call := otto.FunctionCall{
+		ArgumentList: []otto.Value{argFile, argContent},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = appendFile(call)
 	}
 }
 
