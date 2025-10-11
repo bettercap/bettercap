@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package network
@@ -36,7 +37,7 @@ type BLEDevice struct {
 	Services      []BLEService
 }
 
-type bleDeviceJSON struct {
+type BLEDeviceJSON struct {
 	LastSeen    time.Time    `json:"last_seen"`
 	Name        string       `json:"name"`
 	MAC         string       `json:"mac"`
@@ -77,8 +78,8 @@ func (d *BLEDevice) Name() string {
 	return name
 }
 
-func (d *BLEDevice) MarshalJSON() ([]byte, error) {
-	doc := bleDeviceJSON{
+func (d *BLEDevice) ToJSON() BLEDeviceJSON {
+	return BLEDeviceJSON{
 		LastSeen:    d.LastSeen,
 		Name:        d.Name(),
 		MAC:         d.Device.ID(),
@@ -89,5 +90,8 @@ func (d *BLEDevice) MarshalJSON() ([]byte, error) {
 		Flags:       d.Advertisement.Flags.String(),
 		Services:    d.Services,
 	}
-	return json.Marshal(doc)
+}
+
+func (d *BLEDevice) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.ToJSON())
 }
