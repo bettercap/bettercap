@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package network
@@ -102,6 +103,12 @@ func (b *BLE) Devices() (devices []*BLEDevice) {
 		devices = append(devices, dev)
 	}
 	return
+}
+
+func (b *BLE) NumDevices() int {
+	b.Lock()
+	defer b.Unlock()
+	return len(b.devices)
 }
 
 func (b *BLE) EachDevice(cb func(mac string, d *BLEDevice)) {
