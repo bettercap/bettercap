@@ -2,7 +2,6 @@ package zerogod
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"testing"
@@ -330,7 +329,7 @@ func TestZeroGodAdvertise(t *testing.T) {
 	t.Skip("Skipping test that requires complex advertiser mocking")
 
 	// Create a test YAML file with services
-	tmpFile, err := ioutil.TempFile("", "zerogod_advertise_*.yml")
+	tmpFile, err := os.CreateTemp("", "zerogod_advertise_*.yml")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}

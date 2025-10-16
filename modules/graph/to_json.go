@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"io/ioutil"
 	"os"
 	"time"
 )
@@ -26,7 +25,7 @@ func (mod *Module) generateJSONGraph(bssid string) error {
 			data = privacyFilter.ReplaceAllString(data, "$1:$2:xx:xx:xx:xx")
 		}
 
-		if err := ioutil.WriteFile(mod.settings.json.output, []byte(data), os.ModePerm); err != nil {
+		if err := os.WriteFile(mod.settings.json.output, []byte(data), os.ModePerm); err != nil {
 			return err
 		} else {
 			mod.Info("graph saved to %s in %v (%d edges, %d discarded)",
