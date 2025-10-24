@@ -56,15 +56,19 @@ func (mod *ZeroGod) updateEndpointMeta(address string, endpoint *network.Endpoin
 
 	endpoint.OnMeta(meta)
 
-	// update ports
+	// update ports if needed
 	ports := endpoint.Meta.GetOr("ports", map[int]*syn_scan.OpenPort{}).(map[int]*syn_scan.OpenPort)
 	if _, found := ports[svc.Port]; !found {
-		ports[svc.Port] = &syn_scan.OpenPort{
+		// ports is a reference, create a copy to avoid race conditions
+		portsCopy := make(map[int]*syn_scan.OpenPort)
+		for k, v := range ports {
+			portsCopy[k] = v
+		}
+		portsCopy[svc.Port] = &syn_scan.OpenPort{
 			Proto:   "tcp",
 			Port:    svc.Port,
 			Service: network.GetServiceByPort(svc.Port, "tcp"),
 		}
+		endpoint.Meta.Set("ports", portsCopy)
 	}
-
-	endpoint.Meta.Set("ports", ports)
 }
