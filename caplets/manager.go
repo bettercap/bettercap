@@ -2,7 +2,6 @@ package caplets
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -86,16 +85,18 @@ func Load(name string) (*Caplet, error) {
 				if strings.Contains(baseName, "/") || strings.Contains(baseName, "\\") {
 					dir := filepath.Dir(fileName)
 					// get all secondary .cap and .js files
-					if files, err := ioutil.ReadDir(dir); err == nil && len(files) > 0 {
+					if files, err := os.ReadDir(dir); err == nil && len(files) > 0 {
 						for _, f := range files {
 							subFileName := filepath.Join(dir, f.Name())
 							if subFileName != fileName && (strings.HasSuffix(subFileName, ".cap") || strings.HasSuffix(subFileName, ".js")) {
 								if reader, err := fs.LineReader(subFileName); err == nil {
-									script := newScript(subFileName, f.Size())
-									for line := range reader {
-										script.Code = append(script.Code, line)
+									if info, err := f.Info(); err == nil {
+										script := newScript(subFileName, info.Size())
+										for line := range reader {
+											script.Code = append(script.Code, line)
+										}
+										cap.Scripts = append(cap.Scripts, script)
 									}
-									cap.Scripts = append(cap.Scripts, script)
 								}
 							}
 						}

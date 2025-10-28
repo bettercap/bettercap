@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -127,8 +127,8 @@ func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, names
 	}
 
 	if netProtocol == "tcp-tls" && p.CertFile != "" && p.KeyFile != "" {
-		rawCert, _ := ioutil.ReadFile(p.CertFile)
-		rawKey, _ := ioutil.ReadFile(p.KeyFile)
+		rawCert, _ := os.ReadFile(p.CertFile)
+		rawKey, _ := os.ReadFile(p.KeyFile)
 		ourCa, err := tls.X509KeyPair(rawCert, rawKey)
 		if err != nil {
 			return err

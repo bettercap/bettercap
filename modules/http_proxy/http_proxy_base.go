@@ -7,10 +7,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -202,7 +202,7 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRed
 	if strings.HasPrefix(jsToInject, "http://") || strings.HasPrefix(jsToInject, "https://") {
 		p.jsHook = fmt.Sprintf("<script src=\"%s\" type=\"text/javascript\"></script></head>", jsToInject)
 	} else if fs.Exists(jsToInject) {
-		if data, err := ioutil.ReadFile(jsToInject); err != nil {
+		if data, err := os.ReadFile(jsToInject); err != nil {
 			return err
 		} else {
 			jsToInject = string(data)
@@ -309,8 +309,8 @@ func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, do
 	p.CertFile = certFile
 	p.KeyFile = keyFile
 
-	rawCert, _ := ioutil.ReadFile(p.CertFile)
-	rawKey, _ := ioutil.ReadFile(p.KeyFile)
+	rawCert, _ := os.ReadFile(p.CertFile)
+	rawKey, _ := os.ReadFile(p.KeyFile)
 	ourCa, err := tls.X509KeyPair(rawCert, rawKey)
 	if err != nil {
 		return err
