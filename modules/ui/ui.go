@@ -78,10 +78,11 @@ func (mod *UIModule) Configure() (err error) {
 		return err
 	}
 
-	mod.server.Addr = fmt.Sprintf("%s:%d", ip, port)
-
 	dist, _ := fs.Sub(web, "ui")
-	mod.server.Handler = http.FileServer(http.FS(dist))
+    mod.server = &http.Server{
+        Addr:    fmt.Sprintf("%s:%d", ip, port),
+        Handler: http.FileServer(http.FS(dist)),
+    }
 
 	return nil
 }
@@ -91,18 +92,18 @@ func (mod *UIModule) Start() error {
 		return err
 	}
 
-	mod.SetRunning(true, func() {
+	return mod.SetRunning(true, func() {
+		defer mod.SetRunning(false, nil)
+		
 		var err error
 
 		mod.Info("web ui starting on http://%s", mod.server.Addr)
 		err = mod.server.ListenAndServe()
 
 		if err != nil && err != http.ErrServerClosed {
-			panic(err)
+            mod.Error("web ui failed: %v", err)
 		}
 	})
-
-	return nil
 }
 
 func (mod *UIModule) Stop() error {
