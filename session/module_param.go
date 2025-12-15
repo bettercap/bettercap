@@ -119,8 +119,8 @@ func (p ModuleParam) parse(s *Session, v string) string {
 		v = net.HardwareAddr(hw).String()
 	default:
 		// check the <iface> case
-	 	if m := ParamIfaceNameParser.FindStringSubmatch(v); len(m) == 2 {
-	 		// does it match any interface?
+		if m := ParamIfaceNameParser.FindStringSubmatch(v); len(m) == 2 {
+			// does it match any interface?
 			name := m[1]
 			if iface, err := net.InterfaceByName(name); err == nil {
 				if addrs, err := iface.Addrs(); err == nil {

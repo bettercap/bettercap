@@ -61,7 +61,6 @@ func (t *HostTracker) Unstrip(stripped string) *Host {
 	return nil
 }
 
-
 func (t *HostTracker) Strip(unstripped string) *Host {
 	t.RLock()
 	defer t.RUnlock()

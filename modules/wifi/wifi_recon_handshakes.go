@@ -29,8 +29,8 @@ func (mod *WiFiModule) getHandshakeFileFor(ap *network.AccessPoint) string {
 	if !mod.shakesAggregate {
 		parentDir := path.Dir(shakesFileName)
 		// check for existing directory at "shakesFileName" for backwards compatibility
-                fileInfo, err := os.Stat(shakesFileName)
-                if (err == nil) && (fileInfo.IsDir()) {
+		fileInfo, err := os.Stat(shakesFileName)
+		if (err == nil) && (fileInfo.IsDir()) {
 			parentDir = shakesFileName
 		}
 		shakesFileName = path.Join(parentDir, fmt.Sprintf("%s.pcap", ap.PathFriendlyName()))

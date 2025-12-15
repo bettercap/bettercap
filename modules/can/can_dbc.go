@@ -165,7 +165,7 @@ func (dbc *DBC) Senders() []string {
 		uniq[msg.SenderNode] = true
 	}
 
-	for sender, _ := range uniq {
+	for sender := range uniq {
 		senders = append(senders, sender)
 	}
 

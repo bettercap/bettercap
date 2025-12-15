@@ -58,4 +58,3 @@ func (mod *EventsStream) doRotation() {
 		}
 	}
 }
-

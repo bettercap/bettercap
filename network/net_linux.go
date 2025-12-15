@@ -42,7 +42,7 @@ func SetInterfaceChannel(iface string, channel int) error {
 	if core.HasBinary("iw") {
 		// Debug("SetInterfaceChannel(%s, %d) iw based", iface, channel)
 		// out, err := core.Exec("iw", []string{"dev", iface, "set", "channel", fmt.Sprintf("%d", channel)})
-        	out, err := core.Exec("iw", []string{"dev", iface, "set", "freq", fmt.Sprintf("%d", Dot11Chan2Freq(channel))})
+		out, err := core.Exec("iw", []string{"dev", iface, "set", "freq", fmt.Sprintf("%d", Dot11Chan2Freq(channel))})
 
 		if err != nil {
 			return fmt.Errorf("iw: out=%s err=%s", out, err)
@@ -91,6 +91,7 @@ func iwlistSupportedFrequencies(iface string) ([]int, error) {
 }
 
 var iwPhyParser = regexp.MustCompile(`^\s*wiphy\s+(\d+)$`)
+
 // var iwFreqParser = regexp.MustCompile(`^\s+\*\s+(\d+)\s+MHz.+dBm.+$`)
 var iwFreqParser = regexp.MustCompile(`^\s+\*\s+(\d+)\.\d+\s+MHz.+dBm.+$`)
 
@@ -143,7 +144,7 @@ func iwSupportedFrequencies(iface string) ([]int, error) {
 
 func GetSupportedFrequencies(iface string) ([]int, error) {
 	// give priority to iwlist because of https://github.com/bettercap/bettercap/issues/881
-        // UPDATE: Changed the priority due iwlist doesn't support 6GHz 
+	// UPDATE: Changed the priority due iwlist doesn't support 6GHz
 	if core.HasBinary("iw") {
 		return iwSupportedFrequencies(iface)
 	} else if core.HasBinary("iwlist") {
