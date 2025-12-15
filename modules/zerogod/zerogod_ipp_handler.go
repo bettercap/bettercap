@@ -51,6 +51,9 @@ func ippClientHandler(ctx *HandlerContext) {
 	if err != nil {
 		ctx.mod.Error("%v", err)
 		return
+	} else if ipp_body == nil {
+		ctx.mod.Warning("no ipp request body from %v (%s)", clientIP, clientUA)
+		return
 	}
 
 	// parse as IPP
