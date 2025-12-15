@@ -3,7 +3,6 @@ package tls
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -87,7 +86,7 @@ func TestCreateCertificate(t *testing.T) {
 }
 
 func TestGenerate(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "tlstest")
+	tempDir, err := os.MkdirTemp("", "tlstest")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,8 +112,8 @@ func TestGenerate(t *testing.T) {
 	}
 
 	// Load and verify
-	certBytes, _ := ioutil.ReadFile(certPath)
-	keyBytes, _ := ioutil.ReadFile(keyPath)
+	certBytes, _ := os.ReadFile(certPath)
+	keyBytes, _ := os.ReadFile(keyPath)
 
 	certBlock, _ := pem.Decode(certBytes)
 	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
