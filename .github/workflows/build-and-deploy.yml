@@ -99,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - name: Download Artifacts
-          uses: actions/download-artifact@v5
+          uses: actions/download-artifact@v7
           with:
             pattern: release-artifacts-*
             merge-multiple: true
