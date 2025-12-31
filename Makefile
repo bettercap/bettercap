@@ -40,4 +40,13 @@ clean:
 	$(RM) $(TARGET)
 	$(RM) -r build
 
+build-arm64: clean
+	docker build -f Dockerfile.arm64 \
+		--target=output \
+		--output type=local,dest=. \
+		.
+
+sync-arm64:
+	rsync -rvzc ./bettercap pi@10.0.0.2:/home/pi/
+
 .PHONY: all build build_with_race_detector resources install docker test html_coverage benchmark fmt clean

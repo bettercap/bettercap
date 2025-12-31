@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1
+
+# build stage for cross-compiling for arm64 using native Go cross-compilation
+FROM golang:1.24-bookworm AS builder
+
+# install cross-compilation toolchain and ARM64 libraries
+RUN dpkg --add-architecture arm64 && \
+    apt-get update && apt-get install -y --no-install-recommends \
+    gcc-aarch64-linux-gnu \
+    libc6-dev-arm64-cross \
+    libpcap-dev:arm64 \
+    libnetfilter-queue-dev:arm64 \
+    libusb-1.0-0-dev:arm64 \
+    libbluetooth-dev:arm64 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# cache go modules (runs natively on x86_64 - fast!)
+RUN go env -w GOCACHE=/go-cache
+RUN go env -w GOMODCACHE=/gomod-cache
+
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/gomod-cache go mod tidy
+RUN --mount=type=cache,target=/gomod-cache go mod download
+
+# copy source code
+COPY . .
+
+# cross-compile for ARM64 using native x86_64 Go compiler
+ENV CC=aarch64-linux-gnu-gcc
+ENV CGO_ENABLED=1
+ENV GOOS=linux
+ENV GOARCH=arm64
+ENV PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
+
+# build with cgo enabled for native library bindings
+RUN --mount=type=cache,target=/gomod-cache --mount=type=cache,target=/go-cache make
+
+# output stage - minimal image containing only the binary
+FROM scratch AS output
+COPY --from=builder /src/bettercap /bettercap

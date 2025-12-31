@@ -143,13 +143,10 @@ func iwSupportedFrequencies(iface string) ([]int, error) {
 }
 
 func GetSupportedFrequencies(iface string) ([]int, error) {
-	// give priority to iwlist because of https://github.com/bettercap/bettercap/issues/881
-	// UPDATE: Changed the priority due iwlist doesn't support 6GHz
-	if core.HasBinary("iw") {
-		return iwSupportedFrequencies(iface)
-	} else if core.HasBinary("iwlist") {
+	// rely on iwlist only because of https://github.com/bettercap/bettercap/issues/1243
+	if core.HasBinary("iwlist") {
 		return iwlistSupportedFrequencies(iface)
 	}
 
-	return nil, fmt.Errorf("no iw or iwlist binaries found in $PATH")
+	return nil, fmt.Errorf("no iwlist binaries found in $PATH")
 }
