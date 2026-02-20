@@ -140,6 +140,9 @@ func (g *Graph) Traverse(root string, onNode NodeCallback, onEdge EdgeCallback) 
 					}
 					return nil
 				})
+				if err != nil {
+					return err
+				}
 			}
 		}
 
