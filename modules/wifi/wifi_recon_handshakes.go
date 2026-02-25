@@ -70,7 +70,12 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 			rawPMKID = station.Handshake.AddAndGetPMKID(packet)
 			PMKID := "without PMKID"
 			if rawPMKID != nil {
-				PMKID = "with PMKID"
+				// ADDED: Use the existing allZeros function to check for vendor patches (fake PMKIDs)
+				if allZeros(rawPMKID) {
+					PMKID = "with FAKE PMKID (all zeros)"
+				} else {
+					PMKID = "with valid PMKID"
+				}
 			}
 
 			mod.Debug("got frame 1/4 of the %s <-> %s handshake (%s) (anonce:%x)",
@@ -118,7 +123,8 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 			}
 		}
 
-		validPMKID := rawPMKID != nil
+		// ADDED: PMKID is only valid if it's not nil AND not all zeros
+		validPMKID := rawPMKID != nil && !allZeros(rawPMKID)
 		validHalfHandshake := !staIsUs && station.Handshake.Half()
 		validFullHandshake := station.Handshake.Complete()
 		// if we have unsaved packets AND
