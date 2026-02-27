@@ -28,7 +28,7 @@ func TestNewModuleHandler(t *testing.T) {
 			args: args{name: "test name", desc: "test description", expr: `[a-z]`},
 			want: ModuleHandler{Name: "test name", Description: "test description", Parser: regexp.MustCompile(`[a-z]`)},
 		},
-		// this test shoud handle panic on bad regexp ?
+		// this test should handle panic on bad regexp ?
 		// {
 		// 	name: "Test NewModuleHandler bad regex expr",
 		// 	args: args{name: "test name", desc: "test description", expr: "/abcd.(]"},
