@@ -59,7 +59,7 @@ func ICMP6RouterAdvertisement(ip net.IP, hw net.HardwareAddr, prefix string, pre
 	}
 	prefixData := []byte{
 		prefixLength,
-		0x0c,                   // flags
+		0xc0,                   // flags
 		0x00, 0x27, 0x8d, 0x00, // valid lifetime (2592000)
 		0x00, 0x09, 0x3a, 0x80, // preferred lifetime (604800)
 		0x00, 0x00, 0x00, 0x00, // reserved

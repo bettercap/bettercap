@@ -221,6 +221,9 @@ func TestICMP6RouterAdvertisement(t *testing.T) {
 					if len(opt.Data) > 0 && opt.Data[0] != prefixLength {
 						t.Errorf("PrefixInfo prefix length = %d, want %d", opt.Data[0], prefixLength)
 					}
+					if len(opt.Data) > 1 && opt.Data[1] != 192 {
+						t.Errorf("PrefixInfo prefix flags = %d, want 192", opt.Data[1])
+					}
 				}
 			}
 
