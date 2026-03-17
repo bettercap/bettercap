@@ -101,6 +101,9 @@ func jsPropToUint8Array(obj map[string]interface{}, key string) []uint8 {
 }
 
 func jsPropToUint16(obj map[string]interface{}, key string) uint16 {
+	if v, ok := obj[key].(uint16); ok {
+		return v
+	}
 	if v, ok := obj[key].(int64); ok {
 		if v >= 0 && v <= math.MaxUint16 {
 			return uint16(v)
