@@ -12,7 +12,7 @@ func NewJSSVCBKeyValue(kv dns.SVCBKeyValue) (map[string]interface{}, error) {
 	key := kv.Key()
 
 	jsKv := map[string]interface{}{
-		"Key": uint16(key),
+		"Key": int64(key),
 	}
 
 	switch v := kv.(type) {
