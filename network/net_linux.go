@@ -40,7 +40,6 @@ func SetInterfaceChannel(iface string, channel int) error {
 	}
 
 	if core.HasBinary("iw") {
-		// Debug("SetInterfaceChannel(%s, %d) iw based", iface, channel)
 		// out, err := core.Exec("iw", []string{"dev", iface, "set", "channel", fmt.Sprintf("%d", channel)})
 		out, err := core.Exec("iw", []string{"dev", iface, "set", "freq", fmt.Sprintf("%d", Dot11Chan2Freq(channel))})
 
@@ -50,7 +49,6 @@ func SetInterfaceChannel(iface string, channel int) error {
 			return fmt.Errorf("Unexpected output while setting interface %s to channel %d: %s", iface, channel, out)
 		}
 	} else if core.HasBinary("iwconfig") {
-		// Debug("SetInterfaceChannel(%s, %d) iwconfig based")
 		out, err := core.Exec("iwconfig", []string{iface, "channel", fmt.Sprintf("%d", channel)})
 		if err != nil {
 			return fmt.Errorf("iwconfig: out=%s err=%s", out, err)
@@ -92,8 +90,8 @@ func iwlistSupportedFrequencies(iface string) ([]int, error) {
 
 var iwPhyParser = regexp.MustCompile(`^\s*wiphy\s+(\d+)$`)
 
-// var iwFreqParser = regexp.MustCompile(`^\s+\*\s+(\d+)\s+MHz.+dBm.+$`)
-var iwFreqParser = regexp.MustCompile(`^\s+\*\s+(\d+)\.\d+\s+MHz.+dBm.+$`)
+// Updated parser to handle decimals (e.g., 2412.0 MHz) and require 'dBm' to ignore '(disabled)' frequencies
+var iwFreqParser = regexp.MustCompile(`^\s*\*\s*(\d+)(?:\.\d+)?\s+MHz.*dBm.*$`)
 
 func iwSupportedFrequencies(iface string) ([]int, error) {
 	// first determine phy index
@@ -118,7 +116,7 @@ func iwSupportedFrequencies(iface string) ([]int, error) {
 		return nil, fmt.Errorf("could not find %s phy index", iface)
 	}
 
-	// then get phyN info
+	// then get phyN info which contains the full hardware capabilities
 	phyName := fmt.Sprintf("phy%d", phy)
 	out, err = core.Exec("iw", []string{phyName, "info"})
 	if err != nil {
@@ -143,10 +141,38 @@ func iwSupportedFrequencies(iface string) ([]int, error) {
 }
 
 func GetSupportedFrequencies(iface string) ([]int, error) {
-	// rely on iwlist only because of https://github.com/bettercap/bettercap/issues/1243
-	if core.HasBinary("iwlist") {
-		return iwlistSupportedFrequencies(iface)
+	var errs []string
+
+	// Prioritize modern 'iw' (nl80211) over legacy 'iwlist' (WEXT). 
+	// See discussion: modern kernels/drivers often provide incomplete info via WEXT.
+	if core.HasBinary("iw") {
+		freqs, err := iwSupportedFrequencies(iface)
+		if err == nil && len(freqs) > 0 {
+			return freqs, nil
+		}
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("iw error: %v", err))
+		} else {
+			errs = append(errs, "iw returned 0 frequencies")
+		}
 	}
 
-	return nil, fmt.Errorf("no iwlist binaries found in $PATH")
+	// Fallback to iwlist (issue #1243 workaround for specific older/patched environments)
+	if core.HasBinary("iwlist") {
+		freqs, err := iwlistSupportedFrequencies(iface)
+		if err == nil && len(freqs) > 0 {
+			return freqs, nil
+		}
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("iwlist error: %v", err))
+		} else {
+			errs = append(errs, "iwlist returned 0 frequencies")
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("could not get supported frequencies: %s", strings.Join(errs, " | "))
+	}
+
+	return nil, fmt.Errorf("neither iw nor iwlist binaries found in $PATH")
 }
