@@ -5,8 +5,8 @@ github.com/adrianmo/go-nmea v1.10.0/go.mod h1:u8bPnpKt/D/5rll/5l9f6iDfeq5WZW0+/S
 github.com/antchfx/jsonquery v1.3.6 h1:TaSfeAh7n6T11I74bsZ1FswreIfrbJ0X+OyLflx6mx4=
 github.com/antchfx/jsonquery v1.3.6/go.mod h1:fGzSGJn9Y826Qd3pC8Wx45avuUwpkePsACQJYy+58BU=
 github.com/antchfx/xpath v1.3.2/go.mod h1:i54GszH55fYfBmoZXapTHN8T8tkcHfRgLyVwwqzXNcs=
-github.com/antchfx/xpath v1.3.4 h1:1ixrW1VnXd4HurCj7qnqnR0jo14g8JMe20Fshg1Vgz4=
-github.com/antchfx/xpath v1.3.4/go.mod h1:i54GszH55fYfBmoZXapTHN8T8tkcHfRgLyVwwqzXNcs=
+github.com/antchfx/xpath v1.3.6 h1:s0y+ElRRtTQdfHP609qFu0+c6bglDv20pqOViQjjdPI=
+github.com/antchfx/xpath v1.3.6/go.mod h1:i54GszH55fYfBmoZXapTHN8T8tkcHfRgLyVwwqzXNcs=
 github.com/bettercap/gatt v0.0.0-20240808115956-ec4935e8c4a0 h1:HiFUGV/7eGWG/YJAf9HcKOUmxIj+7LVzC8zD57VX1qo=
 github.com/bettercap/gatt v0.0.0-20240808115956-ec4935e8c4a0/go.mod h1:oafnPgaBI4gqJiYkueCyR4dqygiWGXTGOE0gmmAVeeQ=
 github.com/bettercap/nrf24 v0.0.0-20190219153547-aa37e6d0e0eb h1:JWAAJk4ny+bT3VrtcX+e7mcmWtWUeUM0xVcocSAUuWc=
