@@ -23,7 +23,7 @@ func NewJSSVCBKeyValue(kv dns.SVCBKeyValue) (map[string]interface{}, error) {
 	case *dns.SVCBECHConfig:
 		jsKv["ECH"] = string(v.ECH)
 	case *dns.SVCBPort:
-		jsKv["Port"] = v.Port
+		jsKv["Port"] = int64(v.Port)
 	case *dns.SVCBIPv4Hint:
 		ips := v.Hint
 		jsIps := make([]string, len(ips))
@@ -48,7 +48,7 @@ func NewJSSVCBKeyValue(kv dns.SVCBKeyValue) (map[string]interface{}, error) {
 		for i, _key := range keys {
 			jsKeys[i] = uint16(_key)
 		}
-		jsKv["Code"] = jsKeys
+		jsKv["Code"] = uint16ArrayToInt64Array(jsKeys)
 	default:
 		return nil, fmt.Errorf("error creating JSSVCBKeyValue: unknown key: %d", key)
 	}
