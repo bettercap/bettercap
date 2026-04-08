@@ -12,7 +12,7 @@ func NewJSEDNS0(e dns.EDNS0) (jsEDNS0 map[string]interface{}, err error) {
 	option := e.Option()
 
 	jsEDNS0 = map[string]interface{}{
-		"Option": option,
+		"Option": int64(option),
 	}
 
 	var jsVal map[string]interface{}
@@ -20,68 +20,68 @@ func NewJSEDNS0(e dns.EDNS0) (jsEDNS0 map[string]interface{}, err error) {
 	switch opt := e.(type) {
 	case *dns.EDNS0_LLQ:
 		jsVal = map[string]interface{}{
-			"Code":      opt.Code,
-			"Error":     opt.Error,
-			"Id":        opt.Id,
-			"LeaseLife": opt.LeaseLife,
-			"Opcode":    opt.Opcode,
-			"Version":   opt.Version,
+			"Code":      int64(opt.Code),
+			"Error":     int64(opt.Error),
+			"Id":        int64(opt.Id),
+			"LeaseLife": int64(opt.LeaseLife),
+			"Opcode":    int64(opt.Opcode),
+			"Version":   int64(opt.Version),
 		}
 	case *dns.EDNS0_UL:
 		jsVal = map[string]interface{}{
-			"Code":     opt.Code,
-			"Lease":    opt.Lease,
-			"KeyLease": opt.KeyLease,
+			"Code":     int64(opt.Code),
+			"Lease":    int64(opt.Lease),
+			"KeyLease": int64(opt.KeyLease),
 		}
 	case *dns.EDNS0_NSID:
 		jsVal = map[string]interface{}{
-			"Code": opt.Code,
+			"Code": int64(opt.Code),
 			"Nsid": opt.Nsid,
 		}
 	case *dns.EDNS0_ESU:
 		jsVal = map[string]interface{}{
-			"Code": opt.Code,
+			"Code": int64(opt.Code),
 			"Uri":  opt.Uri,
 		}
 	case *dns.EDNS0_DAU:
 		jsVal = map[string]interface{}{
-			"AlgCode": opt.AlgCode,
-			"Code":    opt.Code,
+			"AlgCode": uint8ArrayToInt64Array(opt.AlgCode),
+			"Code":    int64(opt.Code),
 		}
 	case *dns.EDNS0_DHU:
 		jsVal = map[string]interface{}{
-			"AlgCode": opt.AlgCode,
-			"Code":    opt.Code,
+			"AlgCode": uint8ArrayToInt64Array(opt.AlgCode),
+			"Code":    int64(opt.Code),
 		}
 	case *dns.EDNS0_N3U:
 		jsVal = map[string]interface{}{
-			"AlgCode": opt.AlgCode,
-			"Code":    opt.Code,
+			"AlgCode": uint8ArrayToInt64Array(opt.AlgCode),
+			"Code":    int64(opt.Code),
 		}
 	case *dns.EDNS0_SUBNET:
 		jsVal = map[string]interface{}{
 			"Address":       opt.Address.String(),
-			"Code":          opt.Code,
-			"Family":        opt.Family,
-			"SourceNetmask": opt.SourceNetmask,
-			"SourceScope":   opt.SourceScope,
+			"Code":          int64(opt.Code),
+			"Family":        int64(opt.Family),
+			"SourceNetmask": int64(opt.SourceNetmask),
+			"SourceScope":   int64(opt.SourceScope),
 		}
 	case *dns.EDNS0_EXPIRE:
 		jsVal = map[string]interface{}{
-			"Code":   opt.Code,
+			"Code":   int64(opt.Code),
 			"Empty":  opt.Empty,
-			"Expire": opt.Expire,
+			"Expire": int64(opt.Expire),
 		}
 	case *dns.EDNS0_COOKIE:
 		jsVal = map[string]interface{}{
-			"Code":   opt.Code,
+			"Code":   int64(opt.Code),
 			"Cookie": opt.Cookie,
 		}
 	case *dns.EDNS0_TCP_KEEPALIVE:
 		jsVal = map[string]interface{}{
-			"Code":    opt.Code,
-			"Length":  opt.Length,
-			"Timeout": opt.Timeout,
+			"Code":    int64(opt.Code),
+			"Length":  int64(opt.Length),
+			"Timeout": int64(opt.Timeout),
 		}
 	case *dns.EDNS0_PADDING:
 		jsVal = map[string]interface{}{
@@ -90,11 +90,11 @@ func NewJSEDNS0(e dns.EDNS0) (jsEDNS0 map[string]interface{}, err error) {
 	case *dns.EDNS0_EDE:
 		jsVal = map[string]interface{}{
 			"ExtraText": opt.ExtraText,
-			"InfoCode":  opt.InfoCode,
+			"InfoCode":  int64(opt.InfoCode),
 		}
 	case *dns.EDNS0_LOCAL:
 		jsVal = map[string]interface{}{
-			"Code": opt.Code,
+			"Code": int64(opt.Code),
 			"Data": string(opt.Data),
 		}
 	default:
