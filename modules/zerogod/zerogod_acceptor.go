@@ -131,6 +131,7 @@ func (a *Acceptor) startTCP() (err error) {
 					defer func() {
 						if r := recover(); r != nil {
 							a.mod.Error("panic in %s handler for %s: %v", a.service, conn.RemoteAddr(), r)
+							conn.Close()
 						}
 					}()
 					a.handler.Handle(ctx)
