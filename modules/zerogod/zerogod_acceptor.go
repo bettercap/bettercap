@@ -117,16 +117,25 @@ func (a *Acceptor) startTCP() (err error) {
 				}
 			} else {
 				a.mod.Debug("accepted %s connection for service %s (port %d): %v", a.proto, tui.Green(a.service), a.port, conn.RemoteAddr())
-				go a.handler.Handle(&HandlerContext{
-					service:       a.service,
-					mod:           a.mod,
-					client:        conn,
-					srvHost:       a.srvHost,
-					srvPort:       int(a.port),
-					srvTLS:        a.tlsConfig != nil,
-					ippAttributes: a.ippAttributes,
-					httpPaths:     a.httpPaths,
-				})
+				go func() {
+					ctx := &HandlerContext{
+						service:       a.service,
+						mod:           a.mod,
+						client:        conn,
+						srvHost:       a.srvHost,
+						srvPort:       int(a.port),
+						srvTLS:        a.tlsConfig != nil,
+						ippAttributes: a.ippAttributes,
+						httpPaths:     a.httpPaths,
+					}
+					defer func() {
+						if r := recover(); r != nil {
+							a.mod.Error("panic in %s handler for %s: %v", a.service, conn.RemoteAddr(), r)
+							conn.Close()
+						}
+					}()
+					a.handler.Handle(ctx)
+				}()
 			}
 		}
 		a.mod.Debug("%s listener for port %d (%s) stopped", a.proto, a.port, tui.Green(a.service))

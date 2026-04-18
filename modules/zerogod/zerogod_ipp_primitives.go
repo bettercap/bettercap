@@ -13,6 +13,7 @@ import (
 )
 
 const IPP_CHUNK_MAX_LINE_SIZE = 1024
+const IPP_CHUNK_MAX_SIZE = 10 * 1024 * 1024 // 10 MB
 
 var IPP_REQUEST_NAMES = map[int16]string{
 	// https://tools.ietf.org/html/rfc2911#section-4.4.15
@@ -136,6 +137,8 @@ func ippReadChunkedBody(ctx *HandlerContext) ([]byte, error) {
 			return nil, fmt.Errorf("error reading next chunk size: %v", err)
 		} else if chunkSize == 0 {
 			break
+		} else if chunkSize > IPP_CHUNK_MAX_SIZE {
+			return nil, fmt.Errorf("chunk size %d exceeds maximum allowed size of %d bytes", chunkSize, IPP_CHUNK_MAX_SIZE)
 		} else {
 			chunk := make([]byte, chunkSize)
 			if n, err := ctx.client.Read(chunk); err != nil {
