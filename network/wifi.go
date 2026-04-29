@@ -29,24 +29,37 @@ func Dot11Freq2Chan(freq int) int {
 	}
 	return 0
 }
+
+var dot11Channel5GHz = map[int]bool{
+	36: true, 40: true, 44: true, 48: true,
+	52: true, 56: true, 60: true, 64: true,
+
+	100: true, 104: true, 108: true, 112: true,
+	116: true, 120: true, 124: true, 128: true,
+	132: true, 136: true, 140: true, 144: true,
+
+	149: true, 153: true, 157: true, 161: true,
+	165: true, 169: true, 173: true, 177: true,
+}
+
 func Dot11Chan2Freq(channel int) int {
 	if channel <= 13 {
 		return ((channel - 1) * 5) + 2412
-	} else if channel == 14 {
+	}
+
+	if channel == 14 {
 		return 2484
-	} else if channel == 36 || channel == 40 || channel == 44 || channel == 48 ||
-		channel == 52 || channel == 56 || channel == 60 || channel == 64 ||
-		channel == 68 || channel == 72 || channel == 76 || channel == 80 ||
-		channel == 100 || channel == 104 || channel == 108 || channel == 112 ||
-		channel == 116 || channel == 120 || channel == 124 || channel == 128 ||
-		channel == 132 || channel == 136 || channel == 140 || channel == 144 ||
-		channel == 149 || channel == 153 || channel == 157 || channel == 161 ||
-		channel == 165 || channel == 169 || channel == 173 || channel == 177 {
+	}
+
+	if dot11Channel5GHz[channel] {
 		return ((channel - 7) * 5) + 5035
-		// 6GHz - Skipped 1-13 to avoid 2Ghz channels conflict
-	} else if channel >= 17 && channel <= 253 {
+	}
+	
+	// 6GHz - Skipped 1-13 to avoid 2Ghz channels conflict
+	if channel >= 17 && channel <= 253 {
 		return ((channel - 1) * 5) + 5955
 	}
+
 	return 0
 }
 
