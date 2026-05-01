@@ -16,15 +16,17 @@ import (
 
 type ArpSpoofer struct {
 	session.SessionModule
-	addresses   []net.IP
-	macs        []net.HardwareAddr
-	wAddresses  []net.IP
-	wMacs       []net.HardwareAddr
-	fullDuplex  bool
-	internal    bool
-	ban         bool
-	skipRestore bool
-	waitGroup   *sync.WaitGroup
+	addresses            []net.IP
+	macs                 []net.HardwareAddr
+	wAddresses           []net.IP
+	wMacs                []net.HardwareAddr
+	fullDuplex           bool
+	internal             bool
+	ban                  bool
+	skipRestore          bool
+	forwardingWasEnabled bool
+	forwardingTouched    bool
+	waitGroup            *sync.WaitGroup
 }
 
 func NewArpSpoofer(s *session.Session) *ArpSpoofer {
@@ -130,12 +132,19 @@ func (mod *ArpSpoofer) Configure() error {
 
 	mod.Debug(" addresses=%v macs=%v whitelisted-addresses=%v whitelisted-macs=%v", mod.addresses, mod.macs, mod.wAddresses, mod.wMacs)
 
+	mod.forwardingWasEnabled = mod.Session.Firewall.IsForwardingEnabled()
+	mod.forwardingTouched = false
+
 	if mod.ban {
 		mod.Warning("running in ban mode, forwarding not enabled!")
-		mod.Session.Firewall.EnableForwarding(false)
-	} else if !mod.Session.Firewall.IsForwardingEnabled() {
+		if mod.forwardingWasEnabled {
+			mod.Session.Firewall.EnableForwarding(false)
+			mod.forwardingTouched = true
+		}
+	} else if !mod.forwardingWasEnabled {
 		mod.Info("enabling forwarding")
 		mod.Session.Firewall.EnableForwarding(true)
+		mod.forwardingTouched = true
 	}
 
 	return nil
@@ -216,6 +225,14 @@ func (mod *ArpSpoofer) Stop() error {
 		mod.Info("waiting for ARP spoofer to stop ...")
 		mod.unSpoof()
 		mod.ban = false
+		// Restore the kernel IP forwarding state if we changed it in
+		// Configure(). Without this, /proc/sys/net/ipv4/ip_forward stays at 1
+		// after `arp.spoof off` until bettercap exits (issue #1261).
+		if mod.forwardingTouched {
+			mod.Info("restoring forwarding state to %v", mod.forwardingWasEnabled)
+			mod.Session.Firewall.EnableForwarding(mod.forwardingWasEnabled)
+			mod.forwardingTouched = false
+		}
 		mod.waitGroup.Wait()
 	})
 }

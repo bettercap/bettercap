@@ -724,6 +724,89 @@ func TestArpSpooferSkipRestore(t *testing.T) {
 	// We can't directly test the observer, but we verify the behavior
 }
 
+func TestArpSpooferRestoresForwarding(t *testing.T) {
+	t.Run("forwarding_off_initially_is_off_after_stop", func(t *testing.T) {
+		mockSess, _, mockFirewall := createMockSession()
+		mockFirewall.forwardingEnabled = false
+		mod := NewArpSpoofer(mockSess.Session)
+
+		targetIP := "192.168.1.10"
+		targetMAC, _ := net.ParseMAC("aa:aa:aa:aa:aa:aa")
+		mockSess.Lan.AddIfNew(targetIP, targetMAC.String())
+		mockSess.findMACResults[targetIP] = targetMAC
+		mockSess.Env.Set("arp.spoof.targets", targetIP)
+
+		if err := mod.Start(); err != nil {
+			t.Fatalf("start: %v", err)
+		}
+		if !mockFirewall.IsForwardingEnabled() {
+			t.Fatal("forwarding should be enabled while spoofer is running")
+		}
+
+		if err := mod.Stop(); err != nil {
+			t.Fatalf("stop: %v", err)
+		}
+		if mockFirewall.IsForwardingEnabled() {
+			t.Error("forwarding should be disabled again after Stop() (issue #1261)")
+		}
+	})
+
+	t.Run("forwarding_on_initially_is_on_after_stop", func(t *testing.T) {
+		mockSess, _, mockFirewall := createMockSession()
+		mockFirewall.forwardingEnabled = true
+		mod := NewArpSpoofer(mockSess.Session)
+
+		targetIP := "192.168.1.10"
+		targetMAC, _ := net.ParseMAC("aa:aa:aa:aa:aa:aa")
+		mockSess.Lan.AddIfNew(targetIP, targetMAC.String())
+		mockSess.findMACResults[targetIP] = targetMAC
+		mockSess.Env.Set("arp.spoof.targets", targetIP)
+
+		if err := mod.Start(); err != nil {
+			t.Fatalf("start: %v", err)
+		}
+		if err := mod.Stop(); err != nil {
+			t.Fatalf("stop: %v", err)
+		}
+		if !mockFirewall.IsForwardingEnabled() {
+			t.Error("forwarding was already on before Start, must remain on after Stop")
+		}
+	})
+
+	t.Run("ban_mode_forwarding_on_initially_is_on_after_stop", func(t *testing.T) {
+		mockSess, _, mockFirewall := createMockSession()
+		mockFirewall.forwardingEnabled = true
+		mod := NewArpSpoofer(mockSess.Session)
+
+		targetIP := "192.168.1.10"
+		targetMAC, _ := net.ParseMAC("aa:aa:aa:aa:aa:aa")
+		mockSess.Lan.AddIfNew(targetIP, targetMAC.String())
+		mockSess.findMACResults[targetIP] = targetMAC
+		mockSess.Env.Set("arp.spoof.targets", targetIP)
+
+		var startErr error
+		for _, h := range mod.Handlers() {
+			if h.Name == "arp.ban on" {
+				startErr = h.Exec([]string{})
+				break
+			}
+		}
+		if startErr != nil {
+			t.Fatalf("ban on: %v", startErr)
+		}
+		if mockFirewall.IsForwardingEnabled() {
+			t.Fatal("ban mode must disable forwarding while running")
+		}
+
+		if err := mod.Stop(); err != nil {
+			t.Fatalf("stop: %v", err)
+		}
+		if !mockFirewall.IsForwardingEnabled() {
+			t.Error("ban mode must restore forwarding to its original (enabled) state on Stop")
+		}
+	})
+}
+
 func TestArpSpooferEmptyTargets(t *testing.T) {
 	mockSess, _, _ := createMockSession()
 	mod := NewArpSpoofer(mockSess.Session)
