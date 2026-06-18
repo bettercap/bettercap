@@ -121,7 +121,9 @@ func NewNTLMState() *NTLMState {
 
 func (sr NTLMChallengeResponse) getServerChallenge() string {
 	dataCallenge := sr.getChallengeBytes()
-	//offset to the challenge and the challenge is 8 bytes long
+	if len(dataCallenge) < NTLM_TYPE2_CHALLENGE_OFFSET+8 {
+		return ""
+	}
 	return hex.EncodeToString(dataCallenge[NTLM_TYPE2_CHALLENGE_OFFSET : NTLM_TYPE2_CHALLENGE_OFFSET+8])
 }
 
@@ -147,14 +149,21 @@ func (sr *NTLMChallengeResponse) ParsedNtLMv2() (NTLMChallengeResponseParsed, er
 		return NTLMChallengeResponseParsed{}, errors.New("No repsponse data")
 	}
 	b := sr.getResponseBytes()
+	if int(r.NtOffset)+int(r.NtLen) > len(b) ||
+		int(r.UserOffset)+int(r.UserLen) > len(b) ||
+		int(r.DomainOffset)+int(r.DomainLen) > len(b) {
+		return NTLMChallengeResponseParsed{}, errors.New("response too short")
+	}
 	nthash := b[r.NtOffset : r.NtOffset+r.NtLen]
-	// each char in user and domain is null terminated
+	if len(nthash) < 16 {
+		return NTLMChallengeResponseParsed{}, errors.New("NTLMv2 hash too short")
+	}
 	return NTLMChallengeResponseParsed{
 		Type:            NtlmV2,
 		ServerChallenge: sr.getServerChallenge(),
 		User:            strings.Replace(string(b[r.UserOffset:r.UserOffset+r.UserLen]), "\x00", "", -1),
 		Domain:          strings.Replace(string(b[r.DomainOffset:r.DomainOffset+r.DomainLen]), "\x00", "", -1),
-		NtHashOne:       hex.EncodeToString(nthash[:16]), // first part of the hash is 16 bytes
+		NtHashOne:       hex.EncodeToString(nthash[:16]),
 		NtHashTwo:       hex.EncodeToString(nthash[16:]),
 	}, nil
 }
@@ -170,7 +179,11 @@ func (sr NTLMChallengeResponse) ParsedNtLMv1() (NTLMChallengeResponseParsed, err
 		return NTLMChallengeResponseParsed{}, errors.New("No repsponse data")
 	}
 	b := sr.getResponseBytes()
-	// each char user and domain is null terminated
+	if int(r.UserOffset)+int(r.UserLen) > len(b) ||
+		int(r.DomainOffset)+int(r.DomainLen) > len(b) ||
+		int(r.LmOffset)+int(r.LmLen) > len(b) {
+		return NTLMChallengeResponseParsed{}, errors.New("response too short")
+	}
 	return NTLMChallengeResponseParsed{
 		Type:            NtlmV1,
 		ServerChallenge: sr.getServerChallenge(),
@@ -204,7 +217,7 @@ func _uint16(b []byte, start, end int) uint16 {
 
 func (sr NTLMChallengeResponse) getResponseHeader() NTLMResponseHeader {
 	b := sr.getResponseBytes()
-	if len(b) == 0 {
+	if len(b) < NTLM_TYPE3_WORKSTN_OFFSET+6 {
 		return NTLMResponseHeader{}
 	}
 	return NTLMResponseHeader{
