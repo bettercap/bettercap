@@ -104,16 +104,22 @@ func (mod *DNSSpoofer) Configure() error {
 	} else if mod.Handle, err = network.Capture(mod.Session.Interface.Name()); err != nil {
 		return err
 	} else if err = mod.Handle.SetBPFFilter("udp"); err != nil {
+		mod.Handle.Close()
 		return err
 	} else if err, mod.All = mod.BoolParam("dns.spoof.all"); err != nil {
+		mod.Handle.Close()
 		return err
 	} else if err, address = mod.IPParam("dns.spoof.address"); err != nil {
+		mod.Handle.Close()
 		return err
 	} else if err, domains = mod.ListParam("dns.spoof.domains"); err != nil {
+		mod.Handle.Close()
 		return err
 	} else if err, hostsFile = mod.StringParam("dns.spoof.hosts"); err != nil {
+		mod.Handle.Close()
 		return err
 	} else if err, ttl = mod.StringParam("dns.spoof.ttl"); err != nil {
+		mod.Handle.Close()
 		return err
 	}
 

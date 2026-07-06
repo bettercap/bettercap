@@ -68,6 +68,7 @@ func (mod *RestAPI) streamWriter(ws *websocket.Conn, w http.ResponseWriter, r *h
 	mod.Debug("Listening for events and streaming to ws endpoint ...")
 
 	pingTicker := time.NewTicker(pingPeriod)
+	defer pingTicker.Stop()
 	listener := session.I.Events.Listen()
 	defer session.I.Events.Unlisten(listener)
 

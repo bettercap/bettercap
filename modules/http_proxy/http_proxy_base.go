@@ -375,6 +375,7 @@ func (p *HTTPProxy) httpsWorker() error {
 		}
 
 		go func(c net.Conn) {
+			defer c.Close()
 			now := time.Now()
 			c.SetReadDeadline(now.Add(httpReadTimeout))
 			c.SetWriteDeadline(now.Add(httpWriteTimeout))

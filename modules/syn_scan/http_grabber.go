@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"golang.org/x/net/html"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -79,7 +80,9 @@ func httpGrabber(mod *SynScanner, ip string, port int) string {
 		}
 	}
 
-	doc, err := html.Parse(resp.Body)
+	// Limit response body to 1MB to prevent memory exhaustion from malicious servers
+	limitedReader := io.LimitReader(resp.Body, 1<<20)
+	doc, err := html.Parse(limitedReader)
 	if err != nil {
 		mod.Debug("error while reading and parsing response from %s: %v", url, err)
 		return fallback

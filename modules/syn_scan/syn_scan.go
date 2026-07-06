@@ -119,6 +119,7 @@ func (mod *SynScanner) Configure() (err error) {
 		if mod.handle, err = network.Capture(mod.Session.Interface.Name()); err != nil {
 			return err
 		} else if err = mod.handle.SetBPFFilter(fmt.Sprintf("tcp dst port %d", synSourcePort)); err != nil {
+			mod.handle.Close()
 			return err
 		}
 		mod.packets = gopacket.NewPacketSource(mod.handle, mod.handle.LinkType()).Packets()
@@ -157,6 +158,9 @@ func (mod *SynScanner) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.packets <- nil
 		mod.waitGroup.Wait()
+		if mod.handle != nil {
+			mod.handle.Close()
+		}
 	})
 }
 
