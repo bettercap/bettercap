@@ -117,6 +117,7 @@ func (mod *Ticker) worker(name string, params *Params) {
 	}
 
 	tick := time.NewTicker(params.Period)
+	defer tick.Stop()
 	for range tick.C {
 		if !params.Running {
 			break

@@ -55,6 +55,7 @@ func (mod *RestAPI) recorder() {
 	defer mod.recordWait.Done()
 
 	tick := time.NewTicker(1 * time.Second)
+	defer tick.Stop()
 	lastSampled := time.Time{}
 
 	for range tick.C {
