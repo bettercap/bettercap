@@ -63,8 +63,8 @@ func (g *Graph) EachEdge(cb EdgeCallback) error {
 		var left, right *Node
 		var err error
 
-		leftFileName := path.Join(g.path, fromID+".json")
-		rightFileName := path.Join(g.path, toID+".json")
+		leftFileName := path.Join(g.path, SafeFileName(fromID)+".json")
+		rightFileName := path.Join(g.path, SafeFileName(toID)+".json")
 
 		if left, err = ReadNode(leftFileName); err != nil {
 			return err
@@ -123,7 +123,7 @@ func (g *Graph) Traverse(root string, onNode NodeCallback, onEdge EdgeCallback) 
 
 				// collect all edges starting from this node
 				err = g.edges.ForEachEdgeFrom(nodeID, func(_ string, edges []Edge, toID string) error {
-					rightFileName := path.Join(g.path, toID+".json")
+					rightFileName := path.Join(g.path, SafeFileName(toID)+".json")
 					if right, err := ReadNode(rightFileName); err != nil {
 						return err
 					} else {
@@ -311,7 +311,7 @@ func (g *Graph) FindNode(t NodeType, id string) (*Node, error) {
 	g.Lock()
 	defer g.Unlock()
 
-	nodeFileName := path.Join(g.path, fmt.Sprintf("%s_%s.json", t, id))
+	nodeFileName := path.Join(g.path, SafeFileName(fmt.Sprintf("%s_%s", t, id))+".json")
 	if fs.Exists(nodeFileName) {
 		return ReadNode(nodeFileName)
 	}
@@ -327,7 +327,7 @@ func (g *Graph) FindOtherTypes(t NodeType, id string) ([]*Node, error) {
 
 	for _, otherType := range NodeTypes {
 		if otherType != t {
-			if nodeFileName := path.Join(g.path, fmt.Sprintf("%s_%s.json", otherType, id)); fs.Exists(nodeFileName) {
+			if nodeFileName := path.Join(g.path, SafeFileName(fmt.Sprintf("%s_%s", otherType, id))+".json"); fs.Exists(nodeFileName) {
 				if node, err := ReadNode(nodeFileName); err != nil {
 					return nil, err
 				} else {
@@ -351,7 +351,7 @@ func (g *Graph) CreateNode(t NodeType, id string, entity interface{}, annotation
 		Annotations: annotations,
 	}
 
-	nodeFileName := path.Join(g.path, fmt.Sprintf("%s.json", node.String()))
+	nodeFileName := path.Join(g.path, SafeFileName(node.String())+".json")
 	if err := CreateNode(nodeFileName, node); err != nil {
 		return nil, err
 	}
@@ -365,7 +365,7 @@ func (g *Graph) UpdateNode(node *Node) error {
 	g.Lock()
 	defer g.Unlock()
 
-	nodeFileName := path.Join(g.path, fmt.Sprintf("%s.json", node.String()))
+	nodeFileName := path.Join(g.path, SafeFileName(node.String())+".json")
 	if err := UpdateNode(nodeFileName, node); err != nil {
 		return err
 	}

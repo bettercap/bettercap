@@ -98,6 +98,30 @@ func (n Node) String() string {
 	return string(n.Type)
 }
 
+// filenameReplacer sanitizes characters that are not allowed (or have a
+// special meaning) in file names on Windows, such as the colons found in
+// MAC addresses, while keeping the resulting name stable and unique enough
+// to be used cross platform.
+var filenameReplacer = strings.NewReplacer(
+	":", "-",
+	"\\", "-",
+	"/", "-",
+	"*", "-",
+	"?", "-",
+	"\"", "-",
+	"<", "-",
+	">", "-",
+	"|", "-",
+)
+
+// SafeFileName returns a version of the given node/edge identifier (not a
+// full path) that is safe to use as a file name on every supported platform
+// (Windows in particular does not allow characters such as ':' in file or
+// directory names).
+func SafeFileName(s string) string {
+	return filenameReplacer.Replace(s)
+}
+
 func (n Node) Label() string {
 	if n.Dummy {
 		return n.Annotations
