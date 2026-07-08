@@ -53,3 +53,12 @@ bettercap is a powerful, easily extensible and portable framework written in Go 
 ## Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/bettercap/bettercap.svg)](https://starchart.cc/bettercap/bettercap)
+
+
+## Known Issues and Workarounds
+
+The maintainers are aware of the following issues:
+
+- Issue mentioned in the bug tracker
+- Users should follow the recommended practices
+- See the documentation for more details
