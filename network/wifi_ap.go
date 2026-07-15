@@ -128,14 +128,20 @@ func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8) (*
 	alias := ap.aliases.GetOr(bssid, "")
 
 	if s, found := ap.clients[bssid]; found {
-		// update
+		// update -- same race as the WPS/Encryption fix in wifi_station.go:
+		// these fields are read by Station.MarshalJSON() under stationMu,
+		// but ap.Lock() (held above) is a *different* mutex that provides
+		// no mutual exclusion against that read. This station is already
+		// published in ap.clients, so a concurrent REST/websocket read
+		// (e.g. pwnagotchi's own session() polling) can observe it mid-write.
+		stationMu.Lock()
 		s.Frequency = frequency
 		s.RSSI = rssi
 		s.LastSeen = time.Now()
-
 		if alias != "" {
 			s.Alias = alias
 		}
+		stationMu.Unlock()
 
 		return s, false
 	}
