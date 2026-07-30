@@ -39,6 +39,17 @@ func SetInterfaceChannel(iface string, channel int) error {
 		return nil
 	}
 
+	// Direct nl80211 first -- same effect as the iw/iwconfig fallback
+	// below, no process fork per hop (see net_linux_netlink.go). Falls
+	// through to the process-based path on any failure, so an
+	// unsupported kernel/driver combo behaves exactly as it did before
+	// this existed, just with one extra (fast, already-failing) netlink
+	// attempt ahead of it.
+	if err := setInterfaceChannelNetlink(iface, Dot11Chan2Freq(channel)); err == nil {
+		SetInterfaceCurrentChannel(iface, channel)
+		return nil
+	}
+
 	if core.HasBinary("iw") {
 		// out, err := core.Exec("iw", []string{"dev", iface, "set", "channel", fmt.Sprintf("%d", channel)})
 		out, err := core.Exec("iw", []string{"dev", iface, "set", "freq", fmt.Sprintf("%d", Dot11Chan2Freq(channel))})
