@@ -53,6 +53,13 @@ func Dot11Info(id layers.Dot11InformationElementID, info []byte) *layers.Dot11In
 	}
 }
 
+func emptyRadioTap() *layers.RadioTap {
+	return &layers.RadioTap{
+		Present:        []layers.RadioTapPresent{0},
+		RadioTapValues: []layers.RadioTapNamespace{{}},
+	}
+}
+
 func NewDot11Beacon(conf Dot11ApConfig, seq uint16, extendDot11Info ...*layers.Dot11InformationElement) (error, []byte) {
 	flags := openFlags
 	if conf.Encryption {
@@ -62,10 +69,7 @@ func NewDot11Beacon(conf Dot11ApConfig, seq uint16, extendDot11Info ...*layers.D
 		flags |= specManFlag
 	}
 	stack := []gopacket.SerializableLayer{
-		&layers.RadioTap{
-			DBMAntennaSignal: int8(-10),
-			ChannelFrequency: layers.RadioTapChannelFrequency(network.Dot11Chan2Freq(conf.Channel)),
-		},
+		emptyRadioTap(),
 		&layers.Dot11{
 			Address1:       network.BroadcastHw,
 			Address2:       conf.BSSID,
@@ -97,7 +101,7 @@ func NewDot11Beacon(conf Dot11ApConfig, seq uint16, extendDot11Info ...*layers.D
 
 func NewDot11ProbeRequest(staMac net.HardwareAddr, seq uint16, ssid string, channel int) (error, []byte) {
 	stack := []gopacket.SerializableLayer{
-		&layers.RadioTap{},
+		emptyRadioTap(),
 		&layers.Dot11{
 			Address1:       network.BroadcastHw,
 			Address2:       staMac,
@@ -123,7 +127,7 @@ func NewDot11ProbeRequest(staMac net.HardwareAddr, seq uint16, ssid string, chan
 
 func NewDot11Deauth(a1 net.HardwareAddr, a2 net.HardwareAddr, a3 net.HardwareAddr, seq uint16) (error, []byte) {
 	return Serialize(
-		&layers.RadioTap{},
+		emptyRadioTap(),
 		&layers.Dot11{
 			Address1:       a1,
 			Address2:       a2,
@@ -139,7 +143,7 @@ func NewDot11Deauth(a1 net.HardwareAddr, a2 net.HardwareAddr, a3 net.HardwareAdd
 
 func NewDot11Auth(sta net.HardwareAddr, apBSSID net.HardwareAddr, seq uint16) (error, []byte) {
 	return Serialize(
-		&layers.RadioTap{},
+		emptyRadioTap(),
 		&layers.Dot11{
 			Address1:       apBSSID,
 			Address2:       sta,
@@ -159,7 +163,7 @@ func NewDot11Auth(sta net.HardwareAddr, apBSSID net.HardwareAddr, seq uint16) (e
 
 func NewDot11AssociationRequest(sta net.HardwareAddr, apBSSID net.HardwareAddr, apESSID string, seq uint16) (error, []byte) {
 	return Serialize(
-		&layers.RadioTap{},
+		emptyRadioTap(),
 		&layers.Dot11{
 			Address1:       apBSSID,
 			Address2:       sta,

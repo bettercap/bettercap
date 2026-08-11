@@ -137,7 +137,7 @@ func BuildDot11Packet() gopacket.Packet {
 	mac, _ := net.ParseMAC("00:00:00:00:00:00")
 	seq := uint16(0)
 	_, bytes := Serialize(
-		&layers.RadioTap{},
+		emptyRadioTap(),
 		&layers.Dot11{
 			Address1:       mac,
 			Address2:       mac,
@@ -251,7 +251,7 @@ func TestDot11IsDataFor(t *testing.T) {
 	mac, _ := net.ParseMAC("00:00:00:00:00:00")
 	seq := uint16(0)
 	_, bytes := Serialize(
-		&layers.RadioTap{},
+		emptyRadioTap(),
 		&layers.Dot11{
 			Address1:       mac,
 			Address2:       mac,
