@@ -1,7 +1,6 @@
 package wifi
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"sort"
@@ -25,12 +24,7 @@ func (mod *WiFiModule) sendAssocPacket(ap network.StationSnapshot) {
 }
 
 func (mod *WiFiModule) skipAssoc(to net.HardwareAddr) bool {
-	for _, mac := range mod.assocSkip {
-		if bytes.Equal(to, mac) {
-			return true
-		}
-	}
-	return false
+	return hardwareAddrIn(mod.assocSkip, to)
 }
 
 func (mod *WiFiModule) isAssocSilent() bool {
@@ -60,14 +54,33 @@ func (mod *WiFiModule) doAssocAcquired() bool {
 	return mod.assocAcquired
 }
 
-func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
-	// parse skip list
-	if err, assocSkip := mod.StringParam("wifi.assoc.skip"); err != nil {
+func (mod *WiFiModule) assocTargetsFor(selector wifiSelector) []wifiTarget {
+	toAssoc := make([]wifiTarget, 0)
+	for _, target := range mod.resolveWiFiTargets(selector, false) {
+		if !mod.skipAssoc(target.apSnapshot.HW) {
+			toAssoc = append(toAssoc, target)
+		} else {
+			mod.Debug("skipping ap:%v because skip list %v", target.ap, mod.assocSkip)
+		}
+	}
+	return toAssoc
+}
+
+func (mod *WiFiModule) assocCompleter(prefix string) []string {
+	return mod.wifiTargetCompleter(prefix, false)
+}
+
+func (mod *WiFiModule) startAssoc(target string) error {
+	selector, err := newWiFiSelector(target)
+	if err != nil {
 		return err
-	} else if macs, err := network.ParseMACs(assocSkip); err != nil {
+	}
+
+	// parse skip list
+	if assocSkip, err := mod.parseWiFiSkipList("wifi.assoc.skip"); err != nil {
 		return err
 	} else {
-		mod.assocSkip = macs
+		mod.assocSkip = assocSkip
 	}
 
 	// if not already running, temporarily enable the pcap handle
@@ -79,28 +92,13 @@ func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 		defer mod.handle.Close()
 	}
 
-	type target struct {
-		ap       *network.AccessPoint
-		snapshot network.StationSnapshot
-	}
-	toAssoc := make([]target, 0)
-	isBcast := network.IsBroadcastMac(to)
-	for _, ap := range mod.Session.WiFi.List() {
-		snapshot := ap.Snapshot()
-		if isBcast || bytes.Equal(snapshot.HW, to) {
-			if !mod.skipAssoc(snapshot.HW) {
-				toAssoc = append(toAssoc, target{ap: ap, snapshot: snapshot})
-			} else {
-				mod.Debug("skipping ap:%v because skip list %v", ap, mod.assocSkip)
-			}
-		}
-	}
+	toAssoc := mod.assocTargetsFor(selector)
 
 	if len(toAssoc) == 0 {
-		if isBcast {
+		if selector.all {
 			return nil
 		}
-		return fmt.Errorf("%s is an unknown BSSID or it is in the association skip list.", to.String())
+		return fmt.Errorf("%q is an unknown BSSID or ESSID, or it is in the association skip list", selector.raw)
 	}
 	mod.writes.Add(1)
 	go func() {
@@ -110,14 +108,14 @@ func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 		// association request, let's sort by channel so we do the minimum
 		// amount of hops possible
 		sort.Slice(toAssoc, func(i, j int) bool {
-			return toAssoc[i].snapshot.Channel < toAssoc[j].snapshot.Channel
+			return toAssoc[i].apSnapshot.Channel < toAssoc[j].apSnapshot.Channel
 		})
 
 		// send the association request frames
 		for _, target := range toAssoc {
 			if mod.Running() {
 				ap := target.ap
-				snapshot := target.snapshot
+				snapshot := target.apSnapshot
 				logger := mod.Info
 				if mod.isAssocSilent() {
 					logger = mod.Debug

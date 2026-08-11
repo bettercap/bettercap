@@ -261,20 +261,13 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		}
 	})
 
-	deauth := session.NewModuleHandler("wifi.deauth BSSID", `wifi\.deauth ((?:[a-fA-F0-9:]{11,})|all|\*)`,
-		"Start a 802.11 deauth attack, if an access point BSSID is provided, every client will be deauthenticated, otherwise only the selected client. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate every access point with at least one client and start a deauth attack for each one.",
+	deauth := session.NewModuleHandler("wifi.deauth BSSID", `^wifi\.deauth\s+(.+)$`,
+		"Start an 802.11 deauth attack. The argument can be a client or AP BSSID, an exact ESSID, a case-sensitive ESSID wildcard expression such as 'Corp*', 'all', '*', or the broadcast BSSID. ESSID targets apply to every visible AP with a matching name.",
 		func(args []string) error {
-			if args[0] == "all" || args[0] == "*" {
-				args[0] = "ff:ff:ff:ff:ff:ff"
-			}
-			bssid, err := net.ParseMAC(args[0])
-			if err != nil {
-				return err
-			}
-			return mod.startDeauth(bssid)
+			return mod.startDeauth(args[0])
 		})
 
-	deauth.Complete("wifi.deauth", s.WiFiCompleterFull)
+	deauth.Complete("wifi.deauth", mod.deauthCompleter)
 
 	mod.AddHandler(deauth)
 
@@ -353,20 +346,13 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		"false",
 		"Send wifi deauth packets from AP's for which key material was already acquired."))
 
-	assoc := session.NewModuleHandler("wifi.assoc BSSID", `wifi\.assoc ((?:[a-fA-F0-9:]{11,})|all|\*)`,
-		"Send an association request to the selected BSSID in order to receive a RSN PMKID key. Use 'all', '*' or a broadcast BSSID (ff:ff:ff:ff:ff:ff) to iterate for every access point.",
+	assoc := session.NewModuleHandler("wifi.assoc BSSID", `^wifi\.assoc\s+(.+)$`,
+		"Send an association request to receive an RSN PMKID key. The argument can be an AP BSSID, an exact ESSID, a case-sensitive ESSID wildcard expression such as 'Corp*', 'all', '*', or the broadcast BSSID. ESSID targets apply to every visible AP with a matching name.",
 		func(args []string) error {
-			if args[0] == "all" || args[0] == "*" {
-				args[0] = "ff:ff:ff:ff:ff:ff"
-			}
-			bssid, err := net.ParseMAC(args[0])
-			if err != nil {
-				return err
-			}
-			return mod.startAssoc(bssid)
+			return mod.startAssoc(args[0])
 		})
 
-	assoc.Complete("wifi.assoc", s.WiFiCompleter)
+	assoc.Complete("wifi.assoc", mod.assocCompleter)
 
 	mod.AddHandler(assoc)
 
