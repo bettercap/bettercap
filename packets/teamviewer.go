@@ -98,7 +98,7 @@ type TeamViewerPacket struct {
 }
 
 func ParseTeamViewer(data []byte) *TeamViewerPacket {
-	if len(data) < 3 {
+	if len(data) < 4 {
 		return nil
 	}
 

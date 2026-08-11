@@ -30,7 +30,7 @@ func NBNSGetMeta(pkt gopacket.Packet) map[string]string {
 	if ludp := pkt.Layer(layers.LayerTypeUDP); ludp != nil {
 		if udp := ludp.(*layers.UDP); udp != nil && udp.SrcPort == NBNSPort && len(udp.Payload) >= NBNSMinRespSize {
 			hostname := str.Trim(string(udp.Payload[57:72]))
-			if strconv.IsPrint(rune(hostname[0])) {
+			if len(hostname) > 0 && strconv.IsPrint(rune(hostname[0])) {
 				return map[string]string{
 					"nbns:hostname": hostname,
 				}

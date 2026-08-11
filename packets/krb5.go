@@ -101,6 +101,10 @@ func (kdc Krb5Request) String() (string, error) {
 		return "", ErrNoCipher
 	}
 
+	if len(crypt) == 0 {
+		return "", ErrNoCrypt
+	}
+
 	return fmt.Sprintf("$krb5$%s$%s$%s$nodata$%s", eType, crypt[0], realm, cipher), nil
 }
 
