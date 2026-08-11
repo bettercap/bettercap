@@ -40,7 +40,7 @@ func SetInterfaceChannel(iface string, channel int) error {
 	}
 
 	// Direct nl80211 first -- same effect as the iw/iwconfig fallback
-	// below, no process fork per hop (see net_linux_netlink.go). Falls
+	// below, no process fork per hop (see net_netlink_linux.go). Falls
 	// through to the process-based path on any failure, so an
 	// unsupported kernel/driver combo behaves exactly as it did before
 	// this existed, just with one extra (fast, already-failing) netlink
