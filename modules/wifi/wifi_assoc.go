@@ -10,14 +10,14 @@ import (
 	"github.com/bettercap/bettercap/v2/packets"
 )
 
-func (mod *WiFiModule) sendAssocPacket(ap *network.AccessPoint) {
+func (mod *WiFiModule) sendAssocPacket(ap network.StationSnapshot) {
 	if err, pkt := packets.NewDot11Auth(mod.iface.HW, ap.HW, 1); err != nil {
 		mod.Error("cloud not create auth packet: %s", err)
 	} else {
 		mod.injectPacket(pkt)
 	}
 
-	if err, pkt := packets.NewDot11AssociationRequest(mod.iface.HW, ap.HW, ap.ESSID(), 1); err != nil {
+	if err, pkt := packets.NewDot11AssociationRequest(mod.iface.HW, ap.HW, ap.Hostname, 1); err != nil {
 		mod.Error("cloud not create association request packet: %s", err)
 	} else {
 		mod.injectPacket(pkt)
@@ -79,12 +79,17 @@ func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 		defer mod.handle.Close()
 	}
 
-	toAssoc := make([]*network.AccessPoint, 0)
+	type target struct {
+		ap       *network.AccessPoint
+		snapshot network.StationSnapshot
+	}
+	toAssoc := make([]target, 0)
 	isBcast := network.IsBroadcastMac(to)
 	for _, ap := range mod.Session.WiFi.List() {
-		if isBcast || bytes.Equal(ap.HW, to) {
-			if !mod.skipAssoc(ap.HW) {
-				toAssoc = append(toAssoc, ap)
+		snapshot := ap.Snapshot()
+		if isBcast || bytes.Equal(snapshot.HW, to) {
+			if !mod.skipAssoc(snapshot.HW) {
+				toAssoc = append(toAssoc, target{ap: ap, snapshot: snapshot})
 			} else {
 				mod.Debug("skipping ap:%v because skip list %v", ap, mod.assocSkip)
 			}
@@ -105,26 +110,28 @@ func (mod *WiFiModule) startAssoc(to net.HardwareAddr) error {
 		// association request, let's sort by channel so we do the minimum
 		// amount of hops possible
 		sort.Slice(toAssoc, func(i, j int) bool {
-			return toAssoc[i].Channel < toAssoc[j].Channel
+			return toAssoc[i].snapshot.Channel < toAssoc[j].snapshot.Channel
 		})
 
 		// send the association request frames
-		for _, ap := range toAssoc {
+		for _, target := range toAssoc {
 			if mod.Running() {
+				ap := target.ap
+				snapshot := target.snapshot
 				logger := mod.Info
 				if mod.isAssocSilent() {
 					logger = mod.Debug
 				}
 
-				if ap.IsOpen() && !mod.doAssocOpen() {
-					mod.Debug("skipping association for open network %s (wifi.assoc.open is false)", ap.ESSID())
+				if (snapshot.Encryption == "" || snapshot.Encryption == "OPEN") && !mod.doAssocOpen() {
+					mod.Debug("skipping association for open network %s (wifi.assoc.open is false)", snapshot.Hostname)
 				} else if ap.HasKeyMaterial() && !mod.doAssocAcquired() {
-					mod.Debug("skipping association for AP %s (key material already acquired)", ap.ESSID())
+					mod.Debug("skipping association for AP %s (key material already acquired)", snapshot.Hostname)
 				} else {
-					logger("sending association request to AP %s (channel:%d encryption:%s)", ap.ESSID(), ap.Channel, ap.Encryption)
+					logger("sending association request to AP %s (channel:%d encryption:%s)", snapshot.Hostname, snapshot.Channel, snapshot.Encryption)
 
-					mod.onChannel(ap.Channel, func() {
-						mod.sendAssocPacket(ap)
+					mod.onChannel(snapshot.Channel, func() {
+						mod.sendAssocPacket(snapshot)
 					})
 				}
 			}

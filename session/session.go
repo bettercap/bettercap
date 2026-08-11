@@ -164,13 +164,11 @@ func New() (*Session, error) {
 func (s *Session) Lock() {
 	s.Env.Lock()
 	s.Lan.Lock()
-	s.WiFi.Lock()
 }
 
 func (s *Session) Unlock() {
 	s.Env.Unlock()
 	s.Lan.Unlock()
-	s.WiFi.Unlock()
 }
 
 func (s *Session) Module(name string) (err error, mod Module) {

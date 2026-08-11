@@ -84,18 +84,22 @@ func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 	}
 
 	type flow struct {
-		Ap     *network.AccessPoint
-		Client *network.Station
+		ap             *network.AccessPoint
+		client         *network.Station
+		apSnapshot     network.StationSnapshot
+		clientSnapshot network.StationSnapshot
 	}
 
 	toDeauth := make([]flow, 0)
 	isBcast := network.IsBroadcastMac(to)
 	for _, ap := range mod.Session.WiFi.List() {
-		isAP := bytes.Equal(ap.HW, to)
+		apSnapshot := ap.Snapshot()
+		isAP := bytes.Equal(apSnapshot.HW, to)
 		for _, client := range ap.Clients() {
-			if isBcast || isAP || bytes.Equal(client.HW, to) {
-				if !mod.skipDeauth(ap.HW) && !mod.skipDeauth(client.HW) {
-					toDeauth = append(toDeauth, flow{Ap: ap, Client: client})
+			clientSnapshot := client.Snapshot()
+			if isBcast || isAP || bytes.Equal(clientSnapshot.HW, to) {
+				if !mod.skipDeauth(apSnapshot.HW) && !mod.skipDeauth(clientSnapshot.HW) {
+					toDeauth = append(toDeauth, flow{ap: ap, client: client, apSnapshot: apSnapshot, clientSnapshot: clientSnapshot})
 				} else {
 					mod.Debug("skipping ap:%v client:%v because skip list %v", ap, client, mod.deauthSkip)
 				}
@@ -118,28 +122,30 @@ func (mod *WiFiModule) startDeauth(to net.HardwareAddr) error {
 		// deauth packet, let's sort by channel so we do the minimum
 		// amount of hops possible
 		sort.Slice(toDeauth, func(i, j int) bool {
-			return toDeauth[i].Ap.Channel < toDeauth[j].Ap.Channel
+			return toDeauth[i].apSnapshot.Channel < toDeauth[j].apSnapshot.Channel
 		})
 
 		// send the deauth frames
 		for _, deauth := range toDeauth {
-			client := deauth.Client
-			ap := deauth.Ap
+			client := deauth.client
+			ap := deauth.ap
+			apSnapshot := deauth.apSnapshot
+			clientSnapshot := deauth.clientSnapshot
 			if mod.Running() {
 				logger := mod.Info
 				if mod.isDeauthSilent() {
 					logger = mod.Debug
 				}
 
-				if ap.IsOpen() && !mod.doDeauthOpen() {
-					mod.Debug("skipping deauth for open network %s (wifi.deauth.open is false)", ap.ESSID())
+				if (apSnapshot.Encryption == "" || apSnapshot.Encryption == "OPEN") && !mod.doDeauthOpen() {
+					mod.Debug("skipping deauth for open network %s (wifi.deauth.open is false)", apSnapshot.Hostname)
 				} else if ap.HasKeyMaterial() && !mod.doDeauthAcquired() {
-					mod.Debug("skipping deauth for AP %s (key material already acquired)", ap.ESSID())
+					mod.Debug("skipping deauth for AP %s (key material already acquired)", apSnapshot.Hostname)
 				} else {
-					logger("deauthing client %s from AP %s (channel:%d encryption:%s)", client.String(), ap.ESSID(), ap.Channel, ap.Encryption)
+					logger("deauthing client %s from AP %s (channel:%d encryption:%s)", client.String(), apSnapshot.Hostname, apSnapshot.Channel, apSnapshot.Encryption)
 
-					mod.onChannel(ap.Channel, func() {
-						mod.sendDeauthPacket(ap.HW, client.HW)
+					mod.onChannel(apSnapshot.Channel, func() {
+						mod.sendDeauthPacket(apSnapshot.HW, clientSnapshot.HW)
 					})
 				}
 			}

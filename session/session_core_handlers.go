@@ -318,11 +318,11 @@ func (s *Session) propagateAlias(mac, alias string) {
 	}
 
 	if ap, found := s.WiFi.Get(mac); found {
-		ap.Alias = alias
+		ap.SetAlias(alias)
 	}
 
 	if sta, found := s.WiFi.GetClient(mac); found {
-		sta.Alias = alias
+		sta.SetAlias(alias)
 	}
 
 	if host, found := s.Lan.Get(mac); found {

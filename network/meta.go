@@ -34,6 +34,20 @@ func (m *Meta) MarshalJSON() ([]byte, error) {
 	return json.Marshal(metaJSON{Values: m.m})
 }
 
+func (m *Meta) UnmarshalJSON(raw []byte) error {
+	var doc metaJSON
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return err
+	}
+	if doc.Values == nil {
+		doc.Values = make(map[string]interface{})
+	}
+	m.Lock()
+	m.m = doc.Values
+	m.Unlock()
+	return nil
+}
+
 func (m *Meta) Set(name string, value interface{}) {
 	m.Lock()
 	defer m.Unlock()

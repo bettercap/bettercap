@@ -22,17 +22,18 @@ func (mod *WiFiModule) isApSelected() bool {
 }
 
 func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
-	rssi := network.ColorRSSI(int(station.RSSI))
-	bssid := station.HwAddress
+	snapshot := station.Snapshot()
+	rssi := network.ColorRSSI(int(snapshot.RSSI))
+	bssid := snapshot.HwAddress
 	sinceStarted := time.Since(mod.Session.StartedAt)
-	sinceFirstSeen := time.Since(station.FirstSeen)
+	sinceFirstSeen := time.Since(snapshot.FirstSeen)
 	if sinceStarted > (net_recon.JustJoinedTimeInterval*2) && sinceFirstSeen <= net_recon.JustJoinedTimeInterval {
 		// if endpoint was first seen in the last 10 seconds
 		bssid = tui.Bold(bssid)
 	}
 
-	seen := station.LastSeen.Format("15:04:05")
-	sinceLastSeen := time.Since(station.LastSeen)
+	seen := snapshot.LastSeen.Format("15:04:05")
+	sinceLastSeen := time.Since(snapshot.LastSeen)
 	if sinceStarted > net_recon.AliveTimeInterval && sinceLastSeen <= net_recon.AliveTimeInterval {
 		// if endpoint seen in the last 10 seconds
 		seen = tui.Bold(seen)
@@ -41,11 +42,11 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		seen = tui.Dim(seen)
 	}
 
-	ssid := ops.Ternary(station.ESSID() == "<hidden>", tui.Dim(station.ESSID()), station.ESSID()).(string)
+	ssid := ops.Ternary(snapshot.Hostname == "<hidden>", tui.Dim(snapshot.Hostname), snapshot.Hostname).(string)
 
-	encryption := station.Encryption
-	if len(station.Cipher) > 0 {
-		encryption = fmt.Sprintf("%s (%s, %s)", station.Encryption, station.Cipher, station.Authentication)
+	encryption := snapshot.Encryption
+	if len(snapshot.Cipher) > 0 {
+		encryption = fmt.Sprintf("%s (%s, %s)", snapshot.Encryption, snapshot.Cipher, snapshot.Authentication)
 	}
 
 	if encryption == "OPEN" || encryption == "" {
@@ -56,18 +57,18 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		// this is ugly, but necessary in order to have this
 		// method handle both access point and clients
 		// transparently
-		if ap, found := mod.Session.WiFi.Get(station.HwAddress); found && ap.HasKeyMaterial() {
+		if ap, found := mod.Session.WiFi.Get(snapshot.HwAddress); found && ap.HasKeyMaterial() {
 			encryption = tui.Red(encryption)
 		}
 	}
 
-	sent := ops.Ternary(station.Sent > 0, humanize.Bytes(station.Sent), "").(string)
-	recvd := ops.Ternary(station.Received > 0, humanize.Bytes(station.Received), "").(string)
+	sent := ops.Ternary(snapshot.Sent > 0, humanize.Bytes(snapshot.Sent), "").(string)
+	recvd := ops.Ternary(snapshot.Received > 0, humanize.Bytes(snapshot.Received), "").(string)
 
 	include := false
 	if mod.source == "" {
 		for _, frequencies := range mod.frequencies {
-			if frequencies == station.Frequency {
+			if frequencies == snapshot.Frequency {
 				include = true
 				break
 			}
@@ -76,7 +77,7 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		include = true
 	}
 
-	if int(station.RSSI) < mod.minRSSI {
+	if int(snapshot.RSSI) < mod.minRSSI {
 		include = false
 	}
 
@@ -85,8 +86,8 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 			return []string{
 				rssi,
 				bssid,
-				tui.Dim(station.Vendor),
-				strconv.Itoa(station.Channel),
+				tui.Dim(snapshot.Vendor),
+				strconv.Itoa(snapshot.Channel),
 				sent,
 				recvd,
 				seen,
@@ -95,7 +96,7 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 			return []string{
 				rssi,
 				bssid,
-				strconv.Itoa(station.Channel),
+				strconv.Itoa(snapshot.Channel),
 				sent,
 				recvd,
 				seen,
@@ -106,15 +107,15 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 		// method handle both access point and clients
 		// transparently
 		clients := ""
-		if ap, found := mod.Session.WiFi.Get(station.HwAddress); found {
+		if ap, found := mod.Session.WiFi.Get(snapshot.HwAddress); found {
 			if ap.NumClients() > 0 {
 				clients = strconv.Itoa(ap.NumClients())
 			}
 		}
 
 		wps := ""
-		if station.HasWPS() {
-			wpsInfo := station.WPSInfo()
+		if len(snapshot.WPS) > 0 {
+			wpsInfo := snapshot.WPS
 			if ver, found := wpsInfo["Version"]; found {
 				wps = ver
 			} else {
@@ -134,11 +135,11 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 			return []string{
 				rssi,
 				bssid,
-				tui.Dim(station.Vendor),
+				tui.Dim(snapshot.Vendor),
 				ssid,
 				encryption,
 				wps,
-				strconv.Itoa(station.Channel),
+				strconv.Itoa(snapshot.Channel),
 				clients,
 				sent,
 				recvd,
@@ -151,7 +152,7 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 				ssid,
 				encryption,
 				wps,
-				strconv.Itoa(station.Channel),
+				strconv.Itoa(snapshot.Channel),
 				clients,
 				sent,
 				recvd,
@@ -162,14 +163,18 @@ func (mod *WiFiModule) getRow(station *network.Station) ([]string, bool) {
 }
 
 func (mod *WiFiModule) doFilter(station *network.Station) bool {
+	return mod.doFilterSnapshot(station.Snapshot())
+}
+
+func (mod *WiFiModule) doFilterSnapshot(snapshot network.StationSnapshot) bool {
 	if mod.selector.Expression == nil {
 		return true
 	}
-	return mod.selector.Expression.MatchString(station.BSSID()) ||
-		mod.selector.Expression.MatchString(station.ESSID()) ||
-		mod.selector.Expression.MatchString(station.Alias) ||
-		mod.selector.Expression.MatchString(station.Vendor) ||
-		mod.selector.Expression.MatchString(station.Encryption)
+	return mod.selector.Expression.MatchString(snapshot.HwAddress) ||
+		mod.selector.Expression.MatchString(snapshot.Hostname) ||
+		mod.selector.Expression.MatchString(snapshot.Alias) ||
+		mod.selector.Expression.MatchString(snapshot.Vendor) ||
+		mod.selector.Expression.MatchString(snapshot.Encryption)
 }
 
 func (mod *WiFiModule) doSelection() (err error, stations []*network.Station) {
@@ -179,54 +184,81 @@ func (mod *WiFiModule) doSelection() (err error, stations []*network.Station) {
 
 	apSelected := mod.isApSelected()
 	if apSelected {
-		if ap, found := mod.Session.WiFi.Get(mod.ap.HwAddress); found {
+		selectedBSSID := mod.ap.BSSID()
+		if ap, found := mod.Session.WiFi.Get(selectedBSSID); found {
 			stations = ap.Clients()
 		} else {
-			err = fmt.Errorf("could not find station %s", mod.ap.HwAddress)
+			err = fmt.Errorf("could not find station %s", selectedBSSID)
 			return
 		}
 	} else {
 		stations = mod.Session.WiFi.Stations()
 	}
 
-	filtered := []*network.Station{}
+	type selection struct {
+		station  *network.Station
+		snapshot network.StationSnapshot
+		clients  int
+	}
+	filtered := make([]selection, 0, len(stations))
 	for _, station := range stations {
-		if mod.doFilter(station) {
-			filtered = append(filtered, station)
+		snapshot := station.Snapshot()
+		if mod.doFilterSnapshot(snapshot) {
+			nClients := 0
+			if ap, found := mod.Session.WiFi.Get(snapshot.HwAddress); found {
+				nClients = ap.NumClients()
+			}
+			filtered = append(filtered, selection{station: station, snapshot: snapshot, clients: nClients})
 		}
 	}
-	stations = filtered
-
-	switch mod.selector.SortField {
-	case "seen":
-		sort.Sort(ByWiFiSeenSorter(stations))
-	case "essid":
-		sort.Sort(ByEssidSorter(stations))
-	case "bssid":
-		sort.Sort(ByBssidSorter(stations))
-	case "channel":
-		sort.Sort(ByChannelSorter(stations))
-	case "clients":
-		sort.Sort(ByClientsSorter(stations))
-	case "encryption":
-		sort.Sort(ByEncryptionSorter(stations))
-	case "sent":
-		sort.Sort(ByWiFiSentSorter(stations))
-	case "rcvd":
-		sort.Sort(ByWiFiRcvdSorter(stations))
-	case "rssi":
-		sort.Sort(ByRSSISorter(stations))
-	default:
-		sort.Sort(ByRSSISorter(stations))
-	}
+	sort.Slice(filtered, func(i, j int) bool {
+		left, right := filtered[i], filtered[j]
+		switch mod.selector.SortField {
+		case "seen":
+			return left.snapshot.LastSeen.Before(right.snapshot.LastSeen)
+		case "essid":
+			if left.snapshot.Hostname == right.snapshot.Hostname {
+				return left.snapshot.HwAddress < right.snapshot.HwAddress
+			}
+			return left.snapshot.Hostname < right.snapshot.Hostname
+		case "bssid":
+			return left.snapshot.HwAddress < right.snapshot.HwAddress
+		case "channel":
+			return left.snapshot.Frequency < right.snapshot.Frequency
+		case "clients":
+			if left.clients == right.clients {
+				return left.snapshot.HwAddress < right.snapshot.HwAddress
+			}
+			return left.clients < right.clients
+		case "encryption":
+			if left.snapshot.Encryption == right.snapshot.Encryption {
+				return left.snapshot.HwAddress < right.snapshot.HwAddress
+			}
+			return left.snapshot.Encryption < right.snapshot.Encryption
+		case "sent":
+			return left.snapshot.Sent < right.snapshot.Sent
+		case "rcvd":
+			return left.snapshot.Received < right.snapshot.Received
+		default:
+			if left.snapshot.RSSI == right.snapshot.RSSI {
+				return left.snapshot.HwAddress < right.snapshot.HwAddress
+			}
+			return left.snapshot.RSSI > right.snapshot.RSSI
+		}
+	})
 
 	// default is asc
 	if mod.selector.Sort == "desc" {
 		// from https://github.com/golang/go/wiki/SliceTricks
-		for i := len(stations)/2 - 1; i >= 0; i-- {
-			opp := len(stations) - 1 - i
-			stations[i], stations[opp] = stations[opp], stations[i]
+		for i := len(filtered)/2 - 1; i >= 0; i-- {
+			opp := len(filtered) - 1 - i
+			filtered[i], filtered[opp] = filtered[opp], filtered[i]
 		}
+	}
+
+	stations = make([]*network.Station, len(filtered))
+	for i, item := range filtered {
+		stations[i] = item.station
 	}
 
 	if mod.selector.Limit > 0 {
@@ -265,9 +297,9 @@ func (mod *WiFiModule) colNames(nrows int) []string {
 		} else {
 			columns = []string{"RSSI", "BSSID", "Ch", "Sent", "Recvd", "Seen"}
 		}
-		mod.Printf("\n%s clients:\n", mod.ap.HwAddress)
+		mod.Printf("\n%s clients:\n", mod.ap.BSSID())
 	} else {
-		mod.Printf("\nNo authenticated clients detected for %s.\n", mod.ap.HwAddress)
+		mod.Printf("\nNo authenticated clients detected for %s.\n", mod.ap.BSSID())
 	}
 
 	if columns != nil {
@@ -359,13 +391,13 @@ func (mod *WiFiModule) ShowWPS(bssid string) (err error) {
 	if bssid == network.BroadcastMac {
 		for _, station := range mod.Session.WiFi.List() {
 			if station.HasWPS() {
-				toShow = append(toShow, station.Station)
+				toShow = append(toShow, station.Station())
 			}
 		}
 	} else {
 		if station, found := mod.Session.WiFi.Get(bssid); found {
 			if station.HasWPS() {
-				toShow = append(toShow, station.Station)
+				toShow = append(toShow, station.Station())
 			}
 		}
 	}
@@ -374,7 +406,7 @@ func (mod *WiFiModule) ShowWPS(bssid string) (err error) {
 		return fmt.Errorf("no WPS enabled access points matched the criteria")
 	}
 
-	sort.Sort(ByBssidSorter(toShow))
+	sort.Slice(toShow, func(i, j int) bool { return toShow[i].BSSID() < toShow[j].BSSID() })
 
 	colNames := []string{"Name", "Value"}
 

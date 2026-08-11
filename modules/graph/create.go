@@ -42,12 +42,13 @@ func (mod *Module) createIPGraph(endpoint *network.Endpoint) (*Node, bool, error
 }
 
 func (mod *Module) createDot11ApGraph(ap *network.AccessPoint) (*Node, bool, error) {
-	node, err := mod.db.FindNode(AccessPoint, ap.HwAddress)
+	bssid := ap.BSSID()
+	node, err := mod.db.FindNode(AccessPoint, bssid)
 	isNew := node == nil
 	if err != nil {
 		return nil, false, err
 	} else if isNew {
-		if node, err = mod.db.CreateNode(AccessPoint, ap.HwAddress, ap, ""); err != nil {
+		if node, err = mod.db.CreateNode(AccessPoint, bssid, ap, ""); err != nil {
 			return nil, false, err
 		}
 	} else if err = mod.db.UpdateNode(node); err != nil {
@@ -72,12 +73,13 @@ func (mod *Module) createDot11SSIDGraph(hex string, ssid string) (*Node, bool, e
 }
 
 func (mod *Module) createDot11StaGraph(station *network.Station) (*Node, bool, error) {
-	node, err := mod.db.FindNode(Station, station.HwAddress)
+	bssid := station.BSSID()
+	node, err := mod.db.FindNode(Station, bssid)
 	isNew := node == nil
 	if err != nil {
 		return nil, false, err
 	} else if isNew {
-		if node, err = mod.db.CreateNode(Station, station.HwAddress, station, ""); err != nil {
+		if node, err = mod.db.CreateNode(Station, bssid, station, ""); err != nil {
 			return nil, false, err
 		}
 	} else if err = mod.db.UpdateNode(node); err != nil {

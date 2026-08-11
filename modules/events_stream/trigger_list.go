@@ -99,7 +99,7 @@ func (l *TriggerList) Dispatch(e session.Event) (ident string, cmd string, err e
 			// the field to JSON, parse it again and then allow the
 			// user to access it in the command via JSON-Query, example:
 			//
-			// events.on wifi.client.new "wifi.deauth {{Client\mac}}"
+			// events.on wifi.client.new "wifi.deauth {{Client/mac}}"
 			cmd = t.Action
 			found = true
 			ident = id
@@ -118,16 +118,21 @@ func (l *TriggerList) Dispatch(e session.Event) (ident string, cmd string, err e
 					}
 				}
 				// {EXPR} -> EXPR
-				expr := strings.Trim(m, "{}")
+				expr := strings.ReplaceAll(strings.Trim(m, "{}"), `\`, "/")
+				if !strings.HasPrefix(expr, "/") {
+					expr = "/" + expr
+				}
 				// use EXPR as a JSON query
-				if node := jsonquery.FindOne(doc, expr); node != nil {
+				if node, queryErr := jsonquery.Query(doc, expr); queryErr != nil {
+					err = fmt.Errorf("error while parsing expression for trigger %s: %v", tui.Bold(id), queryErr)
+					return
+				} else if node != nil {
 					cmd = strings.Replace(cmd, m, node.InnerText(), -1)
 				} else {
 					err = fmt.Errorf(
-						"error while parsing expressionfor trigger %s: '%s' doesn't resolve any object: %v",
+						"error while parsing expression for trigger %s: '%s' doesn't resolve any object",
 						tui.Bold(id),
 						expr,
-						err,
 					)
 					return
 				}

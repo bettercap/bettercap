@@ -8,33 +8,46 @@ import (
 )
 
 type Handshake struct {
-	sync.RWMutex
+	mu sync.RWMutex
 
-	Beacon        gopacket.Packet
-	Challenges    []gopacket.Packet
-	Responses     []gopacket.Packet
-	Confirmations []gopacket.Packet
+	beacon        gopacket.Packet
+	challenges    []gopacket.Packet
+	responses     []gopacket.Packet
+	confirmations []gopacket.Packet
 	hasPMKID      bool
 	unsaved       []gopacket.Packet
 }
 
 func NewHandshake() *Handshake {
 	return &Handshake{
-		Challenges:    make([]gopacket.Packet, 0),
-		Responses:     make([]gopacket.Packet, 0),
-		Confirmations: make([]gopacket.Packet, 0),
+		challenges:    make([]gopacket.Packet, 0),
+		responses:     make([]gopacket.Packet, 0),
+		confirmations: make([]gopacket.Packet, 0),
 		unsaved:       make([]gopacket.Packet, 0),
 	}
 }
 
 func (h *Handshake) SetBeacon(pkt gopacket.Packet) {
-	h.Lock()
-	defer h.Unlock()
-
-	if h.Beacon == nil {
-		h.Beacon = pkt
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.beacon == nil {
+		h.beacon = pkt
 		h.unsaved = append(h.unsaved, pkt)
 	}
+}
+
+// UpdateBeacon replaces the AP beacon without adding it to the station's
+// unsaved handshake frames.
+func (h *Handshake) UpdateBeacon(pkt gopacket.Packet) {
+	h.mu.Lock()
+	h.beacon = pkt
+	h.mu.Unlock()
+}
+
+func (h *Handshake) Beacon() gopacket.Packet {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.beacon
 }
 
 func (h *Handshake) AddAndGetPMKID(pkt gopacket.Packet) []byte {
@@ -50,74 +63,58 @@ func (h *Handshake) AddAndGetPMKID(pkt gopacket.Packet) []byte {
 		if prevWasKey && layer.LayerType() == layers.LayerTypeDot11InformationElement {
 			info := layer.(*layers.Dot11InformationElement)
 			if info.ID == layers.Dot11InformationElementIDVendor && info.Length == 20 {
-				h.Lock()
-				defer h.Unlock()
+				h.mu.Lock()
 				h.hasPMKID = true
+				h.mu.Unlock()
 				return info.Info
 			}
 		}
 
 		prevWasKey = false
 	}
-
 	return nil
 }
 
 func (h *Handshake) AddFrame(n int, pkt gopacket.Packet) {
-	h.Lock()
-	defer h.Unlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	switch n {
 	case 0:
-		h.Challenges = append(h.Challenges, pkt)
+		h.challenges = append(h.challenges, pkt)
 	case 1:
-		h.Responses = append(h.Responses, pkt)
+		h.responses = append(h.responses, pkt)
 	case 2:
-		h.Confirmations = append(h.Confirmations, pkt)
+		h.confirmations = append(h.confirmations, pkt)
 	}
-
 	h.unsaved = append(h.unsaved, pkt)
 }
 
 func (h *Handshake) AddExtra(pkt gopacket.Packet) {
-	h.Lock()
-	defer h.Unlock()
+	h.mu.Lock()
 	h.unsaved = append(h.unsaved, pkt)
+	h.mu.Unlock()
 }
 
 func (h *Handshake) Complete() bool {
-	h.RLock()
-	defer h.RUnlock()
-
-	nChal := len(h.Challenges)
-	nResp := len(h.Responses)
-	nConf := len(h.Confirmations)
-
-	return nChal > 0 && nResp > 0 && nConf > 0
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.challenges) > 0 && len(h.responses) > 0 && len(h.confirmations) > 0
 }
 
 func (h *Handshake) Half() bool {
-	h.RLock()
-	defer h.RUnlock()
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 
-	/*
-	 * You can use every combination of the handshake to crack the net:
-	 * M1/M2
-	 * M2/M3
-	 * M3/M4
-	 * M1/M4 (if M4 snonce is not zero)
-	 * We only have M1 (the challenge), M2 (the response) and M3 (the confirmation)
-	 */
-	nChal := len(h.Challenges)
-	nResp := len(h.Responses)
-	nConf := len(h.Confirmations)
-
+	nChal := len(h.challenges)
+	nResp := len(h.responses)
+	nConf := len(h.confirmations)
 	return (nChal > 0 && nResp > 0) || (nResp > 0 && nConf > 0)
 }
 
 func (h *Handshake) HasPMKID() bool {
-	h.RLock()
-	defer h.RUnlock()
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	return h.hasPMKID
 }
 
@@ -126,17 +123,18 @@ func (h *Handshake) Any() bool {
 }
 
 func (h *Handshake) NumUnsaved() int {
-	h.RLock()
-	defer h.RUnlock()
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	return len(h.unsaved)
 }
 
 func (h *Handshake) EachUnsavedPacket(cb func(gopacket.Packet)) {
-	h.Lock()
-	defer h.Unlock()
+	h.mu.Lock()
+	packets := h.unsaved
+	h.unsaved = make([]gopacket.Packet, 0)
+	h.mu.Unlock()
 
-	for _, pkt := range h.unsaved {
+	for _, pkt := range packets {
 		cb(pkt)
 	}
-	h.unsaved = make([]gopacket.Packet, 0)
 }

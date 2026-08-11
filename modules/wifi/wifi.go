@@ -179,7 +179,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 				return err
 			} else if ap, found := mod.Session.WiFi.Get(bssid.String()); found {
 				mod.ap = ap
-				mod.stickChan = ap.Channel
+				mod.stickChan = ap.Snapshot().Channel
 				return nil
 			}
 			return fmt.Errorf("could not find station with BSSID %s", args[0])
@@ -731,8 +731,8 @@ func (mod *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
 			// makes stations with encryption enabled switch to OPEN.
 			// Prevent this behaviour by not downgrading the encryption.
 			bssid := dot11.Address3.String()
-			if station, found := mod.Session.WiFi.Get(bssid); found && station.IsOpen() {
-				station.SetEncryption(enc, cipher, auth)
+			if station, found := mod.Session.WiFi.Get(bssid); found {
+				station.SetEncryptionIfOpen(enc, cipher, auth)
 			}
 		}
 
@@ -753,16 +753,16 @@ func (mod *WiFiModule) updateStats(dot11 *layers.Dot11, packet gopacket.Packet) 
 
 		dst := dot11.Address1.String()
 		if ap, found := mod.Session.WiFi.Get(dst); found {
-			ap.Received += bytes
+			ap.AddTraffic(0, bytes)
 		} else if sta, found := mod.Session.WiFi.GetClient(dst); found {
-			sta.Received += bytes
+			sta.AddTraffic(0, bytes)
 		}
 
 		src := dot11.Address2.String()
 		if ap, found := mod.Session.WiFi.Get(src); found {
-			ap.Sent += bytes
+			ap.AddTraffic(bytes, 0)
 		} else if sta, found := mod.Session.WiFi.GetClient(src); found {
-			sta.Sent += bytes
+			sta.AddTraffic(bytes, 0)
 		}
 	}
 }

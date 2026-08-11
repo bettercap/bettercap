@@ -19,12 +19,12 @@ func (mod *WiFiModule) isCSASilent() bool {
 	return mod.csaSilent
 }
 
-func (mod *WiFiModule) sendBeaconWithCSAPacket(ap *network.AccessPoint, toChan int8) {
-	ssid := ap.ESSID()
+func (mod *WiFiModule) sendBeaconWithCSAPacket(ap network.StationSnapshot, toChan int8) {
+	ssid := ap.Hostname
 	if ssid == "<hidden>" {
 		ssid = ""
 	}
-	hw, _ := net.ParseMAC(ap.BSSID())
+	hw, _ := net.ParseMAC(ap.HwAddress)
 
 	for seq := uint16(0); seq < 256 && mod.Running(); seq++ {
 		if err, pkt := packets.NewDot11Beacon(packets.Dot11ApConfig{
@@ -52,11 +52,14 @@ func (mod *WiFiModule) startCSA(to net.HardwareAddr, toChan int8) error {
 		defer mod.handle.Close()
 	}
 
-	var ap *network.AccessPoint = nil
+	var ap *network.AccessPoint
+	var snapshot network.StationSnapshot
 
 	for _, _ap := range mod.Session.WiFi.List() {
-		if bytes.Equal(_ap.HW, to) {
+		candidate := _ap.Snapshot()
+		if bytes.Equal(candidate.HW, to) {
 			ap = _ap
+			snapshot = candidate
 		}
 
 	}
@@ -74,10 +77,10 @@ func (mod *WiFiModule) startCSA(to net.HardwareAddr, toChan int8) error {
 			if mod.isCSASilent() {
 				logger = mod.Debug
 			}
-			logger("channel hop attack in AP %s (channel:%d encryption:%s), hop to channel %d ", ap.ESSID(), ap.Channel, ap.Encryption, toChan)
+			logger("channel hop attack in AP %s (channel:%d encryption:%s), hop to channel %d ", snapshot.Hostname, snapshot.Channel, snapshot.Encryption, toChan)
 			// send the beacon frame with channel switch announce element id
-			mod.onChannel(ap.Channel, func() {
-				mod.sendBeaconWithCSAPacket(ap, toChan)
+			mod.onChannel(snapshot.Channel, func() {
+				mod.sendBeaconWithCSAPacket(snapshot, toChan)
 			})
 		}
 

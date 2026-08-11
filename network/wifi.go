@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
@@ -37,10 +36,10 @@ func Dot11Freq2Chan(freq int) int {
 }
 
 var dot11Channel5GHz = map[int]struct{}{
-	36:  {}, 40:  {}, 44:  {}, 48:  {},
-	52:  {}, 56:  {}, 60:  {}, 64:  {},
+	36: {}, 40: {}, 44: {}, 48: {},
+	52: {}, 56: {}, 60: {}, 64: {},
 
-	68:  {}, 72:  {}, 76:  {}, 80:  {},
+	68: {}, 72: {}, 76: {}, 80: {},
 	100: {}, 104: {}, 108: {}, 112: {},
 
 	116: {}, 120: {}, 124: {}, 128: {},
@@ -62,7 +61,7 @@ func Dot11Chan2Freq(channel int) int {
 	if _, ok := dot11Channel5GHz[channel]; ok {
 		return ((channel - 7) * 5) + 5035
 	}
-	
+
 	// 6GHz - Skipped 1-13 to avoid 2Ghz channels conflict
 	if channel >= 17 && channel <= 253 {
 		return ((channel - 1) * 5) + 5955
@@ -75,7 +74,7 @@ type APNewCallback func(ap *AccessPoint)
 type APLostCallback func(ap *AccessPoint)
 
 type WiFi struct {
-	sync.RWMutex
+	mu sync.RWMutex
 
 	aliases *data.UnsortedKV
 	aps     map[string]*AccessPoint
@@ -99,61 +98,57 @@ func NewWiFi(iface *Endpoint, aliases *data.UnsortedKV, newcb APNewCallback, los
 }
 
 func (w *WiFi) MarshalJSON() ([]byte, error) {
-
 	doc := wifiJSON{
-		// we know the length so preallocate to reduce memory allocations
-		AccessPoints: make([]*AccessPoint, 0, len(w.aps)),
+		AccessPoints: w.List(),
 	}
-
-	for _, ap := range w.aps {
-		doc.AccessPoints = append(doc.AccessPoints, ap)
-	}
-
 	return json.Marshal(doc)
 }
 
 func (w *WiFi) EachAccessPoint(cb func(mac string, ap *AccessPoint)) {
-	w.Lock()
-	defer w.Unlock()
-
+	type entry struct {
+		mac string
+		ap  *AccessPoint
+	}
+	w.mu.RLock()
+	entries := make([]entry, 0, len(w.aps))
 	for m, ap := range w.aps {
-		cb(m, ap)
+		entries = append(entries, entry{mac: m, ap: ap})
+	}
+	w.mu.RUnlock()
+	for _, item := range entries {
+		cb(item.mac, item.ap)
 	}
 }
 
 func (w *WiFi) Stations() (list []*Station) {
-	w.RLock()
-	defer w.RUnlock()
-
+	w.mu.RLock()
 	list = make([]*Station, 0, len(w.aps))
-
 	for _, ap := range w.aps {
-		list = append(list, ap.Station)
+		list = append(list, ap.Station())
 	}
+	w.mu.RUnlock()
 	return
 }
 
 func (w *WiFi) List() (list []*AccessPoint) {
-	w.RLock()
-	defer w.RUnlock()
-
+	w.mu.RLock()
 	list = make([]*AccessPoint, 0, len(w.aps))
-
 	for _, ap := range w.aps {
 		list = append(list, ap)
 	}
+	w.mu.RUnlock()
 	return
 }
 
 func (w *WiFi) Remove(mac string) {
-	w.Lock()
-	defer w.Unlock()
-
-	if ap, found := w.aps[mac]; found {
+	w.mu.Lock()
+	ap, found := w.aps[mac]
+	if found {
 		delete(w.aps, mac)
-		if w.lostCb != nil {
-			w.lostCb(ap)
-		}
+	}
+	w.mu.Unlock()
+	if found && w.lostCb != nil {
+		w.lostCb(ap)
 	}
 }
 
@@ -170,60 +165,44 @@ func isBogusMacESSID(essid string) bool {
 }
 
 func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) (*AccessPoint, bool) {
-	w.Lock()
-	defer w.Unlock()
-
 	mac = NormalizeMac(mac)
 	alias := w.aliases.GetOr(mac, "")
-	if ap, found := w.aps[mac]; found {
-		// same race as the WPS/Encryption fix and AddClientIfNew's fix
-		// above (see network/wifi_station.go): these embedded Endpoint
-		// fields are read by Station.MarshalJSON() under stationMu, but
-		// w.Lock() (held above) is a *different* mutex -- it protects
-		// w.aps itself, not the fields of an already-published AP that a
-		// concurrent REST/websocket read can observe mid-write.
-		stationMu.Lock()
-		ap.LastSeen = time.Now()
-		if rssi != 0 {
-			ap.RSSI = rssi
-		}
-		// always get the cleanest one
-		if !isBogusMacESSID(ssid) {
-			ap.Hostname = ssid
-		}
-		if alias != "" {
-			ap.Alias = alias
-		}
-		stationMu.Unlock()
+	w.mu.RLock()
+	ap, found := w.aps[mac]
+	w.mu.RUnlock()
+	if found {
+		ap.Station().updateAccessPoint(ssid, rssi, alias)
 		return ap, false
 	}
 
-	newAp := NewAccessPoint(ssid, mac, frequency, rssi, w.aliases)
-	newAp.Alias = alias
-	w.aps[mac] = newAp
+	candidate := NewAccessPoint(ssid, mac, frequency, rssi, w.aliases)
+	candidate.SetAlias(alias)
 
-	if w.newCb != nil {
-		w.newCb(newAp)
+	w.mu.Lock()
+	if ap, found = w.aps[mac]; found {
+		w.mu.Unlock()
+		ap.Station().updateAccessPoint(ssid, rssi, alias)
+		return ap, false
 	}
-
-	return newAp, true
+	w.aps[mac] = candidate
+	w.mu.Unlock()
+	if w.newCb != nil {
+		w.newCb(candidate)
+	}
+	return candidate, true
 }
 
 func (w *WiFi) Get(mac string) (*AccessPoint, bool) {
-	w.RLock()
-	defer w.RUnlock()
-
 	mac = NormalizeMac(mac)
+	w.mu.RLock()
 	ap, found := w.aps[mac]
+	w.mu.RUnlock()
 	return ap, found
 }
 
 func (w *WiFi) GetClient(mac string) (*Station, bool) {
-	w.RLock()
-	defer w.RUnlock()
-
 	mac = NormalizeMac(mac)
-	for _, ap := range w.aps {
+	for _, ap := range w.List() {
 		if client, found := ap.Get(mac); found {
 			return client, true
 		}
@@ -233,26 +212,23 @@ func (w *WiFi) GetClient(mac string) (*Station, bool) {
 }
 
 func (w *WiFi) Clear() {
-	w.Lock()
-	defer w.Unlock()
+	w.mu.Lock()
 	w.aps = make(map[string]*AccessPoint)
+	w.mu.Unlock()
 }
 
 func (w *WiFi) NumAPs() int {
-	w.RLock()
-	defer w.RUnlock()
-
-	return len(w.aps)
+	w.mu.RLock()
+	n := len(w.aps)
+	w.mu.RUnlock()
+	return n
 }
 
 func (w *WiFi) NumHandshakes() int {
-	w.RLock()
-	defer w.RUnlock()
-
 	sum := 0
-	for _, ap := range w.aps {
+	for _, ap := range w.List() {
 		for _, station := range ap.Clients() {
-			if station.Handshake.Complete() {
+			if station.Handshake().Complete() {
 				sum++
 			}
 		}
@@ -283,15 +259,13 @@ func (w *WiFi) SaveHandshakesTo(fileName string, linkType layers.LinkType) error
 
 	defer writer.Flush()
 
-	w.RLock()
-	defer w.RUnlock()
-
-	for _, ap := range w.aps {
+	for _, ap := range w.List() {
 		for _, station := range ap.Clients() {
 			// if half (which includes also complete) or has pmkid
-			if station.Handshake.Any() {
+			handshake := station.Handshake()
+			if handshake.Any() {
 				err = nil
-				station.Handshake.EachUnsavedPacket(func(pkt gopacket.Packet) {
+				handshake.EachUnsavedPacket(func(pkt gopacket.Packet) {
 					if err == nil {
 						ci := pkt.Metadata().CaptureInfo
 						ci.InterfaceIndex = 0

@@ -39,11 +39,14 @@ func (mod *WiFiModule) startFakeAuth(bssid, client net.HardwareAddr) error {
 		defer mod.handle.Close()
 	}
 
-	var ap *network.AccessPoint = nil
+	var ap *network.AccessPoint
+	var snapshot network.StationSnapshot
 
 	for _, _ap := range mod.Session.WiFi.List() {
-		if bytes.Equal(_ap.HW, bssid) {
+		candidate := _ap.Snapshot()
+		if bytes.Equal(candidate.HW, bssid) {
 			ap = _ap
+			snapshot = candidate
 		}
 	}
 
@@ -60,9 +63,9 @@ func (mod *WiFiModule) startFakeAuth(bssid, client net.HardwareAddr) error {
 			if mod.isFakeAuthSilent() {
 				logger = mod.Debug
 			}
-			logger("fake authentication attack in AP: %s client: %s", ap.ESSID(), client.String())
+			logger("fake authentication attack in AP: %s client: %s", snapshot.Hostname, client.String())
 			// send the beacon frame with channel switch announce element id
-			mod.onChannel(ap.Channel, func() {
+			mod.onChannel(snapshot.Channel, func() {
 				mod.sendFakeAuthPacket(bssid, client)
 			})
 		}

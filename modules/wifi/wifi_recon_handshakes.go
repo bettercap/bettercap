@@ -61,13 +61,15 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		station, found := ap.Get(staMac.String())
 		staAdded := false
 		if !found {
-			station, staAdded = ap.AddClientIfNew(staMac.String(), ap.Frequency, ap.RSSI)
+			apSnapshot := ap.Snapshot()
+			station, staAdded = ap.AddClientIfNew(staMac.String(), apSnapshot.Frequency, apSnapshot.RSSI)
 		}
+		handshake := station.Handshake()
 
 		rawPMKID := []byte(nil)
 		if !key.Install && key.KeyACK && !key.KeyMIC {
 			// [1] (ACK) AP is sending ANonce to the client
-			rawPMKID = station.Handshake.AddAndGetPMKID(packet)
+			rawPMKID = handshake.AddAndGetPMKID(packet)
 			PMKID := "without PMKID"
 			if rawPMKID != nil {
 				// ADDED: Use the existing allZeros function to check for vendor patches (fake PMKIDs)
@@ -88,14 +90,14 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 			//https://github.com/ZerBea/hcxtools/issues/92
 			//https://github.com/bettercap/bettercap/issues/592
 
-			if ap.Station.Handshake.Beacon != nil {
+			if beacon := ap.Handshake().Beacon(); beacon != nil {
 				mod.Debug("adding beacon frame to handshake for %s", apMac)
-				station.Handshake.AddFrame(1, ap.Station.Handshake.Beacon)
+				handshake.AddFrame(1, beacon)
 			}
 
 		} else if !key.Install && !key.KeyACK && key.KeyMIC && !allZeros(key.Nonce) {
 			// [2] (MIC) client is sending SNonce+MIC to the API
-			station.Handshake.AddFrame(1, packet)
+			handshake.AddFrame(1, packet)
 
 			mod.Debug("got frame 2/4 of the %s <-> %s handshake (snonce:%x mic:%x)",
 				apMac,
@@ -104,7 +106,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 				key.MIC)
 		} else if key.Install && key.KeyACK && key.KeyMIC {
 			// [3]: (INSTALL+ACK+MIC) AP informs the client that the PTK is installed
-			station.Handshake.AddFrame(2, packet)
+			handshake.AddFrame(2, packet)
 
 			mod.Debug("got frame 3/4 of the %s <-> %s handshake (mic:%x)",
 				apMac,
@@ -113,7 +115,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 		}
 
 		// if we have unsaved packets as part of the handshake, save them.
-		numUnsaved := station.Handshake.NumUnsaved()
+		numUnsaved := handshake.NumUnsaved()
 		shakesFileName := mod.getHandshakeFileFor(ap)
 		doSave := numUnsaved > 0
 		if doSave && shakesFileName != "" {
@@ -125,8 +127,8 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 
 		// ADDED: PMKID is only valid if it's not nil AND not all zeros
 		validPMKID := rawPMKID != nil && !allZeros(rawPMKID)
-		validHalfHandshake := !staIsUs && station.Handshake.Half()
-		validFullHandshake := station.Handshake.Complete()
+		validHalfHandshake := !staIsUs && handshake.Half()
+		validFullHandshake := handshake.Complete()
 		// if we have unsaved packets AND
 		//   if we captured a PMKID OR
 		//   if we captured am half handshake which is not ours OR
@@ -138,8 +140,8 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 				AP:         apMac.String(),
 				Station:    staMac.String(),
 				PMKID:      rawPMKID,
-				Half:       station.Handshake.Half(),
-				Full:       station.Handshake.Complete(),
+				Half:       handshake.Half(),
+				Full:       handshake.Complete(),
 			})
 			// make sure the info that we have key material for this AP
 			// is persisted even after stations are pruned due to inactivity
@@ -172,10 +174,12 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 				// search client station
 				ap.EachClient(func(mac string, station *network.Station) {
 					// any valid key material for this station?
-					if station.Handshake.Any() {
+					handshake := station.Handshake()
+					if handshake.Any() {
 						// check if target
+						stationHW := station.HardwareAddr()
 						for _, a := range bssids {
-							if bytes.Equal(a, station.HW) {
+							if bytes.Equal(a, stationHW) {
 								target = station
 								targetAP = ap
 								break
@@ -192,7 +196,7 @@ func (mod *WiFiModule) discoverHandshakes(radiotap *layers.RadioTap, dot11 *laye
 				len(packet.Data()),
 				target.String())
 
-			target.Handshake.AddExtra(packet)
+			target.Handshake().AddExtra(packet)
 
 			shakesFileName := mod.getHandshakeFileFor(targetAP)
 			if shakesFileName != "" {

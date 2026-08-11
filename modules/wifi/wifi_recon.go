@@ -31,7 +31,8 @@ func (mod *WiFiModule) stationPruner() {
 	for mod.Running() {
 		// loop every AP
 		for _, ap := range mod.Session.WiFi.List() {
-			sinceLastSeen := time.Since(ap.LastSeen)
+			apSnapshot := ap.Snapshot()
+			sinceLastSeen := time.Since(apSnapshot.LastSeen)
 			if sinceLastSeen > maxApTTL {
 				mod.Debug("station %s not seen in %s, removing.", ap.BSSID(), sinceLastSeen)
 				mod.Session.WiFi.Remove(ap.BSSID())
@@ -39,7 +40,8 @@ func (mod *WiFiModule) stationPruner() {
 			}
 			// loop every AP client
 			for _, c := range ap.Clients() {
-				sinceLastSeen := time.Since(c.LastSeen)
+				clientSnapshot := c.Snapshot()
+				sinceLastSeen := time.Since(clientSnapshot.LastSeen)
 				if sinceLastSeen > maxStaTTL {
 					mod.Debug("client %s of station %s not seen in %s, removing.", c.String(), ap.BSSID(), sinceLastSeen)
 					ap.RemoveClient(c.BSSID())
@@ -84,9 +86,9 @@ func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *la
 				if ap, isNew := mod.Session.WiFi.AddIfNew(ssid, bssid, frequency, radio.DBMAntennaSignal); !isNew {
 					//set beacon packet on the access point station.
 					//This is for it to be included in the saved handshake file for wifi.assoc
-					ap.Station.Handshake.Beacon = packet
+					ap.Handshake().UpdateBeacon(packet)
 					ap.EachClient(func(mac string, station *network.Station) {
-						station.Handshake.SetBeacon(packet)
+						station.Handshake().SetBeacon(packet)
 					})
 				}
 			} else {
@@ -178,7 +180,7 @@ func (mod *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.
 
 	mod.Session.WiFi.EachAccessPoint(func(bssid string, ap *network.AccessPoint) {
 		// packet going to this specific BSSID?
-		if packets.Dot11IsDataFor(dot11, ap.HW) {
+		if packets.Dot11IsDataFor(dot11, ap.Snapshot().HW) {
 			bssid := dot11.Address2.String()
 			freq := int(radio.ChannelFrequency)
 			rssi := radio.DBMAntennaSignal

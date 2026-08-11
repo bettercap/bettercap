@@ -285,16 +285,11 @@ func (mod *Module) onEvent(e session.Event) {
 		}
 	} else if e.Tag == "wifi.client.probe" {
 		probe := e.Data.(wifi.ProbeEvent)
-		station := network.Station{
-			RSSI: probe.RSSI,
-			Endpoint: &network.Endpoint{
-				HwAddress: probe.FromAddr,
-				Vendor:    probe.FromVendor,
-				Alias:     probe.FromAlias,
-			},
-		}
+		station := network.NewStation("", probe.FromAddr, 0, probe.RSSI)
+		station.SetVendor(probe.FromVendor)
+		station.SetAlias(probe.FromAlias)
 
-		if _, _, staEntity, _, err := mod.createDot11ProbeGraph(probe.SSID, &station); err != nil {
+		if _, _, staEntity, _, err := mod.createDot11ProbeGraph(probe.SSID, station); err != nil {
 			mod.Error("%s", err)
 		} else {
 			// don't add fake ap to entities, no need to correlate

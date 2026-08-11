@@ -2,225 +2,251 @@ package network
 
 import (
 	"encoding/json"
+	"net"
 	"sync"
-	"time"
 
 	"github.com/evilsocket/islazy/data"
 )
 
 type AccessPoint struct {
-	*Station
-	sync.RWMutex
+	mu sync.RWMutex
 
+	station         *Station
 	aliases         *data.UnsortedKV
 	clients         map[string]*Station
 	withKeyMaterial bool
 }
 
-type apJSON struct {
-	*Station
+type accessPointJSON struct {
+	*StationSnapshot
+	Clients   []*Station `json:"clients"`
+	Handshake bool       `json:"handshake"`
+}
+
+type accessPointFieldsJSON struct {
+	stationFieldsJSON
 	Clients   []*Station `json:"clients"`
 	Handshake bool       `json:"handshake"`
 }
 
 func NewAccessPoint(essid, bssid string, frequency int, rssi int8, aliases *data.UnsortedKV) *AccessPoint {
 	return &AccessPoint{
-		Station: NewStation(essid, bssid, frequency, rssi),
+		station: NewStation(essid, bssid, frequency, rssi),
 		aliases: aliases,
 		clients: make(map[string]*Station),
 	}
 }
 
-func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
-	ap.RLock()
-	defer ap.RUnlock()
-
-	// Station.MarshalJSON() (see wifi_station.go) exists to lock wpsMu
-	// while reading the WPS field -- but apJSON embeds *Station
-	// anonymously, and Go promotes an embedded field's MarshalJSON onto
-	// the outer struct too. That means a naive json.Marshal(apJSON{...})
-	// here would call ONLY Station.MarshalJSON() and silently drop
-	// apJSON's own Clients/Handshake fields from the output entirely --
-	// confirmed on-device: this broke pwnagotchi's own agent.py, which
-	// expects every AP object to always have a "clients" key
-	// (KeyError: 'clients'). Marshaling the station and the extra fields
-	// separately, then splicing the two JSON objects together, keeps
-	// both: the wpsMu-locked Station encoding via its own MarshalJSON,
-	// and apJSON's additional fields, without either being silently
-	// discarded by that promotion behavior.
-	stationBytes, err := json.Marshal(ap.Station)
-	if err != nil {
-		return nil, err
+func (ap *AccessPoint) Station() *Station {
+	if ap == nil {
+		return nil
 	}
-
-	extra := struct {
-		Clients   []*Station `json:"clients"`
-		Handshake bool       `json:"handshake"`
-	}{
-		Clients:   make([]*Station, 0, len(ap.clients)),
-		Handshake: ap.withKeyMaterial,
-	}
-	for _, c := range ap.clients {
-		extra.Clients = append(extra.Clients, c)
-	}
-	extraBytes, err := json.Marshal(extra)
-	if err != nil {
-		return nil, err
-	}
-
-	// both are guaranteed-well-formed JSON objects ("{...}") -- splice
-	// them into one object by joining their inner contents with a comma
-	if len(stationBytes) < 2 || len(extraBytes) < 2 {
-		return stationBytes, nil
-	}
-	merged := make([]byte, 0, len(stationBytes)+len(extraBytes))
-	merged = append(merged, stationBytes[:len(stationBytes)-1]...)
-	merged = append(merged, ',')
-	merged = append(merged, extraBytes[1:]...)
-	return merged, nil
+	ap.mu.RLock()
+	station := ap.station
+	ap.mu.RUnlock()
+	return station
 }
 
-func (ap *AccessPoint) UnmarshalJSON(raw []byte) (err error) {
-	ap.RLock()
-	defer ap.RUnlock()
+func (ap *AccessPoint) Snapshot() StationSnapshot { return ap.Station().Snapshot() }
+func (ap *AccessPoint) BSSID() string             { return ap.Station().BSSID() }
+func (ap *AccessPoint) HardwareAddr() net.HardwareAddr {
+	return ap.Station().HardwareAddr()
+}
+func (ap *AccessPoint) ESSID() string              { return ap.Station().ESSID() }
+func (ap *AccessPoint) IsOpen() bool               { return ap.Station().IsOpen() }
+func (ap *AccessPoint) String() string             { return ap.Station().String() }
+func (ap *AccessPoint) ShortString() string        { return ap.Station().ShortString() }
+func (ap *AccessPoint) PathFriendlyName() string   { return ap.Station().PathFriendlyName() }
+func (ap *AccessPoint) HasWPS() bool               { return ap.Station().HasWPS() }
+func (ap *AccessPoint) WPSInfo() map[string]string { return ap.Station().WPSInfo() }
+func (ap *AccessPoint) SetWPS(name, value string)  { ap.Station().SetWPS(name, value) }
+func (ap *AccessPoint) SetAlias(alias string)      { ap.Station().SetAlias(alias) }
+func (ap *AccessPoint) AddTraffic(sent, received uint64) {
+	ap.Station().AddTraffic(sent, received)
+}
+func (ap *AccessPoint) SetEncryption(enc, cipher, auth string) {
+	ap.Station().SetEncryption(enc, cipher, auth)
+}
+func (ap *AccessPoint) SetEncryptionIfOpen(enc, cipher, auth string) bool {
+	return ap.Station().SetEncryptionIfOpen(enc, cipher, auth)
+}
+func (ap *AccessPoint) Handshake() *Handshake { return ap.Station().Handshake() }
 
-	var apData apJSON
-	if err = json.Unmarshal(raw, &apData); err != nil {
-		return
+func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
+	if ap == nil {
+		return []byte("null"), nil
 	}
 
-	clients := make(map[string]*Station)
-	for _, c := range apData.Clients {
-		clients[c.HwAddress] = c
+	ap.mu.RLock()
+	station := ap.station
+	withKeyMaterial := ap.withKeyMaterial
+	clientPointers := make([]*Station, 0, len(ap.clients))
+	for _, client := range ap.clients {
+		clientPointers = append(clientPointers, client)
+	}
+	ap.mu.RUnlock()
+
+	var stationSnapshot *StationSnapshot
+	hasEndpoint := false
+	if station != nil {
+		snapshot, hasStationEndpoint := station.snapshotState()
+		stationSnapshot = &snapshot
+		hasEndpoint = hasStationEndpoint
+	}
+	if stationSnapshot != nil && !hasEndpoint {
+		return json.Marshal(accessPointFieldsJSON{
+			stationFieldsJSON: stationFieldsFromSnapshot(*stationSnapshot),
+			Clients:           clientPointers,
+			Handshake:         withKeyMaterial,
+		})
 	}
 
-	ap.Station = apData.Station
+	return json.Marshal(accessPointJSON{
+		StationSnapshot: stationSnapshot,
+		Clients:         clientPointers,
+		Handshake:       withKeyMaterial,
+	})
+}
+
+func (ap *AccessPoint) UnmarshalJSON(raw []byte) error {
+	var doc accessPointJSON
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return err
+	}
+
+	var station *Station
+	if doc.StationSnapshot != nil {
+		station = stationFromSnapshot(*doc.StationSnapshot)
+		station.hasEndpoint = stationJSONHasEndpoint(raw)
+	}
+	clients := make(map[string]*Station, len(doc.Clients))
+	for _, client := range doc.Clients {
+		if client != nil {
+			clients[client.BSSID()] = client
+		}
+	}
+	aliases, err := data.NewMemUnsortedKV()
+	if err != nil {
+		return err
+	}
+
+	ap.mu.Lock()
+	ap.station = station
 	ap.clients = clients
-	ap.aliases, err = data.NewMemUnsortedKV()
-
-	return
+	ap.withKeyMaterial = doc.Handshake
+	ap.aliases = aliases
+	ap.mu.Unlock()
+	return nil
 }
 
 func (ap *AccessPoint) Get(bssid string) (*Station, bool) {
-	ap.RLock()
-	defer ap.RUnlock()
-
 	bssid = NormalizeMac(bssid)
-	if s, found := ap.clients[bssid]; found {
-		return s, true
-	}
-	return nil, false
+	ap.mu.RLock()
+	station, found := ap.clients[bssid]
+	ap.mu.RUnlock()
+	return station, found
 }
 
 func (ap *AccessPoint) RemoveClient(mac string) {
-	ap.Lock()
-	defer ap.Unlock()
-
 	bssid := NormalizeMac(mac)
+	ap.mu.Lock()
 	delete(ap.clients, bssid)
+	ap.mu.Unlock()
 }
 
 func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8) (*Station, bool) {
-	ap.Lock()
-	defer ap.Unlock()
-
 	bssid = NormalizeMac(bssid)
-	alias := ap.aliases.GetOr(bssid, "")
+	ap.mu.RLock()
+	station, found := ap.clients[bssid]
+	aliases := ap.aliases
+	ap.mu.RUnlock()
 
-	if s, found := ap.clients[bssid]; found {
-		// update -- same race as the WPS/Encryption fix in wifi_station.go:
-		// these fields are read by Station.MarshalJSON() under stationMu,
-		// but ap.Lock() (held above) is a *different* mutex that provides
-		// no mutual exclusion against that read. This station is already
-		// published in ap.clients, so a concurrent REST/websocket read
-		// (e.g. pwnagotchi's own session() polling) can observe it mid-write.
-		stationMu.Lock()
-		s.Frequency = frequency
-		s.RSSI = rssi
-		s.LastSeen = time.Now()
-		if alias != "" {
-			s.Alias = alias
-		}
-		stationMu.Unlock()
-
-		return s, false
+	alias := ""
+	if aliases != nil {
+		alias = aliases.GetOr(bssid, "")
+	}
+	if found {
+		station.updateClient(frequency, rssi, alias)
+		return station, false
 	}
 
-	s := NewStation("", bssid, frequency, rssi)
-	s.Alias = alias
-	ap.clients[bssid] = s
+	newStation := NewStation("", bssid, frequency, rssi)
+	newStation.SetAlias(alias)
 
-	return s, true
+	ap.mu.Lock()
+	if station, found = ap.clients[bssid]; found {
+		ap.mu.Unlock()
+		station.updateClient(frequency, rssi, alias)
+		return station, false
+	}
+	ap.clients[bssid] = newStation
+	ap.mu.Unlock()
+	return newStation, true
 }
 
 func (ap *AccessPoint) NumClients() int {
-	ap.RLock()
-	defer ap.RUnlock()
-	return len(ap.clients)
+	ap.mu.RLock()
+	n := len(ap.clients)
+	ap.mu.RUnlock()
+	return n
 }
 
-func (ap *AccessPoint) Clients() (list []*Station) {
-	ap.RLock()
-	defer ap.RUnlock()
-
-	list = make([]*Station, 0, len(ap.clients))
-	for _, c := range ap.clients {
-		list = append(list, c)
+func (ap *AccessPoint) Clients() []*Station {
+	ap.mu.RLock()
+	list := make([]*Station, 0, len(ap.clients))
+	for _, client := range ap.clients {
+		list = append(list, client)
 	}
-	return
+	ap.mu.RUnlock()
+	return list
 }
 
 func (ap *AccessPoint) EachClient(cb func(mac string, station *Station)) {
-	ap.Lock()
-	defer ap.Unlock()
-
-	for m, station := range ap.clients {
-		cb(m, station)
+	type entry struct {
+		mac     string
+		station *Station
+	}
+	ap.mu.RLock()
+	entries := make([]entry, 0, len(ap.clients))
+	for mac, station := range ap.clients {
+		entries = append(entries, entry{mac: mac, station: station})
+	}
+	ap.mu.RUnlock()
+	for _, item := range entries {
+		cb(item.mac, item.station)
 	}
 }
 
 func (ap *AccessPoint) WithKeyMaterial(state bool) {
-	ap.Lock()
-	defer ap.Unlock()
-
+	ap.mu.Lock()
 	ap.withKeyMaterial = state
+	ap.mu.Unlock()
 }
 
 func (ap *AccessPoint) HasKeyMaterial() bool {
-	ap.RLock()
-	defer ap.RUnlock()
-
-	return ap.withKeyMaterial
+	ap.mu.RLock()
+	state := ap.withKeyMaterial
+	ap.mu.RUnlock()
+	return state
 }
 
 func (ap *AccessPoint) NumHandshakes() int {
-	ap.RLock()
-	defer ap.RUnlock()
-
 	sum := 0
-
-	for _, c := range ap.clients {
-		if c.Handshake.Complete() {
+	for _, client := range ap.Clients() {
+		if client.Handshake().Complete() {
 			sum++
 		}
 	}
-
 	return sum
 }
 
-func (ap *AccessPoint) HasHandshakes() bool {
-	return ap.NumHandshakes() > 0
-}
+func (ap *AccessPoint) HasHandshakes() bool { return ap.NumHandshakes() > 0 }
 
 func (ap *AccessPoint) HasPMKID() bool {
-	ap.RLock()
-	defer ap.RUnlock()
-
-	for _, c := range ap.clients {
-		if c.Handshake.HasPMKID() {
+	for _, client := range ap.Clients() {
+		if client.Handshake().HasPMKID() {
 			return true
 		}
 	}
-
 	return false
 }

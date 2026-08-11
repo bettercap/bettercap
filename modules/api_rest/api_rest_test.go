@@ -9,7 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/session"
+	"github.com/evilsocket/islazy/data"
+	"github.com/gorilla/mux"
 )
 
 var (
@@ -86,6 +89,143 @@ func TestNewRestAPI(t *testing.T) {
 	}
 	if mod.allowOrigin != "*" {
 		t.Errorf("Expected default allowOrigin '*', got '%s'", mod.allowOrigin)
+	}
+}
+
+func TestShowWiFiJSONContract(t *testing.T) {
+	s := createMockSession(t)
+	aliases, err := data.NewMemUnsortedKV()
+	if err != nil {
+		t.Fatal(err)
+	}
+	previousWiFi := s.WiFi
+	s.WiFi = network.NewWiFi(s.Interface, aliases, nil, nil)
+	defer func() { s.WiFi = previousWiFi }()
+	previousLAN := s.Lan
+	if s.Lan == nil {
+		s.Lan = network.NewLAN(s.Interface, s.Gateway, aliases, nil, nil)
+	}
+	defer func() { s.Lan = previousLAN }()
+
+	ap, added := s.WiFi.AddIfNew("test-network", "02:00:00:00:00:01", 2412, -42)
+	if !added {
+		t.Fatal("expected a new AP")
+	}
+	ap.SetEncryption("WPA2", "CCMP", "PSK")
+	client, added := ap.AddClientIfNew("02:00:00:00:00:02", 2412, -55)
+	if !added {
+		t.Fatal("expected a new client")
+	}
+	client.AddTraffic(10, 20)
+
+	mod := NewRestAPI(s)
+	req := mux.SetURLVars(httptest.NewRequest(http.MethodGet, "/api/session/wifi/02:00:00:00:00:01", nil), map[string]string{
+		"mac": "02:00:00:00:00:01",
+	})
+	recorder := httptest.NewRecorder()
+	mod.showWiFi(recorder, req)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("got status %d: %s", recorder.Code, recorder.Body.String())
+	}
+
+	var doc map[string]interface{}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &doc); err != nil {
+		t.Fatal(err)
+	}
+	wantKeys := []string{
+		"ipv4", "ipv6", "mac", "hostname", "alias", "vendor", "first_seen", "last_seen", "meta",
+		"frequency", "channel", "rssi", "sent", "received", "encryption", "cipher", "authentication", "wps",
+		"clients", "handshake",
+	}
+	if len(doc) != len(wantKeys) {
+		t.Fatalf("unexpected Wi-Fi API response fields: %#v", doc)
+	}
+	for _, key := range wantKeys {
+		if _, found := doc[key]; !found {
+			t.Fatalf("Wi-Fi API response is missing %q: %#v", key, doc)
+		}
+	}
+	if doc["mac"] != "02:00:00:00:00:01" || doc["encryption"] != "WPA2" {
+		t.Fatalf("unexpected AP response: %#v", doc)
+	}
+	clients, ok := doc["clients"].([]interface{})
+	if !ok || len(clients) != 1 {
+		t.Fatalf("unexpected clients response: %#v", doc["clients"])
+	}
+
+	// The bundled Web UI and integrations such as Pwnagotchi consume the
+	// collection form and expect the same AP shape below wifi.aps.
+	recorder = httptest.NewRecorder()
+	mod.showWiFi(recorder, httptest.NewRequest(http.MethodGet, "/api/session/wifi", nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("collection: got status %d: %s", recorder.Code, recorder.Body.String())
+	}
+	var wifiDoc map[string]interface{}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &wifiDoc); err != nil {
+		t.Fatal(err)
+	}
+	aps, ok := wifiDoc["aps"].([]interface{})
+	if !ok || len(aps) != 1 {
+		t.Fatalf("unexpected AP collection: %#v", wifiDoc["aps"])
+	}
+	if _, ok := aps[0].(map[string]interface{})["clients"].([]interface{}); !ok {
+		t.Fatalf("collection AP clients changed: %#v", aps[0])
+	}
+
+	// A direct client lookup must remain a Station object, without AP-only
+	// clients/handshake fields.
+	req = mux.SetURLVars(httptest.NewRequest(http.MethodGet, "/api/session/wifi/02:00:00:00:00:02", nil), map[string]string{
+		"mac": "02:00:00:00:00:02",
+	})
+	recorder = httptest.NewRecorder()
+	mod.showWiFi(recorder, req)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("client: got status %d: %s", recorder.Code, recorder.Body.String())
+	}
+	var clientDoc map[string]interface{}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &clientDoc); err != nil {
+		t.Fatal(err)
+	}
+	if clientDoc["mac"] != "02:00:00:00:00:02" {
+		t.Fatalf("unexpected client response: %#v", clientDoc)
+	}
+	if _, found := clientDoc["clients"]; found {
+		t.Fatalf("client response gained AP-only fields: %#v", clientDoc)
+	}
+
+	// Recording holds Session.Lock while serializing. WiFi now owns its lock,
+	// so this exact path guards against recursive-lock deadlocks and also checks
+	// the full /api/session -> wifi.aps shape consumed by the Web UI.
+	type marshalResult struct {
+		raw []byte
+		err error
+	}
+	done := make(chan marshalResult, 1)
+	go func() {
+		s.Lock()
+		raw, err := json.Marshal(s)
+		s.Unlock()
+		done <- marshalResult{raw: raw, err: err}
+	}()
+	select {
+	case result := <-done:
+		if result.err != nil {
+			t.Fatal(result.err)
+		}
+		var sessionDoc map[string]interface{}
+		if err := json.Unmarshal(result.raw, &sessionDoc); err != nil {
+			t.Fatal(err)
+		}
+		fullWiFi, ok := sessionDoc["wifi"].(map[string]interface{})
+		if !ok {
+			t.Fatalf("full session WiFi changed: %#v", sessionDoc["wifi"])
+		}
+		fullAPs, ok := fullWiFi["aps"].([]interface{})
+		if !ok || len(fullAPs) != 1 {
+			t.Fatalf("full session AP collection changed: %#v", fullWiFi["aps"])
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("full session serialization deadlocked while Session.Lock was held")
 	}
 }
 
