@@ -176,6 +176,13 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) (*AccessPoin
 	mac = NormalizeMac(mac)
 	alias := w.aliases.GetOr(mac, "")
 	if ap, found := w.aps[mac]; found {
+		// same race as the WPS/Encryption fix and AddClientIfNew's fix
+		// above (see network/wifi_station.go): these embedded Endpoint
+		// fields are read by Station.MarshalJSON() under stationMu, but
+		// w.Lock() (held above) is a *different* mutex -- it protects
+		// w.aps itself, not the fields of an already-published AP that a
+		// concurrent REST/websocket read can observe mid-write.
+		stationMu.Lock()
 		ap.LastSeen = time.Now()
 		if rssi != 0 {
 			ap.RSSI = rssi
@@ -184,10 +191,10 @@ func (w *WiFi) AddIfNew(ssid, mac string, frequency int, rssi int8) (*AccessPoin
 		if !isBogusMacESSID(ssid) {
 			ap.Hostname = ssid
 		}
-
 		if alias != "" {
 			ap.Alias = alias
 		}
+		stationMu.Unlock()
 		return ap, false
 	}
 

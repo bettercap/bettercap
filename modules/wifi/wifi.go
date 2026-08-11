@@ -706,16 +706,14 @@ func (mod *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
 			// Prevent this behaviour by not downgrading the encryption.
 			bssid := dot11.Address3.String()
 			if station, found := mod.Session.WiFi.Get(bssid); found && station.IsOpen() {
-				station.Encryption = enc
-				station.Cipher = cipher
-				station.Authentication = auth
+				station.SetEncryption(enc, cipher, auth)
 			}
 		}
 
 		if ok, bssid, info := packets.Dot11ParseWPS(packet, dot11); ok {
 			if station, found := mod.Session.WiFi.Get(bssid.String()); found {
 				for name, value := range info {
-					station.WPS[name] = value
+					station.SetWPS(name, value)
 				}
 			}
 		}
