@@ -82,7 +82,7 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		channel:         0,
 		stickChan:       0,
 		hopPeriod:       250 * time.Millisecond,
-		hopChanges:      make(chan bool),
+		hopChanges:      make(chan bool, 1),
 		ap:              nil,
 		skipBroken:      true,
 		apRunning:       false,
@@ -192,18 +192,21 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 			mod.stickChan = 0
 			freqs, err := network.GetSupportedFrequencies(mod.iface.Name())
 			mod.setFrequencies(freqs)
-			// hopChanges is unbuffered (make(chan bool)) and this is only a
-			// "recompute now instead of waiting for your next per-channel
-			// timeout" nudge to channelHopper() -- not something anyone needs
-			// delivered. A plain blocking send here deadlocks forever (taking
-			// the whole session's command-execution lock down with it, since
-			// this handler runs under Session.Run()'s mutex) whenever the
-			// hopper goroutine isn't in its select case at this exact instant
-			// -- confirmed live: reliably within 1-2 epochs of a caller (e.g.
-			// pwnagotchi) that calls wifi.recon clear on every single cycle.
-			// A non-blocking send is safe: if it's missed, the hopper's own
-			// time.After(delay) fallback picks up the change within one hop
-			// period regardless.
+			// hopChanges is a "recompute now instead of waiting for your next
+			// per-channel timeout" nudge to channelHopper(). A plain blocking
+			// send here deadlocks forever (taking the whole session's
+			// command-execution lock down with it, since this handler runs
+			// under Session.Run()'s mutex) whenever the hopper goroutine
+			// isn't in its select case at this exact instant -- confirmed
+			// live: reliably within 1-2 epochs of a caller (e.g. pwnagotchi)
+			// that calls wifi.recon clear on every single cycle. The
+			// non-blocking send keeps that safe; the buffer of 1 (rather
+			// than unbuffered) means a nudge that arrives while the hopper
+			// is transiently busy elsewhere still gets queued and picked up
+			// as soon as it re-enters the select, instead of being silently
+			// dropped and relying solely on the hopper's own
+			// time.After(delay) fallback to notice the change up to one hop
+			// period later.
 			select {
 			case mod.hopChanges <- true:
 			default:
@@ -501,10 +504,10 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 
 			// mod.Running() guards the "recon never started" case, but not
 			// the hopper goroutine being transiently busy elsewhere (e.g.
-			// mid channel-change) while genuinely running -- same
-			// unbuffered-channel deadlock risk as wifi.recon clear above,
-			// same fix: non-blocking send, safe because this is only an
-			// optimization nudge (see that comment for the full writeup).
+			// mid channel-change) while genuinely running -- same deadlock
+			// risk as wifi.recon clear above, same fix: non-blocking send
+			// into a buffer-of-1 channel (see that comment for the full
+			// writeup).
 			if mod.Running() {
 				select {
 				case mod.hopChanges <- true:
