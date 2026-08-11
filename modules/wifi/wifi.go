@@ -190,6 +190,15 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		func(args []string) (err error) {
 			mod.ap = nil
 			mod.stickChan = 0
+			// same nil-check wifi.recon.channel clear already has just above --
+			// this handler can run before the module's own iface is set (e.g.
+			// pwnagotchi calling it at the very start of a recon cycle, right
+			// after (re)connecting, before wifi.recon on has actually started
+			// the module) and mod.iface.Name() on a nil iface is a crash, not
+			// a graceful error, without this check
+			if mod.iface == nil {
+				return fmt.Errorf("wifi.interface not set or not found")
+			}
 			freqs, err := network.GetSupportedFrequencies(mod.iface.Name())
 			mod.setFrequencies(freqs)
 			mod.hopChanges <- true
@@ -697,16 +706,14 @@ func (mod *WiFiModule) updateInfo(dot11 *layers.Dot11, packet gopacket.Packet) {
 			// Prevent this behaviour by not downgrading the encryption.
 			bssid := dot11.Address3.String()
 			if station, found := mod.Session.WiFi.Get(bssid); found && station.IsOpen() {
-				station.Encryption = enc
-				station.Cipher = cipher
-				station.Authentication = auth
+				station.SetEncryption(enc, cipher, auth)
 			}
 		}
 
 		if ok, bssid, info := packets.Dot11ParseWPS(packet, dot11); ok {
 			if station, found := mod.Session.WiFi.Get(bssid.String()); found {
 				for name, value := range info {
-					station.WPS[name] = value
+					station.SetWPS(name, value)
 				}
 			}
 		}

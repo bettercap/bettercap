@@ -35,17 +35,49 @@ func (ap *AccessPoint) MarshalJSON() ([]byte, error) {
 	ap.RLock()
 	defer ap.RUnlock()
 
-	doc := apJSON{
-		Station:   ap.Station,
+	// Station.MarshalJSON() (see wifi_station.go) exists to lock wpsMu
+	// while reading the WPS field -- but apJSON embeds *Station
+	// anonymously, and Go promotes an embedded field's MarshalJSON onto
+	// the outer struct too. That means a naive json.Marshal(apJSON{...})
+	// here would call ONLY Station.MarshalJSON() and silently drop
+	// apJSON's own Clients/Handshake fields from the output entirely --
+	// confirmed on-device: this broke pwnagotchi's own agent.py, which
+	// expects every AP object to always have a "clients" key
+	// (KeyError: 'clients'). Marshaling the station and the extra fields
+	// separately, then splicing the two JSON objects together, keeps
+	// both: the wpsMu-locked Station encoding via its own MarshalJSON,
+	// and apJSON's additional fields, without either being silently
+	// discarded by that promotion behavior.
+	stationBytes, err := json.Marshal(ap.Station)
+	if err != nil {
+		return nil, err
+	}
+
+	extra := struct {
+		Clients   []*Station `json:"clients"`
+		Handshake bool       `json:"handshake"`
+	}{
 		Clients:   make([]*Station, 0, len(ap.clients)),
 		Handshake: ap.withKeyMaterial,
 	}
-
 	for _, c := range ap.clients {
-		doc.Clients = append(doc.Clients, c)
+		extra.Clients = append(extra.Clients, c)
+	}
+	extraBytes, err := json.Marshal(extra)
+	if err != nil {
+		return nil, err
 	}
 
-	return json.Marshal(doc)
+	// both are guaranteed-well-formed JSON objects ("{...}") -- splice
+	// them into one object by joining their inner contents with a comma
+	if len(stationBytes) < 2 || len(extraBytes) < 2 {
+		return stationBytes, nil
+	}
+	merged := make([]byte, 0, len(stationBytes)+len(extraBytes))
+	merged = append(merged, stationBytes[:len(stationBytes)-1]...)
+	merged = append(merged, ',')
+	merged = append(merged, extraBytes[1:]...)
+	return merged, nil
 }
 
 func (ap *AccessPoint) UnmarshalJSON(raw []byte) (err error) {
@@ -96,14 +128,20 @@ func (ap *AccessPoint) AddClientIfNew(bssid string, frequency int, rssi int8) (*
 	alias := ap.aliases.GetOr(bssid, "")
 
 	if s, found := ap.clients[bssid]; found {
-		// update
+		// update -- same race as the WPS/Encryption fix in wifi_station.go:
+		// these fields are read by Station.MarshalJSON() under stationMu,
+		// but ap.Lock() (held above) is a *different* mutex that provides
+		// no mutual exclusion against that read. This station is already
+		// published in ap.clients, so a concurrent REST/websocket read
+		// (e.g. pwnagotchi's own session() polling) can observe it mid-write.
+		stationMu.Lock()
 		s.Frequency = frequency
 		s.RSSI = rssi
 		s.LastSeen = time.Now()
-
 		if alias != "" {
 			s.Alias = alias
 		}
+		stationMu.Unlock()
 
 		return s, false
 	}

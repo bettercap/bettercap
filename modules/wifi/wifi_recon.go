@@ -12,6 +12,14 @@ import (
 	"github.com/gopacket/gopacket/layers"
 )
 
+func radioTapValues(radiotap *layers.RadioTap) layers.RadioTapNamespace {
+	if radiotap == nil || len(radiotap.RadioTapValues) == 0 {
+		return layers.RadioTapNamespace{}
+	}
+
+	return radiotap.RadioTapValues[0]
+}
+
 func (mod *WiFiModule) stationPruner() {
 	mod.reads.Add(1)
 	defer mod.reads.Done()
@@ -51,6 +59,8 @@ func (mod *WiFiModule) stationPruner() {
 }
 
 func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+	radio := radioTapValues(radiotap)
+
 	// search for Dot11InformationElementIDSSID
 	if ok, ssid := packets.Dot11ParseIDSSID(packet); ok {
 		from := dot11.Address3
@@ -61,17 +71,17 @@ func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *la
 		}
 
 		if !network.IsZeroMac(from) && !network.IsBroadcastMac(from) {
-			if int(radiotap.DBMAntennaSignal) >= mod.minRSSI {
+			if int(radio.DBMAntennaSignal) >= mod.minRSSI {
 				var frequency int
 				bssid := from.String()
 
 				if found, channel := packets.Dot11ParseDSSet(packet); found {
 					frequency = network.Dot11Chan2Freq(channel)
 				} else {
-					frequency = int(radiotap.ChannelFrequency)
+					frequency = int(radio.ChannelFrequency)
 				}
 
-				if ap, isNew := mod.Session.WiFi.AddIfNew(ssid, bssid, frequency, radiotap.DBMAntennaSignal); !isNew {
+				if ap, isNew := mod.Session.WiFi.AddIfNew(ssid, bssid, frequency, radio.DBMAntennaSignal); !isNew {
 					//set beacon packet on the access point station.
 					//This is for it to be included in the saved handshake file for wifi.assoc
 					ap.Station.Handshake.Beacon = packet
@@ -80,7 +90,7 @@ func (mod *WiFiModule) discoverAccessPoints(radiotap *layers.RadioTap, dot11 *la
 					})
 				}
 			} else {
-				mod.Debug("skipping %s with %d dBm", from.String(), radiotap.DBMAntennaSignal)
+				mod.Debug("skipping %s with %d dBm", from.String(), radio.DBMAntennaSignal)
 			}
 		}
 	}
@@ -159,17 +169,19 @@ func (mod *WiFiModule) discoverProbes(radiotap *layers.RadioTap, dot11 *layers.D
 		FromVendor: network.ManufLookup(clientSTA),
 		FromAlias:  mod.Session.Lan.GetAlias(clientSTA),
 		SSID:       apSSID,
-		RSSI:       radiotap.DBMAntennaSignal,
+		RSSI:       radioTapValues(radiotap).DBMAntennaSignal,
 	})
 }
 
 func (mod *WiFiModule) discoverClients(radiotap *layers.RadioTap, dot11 *layers.Dot11, packet gopacket.Packet) {
+	radio := radioTapValues(radiotap)
+
 	mod.Session.WiFi.EachAccessPoint(func(bssid string, ap *network.AccessPoint) {
 		// packet going to this specific BSSID?
 		if packets.Dot11IsDataFor(dot11, ap.HW) {
 			bssid := dot11.Address2.String()
-			freq := int(radiotap.ChannelFrequency)
-			rssi := radiotap.DBMAntennaSignal
+			freq := int(radio.ChannelFrequency)
+			rssi := radio.DBMAntennaSignal
 
 			if station, isNew := ap.AddClientIfNew(bssid, freq, rssi); isNew {
 				mod.Session.Events.Add("wifi.client.new", ClientEvent{
@@ -187,7 +199,8 @@ func (mod *WiFiModule) discoverDeauths(radiotap *layers.RadioTap, dot11 *layers.
 	}
 
 	// ignore deauth frames that we sent
-	if radiotap.ChannelFrequency == 0 {
+	radio := radioTapValues(radiotap)
+	if radio.ChannelFrequency == 0 {
 		return
 	}
 
@@ -213,7 +226,7 @@ func (mod *WiFiModule) discoverDeauths(radiotap *layers.RadioTap, dot11 *layers.
 	mod.Debug("deauth radio %#v", radiotap)
 
 	mod.Session.Events.Add("wifi.deauthentication", DeauthEvent{
-		RSSI:     radiotap.DBMAntennaSignal,
+		RSSI:     radio.DBMAntennaSignal,
 		AP:       ap,
 		Address1: source,
 		Address2: dot11.Address2.String(),
