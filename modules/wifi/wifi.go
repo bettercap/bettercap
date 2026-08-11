@@ -190,6 +190,15 @@ func NewWiFiModule(s *session.Session) *WiFiModule {
 		func(args []string) (err error) {
 			mod.ap = nil
 			mod.stickChan = 0
+			// same nil-check wifi.recon.channel clear already has just above --
+			// this handler can run before the module's own iface is set (e.g.
+			// pwnagotchi calling it at the very start of a recon cycle, right
+			// after (re)connecting, before wifi.recon on has actually started
+			// the module) and mod.iface.Name() on a nil iface is a crash, not
+			// a graceful error, without this check
+			if mod.iface == nil {
+				return fmt.Errorf("wifi.interface not set or not found")
+			}
 			freqs, err := network.GetSupportedFrequencies(mod.iface.Name())
 			mod.setFrequencies(freqs)
 			mod.hopChanges <- true
