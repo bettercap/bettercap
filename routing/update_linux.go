@@ -3,6 +3,7 @@ package routing
 import (
 	"regexp"
 	"strings"
+	
 
 	"github.com/bettercap/bettercap/v2/core"
 	"github.com/evilsocket/islazy/str"
@@ -15,8 +16,9 @@ var (
 
 func update() ([]Route, error) {
 	table = make([]Route, 0)
+	routeHeadings = nil
 
-	output, err := core.Exec("netstat", []string{"-r", "-n", "-4", "-6"})
+	output, err := core.Exec("sh", []string{"-c", "LC_ALL=C netstat -r -n -4 -6"})
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +37,16 @@ func update() ([]Route, error) {
 				continue
 			}
 
+			        // Ungültige IPv6-"Default"-Route ohne Gateway ignorieren:
+        // ::/0   ::   !n   ...   lo
+        if len(parts) >= 7 &&
+            parts[0] == "::/0" &&
+            parts[1] == "::" &&
+            strings.Contains(parts[2], "!n") &&
+            parts[len(parts)-1] == "lo" {
+            continue
+        }
+
 			// skip line if no route headings found yet
 			if routeHeadings == nil {
 				continue
@@ -42,6 +54,10 @@ func update() ([]Route, error) {
 
 			route := Route{}
 			for i, s := range parts {
+				if i >= len(routeHeadings) {
+					break
+				}
+
 				switch routeHeadings[i] {
 				case "Destination":
 					route.Destination = s
@@ -74,7 +90,7 @@ func update() ([]Route, error) {
 			} else {
 				route.Type = IPv6
 			}
-
+            
 			table = append(table, route)
 		}
 	}
