@@ -57,9 +57,10 @@ jobs:
         if: matrix.os.name == 'windows'
         uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
         with:
+          msystem: UCRT64
           install: |-
-            mingw64/mingw-w64-x86_64-libusb
-            mingw64/mingw-w64-x86_64-pkg-config
+            mingw-w64-ucrt-x86_64-libusb
+            mingw-w64-ucrt-x86_64-pkgconf
       - name: Install Other Dependencies (Windows)
         if: matrix.os.name == 'windows'
         shell: pwsh
@@ -70,7 +71,7 @@ jobs:
           choco install zadig -y
           curl.exe -L "https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip" -o "C:\wpcap-sdk.zip"
           7z x -y "C:\wpcap-sdk.zip" -o"C:\winpcap"
-          echo "D:\a\_temp\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "D:\a\_temp\msys64\ucrt64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Run Tests
         shell: bash
