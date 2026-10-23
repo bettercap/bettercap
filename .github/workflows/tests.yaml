@@ -10,7 +10,7 @@ on:
 jobs:
   test:
     name: ${{ matrix.os.name }} Tests
-    runs-on: ${{ matrix.os.runner }}
+    runs-on: ${{ matrix.os.runs-on }}
 
     strategy:
       fail-fast: false
