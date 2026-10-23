@@ -349,3 +349,53 @@ func BenchmarkNBNSGetMetaNonNBNS(b *testing.B) {
 		_ = NBNSGetMeta(packet)
 	}
 }
+
+func TestNBNSGetMetaEmptyHostname(t *testing.T) {
+	eth := layers.Ethernet{
+		SrcMAC:       net.HardwareAddr{0, 0, 0, 0, 0, 1},
+		DstMAC:       net.HardwareAddr{0, 0, 0, 0, 0, 2},
+		EthernetType: layers.EthernetTypeIPv4,
+	}
+
+	ip := layers.IPv4{
+		Version:  4,
+		TTL:      64,
+		Protocol: layers.IPProtocolUDP,
+		SrcIP:    net.IP{192, 168, 1, 100},
+		DstIP:    net.IP{192, 168, 1, 200},
+	}
+
+	udp := layers.UDP{
+		SrcPort: NBNSPort,
+		DstPort: 12345,
+	}
+
+	payload := make([]byte, NBNSMinRespSize)
+	for i := 57; i < 72; i++ {
+		payload[i] = ' '
+	}
+	udp.Payload = payload
+	udp.SetNetworkLayerForChecksum(&ip)
+
+	buf := gopacket.NewSerializeBuffer()
+	opts := gopacket.SerializeOptions{
+		FixLengths:       true,
+		ComputeChecksums: true,
+	}
+
+	if err := gopacket.SerializeLayers(
+		buf, opts, &eth, &ip, &udp,
+	); err != nil {
+		t.Fatalf("serialize packet: %v", err)
+	}
+
+	packet := gopacket.NewPacket(
+		buf.Bytes(),
+		layers.LayerTypeEthernet,
+		gopacket.Default,
+	)
+
+	if got := NBNSGetMeta(packet); got != nil {
+		t.Fatalf("NBNSGetMeta() = %v, want nil", got)
+	}
+}
