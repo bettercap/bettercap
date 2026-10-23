@@ -1,5 +1,5 @@
 # build stage
-FROM golang:1.24-alpine AS build-env
+FROM golang:1.27-alpine AS build-env
 
 RUN apk add --no-cache ca-certificates
 RUN apk add --no-cache bash gcc g++ binutils-gold iptables wireless-tools build-base libpcap-dev libusb-dev linux-headers libnetfilter_queue-dev git
