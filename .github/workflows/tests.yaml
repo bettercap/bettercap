@@ -1,0 +1,78 @@
+name: Tests
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os.name }} Tests
+    runs-on: ${{ matrix.os.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: ["1.27.x"]
+        os:
+          - name: darwin
+            runs-on: [macos-latest]
+            pretty: 🍎 macOS
+          - name: linux
+            runs-on: [ubuntu-latest]
+            pretty: 🐧 Linux
+          - name: windows
+            runs-on: [windows-latest]
+            pretty: 🪟 Windows
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      # Linux dependencies
+      - name: Install Dependencies (Linux)
+        if: matrix.os.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            p7zip-full \
+            libpcap-dev \
+            libnetfilter-queue-dev \
+            libusb-1.0-0-dev
+
+      # macOS dependencies
+      - name: Install Dependencies (macOS)
+        if: matrix.os.name == 'darwin'
+        run: brew install libpcap libusb p7zip
+
+      # Windows dependencies
+      - name: Install libusb via mingw (Windows)
+        if: matrix.os.name == 'windows'
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
+        with:
+          install: |-
+            mingw64/mingw-w64-x86_64-libusb
+            mingw64/mingw-w64-x86_64-pkg-config
+      - name: Install Other Dependencies (Windows)
+        if: matrix.os.name == 'windows'
+        shell: pwsh
+        run: |
+          choco install openssl.light -y
+          choco install make -y
+          choco install 7zip -y
+          choco install zadig -y
+          curl.exe -L "https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip" -o "C:\wpcap-sdk.zip"
+          7z x -y "C:\wpcap-sdk.zip" -o"C:\winpcap"
+          echo "D:\a\_temp\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          env GO111MODULE=on make test
