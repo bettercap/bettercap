@@ -70,3 +70,33 @@ func TestWiFiSelectionFilterAndSortContract(t *testing.T) {
 		t.Fatalf("unexpected sent sort order: %#v", got)
 	}
 }
+
+func TestWiFiRSSISortContract(t *testing.T) {
+	sess := createMockSession()
+	mod := NewWiFiModule(sess)
+
+	weak, _ := sess.WiFi.AddIfNew("weak", "02:00:00:00:00:01", 2412, -84)
+	mid, _ := sess.WiFi.AddIfNew("mid", "02:00:00:00:00:02", 2412, -64)
+	strong, _ := sess.WiFi.AddIfNew("strong", "02:00:00:00:00:03", 2412, -47)
+
+	sess.Env.Set("wifi.show.filter", "")
+	sess.Env.Set("wifi.show.limit", "0")
+
+	sess.Env.Set("wifi.show.sort", "rssi desc")
+	err, stations := mod.doSelection()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := []string{stations[0].BSSID(), stations[1].BSSID(), stations[2].BSSID()}; got[0] != strong.BSSID() || got[1] != mid.BSSID() || got[2] != weak.BSSID() {
+		t.Fatalf("unexpected rssi desc sort order (want strongest signal first): %#v", got)
+	}
+
+	sess.Env.Set("wifi.show.sort", "rssi asc")
+	err, stations = mod.doSelection()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := []string{stations[0].BSSID(), stations[1].BSSID(), stations[2].BSSID()}; got[0] != weak.BSSID() || got[1] != mid.BSSID() || got[2] != strong.BSSID() {
+		t.Fatalf("unexpected rssi asc sort order (want weakest signal first): %#v", got)
+	}
+}
