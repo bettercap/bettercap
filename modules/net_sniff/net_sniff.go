@@ -29,8 +29,6 @@ func NewSniffer(s *session.Session) *Sniffer {
 		Stats:         nil,
 	}
 
-	mod.SessionModule.Requires("net.recon")
-
 	mod.AddParam(session.NewBoolParameter("net.sniff.verbose",
 		"false",
 		"If true, every captured and parsed packet will be sent to the events.stream for displaying, otherwise only the ones parsed at the application layer (sni, http, etc)."))
@@ -176,6 +174,15 @@ func (mod *Sniffer) Configure() error {
 func (mod *Sniffer) Start() error {
 	if err := mod.Configure(); err != nil {
 		return err
+	}
+
+	// net.recon is only needed for live captures, not when reading from a pcap file (#1292)
+	if mod.Ctx.Source == "" && !mod.Session.IsOn("net.recon") {
+		mod.Info("starting net.recon as a requirement for net.sniff")
+		if err := mod.Session.Run("net.recon on"); err != nil {
+			mod.Ctx.Close()
+			return fmt.Errorf("error while starting module net.recon as a requirement for net.sniff: %v", err)
+		}
 	}
 
 	return mod.SetRunning(true, func() {
