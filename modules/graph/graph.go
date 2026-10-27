@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"path"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -63,8 +65,8 @@ func (g *Graph) EachEdge(cb EdgeCallback) error {
 		var left, right *Node
 		var err error
 
-		leftFileName := path.Join(g.path, fromID+".json")
-		rightFileName := path.Join(g.path, toID+".json")
+		leftFileName := g.nodeFile(fromID)
+		rightFileName := g.nodeFile(toID)
 
 		if left, err = ReadNode(leftFileName); err != nil {
 			return err
@@ -123,7 +125,7 @@ func (g *Graph) Traverse(root string, onNode NodeCallback, onEdge EdgeCallback) 
 
 				// collect all edges starting from this node
 				err = g.edges.ForEachEdgeFrom(nodeID, func(_ string, edges []Edge, toID string) error {
-					rightFileName := path.Join(g.path, toID+".json")
+					rightFileName := g.nodeFile(toID)
 					if right, err := ReadNode(rightFileName); err != nil {
 						return err
 					} else {
@@ -311,7 +313,7 @@ func (g *Graph) FindNode(t NodeType, id string) (*Node, error) {
 	g.Lock()
 	defer g.Unlock()
 
-	nodeFileName := path.Join(g.path, fmt.Sprintf("%s_%s.json", t, id))
+	nodeFileName := g.nodeFile(fmt.Sprintf("%s_%s", t, id))
 	if fs.Exists(nodeFileName) {
 		return ReadNode(nodeFileName)
 	}
@@ -327,7 +329,7 @@ func (g *Graph) FindOtherTypes(t NodeType, id string) ([]*Node, error) {
 
 	for _, otherType := range NodeTypes {
 		if otherType != t {
-			if nodeFileName := path.Join(g.path, fmt.Sprintf("%s_%s.json", otherType, id)); fs.Exists(nodeFileName) {
+			if nodeFileName := g.nodeFile(fmt.Sprintf("%s_%s", otherType, id)); fs.Exists(nodeFileName) {
 				if node, err := ReadNode(nodeFileName); err != nil {
 					return nil, err
 				} else {
@@ -351,7 +353,7 @@ func (g *Graph) CreateNode(t NodeType, id string, entity interface{}, annotation
 		Annotations: annotations,
 	}
 
-	nodeFileName := path.Join(g.path, fmt.Sprintf("%s.json", node.String()))
+	nodeFileName := g.nodeFile(node.String())
 	if err := CreateNode(nodeFileName, node); err != nil {
 		return nil, err
 	}
@@ -365,7 +367,7 @@ func (g *Graph) UpdateNode(node *Node) error {
 	g.Lock()
 	defer g.Unlock()
 
-	nodeFileName := path.Join(g.path, fmt.Sprintf("%s.json", node.String()))
+	nodeFileName := g.nodeFile(node.String())
 	if err := UpdateNode(nodeFileName, node); err != nil {
 		return err
 	}
@@ -426,4 +428,23 @@ func (g *Graph) CreateEdge(from, to *Node, edgeType EdgeType) (*Edge, error) {
 	})
 
 	return &edge, nil
+}
+
+// Node keys embed MAC addresses ("endpoint_8c:1d:89:fe:12:eb"). Windows can't
+// create files with ':' (or the other reserved characters) in their name, so
+// replace them there; other platforms keep the names existing graphs use.
+func safeFileName(name string, windows bool) string {
+	if !windows {
+		return name
+	}
+	return strings.Map(func(r rune) rune {
+		if strings.ContainsRune(`<>:"/\|?*`, r) {
+			return '_'
+		}
+		return r
+	}, name)
+}
+
+func (g *Graph) nodeFile(key string) string {
+	return path.Join(g.path, safeFileName(key, runtime.GOOS == "windows")+".json")
 }
