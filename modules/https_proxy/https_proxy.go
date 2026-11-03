@@ -56,6 +56,10 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"",
 		"HTTPS proxy certification authority TLS key file."))
 
+	mod.AddParam(session.NewIntParameter("https.proxy.leaf.bits",
+		"2048",
+		"Number of bits of the RSA private key of the spoofed per-host certificates. Values below 2048 are rejected by clients enforcing OpenSSL security level >= 2."))
+
 	tls.CertConfigToModule("https.proxy", &mod.SessionModule, tls.DefaultSpoofConfig)
 
 	mod.AddParam(session.NewStringParameter("https.proxy.script",
@@ -111,6 +115,7 @@ func (mod *HttpsProxy) Configure() error {
 	var jsToInject string
 	var whitelist string
 	var blacklist string
+	var leafBits int
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
@@ -140,6 +145,8 @@ func (mod *HttpsProxy) Configure() error {
 		return err
 	} else if err, whitelist = mod.StringParam("https.proxy.whitelist"); err != nil {
 		return err
+	} else if err, leafBits = mod.IntParam("https.proxy.leaf.bits"); err != nil {
+		return err
 	}
 
 	mod.proxy.Blacklist = str.Comma(blacklist)
@@ -163,7 +170,7 @@ func (mod *HttpsProxy) Configure() error {
 	}
 
 	error := mod.proxy.ConfigureTLS(address, proxyPort, httpPort, doRedirect, scriptPath, certFile, keyFile, jsToInject,
-		stripSSL)
+		stripSSL, leafBits)
 
 	// save stripper to share it with other http(s) proxies
 	mod.State.Store("stripper", mod.proxy.Stripper)

@@ -43,6 +43,7 @@ type HTTPProxy struct {
 	Redirection *firewall.Redirection
 	Proxy       *goproxy.ProxyHttpServer
 	Script      *HttpProxyScript
+	LeafBits    int
 	CertFile    string
 	KeyFile     string
 	Blacklist   []string
@@ -277,7 +278,7 @@ func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *
 		cert := getCachedCert(hostname, port)
 		if cert == nil {
 			p.Info("creating spoofed certificate for %s:%d", tui.Yellow(hostname), port)
-			cert, err = btls.SignCertificateForHost(ca, hostname, port)
+			cert, err = btls.SignCertificateForHost(ca, hostname, port, p.LeafBits)
 			if err != nil {
 				p.Warning("cannot sign host certificate with provided CA: %s", err)
 				return nil, err
@@ -299,10 +300,12 @@ func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *
 
 func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, doRedirect bool, scriptPath string,
 	certFile string,
-	keyFile string, jsToInject string, stripSSL bool) (err error) {
+	keyFile string, jsToInject string, stripSSL bool, leafBits int) (err error) {
 	if err = p.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL); err != nil {
 		return err
 	}
+
+	p.LeafBits = leafBits
 
 	p.isTLS = true
 	p.Name = "https.proxy"
