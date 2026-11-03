@@ -13,7 +13,7 @@ import (
 )
 
 // poor man's TLS Client Hello with SNI extension parser :P
-var sniRe = regexp.MustCompile("\x00\x00.{4}\x00.{2}([a-z0-9]+([\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,6})\x00")
+var sniRe = regexp.MustCompile("(?s)\x00\x00.{4}\x00.{2}([a-z0-9]+([\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,6})\x00")
 
 func sniParser(srcIP, dstIP net.IP, payload []byte, pkt gopacket.Packet, tcp *layers.TCP) bool {
 	data := tcp.Payload
