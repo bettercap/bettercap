@@ -243,7 +243,11 @@ func (mod *WiFiModule) doSelection() (err error, stations []*network.Station) {
 			if left.snapshot.RSSI == right.snapshot.RSSI {
 				return left.snapshot.HwAddress < right.snapshot.HwAddress
 			}
-			return left.snapshot.RSSI > right.snapshot.RSSI
+			// every other field sorts ascending here and gets flipped below when
+			// selector.Sort == "desc"; RSSI used '>' as its "ascending" base, which
+			// made it sort strongest-first by default and weakest-first on "desc" -
+			// backwards from what every other column does and from what "desc" means.
+			return left.snapshot.RSSI < right.snapshot.RSSI
 		}
 	})
 

@@ -15,7 +15,10 @@ func (a ByBLERSSISorter) Less(i, j int) bool {
 	if a[i].RSSI == a[j].RSSI {
 		return a[i].Device.ID() < a[j].Device.ID()
 	}
-	return a[i].RSSI > a[j].RSSI
+	// same fix as wifi_show.go's RSSI case: this must sort ascending so the
+	// desc-reversal in ble_show.go's doSelection produces strongest-first,
+	// matching every other sort field and what "desc" is supposed to mean.
+	return a[i].RSSI < a[j].RSSI
 }
 
 type ByBLEMacSorter []*network.BLEDevice
