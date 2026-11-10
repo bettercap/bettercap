@@ -86,6 +86,27 @@ func (f *LinuxFirewall) getCommandLine(r *Redirection, enabled bool) (cmdLine []
 		action = "-D"
 	}
 
+	if r.Drop {
+		// insert at the top of FORWARD so the drop wins over any ACCEPT rules
+		// an existing firewall manager (ufw, firewalld, libvirt, ...) may have
+		// placed earlier in the chain; an appended rule could never be reached.
+		dropAction := "-I"
+		if !enabled {
+			dropAction = "-D"
+		}
+		cmdLine = []string{
+			dropAction, "FORWARD",
+			"-i", r.Interface,
+			"-p", r.Protocol,
+			"--dport", fmt.Sprintf("%d", r.SrcPort),
+		}
+		if r.DropMatch != "" {
+			cmdLine = append(cmdLine, "-m", "string", "--algo", "bm", "--hex-string", r.DropMatch)
+		}
+		cmdLine = append(cmdLine, "-j", "DROP")
+		return
+	}
+
 	if strings.Count(r.DstAddress, ":") < 2 {
 		destination = r.DstAddress
 	} else {
@@ -128,36 +149,49 @@ func (f *LinuxFirewall) EnableRedirection(r *Redirection, enabled bool) error {
 	cmdLine := f.getCommandLine(r, enabled)
 	rkey := r.String()
 	_, found := f.redirections[rkey]
-	cmd := ""
 
-	if strings.Count(r.DstAddress, ":") < 2 {
-		cmd = "iptables"
+	cmds := []string{}
+	if r.Drop {
+		cmds = append(cmds, "iptables")
+		if fs.Exists(IPV6ForwardingFile) {
+			cmds = append(cmds, "ip6tables")
+		}
+	} else if strings.Count(r.DstAddress, ":") < 2 {
+		cmds = append(cmds, "iptables")
 	} else {
-		cmd = "ip6tables"
+		cmds = append(cmds, "ip6tables")
 	}
 
 	if enabled {
 		if found {
 			return fmt.Errorf("Redirection '%s' already enabled.", rkey)
 		}
-
 		f.redirections[rkey] = r
-
-		// accept all
-		if _, err := core.Exec(cmd, []string{"-P", "FORWARD", "ACCEPT"}); err != nil {
-			return err
-		} else if _, err := core.Exec(cmd, cmdLine); err != nil {
-			return err
+		for i, cmd := range cmds {
+			if !r.Drop {
+				if _, err := core.Exec(cmd, []string{"-P", "FORWARD", "ACCEPT"}); err != nil {
+					return err
+				}
+			}
+			if _, err := core.Exec(cmd, cmdLine); err != nil {
+				if i == 0 {
+					delete(f.redirections, rkey)
+					return err
+				}
+				// ip6tables is best-effort
+			}
 		}
 	} else {
 		if !found {
 			return nil
 		}
-
-		delete(f.redirections, r.String())
-
-		if _, err := core.Exec(cmd, cmdLine); err != nil {
-			return err
+		delete(f.redirections, rkey)
+		for i, cmd := range cmds {
+			if _, err := core.Exec(cmd, cmdLine); err != nil {
+				if i == 0 && !r.Drop {
+					return err
+				}
+			}
 		}
 	}
 

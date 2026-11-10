@@ -2,11 +2,15 @@ package dns_spoof
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"net"
+	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 
+	"github.com/bettercap/bettercap/v2/firewall"
 	"github.com/bettercap/bettercap/v2/log"
 	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/packets"
@@ -25,6 +29,8 @@ type DNSSpoofer struct {
 	Hosts         Hosts
 	TTL           uint32
 	All           bool
+	blockReal     bool
+	dropRules     []*firewall.Redirection
 	waitGroup     *sync.WaitGroup
 	pktSourceChan chan gopacket.Packet
 }
@@ -65,6 +71,10 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		"^[0-9]+$",
 		"TTL of spoofed DNS replies."))
 
+	mod.AddParam(session.NewBoolParameter("dns.spoof.block_real",
+		"true",
+		"If true, forwarded DNS queries for spoofed domains are dropped (Linux only) so the real DNS reply cannot win the race against the spoofed one. Non-spoofed domains are unaffected."))
+
 	mod.AddHandler(session.NewModuleHandler("dns.spoof on", "",
 		"Start the DNS spoofer in the background.",
 		func(args []string) error {
@@ -78,6 +88,23 @@ func NewDNSSpoofer(s *session.Session) *DNSSpoofer {
 		}))
 
 	return mod
+}
+
+func dnsNameToHexString(name string) (string, bool) {
+	name = strings.Trim(strings.ToLower(name), ".")
+	if name == "" || strings.ContainsAny(name, "*?[]{}\\") {
+		return "", false
+	}
+	var buf []byte
+	for _, label := range strings.Split(name, ".") {
+		if label == "" || len(label) > 63 {
+			return "", false
+		}
+		buf = append(buf, byte(len(label)))
+		buf = append(buf, []byte(label)...)
+	}
+	buf = append(buf, 0x00)
+	return "|" + hex.EncodeToString(buf) + "|", true
 }
 
 func (mod DNSSpoofer) Name() string {
@@ -115,6 +142,8 @@ func (mod *DNSSpoofer) Configure() error {
 		return err
 	} else if err, ttl = mod.StringParam("dns.spoof.ttl"); err != nil {
 		return err
+	} else if err, mod.blockReal = mod.BoolParam("dns.spoof.block_real"); err != nil {
+		return err
 	}
 
 	mod.Hosts = Hosts{}
@@ -142,6 +171,39 @@ func (mod *DNSSpoofer) Configure() error {
 	if !mod.Session.Firewall.IsForwardingEnabled() {
 		mod.Info("enabling forwarding.")
 		mod.Session.Firewall.EnableForwarding(true)
+	}
+
+	mod.dropRules = nil
+	if mod.blockReal {
+		if runtime.GOOS != "linux" {
+			mod.Warning("dns.spoof.block_real is only supported on Linux, the real DNS reply may win the race.")
+		} else {
+			iface := mod.Session.Interface.Name()
+			blocked := 0
+			for _, entry := range mod.Hosts {
+				match, ok := dnsNameToHexString(entry.Host)
+				if !ok {
+					mod.Warning("can't block real DNS replies for '%s' (wildcard or invalid), the real reply may win the race.", entry.Host)
+					continue
+				}
+				ruleOk := true
+				for _, proto := range []string{"udp", "tcp"} {
+					r := firewall.NewDropForwarding(iface, proto, 53, match)
+					if err := mod.Session.Firewall.EnableRedirection(r, true); err != nil {
+						mod.Warning("could not install DNS block rule for '%s': %v", entry.Host, err)
+						ruleOk = false
+						break
+					}
+					mod.dropRules = append(mod.dropRules, r)
+				}
+				if ruleOk {
+					blocked++
+				}
+			}
+			if blocked > 0 {
+				mod.Info("blocking forwarded DNS queries for %d spoofed name(s) to stop the real reply from winning the race.", blocked)
+			}
+		}
 	}
 
 	_ttl, _ := strconv.Atoi(ttl)
@@ -328,5 +390,12 @@ func (mod *DNSSpoofer) Stop() error {
 		mod.pktSourceChan <- nil
 		mod.Handle.Close()
 		mod.waitGroup.Wait()
+
+		for _, r := range mod.dropRules {
+			if err := mod.Session.Firewall.EnableRedirection(r, false); err != nil {
+				mod.Warning("could not remove DNS block rule: %v", err)
+			}
+		}
+		mod.dropRules = nil
 	})
 }
