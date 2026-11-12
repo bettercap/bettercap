@@ -144,6 +144,10 @@ func (mod *EventsStream) Render(output io.Writer, e session.Event) {
 func (mod *EventsStream) View(e session.Event, refresh bool) {
 	mod.Render(mod.output, e)
 
+	// baseline behavior preserved exactly: refresh only when writing to the
+	// stdout that is current at call time; during the API route's capture
+	// swap the cached writer differs from the global and the refresh is
+	// skipped, so the worker never touches the prompt mid-command
 	if refresh && mod.output == os.Stdout {
 		mod.Session.Refresh()
 	}
