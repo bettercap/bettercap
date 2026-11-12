@@ -228,6 +228,15 @@ func (mod *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 	rescueStdout := os.Stdout
 	stdoutReader, stdoutWriter, _ := os.Pipe()
 	os.Stdout = stdoutWriter
+	// Always restore the real stdout and release the capture pipe, even when
+	// a command fails: leaving the pipe installed would silently swallow
+	// everything the process writes afterwards, including the interactive
+	// prompt. Closing an already-closed writer just returns an error.
+	defer func() {
+		os.Stdout = rescueStdout
+		stdoutWriter.Close()
+		stdoutReader.Close()
+	}()
 
 	for _, aCommand := range session.ParseCommands(cmd.Command) {
 		if err = mod.Session.Run(aCommand); err != nil {
@@ -238,7 +247,6 @@ func (mod *RestAPI) runSessionCommand(w http.ResponseWriter, r *http.Request) {
 
 	stdoutWriter.Close()
 	out, _ := io.ReadAll(stdoutReader)
-	os.Stdout = rescueStdout
 
 	// remove ANSI escape sequences (bash color codes) from output
 	mod.toJSON(w, APIResponse{Success: true, Message: ansiEscapeRegex.ReplaceAllString(string(out), "")})

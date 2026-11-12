@@ -8,14 +8,11 @@ import (
 )
 
 func (mod *EventsStream) doRotation() {
-	if mod.output == os.Stdout {
+	// rotate only a file the module owns, never os.Stdout
+	output := mod.outputFile.Load()
+	if output == nil {
 		return
 	} else if !mod.rotation.Enabled {
-		return
-	}
-
-	output, isFile := mod.output.(*os.File)
-	if !isFile {
 		return
 	}
 
@@ -52,9 +49,12 @@ func (mod *EventsStream) doRotation() {
 			}
 		}
 
-		mod.output, err = os.OpenFile(mod.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		fp, err := os.OpenFile(mod.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			mod.Printf("could not open %s: %s", mod.outputName, err)
+		} else {
+			mod.output = fp
+			mod.outputFile.Store(fp)
 		}
 	}
 }
