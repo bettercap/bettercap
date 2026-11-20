@@ -130,6 +130,11 @@ func (f *PfFirewall) enable(enabled bool) {
 }
 
 func (f PfFirewall) EnableRedirection(r *Redirection, enabled bool) error {
+	if r.Drop {
+		log.Printf("drop rules are only supported on Linux; ignoring drop rule")
+		return nil
+	}
+
 	rule := f.generateRule(r)
 
 	if enabled {
