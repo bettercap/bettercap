@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"testing"
 
+	"github.com/bettercap/bettercap/v2/internal/certtest"
 	"github.com/bettercap/bettercap/v2/tls/emudhra"
 )
 
@@ -29,26 +30,18 @@ func TestLoadTLSConfigEmudhra(t *testing.T) {
 		t.Fatal("expected a parsed leaf")
 	}
 
-	roots := x509.NewCertPool()
-	for _, anchor := range emudhra.Anchors(emudhra.ChainEmSign) {
-		roots.AddCert(anchor)
-	}
-
-	intermediates := x509.NewCertPool()
+	intermediates := []*x509.Certificate{}
 	for _, raw := range cert.Certificate[1:] {
 		parsed, err := x509.ParseCertificate(raw)
 		if err != nil {
 			t.Fatal(err)
 		}
-		intermediates.AddCert(parsed)
+		intermediates = append(intermediates, parsed)
 	}
 
-	if _, err := cert.Leaf.Verify(x509.VerifyOptions{
-		Roots:         roots,
-		Intermediates: intermediates,
-		DNSName:       "iot.example.com",
-		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-	}); err != nil {
+	// Go 1.27.4+ distrusted eMudhra SPKIs by hash, so x509.Verify cannot
+	// be used even though the chain is cryptographically valid.
+	if err := certtest.VerifyChain(cert.Leaf, intermediates, emudhra.AllAnchors(), "iot.example.com"); err != nil {
 		t.Fatalf("advertised certificate does not verify: %v", err)
 	}
 }

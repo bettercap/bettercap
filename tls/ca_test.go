@@ -6,24 +6,20 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bettercap/bettercap/v2/internal/certtest"
 	"github.com/bettercap/bettercap/v2/tls/emudhra"
 )
 
 func verifyServedChain(t *testing.T, cert *stdtls.Certificate, chain string, includeRoot bool) {
 	t.Helper()
 
-	roots := x509.NewCertPool()
-	for _, anchor := range emudhra.AllAnchors() {
-		roots.AddCert(anchor)
-	}
-
-	intermediates := x509.NewCertPool()
+	intermediates := []*x509.Certificate{}
 	for _, raw := range cert.Certificate[1:] {
 		parsed, err := x509.ParseCertificate(raw)
 		if err != nil {
 			t.Fatalf("could not parse chain certificate: %v", err)
 		}
-		intermediates.AddCert(parsed)
+		intermediates = append(intermediates, parsed)
 	}
 
 	// both chain variants are always sent: intermediate, cross-signed
@@ -44,12 +40,9 @@ func verifyServedChain(t *testing.T, cert *stdtls.Certificate, chain string, inc
 		}
 	}
 
-	if _, err := leaf.Verify(x509.VerifyOptions{
-		Roots:         roots,
-		Intermediates: intermediates,
-		DNSName:       "iot.example.com",
-		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-	}); err != nil {
+	// Go 1.27.4+ distrusted eMudhra SPKIs by hash, so x509.Verify cannot
+	// be used here even though the chain is cryptographically valid.
+	if err := certtest.VerifyChain(leaf, intermediates, emudhra.AllAnchors(), "iot.example.com"); err != nil {
 		t.Fatalf("served chain does not verify for %s: %v", chain, err)
 	}
 

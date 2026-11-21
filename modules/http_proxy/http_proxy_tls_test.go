@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bettercap/bettercap/v2/internal/certtest"
 	btls "github.com/bettercap/bettercap/v2/tls"
 	"github.com/bettercap/bettercap/v2/tls/emudhra"
 )
@@ -43,6 +44,30 @@ func startMITMServer(t *testing.T, proxy *HTTPProxy, ca *tls.Certificate, host s
 	return listener.Addr().String()
 }
 
+// verifyMITMChain validates the chain served by the proxy without relying on
+// x509.Verify, which distrusted the eMudhra SPKIs in Go 1.27.4.
+func verifyMITMChain(rawCerts [][]byte, _ [][]*x509.Certificate) error {
+	if len(rawCerts) == 0 {
+		return fmt.Errorf("no certificates presented")
+	}
+
+	leaf, err := x509.ParseCertificate(rawCerts[0])
+	if err != nil {
+		return err
+	}
+
+	intermediates := make([]*x509.Certificate, 0, len(rawCerts)-1)
+	for _, raw := range rawCerts[1:] {
+		parsed, err := x509.ParseCertificate(raw)
+		if err != nil {
+			return err
+		}
+		intermediates = append(intermediates, parsed)
+	}
+
+	return certtest.VerifyChain(leaf, intermediates, emudhra.AllAnchors(), "127.0.0.1")
+}
+
 // TestEmudhraMITMInterceptsHTTPS verifies that the spoofed certificate chain
 // produced for an intercepted host validates against the eMudhra root and that
 // a client with an unrelated trust store rejects it.
@@ -71,15 +96,17 @@ func TestEmudhraMITMInterceptsHTTPS(t *testing.T) {
 
 	addr := startMITMServer(t, proxy, ca, "127.0.0.1", originPort)
 
-	trustedRoots := x509.NewCertPool()
-	for _, anchor := range emudhra.Anchors(emudhra.ChainEmSign) {
-		trustedRoots.AddCert(anchor)
-	}
-
+	// Go 1.27.4+ hardcodes the compromised eMudhra SPKIs in its
+	// distrusted list, so a normal Go client rejects the chain even when
+	// the eMudhra root is trusted. Verify signatures and structure
+	// manually to exercise the interception path.
 	trusted := &http.Client{
 		Timeout: 5 * time.Second,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: trustedRoots},
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify:    true,
+				VerifyPeerCertificate: verifyMITMChain,
+			},
 		},
 	}
 
