@@ -3,6 +3,7 @@ package tls
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -122,7 +123,7 @@ func CreateCertificate(cfg CertConfig, ca bool) (*rsa.PrivateKey, []byte, error)
 	return priv, cert, err
 }
 
-func Generate(cfg CertConfig, certPath string, keyPath string, ca bool) error {
+func writeCertificate(priv *rsa.PrivateKey, certDER []byte, certPath string, keyPath string) error {
 	keyFile, err := os.Create(keyPath)
 	if err != nil {
 		return err
@@ -135,14 +136,42 @@ func Generate(cfg CertConfig, certPath string, keyPath string, ca bool) error {
 	}
 	defer certFile.Close()
 
-	priv, cert, err := CreateCertificate(cfg, ca)
-	if err != nil {
-		return err
-	}
-
 	if err := pem.Encode(keyFile, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
 		return err
 	}
 
-	return pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: cert})
+	return pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+}
+
+func Generate(cfg CertConfig, certPath string, keyPath string, ca bool) error {
+	priv, certDER, err := CreateCertificate(cfg, ca)
+	if err != nil {
+		return err
+	}
+
+	return writeCertificate(priv, certDER, certPath, keyPath)
+}
+
+// GenerateAndLoad generates a certificate, writes it and its key to the given
+// paths and returns the loaded tls.Certificate.
+func GenerateAndLoad(cfg CertConfig, certPath string, keyPath string, ca bool) (*tls.Certificate, error) {
+	priv, certDER, err := CreateCertificate(cfg, ca)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := writeCertificate(priv, certDER, certPath, keyPath); err != nil {
+		return nil, err
+	}
+
+	leaf, err := x509.ParseCertificate(certDER)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tls.Certificate{
+		Certificate: [][]byte{certDER},
+		PrivateKey:  priv,
+		Leaf:        leaf,
+	}, nil
 }

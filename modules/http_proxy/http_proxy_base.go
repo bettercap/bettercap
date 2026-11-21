@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -44,8 +45,7 @@ type HTTPProxy struct {
 	Proxy       *goproxy.ProxyHttpServer
 	Script      *HttpProxyScript
 	LeafBits    int
-	CertFile    string
-	KeyFile     string
+	CA          *tls.Certificate
 	Blacklist   []string
 	Whitelist   []string
 	Sess        *session.Session
@@ -72,7 +72,28 @@ type dummyLogger struct {
 }
 
 func (l dummyLogger) Printf(format string, v ...interface{}) {
-	l.p.Debug("[goproxy.log] %s", str.Trim(fmt.Sprintf(format, v...)))
+	msg := str.Trim(fmt.Sprintf(format, v...))
+
+	// goproxy reports client side failures through its logger: surface the
+	// relevant ones instead of hiding them in the debug output.
+	if strings.Contains(msg, "Cannot handshake client") {
+		switch {
+		case strings.Contains(msg, "i/o timeout"):
+			l.p.Warning("MITM connection timed out before the client sent a request: %s", msg)
+		case strings.Contains(msg, "unknown certificate authority"),
+			strings.Contains(msg, "bad certificate"),
+			strings.Contains(msg, "handshake failure"),
+			strings.Contains(msg, "protocol version"),
+			strings.Contains(msg, "no supported versions"):
+			l.p.Warning("MITM rejected by the client: %s", msg)
+			l.p.Warning("the client does not trust the forged chain, or it performs CRL/OCSP or CT checks")
+		default:
+			l.p.Debug("[goproxy.log] %s", msg)
+		}
+		return
+	}
+
+	l.p.Debug("[goproxy.log] %s", msg)
 }
 
 func NewHTTPProxy(s *session.Session, tag string) *HTTPProxy {
@@ -264,6 +285,8 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRed
 }
 
 func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCtx) (*tls.Config, error) {
+	_, caIsECDSA := ca.PrivateKey.(*ecdsa.PrivateKey)
+
 	return func(host string, ctx *goproxy.ProxyCtx) (c *tls.Config, err error) {
 		parts := strings.SplitN(host, ":", 2)
 		hostname := parts[0]
@@ -292,42 +315,93 @@ func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *
 		config := tls.Config{
 			InsecureSkipVerify: true,
 			Certificates:       []tls.Certificate{*cert},
+			// called on the server side once the handshake is complete
+			VerifyConnection: func(cs tls.ConnectionState) error {
+				p.Info("MITM handshake established with %s:%d (%s, %s)",
+					tui.Yellow(hostname), port, tls.VersionName(cs.Version), tls.CipherSuiteName(cs.CipherSuite))
+				return nil
+			},
+			// called as soon as the client sends its hello, before any
+			// certificate is chosen
+			GetConfigForClient: func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
+				p.logClientHello(hostname, port, hello, caIsECDSA)
+				return nil, nil
+			},
 		}
 
 		return &config, nil
 	}
 }
 
+// logClientHello logs the capabilities advertised by the client so that a
+// failed interception can be diagnosed: a client that does not offer an
+// ECDSA P-384 signature algorithm can never accept a certificate signed by the
+// compromised eMudhra CAs.
+func (p *HTTPProxy) logClientHello(host string, port int, hello *tls.ClientHelloInfo, caIsECDSA bool) {
+	schemes := make([]string, 0, len(hello.SignatureSchemes))
+	hasP384 := false
+	for _, scheme := range hello.SignatureSchemes {
+		schemes = append(schemes, scheme.String())
+		if scheme == tls.ECDSAWithP384AndSHA384 {
+			hasP384 = true
+		}
+	}
+
+	versions := make([]string, 0, len(hello.SupportedVersions))
+	for _, version := range hello.SupportedVersions {
+		versions = append(versions, tls.VersionName(version))
+	}
+
+	p.Info("client hello from %s:%d: versions=[%s] sigalgs=[%s] curves=[%s] sni=%q",
+		tui.Yellow(host), port,
+		strings.Join(versions, " "),
+		strings.Join(schemes, " "),
+		strings.Join(curveNames(hello.SupportedCurves), " "),
+		hello.ServerName)
+
+	if caIsECDSA && !hasP384 {
+		p.Warning("%s:%d does not offer ecdsa_secp384r1_sha384, it cannot accept the eMudhra chain", host, port)
+	}
+}
+
+func curveNames(curves []tls.CurveID) []string {
+	names := make([]string, 0, len(curves))
+	for _, curve := range curves {
+		names = append(names, curve.String())
+	}
+	return names
+}
+
 func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, doRedirect bool, scriptPath string,
-	certFile string,
-	keyFile string, jsToInject string, stripSSL bool, leafBits int) (err error) {
+	ca *tls.Certificate, jsToInject string, stripSSL bool, leafBits int) (err error) {
 	if err = p.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL); err != nil {
 		return err
 	}
 
-	p.LeafBits = leafBits
+	if ca == nil || len(ca.Certificate) == 0 {
+		return fmt.Errorf("no certificate authority configured")
+	}
 
+	if ca.Leaf == nil {
+		if ca.Leaf, err = x509.ParseCertificate(ca.Certificate[0]); err != nil {
+			return err
+		}
+	}
+
+	p.LeafBits = leafBits
 	p.isTLS = true
 	p.Name = "https.proxy"
-	p.CertFile = certFile
-	p.KeyFile = keyFile
+	p.CA = ca
 
-	rawCert, _ := ioutil.ReadFile(p.CertFile)
-	rawKey, _ := ioutil.ReadFile(p.KeyFile)
-	ourCa, err := tls.X509KeyPair(rawCert, rawKey)
-	if err != nil {
-		return err
-	}
+	// spoofed certificates cached by a previous configuration were signed by
+	// a different CA and cannot be reused
+	ClearCertCache()
 
-	if ourCa.Leaf, err = x509.ParseCertificate(ourCa.Certificate[0]); err != nil {
-		return err
-	}
-
-	goproxy.GoproxyCa = ourCa
-	goproxy.OkConnect = &goproxy.ConnectAction{Action: goproxy.ConnectAccept, TLSConfig: p.TLSConfigFromCA(&ourCa)}
-	goproxy.MitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectMitm, TLSConfig: p.TLSConfigFromCA(&ourCa)}
-	goproxy.HTTPMitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectHTTPMitm, TLSConfig: p.TLSConfigFromCA(&ourCa)}
-	goproxy.RejectConnect = &goproxy.ConnectAction{Action: goproxy.ConnectReject, TLSConfig: p.TLSConfigFromCA(&ourCa)}
+	goproxy.GoproxyCa = *ca
+	goproxy.OkConnect = &goproxy.ConnectAction{Action: goproxy.ConnectAccept, TLSConfig: p.TLSConfigFromCA(ca)}
+	goproxy.MitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectMitm, TLSConfig: p.TLSConfigFromCA(ca)}
+	goproxy.HTTPMitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectHTTPMitm, TLSConfig: p.TLSConfigFromCA(ca)}
+	goproxy.RejectConnect = &goproxy.ConnectAction{Action: goproxy.ConnectReject, TLSConfig: p.TLSConfigFromCA(ca)}
 
 	return nil
 }

