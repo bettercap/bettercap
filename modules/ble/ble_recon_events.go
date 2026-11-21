@@ -4,6 +4,8 @@
 package ble
 
 import (
+	"github.com/bettercap/bettercap/v2/network"
+
 	"github.com/bettercap/gatt"
 )
 
@@ -12,15 +14,22 @@ func (mod *BLERecon) onStateChanged(dev gatt.Device, s gatt.State) {
 
 	switch s {
 	case gatt.StatePoweredOn:
-		if mod.currDevice == nil {
-			mod.Debug("starting discovery ...")
-			dev.Scan([]gatt.UUID{}, true)
-		} else {
-			mod.Debug("current device was not cleaned: %v", mod.currDevice)
+		if mod.isConnected() {
+			mod.Debug("already connected, not starting discovery")
+			return
 		}
+
+		if current := mod.currentDevice(); current != nil {
+			mod.Debug("starting discovery for %s ...", current.Device.ID())
+		} else {
+			mod.Debug("starting discovery ...")
+		}
+		dev.Scan([]gatt.UUID{}, true)
 	case gatt.StatePoweredOff:
 		mod.Debug("resetting device instance")
-		mod.gattDevice.StopScanning()
+		if mod.gattDevice != nil {
+			mod.gattDevice.StopScanning()
+		}
 		mod.setCurrentDevice(nil)
 		mod.gattDevice = nil
 
@@ -30,13 +39,25 @@ func (mod *BLERecon) onStateChanged(dev gatt.Device, s gatt.State) {
 }
 
 func (mod *BLERecon) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
-	mod.Session.BLE.AddIfNew(p.ID(), p, a, rssi)
+	dev := mod.Session.BLE.AddIfNew(p.ID(), p, a, rssi)
+	if dev == nil {
+		dev, _ = mod.Session.BLE.Get(p.ID())
+	}
+	if dev == nil || !mod.beginConnect(p.ID()) {
+		return
+	}
+
+	mod.Debug("target %s discovered, connecting ...", p.ID())
+	if mod.gattDevice != nil {
+		mod.gattDevice.StopScanning()
+		mod.gattDevice.Connect(p)
+	}
 }
 
 func (mod *BLERecon) onPeriphDisconnected(p gatt.Peripheral, err error) {
-	mod.Session.Events.Add("ble.device.disconnected", mod.currDevice)
+	mod.Session.Events.Add("ble.device.disconnected", mod.currentDevice())
 	mod.setCurrentDevice(nil)
-	if mod.Running() {
+	if mod.Running() && mod.gattDevice != nil {
 		mod.Debug("device disconnected, restoring discovery.")
 		mod.gattDevice.Scan([]gatt.UUID{}, true)
 	}
@@ -45,13 +66,23 @@ func (mod *BLERecon) onPeriphDisconnected(p gatt.Peripheral, err error) {
 func (mod *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
 	if err != nil {
 		mod.Warning("connected to %s but with error: %s", p.ID(), err)
-		return
-	} else if mod.currDevice == nil {
-		mod.Warning("connected to %s but after the timeout :(", p.ID())
+		mod.onPeriphDisconnected(p, err)
 		return
 	}
 
-	mod.connected = true
+	current := mod.currentDevice()
+	if current == nil {
+		mod.Warning("connected to %s but after the timeout :(", p.ID())
+		p.Device().CancelConnection(p)
+		return
+	} else if target := mod.targetMAC(); target != "" && network.NormalizeMac(p.ID()) != target {
+		mod.Warning("connected to %s instead of %s, disconnecting", p.ID(), target)
+		p.Device().CancelConnection(p)
+		mod.setCurrentDevice(nil)
+		return
+	}
+
+	mod.markConnected()
 
 	defer func(per gatt.Peripheral) {
 		mod.Debug("disconnecting from %s ...", per.ID())
@@ -59,7 +90,7 @@ func (mod *BLERecon) onPeriphConnected(p gatt.Peripheral, err error) {
 		mod.setCurrentDevice(nil)
 	}(p)
 
-	mod.Session.Events.Add("ble.device.connected", mod.currDevice)
+	mod.Session.Events.Add("ble.device.connected", current)
 
 	if err := p.SetMTU(500); err != nil {
 		mod.Warning("failed to set MTU: %s", err)
