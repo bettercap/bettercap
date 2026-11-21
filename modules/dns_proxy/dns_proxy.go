@@ -1,10 +1,11 @@
 package dns_proxy
 
 import (
-	"github.com/bettercap/bettercap/v2/session"
-	"github.com/bettercap/bettercap/v2/tls"
+	"crypto/tls"
 
-	"github.com/evilsocket/islazy/fs"
+	"github.com/bettercap/bettercap/v2/session"
+	btls "github.com/bettercap/bettercap/v2/tls"
+
 	"github.com/evilsocket/islazy/str"
 )
 
@@ -26,24 +27,15 @@ func (mod *DnsProxy) Configure() error {
 	var netProtocol string
 	var proxyPort int
 	var scriptPath string
-	var certFile string
-	var keyFile string
 	var whitelist string
 	var blacklist string
+	var cert *tls.Certificate
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
 	} else if err, dnsPort = mod.IntParam("dns.port"); err != nil {
 		return err
 	} else if err, address = mod.StringParam("dns.proxy.address"); err != nil {
-		return err
-	} else if err, certFile = mod.StringParam("dns.proxy.certificate"); err != nil {
-		return err
-	} else if certFile, err = fs.Expand(certFile); err != nil {
-		return err
-	} else if err, keyFile = mod.StringParam("dns.proxy.key"); err != nil {
-		return err
-	} else if keyFile, err = fs.Expand(keyFile); err != nil {
 		return err
 	} else if err, nameserver = mod.StringParam("dns.proxy.nameserver"); err != nil {
 		return err
@@ -65,26 +57,38 @@ func (mod *DnsProxy) Configure() error {
 	mod.proxy.Whitelist = str.Comma(whitelist)
 
 	if netProtocol == "tcp-tls" {
-		if !fs.Exists(certFile) || !fs.Exists(keyFile) {
-			cfg, err := tls.CertConfigFromModule("dns.proxy", mod.SessionModule)
+		caCfg, err := btls.CAConfigFromModule("dns.proxy", mod.SessionModule)
+		if err != nil {
+			return err
+		}
+		caCfg.IsCA = true
+
+		if caCfg.IsEmudhra() {
+			ca, err := caCfg.Resolve()
 			if err != nil {
 				return err
 			}
-
-			mod.Debug("%+v", cfg)
-			mod.Info("generating proxy certification authority TLS key to %s", keyFile)
-			mod.Info("generating proxy certification authority TLS certificate to %s", certFile)
-			if err := tls.Generate(cfg, certFile, keyFile, true); err != nil {
-				return err
-			}
+			mod.Warning("serving DNS over TLS with revoked eMudhra CA %s", ca)
+		} else if exists, err := caCfg.FilesExist(); err != nil {
+			return err
+		} else if exists {
+			mod.Info("loading proxy certification authority TLS key from %s", caCfg.KeyFile)
+			mod.Info("loading proxy certification authority TLS certificate from %s", caCfg.CertFile)
 		} else {
-			mod.Info("loading proxy certification authority TLS key from %s", keyFile)
-			mod.Info("loading proxy certification authority TLS certificate from %s", certFile)
+			mod.Debug("%+v", caCfg.Config)
+			mod.Info("generating proxy certification authority TLS key to %s", caCfg.KeyFile)
+			mod.Info("generating proxy certification authority TLS certificate to %s", caCfg.CertFile)
+		}
+
+		// DoT clients validate the resolver hostname, which defaults to the
+		// common name of the configured certificate (cloudflare-dns.com).
+		if cert, err = caCfg.LoadForHost(caCfg.Config.CommonName, caCfg.Config.Bits); err != nil {
+			return err
 		}
 	}
 
 	err = mod.proxy.Configure(address, dnsPort, doRedirect, nameserver, netProtocol,
-		proxyPort, scriptPath, certFile, keyFile)
+		proxyPort, scriptPath, cert)
 
 	return err
 }
@@ -139,14 +143,15 @@ func NewDnsProxy(s *session.Session) *DnsProxy {
 	mod.AddParam(session.NewStringParameter("dns.proxy.certificate",
 		"~/.bettercap-ca.cert.pem",
 		"",
-		"DNS proxy certification authority TLS certificate file."))
+		"DoT certificate for 'auto' mode (generated if missing); ignored in 'emudhra' mode."))
 
 	mod.AddParam(session.NewStringParameter("dns.proxy.key",
 		"~/.bettercap-ca.key.pem",
 		"",
-		"DNS proxy certification authority TLS key file."))
+		"DoT private key for 'auto' mode (generated if missing); ignored in 'emudhra' mode."))
 
-	tls.CertConfigToModule("dns.proxy", &mod.SessionModule, tls.DefaultCloudflareDNSConfig)
+	btls.CertConfigToModule("dns.proxy", &mod.SessionModule, btls.DefaultCloudflareDNSConfig)
+	btls.CAConfigToModule("dns.proxy", &mod.SessionModule)
 
 	mod.AddParam(session.NewStringParameter("dns.proxy.script",
 		"",

@@ -101,14 +101,15 @@ func NewZeroGod(s *session.Session) *ZeroGod {
 	mod.AddParam(session.NewStringParameter("zerogod.advertise.certificate",
 		"~/.bettercap-zerogod.cert.pem",
 		"",
-		"TLS certificate file (will be auto generated if filled but not existing) to use for advertised TCP services."))
+		"TLS certificate for 'auto' mode (generated if missing) for advertised TCP services; ignored in 'emudhra' mode."))
 
 	mod.AddParam(session.NewStringParameter("zerogod.advertise.key",
 		"~/.bettercap-zerogod.key.pem",
 		"",
-		"TLS key file (will be auto generated if filled but not existing) to use for advertised TCP services."))
+		"TLS key for 'auto' mode (generated if missing) for advertised TCP services; ignored in 'emudhra' mode."))
 
 	tls.CertConfigToModule("zerogod.advertise", &mod.SessionModule, tls.DefaultLegitConfig)
+	tls.CAConfigToModule("zerogod.advertise", &mod.SessionModule)
 
 	mod.AddParam(session.NewStringParameter("zerogod.ipp.save_path",
 		"~/.bettercap/zerogod/documents/",

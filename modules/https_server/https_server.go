@@ -2,23 +2,22 @@ package https_server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/bettercap/bettercap/v2/session"
-	"github.com/bettercap/bettercap/v2/tls"
+	btls "github.com/bettercap/bettercap/v2/tls"
 
-	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/tui"
 )
 
 type HttpsServer struct {
 	session.SessionModule
-	server   *http.Server
-	certFile string
-	keyFile  string
+	server *http.Server
+	cert   *tls.Certificate
 }
 
 func NewHttpsServer(s *session.Session) *HttpsServer {
@@ -44,14 +43,15 @@ func NewHttpsServer(s *session.Session) *HttpsServer {
 	mod.AddParam(session.NewStringParameter("https.server.certificate",
 		"~/.bettercap-httpd.cert.pem",
 		"",
-		"TLS certificate file (will be auto generated if filled but not existing)."))
+		"Server TLS certificate for 'auto' mode (generated if missing); ignored in 'emudhra' mode."))
 
 	mod.AddParam(session.NewStringParameter("https.server.key",
 		"~/.bettercap-httpd.key.pem",
 		"",
-		"TLS key file (will be auto generated if filled but not existing)."))
+		"Server TLS key for 'auto' mode (generated if missing); ignored in 'emudhra' mode."))
 
-	tls.CertConfigToModule("https.server", &mod.SessionModule, tls.DefaultLegitConfig)
+	btls.CertConfigToModule("https.server", &mod.SessionModule, btls.DefaultLegitConfig)
+	btls.CAConfigToModule("https.server", &mod.SessionModule)
 
 	mod.AddHandler(session.NewModuleHandler("https.server on", "",
 		"Start HTTPS server.",
@@ -85,8 +85,6 @@ func (mod *HttpsServer) Configure() error {
 	var path string
 	var address string
 	var port int
-	var certFile string
-	var keyFile string
 
 	if mod.Running() {
 		return session.ErrAlreadyStarted(mod.Name())
@@ -116,37 +114,34 @@ func (mod *HttpsServer) Configure() error {
 
 	mod.server.Addr = fmt.Sprintf("%s:%d", address, port)
 
-	if err, certFile = mod.StringParam("https.server.certificate"); err != nil {
-		return err
-	} else if certFile, err = fs.Expand(certFile); err != nil {
-		return err
-	}
-
-	if err, keyFile = mod.StringParam("https.server.key"); err != nil {
-		return err
-	} else if keyFile, err = fs.Expand(keyFile); err != nil {
+	caCfg, err := btls.CAConfigFromModule("https.server", mod.SessionModule)
+	if err != nil {
 		return err
 	}
 
-	if !fs.Exists(certFile) || !fs.Exists(keyFile) {
-		cfg, err := tls.CertConfigFromModule("https.server", mod.SessionModule)
+	if caCfg.IsEmudhra() {
+		ca, err := caCfg.Resolve()
 		if err != nil {
 			return err
 		}
-
-		mod.Debug("%+v", cfg)
-		mod.Info("generating server TLS key to %s", keyFile)
-		mod.Info("generating server TLS certificate to %s", certFile)
-		if err := tls.Generate(cfg, certFile, keyFile, false); err != nil {
-			return err
-		}
+		mod.Warning("serving with revoked eMudhra CA %s", ca)
+	} else if exists, err := caCfg.FilesExist(); err != nil {
+		return err
+	} else if exists {
+		mod.Info("loading server TLS key from %s", caCfg.KeyFile)
+		mod.Info("loading server TLS certificate from %s", caCfg.CertFile)
 	} else {
-		mod.Info("loading server TLS key from %s", keyFile)
-		mod.Info("loading server TLS certificate from %s", certFile)
+		mod.Debug("%+v", caCfg.Config)
+		mod.Info("generating server TLS key to %s", caCfg.KeyFile)
+		mod.Info("generating server TLS certificate to %s", caCfg.CertFile)
 	}
 
-	mod.certFile = certFile
-	mod.keyFile = keyFile
+	cert, err := caCfg.LoadForHost(address, caCfg.Config.Bits)
+	if err != nil {
+		return err
+	}
+
+	mod.cert = cert
 
 	return nil
 }
@@ -158,7 +153,10 @@ func (mod *HttpsServer) Start() error {
 
 	return mod.SetRunning(true, func() {
 		mod.Info("starting on https://%s", mod.server.Addr)
-		if err := mod.server.ListenAndServeTLS(mod.certFile, mod.keyFile); err != nil && err != http.ErrServerClosed {
+		mod.server.TLSConfig = &tls.Config{
+			Certificates: []tls.Certificate{*mod.cert},
+		}
+		if err := mod.server.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
 			mod.Error("%v", err)
 			mod.Stop()
 		}

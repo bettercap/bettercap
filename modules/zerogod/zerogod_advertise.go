@@ -12,7 +12,6 @@ import (
 	"time"
 
 	tls_utils "github.com/bettercap/bettercap/v2/tls"
-	"github.com/evilsocket/islazy/fs"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -43,48 +42,36 @@ func isPortRequested(svc *ServiceData, services []*ServiceData) bool {
 	return false
 }
 
-func (mod *ZeroGod) loadTLSConfig() (*tls.Config, error) {
-	var certFile string
-	var keyFile string
-	var err error
-
-	// read tls configuration
-	if err, certFile = mod.StringParam("zerogod.advertise.certificate"); err != nil {
-		return nil, err
-	} else if certFile, err = fs.Expand(certFile); err != nil {
+func (mod *ZeroGod) loadTLSConfig(host string) (*tls.Config, error) {
+	caCfg, err := tls_utils.CAConfigFromModule("zerogod.advertise", mod.SessionModule)
+	if err != nil {
 		return nil, err
 	}
 
-	if err, keyFile = mod.StringParam("zerogod.advertise.key"); err != nil {
-		return nil, err
-	} else if keyFile, err = fs.Expand(keyFile); err != nil {
-		return nil, err
-	}
-
-	if !fs.Exists(certFile) || !fs.Exists(keyFile) {
-		cfg, err := tls_utils.CertConfigFromModule("zerogod.advertise", mod.SessionModule)
+	if caCfg.IsEmudhra() {
+		ca, err := caCfg.Resolve()
 		if err != nil {
 			return nil, err
 		}
-
-		mod.Debug("%+v", cfg)
-		mod.Info("generating server TLS key to %s", keyFile)
-		mod.Info("generating server TLS certificate to %s", certFile)
-		if err := tls_utils.Generate(cfg, certFile, keyFile, false); err != nil {
-			return nil, err
-		}
+		mod.Warning("advertising with revoked eMudhra CA %s", ca)
+	} else if exists, err := caCfg.FilesExist(); err != nil {
+		return nil, err
+	} else if exists {
+		mod.Info("loading server TLS key from %s", caCfg.KeyFile)
+		mod.Info("loading server TLS certificate from %s", caCfg.CertFile)
 	} else {
-		mod.Info("loading server TLS key from %s", keyFile)
-		mod.Info("loading server TLS certificate from %s", certFile)
+		mod.Debug("%+v", caCfg.Config)
+		mod.Info("generating server TLS key to %s", caCfg.KeyFile)
+		mod.Info("generating server TLS certificate to %s", caCfg.CertFile)
 	}
 
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	cert, err := caCfg.LoadForHost(host, caCfg.Config.Bits)
 	if err != nil {
 		return nil, err
 	}
 
 	return &tls.Config{
-		Certificates:       []tls.Certificate{cert},
+		Certificates:       []tls.Certificate{*cert},
 		InsecureSkipVerify: true,
 	}, nil
 }
@@ -94,16 +81,17 @@ func (mod *ZeroGod) startAdvertiser(fileName string) error {
 		return fmt.Errorf("advertiser already started for %s", mod.advertiser.Filename)
 	}
 
-	tlsConfig, err := mod.loadTLSConfig()
-	if err != nil {
-		return err
-	}
-
 	hostName, err := os.Hostname()
 	if err != nil {
 		return fmt.Errorf("could not get hostname: %v", err)
 	}
 	hostName = strings.ReplaceAll(hostName, ".local", "")
+
+	// the mDNS A record advertised by zeroconf points at <hostname>.local
+	tlsConfig, err := mod.loadTLSConfig(hostName + ".local")
+	if err != nil {
+		return err
+	}
 
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {

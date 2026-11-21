@@ -3,9 +3,7 @@ package dns_proxy
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -32,8 +30,6 @@ type DNSProxy struct {
 	Nameserver  string
 	NetProtocol string
 	Script      *DnsProxyScript
-	CertFile    string
-	KeyFile     string
 	Blacklist   []string
 	Whitelist   []string
 	Sess        *session.Session
@@ -61,13 +57,11 @@ func (p *DNSProxy) shouldProxy(clientIP string) bool {
 	return true
 }
 
-func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, nameserver string, netProtocol string, proxyPort int, scriptPath string, certFile string, keyFile string) error {
+func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, nameserver string, netProtocol string, proxyPort int, scriptPath string, cert *tls.Certificate) error {
 	var err error
 
 	p.Address = address
 	p.doRedirect = doRedirect
-	p.CertFile = certFile
-	p.KeyFile = keyFile
 
 	if scriptPath != "" {
 		if err, p.Script = LoadDnsProxyScript(scriptPath, p.Sess); err != nil {
@@ -126,20 +120,9 @@ func (p *DNSProxy) Configure(address string, dnsPort int, doRedirect bool, names
 		Handler: handler,
 	}
 
-	if netProtocol == "tcp-tls" && p.CertFile != "" && p.KeyFile != "" {
-		rawCert, _ := ioutil.ReadFile(p.CertFile)
-		rawKey, _ := ioutil.ReadFile(p.KeyFile)
-		ourCa, err := tls.X509KeyPair(rawCert, rawKey)
-		if err != nil {
-			return err
-		}
-
-		if ourCa.Leaf, err = x509.ParseCertificate(ourCa.Certificate[0]); err != nil {
-			return err
-		}
-
+	if netProtocol == "tcp-tls" && cert != nil {
 		p.Server.TLSConfig = &tls.Config{
-			Certificates: []tls.Certificate{ourCa},
+			Certificates: []tls.Certificate{*cert},
 		}
 	}
 
