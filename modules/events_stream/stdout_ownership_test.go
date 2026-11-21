@@ -107,7 +107,7 @@ func TestBackgroundEventsBypassCapturePipe(t *testing.T) {
 // A module-configured output file must be closed on Stop.
 func TestStopClosesOwnedOutputFile(t *testing.T) {
 	mod := newTestEventsStream(t)
-	logFile := filepath.Join(t.TempDir(), "events.log")
+	logFile := filepath.Join(tempDir(t), "events.log")
 	mod.Session.Env.Set("events.stream.output", logFile)
 	mod.Session.Env.Set("events.stream.ignore", "sys.log")
 	if err := mod.Start(); err != nil {
@@ -141,7 +141,7 @@ func TestRotationOnlyForOwnedFile(t *testing.T) {
 
 	// file mode: size-based rotation renames, closes the old handle, reopens
 	mod = newTestEventsStream(t)
-	logFile := filepath.Join(t.TempDir(), "events.log")
+	logFile := filepath.Join(tempDir(t), "events.log")
 	mod.Session.Env.Set("events.stream.output", logFile)
 	if err := mod.Configure(); err != nil {
 		t.Fatal(err)
@@ -186,7 +186,7 @@ func TestRotationOnlyForOwnedFile(t *testing.T) {
 // unchanged by this fix and is not exercised here.
 func TestOwnershipFieldConcurrentAccess(t *testing.T) {
 	mod := newTestEventsStream(t)
-	logFile := filepath.Join(t.TempDir(), "events.log")
+	logFile := filepath.Join(tempDir(t), "events.log")
 	mod.Session.Env.Set("events.stream.output", logFile)
 	if err := mod.Configure(); err != nil {
 		t.Fatal(err)
