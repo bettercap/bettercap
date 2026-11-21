@@ -179,7 +179,7 @@ func (mod *ZeroGod) logDNS(src net.IP, dns layers.DNS, isLocal bool) {
 	desc += " :\n"
 
 	for _, q := range dns.Questions {
-		desc += fmt.Sprintf("  Q: %s\n", q)
+		desc += fmt.Sprintf("  Q: %s %s %s\n", q.Name, q.Type, q.Class)
 	}
 	for _, a := range dns.Answers {
 		desc += fmt.Sprintf("  A: %s\n", mod.DNSResourceRecord2String(&a))
