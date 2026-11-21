@@ -87,8 +87,7 @@ func NewHttpsProxy(s *session.Session) *HttpsProxy {
 				return err
 			}
 			for _, ca := range emudhra.List() {
-				mod.Info("%-20s chain=%-6s key=%-3d sha256=%s",
-					ca.Name, ca.Chain, ca.KeyValue(), ca.SHA256)
+				mod.Info("%s", ca)
 			}
 			return nil
 		}))
@@ -167,18 +166,14 @@ func (mod *HttpsProxy) Configure() error {
 		if err != nil {
 			return err
 		}
-		if _, err := ca.Recover(); err != nil {
-			return err
-		}
-		mod.Warning("using revoked eMudhra CA %q (chain %s, recovered private key %d)", ca.Name, ca.Chain, ca.KeyValue())
+		mod.Warning("using revoked eMudhra CA %s", ca)
 		mod.Warning("only clients with stale trust stores and no hard-fail CRL/OCSP or CT checks can be intercepted")
 		if ca.Chain == emudhra.ChainEmSign {
 			mod.Info("if the client only trusts AAA Certificate Services, try 'set https.proxy.ca.chain aaa'")
 		}
-		if err, m := mod.Session.Module("http.proxy"); err == nil && !m.Running() {
-			mod.Info("start 'http.proxy' too so CRL/OCSP lookups are answered locally")
-		}
-	} else if caCfg.FilesExist() {
+	} else if exists, err := caCfg.FilesExist(); err != nil {
+		return err
+	} else if exists {
 		mod.Info("loading proxy certification authority TLS key from %s", caCfg.KeyFile)
 		mod.Info("loading proxy certification authority TLS certificate from %s", caCfg.CertFile)
 	} else {

@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	btls "github.com/bettercap/bettercap/v2/tls"
-
 	"github.com/elazarl/goproxy"
 
 	"github.com/evilsocket/islazy/tui"
@@ -22,15 +20,6 @@ func (p *HTTPProxy) fixRequestHeaders(req *http.Request) {
 }
 
 func (p *HTTPProxy) onRequestFilter(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-	// Answer or fail CRL/OCSP lookups for the compromised eMudhra chain
-	// locally instead of letting the client learn it is revoked.
-	if resp, handled := btls.HandleRevocationRequest(req); handled {
-		if p.Sess != nil && p.Sess.Events != nil {
-			p.Debug("handled revocation request for %s", req.Host)
-		}
-		return req, resp
-	}
-
 	if p.shouldProxy(req) {
 		p.Debug("< %s %s %s%s", req.RemoteAddr, req.Method, req.Host, req.URL.Path)
 

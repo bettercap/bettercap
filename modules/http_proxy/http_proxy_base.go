@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/bettercap/bettercap/v2/firewall"
@@ -45,18 +47,18 @@ type HTTPProxy struct {
 	Proxy       *goproxy.ProxyHttpServer
 	Script      *HttpProxyScript
 	LeafBits    int
-	CA          *tls.Certificate
 	Blacklist   []string
 	Whitelist   []string
 	Sess        *session.Session
 	Stripper    *SSLStripper
 
-	jsHook      string
-	isTLS       bool
-	isRunning   bool
-	doRedirect  bool
-	sniListener net.Listener
-	tag         string
+	connectAction atomic.Pointer[goproxy.ConnectAction]
+	jsHook        string
+	isTLS         bool
+	isRunning     bool
+	doRedirect    bool
+	sniListener   net.Listener
+	tag           string
 }
 
 func stripPort(s string) string {
@@ -123,7 +125,10 @@ func NewHTTPProxy(s *session.Session, tag string) *HTTPProxy {
 		}
 	})
 
-	p.Proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+	p.connectAction.Store(goproxy.MitmConnect)
+	p.Proxy.OnRequest().HandleConnectFunc(func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
+		return p.connectAction.Load(), host
+	})
 	p.Proxy.OnRequest().DoFunc(p.onRequestFilter)
 	p.Proxy.OnResponse().DoFunc(p.onResponseFilter)
 
@@ -286,6 +291,10 @@ func (p *HTTPProxy) Configure(address string, proxyPort int, httpPort int, doRed
 
 func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *goproxy.ProxyCtx) (*tls.Config, error) {
 	_, caIsECDSA := ca.PrivateKey.(*ecdsa.PrivateKey)
+	leafBits := p.LeafBits
+	// A previous configuration may still have handshakes in flight.
+	// Keep its certificates and its signer together for their entire lifetime.
+	var certificates sync.Map
 
 	return func(host string, ctx *goproxy.ProxyCtx) (c *tls.Config, err error) {
 		parts := strings.SplitN(host, ":", 2)
@@ -298,29 +307,25 @@ func (p *HTTPProxy) TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *
 			}
 		}
 
-		cert := getCachedCert(hostname, port)
-		if cert == nil {
+		var cert *tls.Certificate
+		cacheKey := fmt.Sprintf("%s:%d", hostname, port)
+		if cached, ok := certificates.Load(cacheKey); ok {
+			cert = cached.(*tls.Certificate)
+			p.Debug("serving spoofed certificate for %s:%d", tui.Yellow(hostname), port)
+		} else {
 			p.Info("creating spoofed certificate for %s:%d", tui.Yellow(hostname), port)
-			cert, err = btls.SignCertificateForHost(ca, hostname, port, p.LeafBits)
+			cert, err = btls.SignCertificateForHost(ca, hostname, port, leafBits)
 			if err != nil {
 				p.Warning("cannot sign host certificate with provided CA: %s", err)
 				return nil, err
 			}
 
-			setCachedCert(hostname, port, cert)
-		} else {
-			p.Debug("serving spoofed certificate for %s:%d", tui.Yellow(hostname), port)
+			certificates.Store(cacheKey, cert)
 		}
 
 		config := tls.Config{
 			InsecureSkipVerify: true,
 			Certificates:       []tls.Certificate{*cert},
-			// called on the server side once the handshake is complete
-			VerifyConnection: func(cs tls.ConnectionState) error {
-				p.Info("MITM handshake established with %s:%d (%s, %s)",
-					tui.Yellow(hostname), port, tls.VersionName(cs.Version), tls.CipherSuiteName(cs.CipherSuite))
-				return nil
-			},
 			// called as soon as the client sends its hello, before any
 			// certificate is chosen
 			GetConfigForClient: func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
@@ -374,10 +379,6 @@ func curveNames(curves []tls.CurveID) []string {
 
 func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, doRedirect bool, scriptPath string,
 	ca *tls.Certificate, jsToInject string, stripSSL bool, leafBits int) (err error) {
-	if err = p.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL); err != nil {
-		return err
-	}
-
 	if ca == nil || len(ca.Certificate) == 0 {
 		return fmt.Errorf("no certificate authority configured")
 	}
@@ -388,20 +389,17 @@ func (p *HTTPProxy) ConfigureTLS(address string, proxyPort int, httpPort int, do
 		}
 	}
 
+	if err = p.Configure(address, proxyPort, httpPort, doRedirect, scriptPath, jsToInject, stripSSL); err != nil {
+		return err
+	}
+
 	p.LeafBits = leafBits
 	p.isTLS = true
 	p.Name = "https.proxy"
-	p.CA = ca
-
-	// spoofed certificates cached by a previous configuration were signed by
-	// a different CA and cannot be reused
-	ClearCertCache()
-
-	goproxy.GoproxyCa = *ca
-	goproxy.OkConnect = &goproxy.ConnectAction{Action: goproxy.ConnectAccept, TLSConfig: p.TLSConfigFromCA(ca)}
-	goproxy.MitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectMitm, TLSConfig: p.TLSConfigFromCA(ca)}
-	goproxy.HTTPMitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectHTTPMitm, TLSConfig: p.TLSConfigFromCA(ca)}
-	goproxy.RejectConnect = &goproxy.ConnectAction{Action: goproxy.ConnectReject, TLSConfig: p.TLSConfigFromCA(ca)}
+	p.connectAction.Store(&goproxy.ConnectAction{
+		Action:    goproxy.ConnectMitm,
+		TLSConfig: p.TLSConfigFromCA(ca),
+	})
 
 	return nil
 }

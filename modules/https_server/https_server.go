@@ -124,8 +124,10 @@ func (mod *HttpsServer) Configure() error {
 		if err != nil {
 			return err
 		}
-		mod.Warning("serving with revoked eMudhra CA %q (chain %s, recovered private key %d)", ca.Name, ca.Chain, ca.KeyValue())
-	} else if caCfg.FilesExist() {
+		mod.Warning("serving with revoked eMudhra CA %s", ca)
+	} else if exists, err := caCfg.FilesExist(); err != nil {
+		return err
+	} else if exists {
 		mod.Info("loading server TLS key from %s", caCfg.KeyFile)
 		mod.Info("loading server TLS certificate from %s", caCfg.CertFile)
 	} else {

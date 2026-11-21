@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/bettercap/bettercap/v2/log"
-	"github.com/bettercap/bettercap/v2/tls/emudhra"
 )
 
 func getServerCertificate(host string, port int) *x509.Certificate {
@@ -94,12 +93,6 @@ func SignCertificateForHost(ca *tls.Certificate, host string, port int, bits int
 	// OpenSSL security level >= 2
 	if bits <= 0 {
 		bits = 2048
-	}
-
-	// When signing with a compromised eMudhra CA, point the leaf's CRL
-	// distribution point at the synthetic CRL served by the proxy.
-	if emudhraCA, found := emudhra.ByCertificate(x509ca); found {
-		template.CRLDistributionPoints = []string{emudhraCA.CRLDistributionPoint(srvCert)}
 	}
 
 	var certpriv *rsa.PrivateKey

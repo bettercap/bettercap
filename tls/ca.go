@@ -101,25 +101,33 @@ func (c CAConfig) IsEmudhra() bool {
 	return strings.EqualFold(strings.TrimSpace(c.Mode), "emudhra")
 }
 
-// FilesExist returns true when both the certificate and key files are present.
-func (c CAConfig) FilesExist() bool {
-	return fileExists(c.CertFile) && fileExists(c.KeyFile)
+// FilesExist reports whether the local pair can be loaded. Generation is safe
+// only when both paths are absent.
+func (c CAConfig) FilesExist() (bool, error) {
+	if c.CertFile == "" || c.KeyFile == "" {
+		return false, fmt.Errorf("no certificate or key file configured")
+	}
+	certExists, err := regularFileExists(c.CertFile)
+	if err != nil {
+		return false, err
+	}
+	keyExists, err := regularFileExists(c.KeyFile)
+	if err != nil {
+		return false, err
+	}
+	if certExists != keyExists {
+		return false, fmt.Errorf("incomplete TLS pair: certificate %q and key %q must both exist", c.CertFile, c.KeyFile)
+	}
+	return certExists, nil
 }
 
-// Resolve returns the selected eMudhra CA and registers it for the synthetic
-// CRL responder.
+// Resolve looks up the selected CA by its public certificate.
 func (c CAConfig) Resolve() (*emudhra.CA, error) {
 	if !c.IsEmudhra() {
 		return nil, fmt.Errorf("CA mode is %q, not emudhra", c.Mode)
 	}
 
-	ca, err := emudhra.Find(c.Emudhra, c.Chain)
-	if err != nil {
-		return nil, err
-	}
-
-	emudhra.Register(ca)
-	return ca, nil
+	return emudhra.Find(c.Emudhra, c.Chain)
 }
 
 // Describe returns a human readable description of the selected CA.
@@ -129,7 +137,7 @@ func (c CAConfig) Describe() string {
 		if err != nil {
 			return "eMudhra: " + err.Error()
 		}
-		return fmt.Sprintf("eMudhra CA %q (chain %s, recovered key %d)", ca.Name, ca.Chain, ca.KeyValue())
+		return "eMudhra CA " + ca.String()
 	}
 	return "local CA " + c.CertFile
 }
@@ -140,11 +148,12 @@ func (c CAConfig) Describe() string {
 func (c CAConfig) Load() (*tls.Certificate, error) {
 	switch strings.ToLower(strings.TrimSpace(c.Mode)) {
 	case "", "auto":
-		if c.FilesExist() {
-			return LoadCertificate(c.CertFile, c.KeyFile)
+		exists, err := c.FilesExist()
+		if err != nil {
+			return nil, err
 		}
-		if c.CertFile == "" || c.KeyFile == "" {
-			return nil, fmt.Errorf("no certificate or key file configured")
+		if exists {
+			return LoadCertificate(c.CertFile, c.KeyFile)
 		}
 		return GenerateAndLoad(c.Config, c.CertFile, c.KeyFile, c.IsCA)
 	case "emudhra":
@@ -231,8 +240,6 @@ func SignLeafForHost(ca *emudhra.CA, cfg CertConfig, host string, bits int, incl
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
-		// point revocation checks at the synthetic CRL served by the proxy
-		CRLDistributionPoints: []string{ca.CRLDistributionPoint(nil)},
 	}
 
 	if ip := net.ParseIP(host); ip != nil {
@@ -268,7 +275,16 @@ func SignLeafForHost(ca *emudhra.CA, cfg CertConfig, host string, bits int, incl
 	}, nil
 }
 
-func fileExists(path string) bool {
+func regularFileExists(path string) (bool, error) {
 	info, err := os.Stat(path)
-	return err == nil && !info.IsDir()
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if !info.Mode().IsRegular() {
+		return false, fmt.Errorf("%q is not a regular file", path)
+	}
+	return true, nil
 }

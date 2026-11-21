@@ -124,23 +124,31 @@ func CreateCertificate(cfg CertConfig, ca bool) (*rsa.PrivateKey, []byte, error)
 }
 
 func writeCertificate(priv *rsa.PrivateKey, certDER []byte, certPath string, keyPath string) error {
-	keyFile, err := os.Create(keyPath)
+	key := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}
+	if err := writeNewPEM(keyPath, 0600, key); err != nil {
+		return err
+	}
+	if err := writeNewPEM(certPath, 0644, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}); err != nil {
+		os.Remove(keyPath)
+		return err
+	}
+	return nil
+}
+
+// Exclusive creation protects files that appear after checking the two paths.
+func writeNewPEM(path string, mode os.FileMode, block *pem.Block) error {
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
 	if err != nil {
 		return err
 	}
-	defer keyFile.Close()
-
-	certFile, err := os.Create(certPath)
+	err = pem.Encode(file, block)
+	if closeErr := file.Close(); err == nil {
+		err = closeErr
+	}
 	if err != nil {
-		return err
+		os.Remove(path)
 	}
-	defer certFile.Close()
-
-	if err := pem.Encode(keyFile, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
-		return err
-	}
-
-	return pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	return err
 }
 
 func Generate(cfg CertConfig, certPath string, keyPath string, ca bool) error {

@@ -3,6 +3,7 @@ package tls
 import (
 	stdtls "crypto/tls"
 	"crypto/x509"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -131,16 +132,16 @@ func TestCAConfigAutoGeneratesAndReloads(t *testing.T) {
 		IsCA: true,
 	}
 
-	if cfg.FilesExist() {
-		t.Fatal("expected no certificate files yet")
+	if exists, err := cfg.FilesExist(); exists || err != nil {
+		t.Fatalf("new pair: exists=%t, err=%v", exists, err)
 	}
 
 	generated, err := cfg.Load()
 	if err != nil {
 		t.Fatalf("could not generate CA: %v", err)
 	}
-	if !cfg.FilesExist() {
-		t.Fatal("expected the certificate files to be written")
+	if exists, err := cfg.FilesExist(); !exists || err != nil {
+		t.Fatalf("generated pair: exists=%t, err=%v", exists, err)
 	}
 
 	reloaded, err := cfg.Load()
@@ -179,5 +180,59 @@ func TestCAConfigErrors(t *testing.T) {
 	}
 	if _, err := (CAConfig{Mode: "auto"}).Resolve(); err == nil {
 		t.Fatal("expected Resolve to fail for auto mode")
+	}
+}
+
+func TestAutoPreservesExistingTLSFiles(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		existingKey bool
+		directory   bool
+	}{
+		{"key with certificate directory", true, true},
+		{"certificate with key directory", false, true},
+		{"key without certificate", true, false},
+		{"certificate without key", false, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			cfg := CAConfig{CertFile: filepath.Join(dir, "cert"), KeyFile: filepath.Join(dir, "key"), Config: CertConfig{Bits: 2048}}
+			existing, other := cfg.CertFile, cfg.KeyFile
+			if tc.existingKey {
+				existing, other = cfg.KeyFile, cfg.CertFile
+			}
+			const original = "existing TLS material"
+			if err := os.WriteFile(existing, []byte(original), 0600); err != nil {
+				t.Fatal(err)
+			}
+			if tc.directory {
+				if err := os.Mkdir(other, 0700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if _, err := cfg.Load(); err == nil {
+				t.Fatal("expected invalid TLS pair to fail")
+			}
+			data, err := os.ReadFile(existing)
+			if err != nil || string(data) != original {
+				t.Fatalf("existing file changed (read error %v)", err)
+			}
+			if !tc.directory {
+				if _, err := os.Stat(other); !os.IsNotExist(err) {
+					t.Fatalf("missing file was created: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestGenerateAndLoadRollsBackNewKey(t *testing.T) {
+	dir := t.TempDir()
+	key := filepath.Join(dir, "key")
+	if _, err := GenerateAndLoad(CertConfig{Bits: 2048}, dir, key, true); err == nil {
+		t.Fatal("expected creation of the certificate to fail")
+	}
+	if _, err := os.Stat(key); !os.IsNotExist(err) {
+		t.Fatalf("incomplete TLS key left on disk: %v", err)
 	}
 }

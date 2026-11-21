@@ -1,6 +1,7 @@
 package emudhra
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -25,15 +26,6 @@ var expectedFingerprints = map[string]string{
 	"aaa/EM EV TLS CA - G3C":    "FD9D5C2DBBD4995AB69B8D50C439D9527B00529199C2FD01B2174EB58F07021F",
 	"aaa/EM OV TLS CA - G3B":    "5F1DED4DD590AF74631290CF073B122A2AAC6A1FA479778A0BD43579BD832699",
 	"aaa/EM OV TLS CA - G3C":    "7485B51C0ED192878FA1D2F948FB529AE1842CC5086C4B67F7BE5B2039DE9489",
-}
-
-var expectedKeys = map[string]int{
-	"EM DV TLS CA - G3B": 156,
-	"EM DV TLS CA - G3C": 230,
-	"EM EV TLS CA - G3B": 115,
-	"EM EV TLS CA - G3C": 56,
-	"EM OV TLS CA - G3B": 155,
-	"EM OV TLS CA - G3C": 4,
 }
 
 func TestEmbeddedFingerprints(t *testing.T) {
@@ -62,16 +54,10 @@ func TestEmbeddedFingerprints(t *testing.T) {
 	}
 }
 
-func TestRecoveredKeys(t *testing.T) {
-	for _, ca := range List() {
-		want, found := expectedKeys[ca.Name]
-		if !found {
-			t.Fatalf("no expected key for %s", ca.Name)
-		}
-		got := ca.KeyValue()
-		if got != want {
-			t.Errorf("%s: recovered key is %d, expected %d", ca.Name, got, want)
-		}
+func TestCAStringUsesPublicFingerprint(t *testing.T) {
+	ca := &CA{Name: "test CA", Chain: "test", SHA256: "ABCDEF"}
+	if got, want := ca.String(), "test CA (chain test, SHA-256 ABCDEF)"; got != want {
+		t.Fatalf("CA description = %q, want %q", got, want)
 	}
 }
 
@@ -181,8 +167,8 @@ func TestChainVariantsShareKey(t *testing.T) {
 		if other == nil {
 			t.Fatalf("%s: missing %s counterpart", ca.Name, ca.Chain)
 		}
-		if ca.KeyValue() != other.KeyValue() {
-			t.Fatalf("%s: key mismatch between chains (%d != %d)", ca.Name, ca.KeyValue(), other.KeyValue())
+		if !bytes.Equal(ca.Cert.RawSubjectPublicKeyInfo, other.Cert.RawSubjectPublicKeyInfo) {
+			t.Fatalf("%s: public keys differ between chains", ca.Name)
 		}
 	}
 }
@@ -192,7 +178,7 @@ func TestFind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ca.Name != "EM OV TLS CA - G3C" || ca.KeyValue() != 4 {
+	if ca.Name != "EM OV TLS CA - G3C" {
 		t.Fatalf("unexpected CA: %s", ca)
 	}
 
@@ -246,54 +232,6 @@ func signTestLeaf(t *testing.T, ca *CA) *x509.Certificate {
 		t.Fatal(err)
 	}
 	return leaf
-}
-
-func TestCRL(t *testing.T) {
-	ca, err := Find("auto", ChainEmSign)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	der, err := ca.CRL()
-	if err != nil {
-		t.Fatalf("could not create the CRL: %v", err)
-	}
-
-	crl, err := x509.ParseRevocationList(der)
-	if err != nil {
-		t.Fatalf("could not parse the CRL: %v", err)
-	}
-	if crl.Issuer.String() != ca.Cert.Subject.String() {
-		t.Fatalf("CRL issuer is %q, expected %q", crl.Issuer, ca.Cert.Subject)
-	}
-	if err := crl.CheckSignatureFrom(ca.Cert); err != nil {
-		t.Fatalf("CRL signature does not verify: %v", err)
-	}
-	if len(crl.RevokedCertificateEntries) != 0 {
-		t.Fatalf("expected an empty CRL, got %d entries", len(crl.RevokedCertificateEntries))
-	}
-	if !crl.NextUpdate.After(crl.ThisUpdate) {
-		t.Fatal("expected NextUpdate after ThisUpdate")
-	}
-	if ca.CRLPath() != "/"+ca.CRLToken() {
-		t.Fatalf("unexpected CRL path %q", ca.CRLPath())
-	}
-}
-
-func TestCRLDistributionPoint(t *testing.T) {
-	ca, err := Find("auto", ChainAAA)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	origin := &x509.Certificate{CRLDistributionPoints: []string{"http://crl.example.com/foo.crl"}}
-	if got, want := ca.CRLDistributionPoint(origin), "http://crl.example.com"+ca.CRLPath(); got != want {
-		t.Fatalf("got %q, expected %q", got, want)
-	}
-
-	if got, want := ca.CRLDistributionPoint(nil), "http://crl.emsign.com"+ca.CRLPath(); got != want {
-		t.Fatalf("got %q, expected %q", got, want)
-	}
 }
 
 func BenchmarkRecover(b *testing.B) {

@@ -12,7 +12,6 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
@@ -21,12 +20,10 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
-	"net/url"
 	"path"
 	"sort"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -54,10 +51,6 @@ type CA struct {
 	keyOnce sync.Once
 	key     *ecdsa.PrivateKey
 	keyErr  error
-
-	crlMu     sync.Mutex
-	crl       []byte
-	crlExpiry time.Time
 }
 
 var (
@@ -241,16 +234,6 @@ func (ca *CA) Recover() (*ecdsa.PrivateKey, error) {
 	return ca.key, ca.keyErr
 }
 
-// KeyValue returns the recovered private scalar, or 0 if it could not be
-// recovered.
-func (ca *CA) KeyValue() int {
-	key, err := ca.Recover()
-	if err != nil {
-		return 0
-	}
-	return int(key.D.Int64())
-}
-
 func recoverKey(cert *x509.Certificate) (*ecdsa.PrivateKey, error) {
 	pub, ok := cert.PublicKey.(*ecdsa.PublicKey)
 	if !ok {
@@ -375,116 +358,6 @@ func AllAnchors() []*x509.Certificate {
 	return anchors
 }
 
-// --- revocation support ---
-
-var (
-	activeMu sync.RWMutex
-	active   = map[string]*CA{}
-)
-
-// Register makes ca available to the synthetic CRL responder. It is called
-// automatically whenever a CA is loaded through tls.CAConfig.
-func Register(ca *CA) {
-	if ca == nil {
-		return
-	}
-	activeMu.Lock()
-	defer activeMu.Unlock()
-	active[ca.CRLToken()] = ca
-}
-
-// HasActive reports whether at least one eMudhra CA is registered.
-func HasActive() bool {
-	activeMu.RLock()
-	defer activeMu.RUnlock()
-	return len(active) > 0
-}
-
-// ByCertificate returns the registered CA matching cert, if any.
-func ByCertificate(cert *x509.Certificate) (*CA, bool) {
-	if cert == nil {
-		return nil, false
-	}
-	activeMu.RLock()
-	defer activeMu.RUnlock()
-	for _, ca := range active {
-		if bytes.Equal(ca.Cert.Raw, cert.Raw) {
-			return ca, true
-		}
-	}
-	return nil, false
-}
-
-// FindByCRLPath returns the CA whose synthetic CRL path is a suffix of path.
-func FindByCRLPath(path string) (*CA, bool) {
-	activeMu.RLock()
-	defer activeMu.RUnlock()
-	for token, ca := range active {
-		if strings.HasSuffix(path, "/"+token) {
-			return ca, true
-		}
-	}
-	return nil, false
-}
-
-// CRLToken returns the unique token used in the CRL distribution point of
-// leaves signed by ca.
-func (ca *CA) CRLToken() string {
-	return "bettercap-" + ca.Cert.SerialNumber.Text(16) + ".crl"
-}
-
-// CRLPath returns the HTTP path of the synthetic CRL for ca.
-func (ca *CA) CRLPath() string {
-	return "/" + ca.CRLToken()
-}
-
-// CRLDistributionPoint returns the CRL URL to embed in a leaf signed by ca.
-// When the origin certificate advertises a CRL host, that host is reused so
-// the request looks ordinary; the path is always the synthetic CRL path.
-func (ca *CA) CRLDistributionPoint(origin *x509.Certificate) string {
-	host := "crl.emsign.com"
-	if origin != nil {
-		for _, dp := range origin.CRLDistributionPoints {
-			if parsed, err := url.Parse(dp); err == nil && parsed.Host != "" {
-				host = parsed.Host
-				break
-			}
-		}
-	}
-	return "http://" + host + ca.CRLPath()
-}
-
-// CRL returns an empty CRL signed by the CA. It is cached until shortly
-// before its next update.
-func (ca *CA) CRL() ([]byte, error) {
-	ca.crlMu.Lock()
-	defer ca.crlMu.Unlock()
-
-	if ca.crl != nil && time.Now().Before(ca.crlExpiry.Add(-time.Hour)) {
-		return ca.crl, nil
-	}
-
-	key, err := ca.Recover()
-	if err != nil {
-		return nil, err
-	}
-
-	now := time.Now()
-	nextUpdate := now.Add(7 * 24 * time.Hour)
-	der, err := x509.CreateRevocationList(rand.Reader, &x509.RevocationList{
-		Number:     big.NewInt(1),
-		ThisUpdate: now.Add(-time.Hour),
-		NextUpdate: nextUpdate,
-	}, ca.Cert, key)
-	if err != nil {
-		return nil, err
-	}
-
-	ca.crl = der
-	ca.crlExpiry = nextUpdate
-	return der, nil
-}
-
 // TLSCertificate returns the intermediate as a tls.Certificate ready to sign
 // leaf certificates, optionally including the trust anchor in the chain.
 func (ca *CA) TLSCertificate(includeRoot bool) (*tls.Certificate, error) {
@@ -512,5 +385,5 @@ func (ca *CA) TLSCertificate(includeRoot bool) (*tls.Certificate, error) {
 
 // String implements fmt.Stringer.
 func (ca *CA) String() string {
-	return fmt.Sprintf("%s (%s, key %d)", ca.Name, ca.Chain, ca.KeyValue())
+	return fmt.Sprintf("%s (chain %s, SHA-256 %s)", ca.Name, ca.Chain, ca.SHA256)
 }
