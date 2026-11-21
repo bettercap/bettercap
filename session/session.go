@@ -94,7 +94,8 @@ type Session struct {
 	UnkCmdCallback   UnknownCommandCallback
 	Firewall         firewall.FirewallManager
 
-	script *Script
+	script     *Script
+	cpuProfile *os.File
 }
 
 func WithOptions(opts core.Options) (s *Session, err error) {
@@ -122,10 +123,16 @@ func WithOptions(opts core.Options) (s *Session, err error) {
 		if err != nil {
 			return nil, err
 		}
-		defer f.Close()
 		if err := pprof.StartCPUProfile(f); err != nil {
+			f.Close()
 			return nil, err
 		}
+		s.cpuProfile = f
+		defer func() {
+			if err != nil {
+				s.stopCPUProfile()
+			}
+		}()
 	}
 
 	if bufSize := s.Options.PcapBufSize; bufSize != -1 {
@@ -161,6 +168,14 @@ func New() (*Session, error) {
 	return WithOptions(opts)
 }
 
+func (s *Session) stopCPUProfile() {
+	if s.cpuProfile != nil {
+		pprof.StopCPUProfile()
+		s.cpuProfile.Close()
+		s.cpuProfile = nil
+	}
+}
+
 func (s *Session) Lock() {
 	s.Env.Lock()
 	s.Lan.Lock()
@@ -181,6 +196,8 @@ func (s *Session) Module(name string) (err error, mod Module) {
 }
 
 func (s *Session) Close() {
+	defer s.stopCPUProfile()
+
 	if s.Options.PrintVersion {
 		return
 	}
@@ -205,10 +222,6 @@ func (s *Session) Close() {
 		if err := s.Env.Save(envFile); err != nil {
 			fmt.Printf("error while storing the environment to %s: %s", envFile, err)
 		}
-	}
-
-	if s.Options.CpuProfile != "" {
-		pprof.StopCPUProfile()
 	}
 
 	if s.Options.MemProfile != "" {

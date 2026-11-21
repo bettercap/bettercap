@@ -195,10 +195,14 @@ func (m SessionModule) DecParam(name string) (error, float64) {
 }
 
 func (m SessionModule) BoolParam(name string) (error, bool) {
-	if err, v := m.params[name].Get(m.Session); err != nil {
-		return err, false
+	if p, found := m.params[name]; found {
+		if err, v := p.Get(m.Session); err != nil {
+			return err, false
+		} else {
+			return nil, v.(bool)
+		}
 	} else {
-		return nil, v.(bool)
+		return fmt.Errorf("parameter %s does not exist", name), false
 	}
 }
 
