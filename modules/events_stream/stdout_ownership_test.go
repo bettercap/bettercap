@@ -146,6 +146,13 @@ func TestRotationOnlyForOwnedFile(t *testing.T) {
 	if err := mod.Configure(); err != nil {
 		t.Fatal(err)
 	}
+	// Windows can't remove a file that is still open, so close whatever
+	// handle is live (fp2 after rotation) before t.TempDir() cleanup runs.
+	t.Cleanup(func() {
+		if fp := mod.outputFile.Swap(nil); fp != nil {
+			fp.Close()
+		}
+	})
 	fp := mod.outputFile.Load()
 	if fp == nil {
 		t.Fatal("expected owned output file")
