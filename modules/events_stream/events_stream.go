@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/bettercap/bettercap/v2/session"
@@ -26,9 +27,15 @@ type rotation struct {
 
 type EventsStream struct {
 	session.SessionModule
-	timeFormat    string
-	outputName    string
-	output        io.Writer
+	timeFormat string
+	outputName string
+	output     io.Writer
+	// outputFile is non-nil only when the module opened the output file
+	// itself (events.stream.output parameter). It marks ownership for
+	// Stop(); output keeps its historical value (os.Stdout captured at
+	// configure time, or the owned file). Accessed atomically because the
+	// event worker reads it while Stop or log rotation may replace it.
+	outputFile    atomic.Pointer[os.File]
 	rotation      rotation
 	triggerList   *TriggerList
 	waitFor       string
@@ -241,11 +248,15 @@ func (mod *EventsStream) Configure() (err error) {
 	if err, output = mod.StringParam("events.stream.output"); err == nil {
 		if output == "" {
 			mod.output = os.Stdout
+			mod.outputFile.Store(nil)
 		} else if mod.outputName, err = fs.Expand(output); err == nil {
-			mod.output, err = os.OpenFile(mod.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			var fp *os.File
+			fp, err = os.OpenFile(mod.outputName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
 				return err
 			}
+			mod.output = fp
+			mod.outputFile.Store(fp)
 		}
 	}
 
@@ -360,10 +371,12 @@ func (mod *EventsStream) startWaitingFor(tag string, timeout int) error {
 func (mod *EventsStream) Stop() error {
 	return mod.SetRunning(false, func() {
 		mod.quit <- true
-		if mod.output != os.Stdout {
-			if fp, ok := mod.output.(*os.File); ok {
-				fp.Close()
-			}
+		// Only close a file the module opened itself; never os.Stdout,
+		// which is shared with the interactive prompt and may not be
+		// identical to the current global os.Stdout (the API command route
+		// swaps it while commands run).
+		if fp := mod.outputFile.Swap(nil); fp != nil {
+			fp.Close()
 		}
 	})
 }

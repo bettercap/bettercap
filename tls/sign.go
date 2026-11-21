@@ -30,7 +30,7 @@ func getServerCertificate(host string, port int) *x509.Certificate {
 	return state.PeerCertificates[0]
 }
 
-func SignCertificateForHost(ca *tls.Certificate, host string, port int) (cert *tls.Certificate, err error) {
+func SignCertificateForHost(ca *tls.Certificate, host string, port int, bits int) (cert *tls.Certificate, err error) {
 	var x509ca *x509.Certificate
 	var template x509.Certificate
 
@@ -89,8 +89,14 @@ func SignCertificateForHost(ca *tls.Certificate, host string, port int) (cert *t
 		}
 	}
 
+	// default to 2048 bits, the minimum accepted by clients enforcing
+	// OpenSSL security level >= 2
+	if bits <= 0 {
+		bits = 2048
+	}
+
 	var certpriv *rsa.PrivateKey
-	if certpriv, err = rsa.GenerateKey(rand.Reader, 1024); err != nil {
+	if certpriv, err = rsa.GenerateKey(rand.Reader, bits); err != nil {
 		return
 	}
 
@@ -100,7 +106,7 @@ func SignCertificateForHost(ca *tls.Certificate, host string, port int) (cert *t
 	}
 
 	return &tls.Certificate{
-		Certificate: [][]byte{derBytes, ca.Certificate[0]},
+		Certificate: append([][]byte{derBytes}, ca.Certificate...),
 		PrivateKey:  certpriv,
 	}, nil
 }
