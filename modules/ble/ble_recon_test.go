@@ -4,17 +4,65 @@
 package ble
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/bettercap/bettercap/v2/network"
 	"github.com/bettercap/bettercap/v2/session"
+
+	"github.com/bettercap/gatt"
 )
 
 var (
 	testSession *session.Session
 	sessionOnce sync.Once
 )
+
+type fakeGattDevice struct {
+	gatt.Device
+	scanCalls      int
+	stopScanCalls  int
+	connectCalls   int
+	cancelCalls    int
+	lastPeripheral gatt.Peripheral
+}
+
+func (d *fakeGattDevice) Scan([]gatt.UUID, bool) {
+	d.scanCalls++
+}
+
+func (d *fakeGattDevice) StopScanning() {
+	d.stopScanCalls++
+}
+
+func (d *fakeGattDevice) Connect(p gatt.Peripheral) {
+	d.connectCalls++
+	d.lastPeripheral = p
+}
+
+func (d *fakeGattDevice) CancelConnection(p gatt.Peripheral) {
+	d.cancelCalls++
+}
+
+type fakePeripheral struct {
+	gatt.Peripheral
+	id     string
+	device gatt.Device
+}
+
+func (p *fakePeripheral) Device() gatt.Device {
+	return p.device
+}
+
+func (p *fakePeripheral) ID() string {
+	return p.id
+}
+
+func (p *fakePeripheral) Name() string {
+	return "fake"
+}
 
 func createMockSession(t *testing.T) *session.Session {
 	sessionOnce.Do(func() {
@@ -23,6 +71,7 @@ func createMockSession(t *testing.T) *session.Session {
 		if err != nil {
 			t.Fatalf("Failed to create session: %v", err)
 		}
+		testSession.BLE = network.NewBLE(testSession.Aliases, nil, nil)
 	})
 	return testSession
 }
@@ -52,7 +101,7 @@ func TestNewBLERecon(t *testing.T) {
 		t.Errorf("Expected deviceId -1, got %d", mod.deviceId)
 	}
 
-	if mod.connected {
+	if mod.isConnected() {
 		t.Error("Should not be connected initially")
 	}
 
@@ -61,7 +110,7 @@ func TestNewBLERecon(t *testing.T) {
 	}
 
 	if mod.devTTL != 30 {
-		t.Errorf("Expected device TTL 30, got %d", mod.devTTL)
+		t.Errorf("Expected devTTL 30, got %d", mod.devTTL)
 	}
 
 	// Check channels
@@ -188,10 +237,10 @@ func TestSetCurrentDevice(t *testing.T) {
 
 	// Test setting nil device
 	mod.setCurrentDevice(nil)
-	if mod.currDevice != nil {
+	if mod.currentDevice() != nil {
 		t.Error("Current device should be nil")
 	}
-	if mod.connected {
+	if mod.isConnected() {
 		t.Error("Should not be connected after setting nil device")
 	}
 }
@@ -272,9 +321,260 @@ func TestWriteBuffer(t *testing.T) {
 	t.Skip("Skipping writeBuffer test - may hang accessing BLE hardware")
 }
 
-func TestEnumAllTheThings(t *testing.T) {
-	// Skip this test as it may hang trying to access BLE hardware
-	t.Skip("Skipping enumAllTheThings test - may hang accessing BLE hardware")
+const fakeBLEMac = "AA:BB:CC:DD:EE:FF"
+
+func addTestBLEDevice(t *testing.T, mod *BLERecon, p gatt.Peripheral) *network.BLEDevice {
+	t.Helper()
+
+	mod.Session.BLE.Clear()
+	mod.Session.BLE.AddIfNew(p.ID(), p, nil, -50)
+
+	dev, found := mod.Session.BLE.Get(p.ID())
+	if !found {
+		t.Fatalf("device %s was not added to the session", p.ID())
+	}
+	return dev
+}
+
+func TestEnumAllTheThingsScansBeforeConnecting(t *testing.T) {
+	s := createMockSession(t)
+	mod := NewBLERecon(s)
+
+	fake := &fakeGattDevice{}
+	mod.gattDevice = fake
+
+	mod.Session.Env.Set("ble.timeout", "60")
+	defer mod.Session.Env.Set("ble.timeout", "5")
+	defer mod.setCurrentDevice(nil)
+
+	oldDevice := &fakeGattDevice{}
+	p := &fakePeripheral{id: fakeBLEMac, device: oldDevice}
+	dev := addTestBLEDevice(t, mod, p)
+
+	if err := mod.enumAllTheThings(network.NormalizeMac(fakeBLEMac)); err != nil {
+		t.Fatalf("enumAllTheThings failed: %v", err)
+	}
+
+	if fake.scanCalls != 1 {
+		t.Errorf("Expected one scan before connecting, got %d", fake.scanCalls)
+	}
+	if fake.connectCalls != 0 {
+		t.Errorf("Expected no connection before target discovery, got %d", fake.connectCalls)
+	}
+	if current := mod.currentDevice(); current != dev {
+		t.Errorf("Expected current device %p, got %p", dev, current)
+	}
+	if target := mod.targetMAC(); target != network.NormalizeMac(fakeBLEMac) {
+		t.Errorf("Expected target %s, got %s", network.NormalizeMac(fakeBLEMac), target)
+	}
+}
+
+func TestEnumAllTheThingsReusesCurrentPeripheral(t *testing.T) {
+	s := createMockSession(t)
+	mod := NewBLERecon(s)
+
+	fake := &fakeGattDevice{}
+	mod.gattDevice = fake
+
+	mod.Session.Env.Set("ble.timeout", "60")
+	defer mod.Session.Env.Set("ble.timeout", "5")
+	defer mod.setCurrentDevice(nil)
+
+	p := &fakePeripheral{id: fakeBLEMac, device: fake}
+	dev := addTestBLEDevice(t, mod, p)
+
+	if err := mod.enumAllTheThings(network.NormalizeMac(fakeBLEMac)); err != nil {
+		t.Fatalf("enumAllTheThings failed: %v", err)
+	}
+
+	if fake.scanCalls != 0 {
+		t.Errorf("Expected the current peripheral to be reused without scanning, got %d scans", fake.scanCalls)
+	}
+	if fake.connectCalls != 1 {
+		t.Errorf("Expected one immediate connection, got %d", fake.connectCalls)
+	}
+	if fake.lastPeripheral != p {
+		t.Errorf("Expected connection to %p, got %p", p, fake.lastPeripheral)
+	}
+	if current := mod.currentDevice(); current != dev {
+		t.Errorf("Expected current device %p, got %p", dev, current)
+	}
+}
+
+func TestOnStateChangedScansWhileEnumerationIsPending(t *testing.T) {
+	s := createMockSession(t)
+	mod := NewBLERecon(s)
+
+	fake := &fakeGattDevice{}
+	p := &fakePeripheral{id: fakeBLEMac, device: fake}
+	dev := addTestBLEDevice(t, mod, p)
+
+	mod.setCurrentDevice(dev)
+	mod.setTargetMAC(network.NormalizeMac(fakeBLEMac))
+	defer mod.setCurrentDevice(nil)
+
+	mod.onStateChanged(fake, gatt.StatePoweredOn)
+
+	if fake.scanCalls != 1 {
+		t.Errorf("Expected discovery to start for a pending enum, got %d scans", fake.scanCalls)
+	}
+}
+
+func TestOnPeriphDiscoveredConnectsOnlyTarget(t *testing.T) {
+	s := createMockSession(t)
+	mod := NewBLERecon(s)
+
+	fake := &fakeGattDevice{}
+	mod.gattDevice = fake
+
+	p := &fakePeripheral{id: fakeBLEMac, device: fake}
+	dev := addTestBLEDevice(t, mod, p)
+	mod.setCurrentDevice(dev)
+	mod.setTargetMAC(network.NormalizeMac(fakeBLEMac))
+	defer mod.setCurrentDevice(nil)
+
+	other := &fakePeripheral{id: "11:22:33:44:55:66", device: fake}
+	mod.onPeriphDiscovered(other, nil, -40)
+	if fake.connectCalls != 0 {
+		t.Errorf("Expected no connection for a non-target device, got %d", fake.connectCalls)
+	}
+
+	mod.onPeriphDiscovered(p, nil, -50)
+	if fake.connectCalls != 1 {
+		t.Errorf("Expected one connection for the target, got %d", fake.connectCalls)
+	}
+	if fake.stopScanCalls != 1 {
+		t.Errorf("Expected scanning to stop before connecting, got %d", fake.stopScanCalls)
+	}
+	if fake.lastPeripheral != p {
+		t.Errorf("Expected connection to %p, got %p", p, fake.lastPeripheral)
+	}
+
+	mod.onPeriphDiscovered(p, nil, -50)
+	if fake.connectCalls != 1 {
+		t.Errorf("Expected duplicate advertisements to be ignored, got %d connections", fake.connectCalls)
+	}
+}
+
+func TestOnPeriphConnectedCancelsLateConnection(t *testing.T) {
+	s := createMockSession(t)
+	mod := NewBLERecon(s)
+
+	fake := &fakeGattDevice{}
+	p := &fakePeripheral{id: fakeBLEMac, device: fake}
+	mod.setCurrentDevice(nil)
+
+	mod.onPeriphConnected(p, nil)
+
+	if fake.cancelCalls != 1 {
+		t.Errorf("Expected a late connection to be cancelled, got %d", fake.cancelCalls)
+	}
+}
+
+func TestOnPeriphConnectedRejectsUnexpectedDevice(t *testing.T) {
+	s := createMockSession(t)
+	mod := NewBLERecon(s)
+
+	fake := &fakeGattDevice{}
+	p := &fakePeripheral{id: fakeBLEMac, device: fake}
+	dev := addTestBLEDevice(t, mod, p)
+	mod.setCurrentDevice(dev)
+	mod.setTargetMAC(network.NormalizeMac(fakeBLEMac))
+	defer mod.setCurrentDevice(nil)
+
+	other := &fakePeripheral{id: "11:22:33:44:55:66", device: fake}
+	mod.onPeriphConnected(other, nil)
+
+	if fake.cancelCalls != 1 {
+		t.Errorf("Expected an unexpected connection to be cancelled, got %d", fake.cancelCalls)
+	}
+	if mod.currentDevice() != nil {
+		t.Error("Expected state cleanup after an unexpected connection")
+	}
+}
+
+func TestOnPeriphConnectedErrorClearsState(t *testing.T) {
+	s := createMockSession(t)
+	mod := NewBLERecon(s)
+
+	fake := &fakeGattDevice{}
+	p := &fakePeripheral{id: fakeBLEMac, device: fake}
+	dev := addTestBLEDevice(t, mod, p)
+	mod.setCurrentDevice(dev)
+	mod.setTargetMAC(network.NormalizeMac(fakeBLEMac))
+
+	mod.onPeriphConnected(p, fmt.Errorf("connection failed"))
+
+	if mod.currentDevice() != nil {
+		t.Error("Expected state cleanup after a failed connection")
+	}
+	if mod.targetMAC() != "" {
+		t.Error("Expected target cleanup after a failed connection")
+	}
+}
+
+func TestOnStateChangedSkipsScanWhileConnected(t *testing.T) {
+	s := createMockSession(t)
+	mod := NewBLERecon(s)
+
+	fake := &fakeGattDevice{}
+	mod.markConnected()
+	defer mod.setCurrentDevice(nil)
+
+	mod.onStateChanged(fake, gatt.StatePoweredOn)
+
+	if fake.scanCalls != 0 {
+		t.Errorf("Expected no discovery while connected, got %d scans", fake.scanCalls)
+	}
+}
+
+func TestEnumAllTheThingsCanRunAgain(t *testing.T) {
+	s := createMockSession(t)
+	mod := NewBLERecon(s)
+
+	fake := &fakeGattDevice{}
+	mod.gattDevice = fake
+
+	mod.Session.Env.Set("ble.timeout", "60")
+	defer mod.Session.Env.Set("ble.timeout", "5")
+	defer mod.setCurrentDevice(nil)
+
+	oldDevice := &fakeGattDevice{}
+	p := &fakePeripheral{id: fakeBLEMac, device: oldDevice}
+	dev := addTestBLEDevice(t, mod, p)
+	mac := network.NormalizeMac(fakeBLEMac)
+
+	if err := mod.enumAllTheThings(mac); err != nil {
+		t.Fatalf("first enumAllTheThings failed: %v", err)
+	}
+	if fake.scanCalls != 1 {
+		t.Fatalf("Expected the first enumeration to scan a new gatt instance, got %d", fake.scanCalls)
+	}
+
+	current := &fakePeripheral{id: fakeBLEMac, device: fake}
+	mod.onPeriphDiscovered(current, nil, -50)
+	if fake.connectCalls != 1 {
+		t.Fatalf("Expected first enumeration to connect, got %d", fake.connectCalls)
+	}
+
+	mod.markConnected()
+	mod.onPeriphDisconnected(nil, nil)
+	if mod.currentDevice() != nil {
+		t.Fatalf("Expected state cleanup after disconnect, got %v", mod.currentDevice())
+	}
+	if dev.Device != current {
+		t.Fatalf("Expected stored device to retain the current peripheral")
+	}
+
+	if err := mod.enumAllTheThings(mac); err != nil {
+		t.Fatalf("second enumAllTheThings failed: %v", err)
+	}
+	if fake.scanCalls != 1 {
+		t.Errorf("Expected repeat enumeration to reuse the current peripheral, got %d scans", fake.scanCalls)
+	}
+	if fake.connectCalls != 2 {
+		t.Errorf("Expected repeat enumeration to reconnect immediately, got %d", fake.connectCalls)
+	}
 }
 
 // Benchmark tests - using singleton session to avoid flag redefinition

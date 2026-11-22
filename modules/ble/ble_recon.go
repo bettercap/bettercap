@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	golog "log"
+	"sync"
 	"time"
 
 	"github.com/bettercap/bettercap/v2/modules/utils"
@@ -18,14 +19,21 @@ import (
 	"github.com/evilsocket/islazy/str"
 )
 
+type bleState struct {
+	sync.Mutex
+	currDevice *network.BLEDevice
+	targetMAC  string
+	connected  bool
+	connecting bool
+}
+
 type BLERecon struct {
 	session.SessionModule
 	deviceId    int
 	gattDevice  gatt.Device
-	currDevice  *network.BLEDevice
+	state       *bleState
 	writeUUID   *gatt.UUID
 	writeData   []byte
-	connected   bool
 	connTimeout int
 	devTTL      int
 	quit        chan bool
@@ -38,12 +46,11 @@ func NewBLERecon(s *session.Session) *BLERecon {
 		SessionModule: session.NewSessionModule("ble.recon", s),
 		deviceId:      -1,
 		gattDevice:    nil,
+		state:         &bleState{},
 		quit:          make(chan bool),
 		done:          make(chan bool),
 		connTimeout:   5,
 		devTTL:        30,
-		currDevice:    nil,
-		connected:     false,
 	}
 
 	mod.InitState("scanning")
@@ -80,8 +87,8 @@ func NewBLERecon(s *session.Session) *BLERecon {
 	enum := session.NewModuleHandler("ble.enum MAC", "ble.enum "+network.BLEMacValidator,
 		"Enumerate services and characteristics for the given BLE device.",
 		func(args []string) error {
-			if mod.isEnumerating() {
-				return fmt.Errorf("an enumeration for %s is already running, please wait.", mod.currDevice.Device.ID())
+			if dev := mod.currentDevice(); dev != nil {
+				return fmt.Errorf("an enumeration for %s is already running, please wait.", dev.Device.ID())
 			}
 
 			mod.writeData = nil
@@ -141,8 +148,53 @@ func (mod BLERecon) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
+func (mod *BLERecon) currentDevice() *network.BLEDevice {
+	mod.state.Lock()
+	defer mod.state.Unlock()
+	return mod.state.currDevice
+}
+
+func (mod *BLERecon) isConnected() bool {
+	mod.state.Lock()
+	defer mod.state.Unlock()
+	return mod.state.connected
+}
+
+func (mod *BLERecon) targetMAC() string {
+	mod.state.Lock()
+	defer mod.state.Unlock()
+	return mod.state.targetMAC
+}
+
+func (mod *BLERecon) setTargetMAC(mac string) {
+	mod.state.Lock()
+	defer mod.state.Unlock()
+	mod.state.targetMAC = network.NormalizeMac(mac)
+}
+
+func (mod *BLERecon) beginConnect(mac string) bool {
+	mod.state.Lock()
+	defer mod.state.Unlock()
+
+	if mod.state.connected || mod.state.connecting || mod.state.currDevice == nil || mod.state.targetMAC == "" {
+		return false
+	} else if network.NormalizeMac(mac) != mod.state.targetMAC {
+		return false
+	}
+
+	mod.state.connecting = true
+	return true
+}
+
+func (mod *BLERecon) markConnected() {
+	mod.state.Lock()
+	defer mod.state.Unlock()
+	mod.state.connected = true
+	mod.state.connecting = false
+}
+
 func (mod *BLERecon) isEnumerating() bool {
-	return mod.currDevice != nil
+	return mod.currentDevice() != nil
 }
 
 type dummyWriter struct {
@@ -193,8 +245,15 @@ func (mod *BLERecon) Configure() (err error) {
 const blePrompt = "{blb}{fw}BLE {fb}{reset} {bold}» {reset}"
 
 func (mod *BLERecon) Start() error {
+	hadDevice := mod.gattDevice != nil
+
 	if err := mod.Configure(); err != nil {
 		return err
+	}
+
+	if hadDevice && mod.gattDevice != nil {
+		mod.Debug("starting discovery ...")
+		mod.gattDevice.Scan([]gatt.UUID{}, true)
 	}
 
 	mod.SetPrompt(blePrompt)
@@ -207,9 +266,9 @@ func (mod *BLERecon) Start() error {
 		if mod.gattDevice != nil {
 			mod.Info("stopping scan ...")
 
-			if mod.currDevice != nil && mod.currDevice.Device != nil {
-				mod.Debug("resetting connection with %v", mod.currDevice.Device)
-				mod.gattDevice.CancelConnection(mod.currDevice.Device)
+			if dev := mod.currentDevice(); dev != nil && dev.Device != nil {
+				mod.Debug("resetting connection with %v", dev.Device)
+				mod.gattDevice.CancelConnection(dev.Device)
 			}
 
 			mod.Debug("stopping device")
@@ -253,8 +312,12 @@ func (mod *BLERecon) pruner() {
 }
 
 func (mod *BLERecon) setCurrentDevice(dev *network.BLEDevice) {
-	mod.connected = false
-	mod.currDevice = dev
+	mod.state.Lock()
+	mod.state.connected = false
+	mod.state.connecting = false
+	mod.state.targetMAC = ""
+	mod.state.currDevice = dev
+	mod.state.Unlock()
 	mod.State.Store("scanning", dev)
 }
 
@@ -273,22 +336,34 @@ func (mod *BLERecon) enumAllTheThings(mac string) error {
 	}
 
 	mod.setCurrentDevice(dev)
+	mod.setTargetMAC(mac)
+
+	hadDevice := mod.gattDevice != nil
 	if err := mod.Configure(); err != nil && err.Error() != session.ErrAlreadyStarted("ble.recon").Error() {
 		return err
 	}
 
-	mod.Info("connecting to %s ...", mac)
+	mod.Info("looking for %s before connecting ...", mac)
 
-	go func() {
-		time.Sleep(time.Duration(mod.connTimeout) * time.Second)
-		if mod.isEnumerating() && !mod.connected {
+	timeout := time.Duration(mod.connTimeout) * time.Second
+	go func(timeout time.Duration) {
+		time.Sleep(timeout)
+		if mod.isEnumerating() && !mod.isConnected() {
 			mod.Warning("connection timeout")
-			mod.Session.Events.Add("ble.connection.timeout", mod.currDevice)
+			mod.Session.Events.Add("ble.connection.timeout", mod.currentDevice())
 			mod.onPeriphDisconnected(nil, nil)
 		}
-	}()
+	}(timeout)
 
-	mod.gattDevice.Connect(dev.Device)
+	if hadDevice && dev.Device != nil && dev.Device.Device() == mod.gattDevice && mod.beginConnect(mac) {
+		mod.Debug("connecting to %s using the current gatt instance ...", mac)
+		mod.gattDevice.Connect(dev.Device)
+		return nil
+	}
+
+	if hadDevice && mod.gattDevice != nil {
+		mod.gattDevice.Scan([]gatt.UUID{}, true)
+	}
 
 	return nil
 }

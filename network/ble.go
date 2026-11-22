@@ -50,7 +50,7 @@ func (b *BLE) Get(id string) (dev *BLEDevice, found bool) {
 	b.RLock()
 	defer b.RUnlock()
 
-	dev, found = b.devices[id]
+	dev, found = b.devices[NormalizeMac(id)]
 	return
 }
 
@@ -64,6 +64,7 @@ func (b *BLE) AddIfNew(id string, p gatt.Peripheral, a *gatt.Advertisement, rssi
 		dev.LastSeen = time.Now()
 		dev.RSSI = rssi
 		dev.Advertisement = a
+		dev.Device = p
 		if alias != "" {
 			dev.Alias = alias
 		}

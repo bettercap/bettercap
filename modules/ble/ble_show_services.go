@@ -270,13 +270,18 @@ func parsePrivacyFlag(raw []byte) string {
 }
 
 func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
+	dev := mod.currentDevice()
+	if dev == nil {
+		return
+	}
+
 	columns := []string{"Handles", "Service > Characteristics", "Properties", "Data"}
 	rows := make([][]string, 0)
 
 	wantsToWrite := mod.writeUUID != nil
 	foundToWrite := false
 
-	mod.currDevice.Services = make([]network.BLEService, 0)
+	dev.Services = make([]network.BLEService, 0)
 
 	for _, svc := range services {
 		service := network.BLEService{
@@ -366,8 +371,8 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 					data = parseRawData(raw)
 				}
 
-				if ch.Name() == "Device Name" && data != "" && mod.currDevice.DeviceName == "" {
-					mod.currDevice.DeviceName = data
+				if ch.Name() == "Device Name" && data != "" && dev.DeviceName == "" {
+					dev.DeviceName = data
 				}
 
 				if multi == nil {
@@ -400,7 +405,7 @@ func (mod *BLERecon) showServices(p gatt.Peripheral, services []*gatt.Service) {
 			rows = append(rows, []string{"", "", "", ""})
 		}
 
-		mod.currDevice.Services = append(mod.currDevice.Services, service)
+		dev.Services = append(dev.Services, service)
 	}
 
 	if wantsToWrite && !foundToWrite {
