@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"runtime"
 
@@ -27,9 +28,9 @@ func main() {
 
 	if !tui.Effects() {
 		if sess.Options.NoColors {
-			fmt.Printf("\n\nWARNING: Terminal colors have been disabled, view will be very limited.\n\n")
+			fmt.Fprintf(os.Stderr, "\n\nWARNING: Terminal colors have been disabled, view will be very limited.\n\n")
 		} else {
-			fmt.Printf("\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")
+			fmt.Fprintf(os.Stderr, "\n\nWARNING: This terminal does not support colors, view will be very limited.\n\n")
 		}
 	}
 
@@ -41,7 +42,7 @@ func main() {
 	appName := fmt.Sprintf("%s v%s", core.Name, core.Version)
 	appBuild := fmt.Sprintf("(built for %s %s with %s)", runtime.GOOS, runtime.GOARCH, runtime.Version())
 
-	fmt.Printf("%s %s [type '%s' for a list of commands]\n\n", tui.Bold(appName), tui.Dim(appBuild), tui.Bold("help"))
+	fmt.Fprintf(os.Stderr, "%s %s [type '%s' for a list of commands]\n\n", tui.Bold(appName), tui.Dim(appBuild), tui.Bold("help"))
 
 	// Load all modules
 	modules.LoadModules(sess)
@@ -75,6 +76,16 @@ func main() {
 		}
 	}
 
+	// If the MCP module is serving over stdio, it owns stdin/stdout for JSON-RPC
+	// framing. The interactive readline loop must not also read stdin, so block
+	// here until the MCP server stops (e.g. the client disconnects / EOF) instead.
+	if mcpOwnsStdio(sess) {
+		for sess.Active && sess.IsOn("mcp") {
+			time.Sleep(200 * time.Millisecond)
+		}
+		return
+	}
+
 	// Eventually start the interactive session.
 	for sess.Active {
 		line, err := sess.ReadLine()
@@ -96,6 +107,16 @@ func main() {
 			}
 		}
 	}
+}
+
+// mcpOwnsStdio reports whether the mcp module is running with the stdio
+// transport, in which case stdin/stdout are reserved for the MCP JSON-RPC stream.
+func mcpOwnsStdio(sess *session.Session) bool {
+	if !sess.IsOn("mcp") {
+		return false
+	}
+	found, transport := sess.Env.Get("mcp.transport")
+	return found && transport == "stdio"
 }
 
 func exitPrompt() bool {
