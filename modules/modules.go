@@ -20,6 +20,7 @@ import (
 	"github.com/bettercap/bettercap/v2/modules/https_proxy"
 	"github.com/bettercap/bettercap/v2/modules/https_server"
 	"github.com/bettercap/bettercap/v2/modules/mac_changer"
+	"github.com/bettercap/bettercap/v2/modules/mcp"
 	"github.com/bettercap/bettercap/v2/modules/mysql_server"
 	"github.com/bettercap/bettercap/v2/modules/ndp_spoof"
 	"github.com/bettercap/bettercap/v2/modules/net_probe"
@@ -57,6 +58,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(https_proxy.NewHttpsProxy(sess))
 	sess.Register(https_server.NewHttpsServer(sess))
 	sess.Register(mac_changer.NewMacChanger(sess))
+	sess.Register(mcp.NewMCPModule(sess))
 	sess.Register(mysql_server.NewMySQLServer(sess))
 	sess.Register(zerogod.NewZeroGod(sess))
 	sess.Register(net_sniff.NewSniffer(sess))
